@@ -6,7 +6,7 @@ Rust CLI that queries [HackerNews API](https://github.com/HackerNews/API). Creat
 
 ## Usage
 
-- Use `cargo run -- [options]` to run directly from the project's root.
+- Use `cargo run` to run directly from the project's root. To provide  options run `cargo run -- [options]`
 - Or create the binary with `cargo install --path <your_path>` and then use `hn [OPTIONS]` as described below
 
 ```
