@@ -2,15 +2,19 @@ mod lib;
 
 use std::collections::HashSet;
 
-use clap::Parser;
-use anyhow::Result;
-use reqwest::Client;
 use crate::lib::{get_items, get_stories};
+use anyhow::Result;
+use clap::Parser;
+use reqwest::Client;
 
 #[derive(Parser, Debug)]
-#[clap(name = "HN CLI", version = "1.0", about = "A command line interface for Hacker News")]
+#[clap(
+    name = "HN CLI",
+    version = "1.0",
+    about = "A command line interface for Hacker News"
+)]
 struct Cli {
-    #[clap(short, long, default_value="best")]
+    #[clap(short, long, default_value = "best")]
     /// The type of stories to retrieve, can be 'top', 'new' or 'best'
     story_type: String,
     #[clap(short, long, default_value_t=10, value_parser = clap::value_parser!(u8).range(1..=50))]
@@ -22,9 +26,17 @@ fn get_valid_story_types() -> HashSet<&'static str> {
     HashSet::from(["best", "new", "top"])
 }
 
-async fn fetch_top_n_stories(client: &Client, story_type: &str, n: u8) -> Result<Vec<lib::HNCLIItem>, Box<dyn std::error::Error>> {
-    let ids = get_stories(client, story_type).await?
-        .iter().take(n as usize).cloned().collect(); // fetches a lot of ids by default, limit that by length given in args
+async fn fetch_top_n_stories(
+    client: &Client,
+    story_type: &str,
+    n: u8,
+) -> Result<Vec<lib::HNCLIItem>, Box<dyn std::error::Error>> {
+    let ids = get_stories(client, story_type)
+        .await?
+        .iter()
+        .take(n as usize)
+        .cloned()
+        .collect(); // fetches a lot of ids by default, limit that by length given in args
     Ok(get_items(client, ids).await?)
 }
 
@@ -41,7 +53,10 @@ async fn run(args: Cli) -> Result<(), Box<dyn std::error::Error>> {
     for (idx, item) in items.iter().enumerate() {
         println!("\n#{} {}", idx + 1, item);
     }
-    print!("\n^ Enjoy the top {} {} HN stories! ^\n", args.length, args.story_type);
+    print!(
+        "\n^ Enjoy the top {} {} HN stories! ^\n",
+        args.length, args.story_type
+    );
     Ok(())
 }
 
@@ -75,7 +90,7 @@ fn test_validate_args() {
             length: 35, // length is validated by clap
         };
         let result = validate_args(&args);
-        if valid_story_types.contains(story_type){
+        if valid_story_types.contains(story_type) {
             assert!(result.is_ok());
         } else {
             assert!(result.is_err());

@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
 use anyhow::{Context, Result};
-use reqwest::{Client, header::USER_AGENT};
+use reqwest::{header::USER_AGENT, Client};
+use serde::{Deserialize, Serialize};
 
 const HN_API_URL: &str = "https://hacker-news.firebaseio.com/";
 const YC_URL: &str = "https://news.ycombinator.com/";
@@ -36,16 +36,22 @@ impl std::fmt::Display for HNCLIItem {
             None => String::new(),
         };
         let first_line = format!("{} by {}", self.title, self.author);
-        let second_line = format!("[{} points] - {} - {}", self.score, comment_str, self.time_ago);
+        let second_line = format!(
+            "[{} points] - {} - {}",
+            self.score, comment_str, self.time_ago
+        );
         let last_line = format!("-> {}", self.url);
         write!(f, "{}\n{}\n{}", first_line, second_line, last_line)
     }
 }
 
-
-pub async fn get_stories(client: &Client, story_type: &str) -> Result<Vec<i32>, Box<dyn std::error::Error>> {
+pub async fn get_stories(
+    client: &Client,
+    story_type: &str,
+) -> Result<Vec<i32>, Box<dyn std::error::Error>> {
     let url = format!("{}/v0/{}stories.json", HN_API_URL, story_type);
-    let resp = client.get(&url)
+    let resp = client
+        .get(&url)
         .header(USER_AGENT, "reqwest")
         .send()
         .await
@@ -57,7 +63,8 @@ pub async fn get_stories(client: &Client, story_type: &str) -> Result<Vec<i32>, 
 
 async fn get_item(client: &Client, id: &i32) -> Result<HackerNewsItem, Box<dyn std::error::Error>> {
     let url = format!("{}/v0/item/{}.json", HN_API_URL, id);
-    let resp = client.get(&url)
+    let resp = client
+        .get(&url)
         .header(USER_AGENT, "reqwest")
         .send()
         .await
@@ -67,7 +74,10 @@ async fn get_item(client: &Client, id: &i32) -> Result<HackerNewsItem, Box<dyn s
     Ok(resp)
 }
 
-pub async fn get_items(client: &Client, ids: Vec<i32>) -> Result<Vec<HNCLIItem>, Box<dyn std::error::Error>> {
+pub async fn get_items(
+    client: &Client,
+    ids: Vec<i32>,
+) -> Result<Vec<HNCLIItem>, Box<dyn std::error::Error>> {
     let mut items = Vec::new();
     let pb = indicatif::ProgressBar::new(ids.len() as u64);
     for (idx, id) in ids.iter().enumerate() {
@@ -89,12 +99,18 @@ pub async fn get_items(client: &Client, ids: Vec<i32>) -> Result<Vec<HNCLIItem>,
 }
 
 fn unix_epoch_to_datetime(unixepoch: u64) -> String {
-    let dt = chrono::DateTime::<chrono::Utc>::from_utc(chrono::NaiveDateTime::from_timestamp(unixepoch as i64, 0), chrono::Utc);
+    let dt = chrono::DateTime::<chrono::Utc>::from_utc(
+        chrono::NaiveDateTime::from_timestamp(unixepoch as i64, 0),
+        chrono::Utc,
+    );
     dt.format("%Y-%m-%d %H:%M:%S").to_string()
 }
 
 fn time_ago(epoch_time: u64) -> String {
-    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
     let diff = now - epoch_time as u64;
     match diff {
         0..=59 => format!("{} seconds ago", diff),
@@ -109,14 +125,20 @@ fn time_ago(epoch_time: u64) -> String {
 fn test_unix_epoch_to_datetime() {
     let dt = chrono::DateTime::<chrono::Utc>::from_utc(
         chrono::NaiveDateTime::from_timestamp(1588888888, 0),
-        chrono::Utc
+        chrono::Utc,
     );
-    assert_eq!(dt.format("%Y-%m-%d %H:%M:%S").to_string(), "2020-05-07 22:01:28");
+    assert_eq!(
+        dt.format("%Y-%m-%d %H:%M:%S").to_string(),
+        "2020-05-07 22:01:28"
+    );
 }
 
 #[test]
 fn test_time_ago() {
-    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
     assert_eq!(time_ago(now), "0 seconds ago");
     assert_eq!(time_ago(now - 60), "1 minutes ago");
     assert_eq!(time_ago(now - 3600), "1 hours ago");
@@ -135,5 +157,8 @@ fn test_display() {
         score: 9,
         comments: Some(1),
     };
-    assert_eq!(item.to_string(), "Rust is awesome by me\n[9 points] - 1 comments - 0 seconds ago\n-> https://rust-lang.org");
+    assert_eq!(
+        item.to_string(),
+        "Rust is awesome by me\n[9 points] - 1 comments - 0 seconds ago\n-> https://rust-lang.org"
+    );
 }
