@@ -2,7 +2,7 @@
 
 ## Description
 
-Rust CLI that queries [HackerNews API](). Created to learn about Rust.
+Rust CLI that queries [HackerNews API](https://github.com/HackerNews/API). Created to learn about Rust.
 
 ## Usage
 
