@@ -82,20 +82,31 @@ pub async fn get_items(
     let pb = indicatif::ProgressBar::new(ids.len() as u64);
     for (idx, id) in ids.iter().enumerate() {
         let item = get_item(client, id).await?;
-        let item = HNCLIItem {
-            title: item.title,
-            url: item.url.unwrap_or(format!("{}item?id={}", YC_URL, item.id)),
-            author: item.by,
-            time: unix_epoch_to_datetime(item.time),
-            time_ago: time_ago(item.time),
-            score: item.score,
-            comments: item.descendants,
-        };
+        let item = to_hn_cli_item(item);
         items.push(item);
         pb.println(format!("[+] fetched #{} | ETA {:?}", idx + 1, pb.eta()));
         pb.inc(1);
     }
     Ok(items)
+}
+
+fn get_item_url(item: &HackerNewsItem) -> String {
+    match &item.url {
+        Some(url) => url.to_string(),
+        None => format!("{}item?id={}", YC_URL, item.id),
+    }
+}
+
+fn to_hn_cli_item(item: HackerNewsItem) -> HNCLIItem {
+    HNCLIItem {
+        title: (&item.title).to_string(),
+        url: get_item_url(&item),
+        author: item.by,
+        time: unix_epoch_to_datetime(item.time),
+        time_ago: time_ago(item.time),
+        score: item.score,
+        comments: item.descendants,
+    }
 }
 
 fn unix_epoch_to_datetime(unixepoch: u64) -> String {
@@ -161,4 +172,55 @@ fn test_display() {
         item.to_string(),
         "Rust is awesome by me\n[9 points] - 1 comments - 0 seconds ago\n-> https://rust-lang.org"
     );
+}
+
+#[test]
+fn test_get_item_url() {
+    let item = HackerNewsItem {
+        id: 1,
+        by: "me".to_string(),
+        time: 1588888888,
+        kids: None,
+        url: Some("https://rust-lang.org".to_string()),
+        score: 9,
+        title: "Rust is awesome".to_string(),
+        descendants: Some(1),
+        r#type: "story".to_string(),
+    };
+    assert_eq!(get_item_url(&item), "https://rust-lang.org");
+
+    let item = HackerNewsItem {
+        url: None,
+        ..item
+    };
+
+    assert_eq!(get_item_url(&item), "https://news.ycombinator.com/item?id=1");
+}
+
+#[test]
+fn test_to_hn_cli_item() {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+
+    let item = HackerNewsItem {
+        id: 1,
+        by: "me".to_string(),
+        time: now,
+        kids: None,
+        url: Some("https://rust-lang.org".to_string()),
+        score: 9,
+        title: "Rust is awesome".to_string(),
+        descendants: Some(1),
+        r#type: "story".to_string(),
+    };
+    let item = to_hn_cli_item(item);
+    assert_eq!(item.title, "Rust is awesome");
+    assert_eq!(item.url, "https://rust-lang.org");
+    assert_eq!(item.author, "me");
+    assert_eq!(item.time, unix_epoch_to_datetime(now));
+    assert_eq!(item.time_ago, "0 seconds ago");
+    assert_eq!(item.score, 9);
+    assert_eq!(item.comments, Some(1));
 }
