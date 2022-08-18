@@ -76,7 +76,7 @@ async fn get_item(client: &Client, id: &i32) -> Result<HackerNewsItem, Box<dyn s
 
 pub async fn get_items(
     client: &Client,
-    ids: Vec<i32>,
+    ids: &[i32],
 ) -> Result<Vec<HNCLIItem>, Box<dyn std::error::Error>> {
     let mut items = Vec::new();
     let pb = indicatif::ProgressBar::new(ids.len() as u64);

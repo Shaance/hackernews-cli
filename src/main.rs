@@ -31,12 +31,9 @@ async fn fetch_top_n_stories(
     story_type: &str,
     n: u8,
 ) -> Result<Vec<lib::HNCLIItem>, Box<dyn std::error::Error>> {
-    let ids = get_stories(client, story_type)
-        .await?
-        .iter()
-        .take(n as usize)
-        .cloned()
-        .collect(); // fetches a lot of ids by default, limit that by length given in args
+    let ids = get_stories(client, story_type).await?;
+    // fetches a lot of ids by default, limit that by length given in args
+    let ids = &ids[..n as usize];
     Ok(get_items(client, ids).await?)
 }
 
