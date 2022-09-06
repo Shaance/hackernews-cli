@@ -118,11 +118,7 @@ fn unix_epoch_to_datetime(unixepoch: u64) -> String {
 }
 
 fn time_ago(epoch_time: u64) -> String {
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-    let diff = now - epoch_time as u64;
+    let diff = now() - epoch_time as u64;
     match diff {
         0..=59 => format!("{} seconds ago", diff),
         60..=3599 => format!("{} minutes ago", diff / 60),
@@ -132,95 +128,100 @@ fn time_ago(epoch_time: u64) -> String {
     }
 }
 
-#[test]
-fn test_unix_epoch_to_datetime() {
-    let dt = chrono::DateTime::<chrono::Utc>::from_utc(
-        chrono::NaiveDateTime::from_timestamp(1588888888, 0),
-        chrono::Utc,
-    );
-    assert_eq!(
-        dt.format("%Y-%m-%d %H:%M:%S").to_string(),
-        "2020-05-07 22:01:28"
-    );
-}
-
-#[test]
-fn test_time_ago() {
-    let now = std::time::SystemTime::now()
+fn now() -> u64 {
+    std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-    assert_eq!(time_ago(now), "0 seconds ago");
-    assert_eq!(time_ago(now - 60), "1 minutes ago");
-    assert_eq!(time_ago(now - 3600), "1 hours ago");
-    assert_eq!(time_ago(now - 86400), "1 days ago");
-    assert_eq!(time_ago(now - 604800), "1 weeks ago");
+        .expect("Could not retrieve current time")
+        .as_secs()
 }
 
-#[test]
-fn test_display() {
-    let item = HNCLIItem {
-        title: "Rust is awesome".to_string(),
-        url: "https://rust-lang.org".to_string(),
-        author: "me".to_string(),
-        time: "2020-05-07 22:01:28".to_string(),
-        time_ago: "0 seconds ago".to_string(),
-        score: 9,
-        comments: Some(1),
-    };
-    assert_eq!(
-        item.to_string(),
-        "Rust is awesome by me\n[9 points] - 1 comments - 0 seconds ago\n-> https://rust-lang.org"
-    );
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_unix_epoch_to_datetime() {
+        let dt = chrono::DateTime::<chrono::Utc>::from_utc(
+            chrono::NaiveDateTime::from_timestamp(1588888888, 0),
+            chrono::Utc,
+        );
+        assert_eq!(
+            dt.format("%Y-%m-%d %H:%M:%S").to_string(),
+            "2020-05-07 22:01:28"
+        );
+    }
 
-#[test]
-fn test_get_item_url() {
-    let item = HackerNewsItem {
-        id: 1,
-        by: "me".to_string(),
-        time: 1588888888,
-        kids: None,
-        url: Some("https://rust-lang.org".to_string()),
-        score: 9,
-        title: "Rust is awesome".to_string(),
-        descendants: Some(1),
-        r#type: "story".to_string(),
-    };
-    assert_eq!(get_item_url(&item), "https://rust-lang.org");
+    #[test]
+    fn test_time_ago() {
+        let now = now();
+        assert_eq!(time_ago(now), "0 seconds ago");
+        assert_eq!(time_ago(now - 60), "1 minutes ago");
+        assert_eq!(time_ago(now - 3600), "1 hours ago");
+        assert_eq!(time_ago(now - 86400), "1 days ago");
+        assert_eq!(time_ago(now - 604800), "1 weeks ago");
+    }
 
-    let item = HackerNewsItem {
-        url: None,
-        ..item
-    };
+    #[test]
+    fn test_display() {
+        let item = HNCLIItem {
+            title: "Rust is awesome".to_string(),
+            url: "https://rust-lang.org".to_string(),
+            author: "me".to_string(),
+            time: "2020-05-07 22:01:28".to_string(),
+            time_ago: "0 seconds ago".to_string(),
+            score: 9,
+            comments: Some(1),
+        };
+        assert_eq!(
+            item.to_string(),
+            "Rust is awesome by me\n[9 points] - 1 comments - 0 seconds ago\n-> https://rust-lang.org"
+        );
+    }
 
-    assert_eq!(get_item_url(&item), "https://news.ycombinator.com/item?id=1");
-}
+    #[test]
+    fn test_get_item_url() {
+        let item = HackerNewsItem {
+            id: 1,
+            by: "me".to_string(),
+            time: 1588888888,
+            kids: None,
+            url: Some("https://rust-lang.org".to_string()),
+            score: 9,
+            title: "Rust is awesome".to_string(),
+            descendants: Some(1),
+            r#type: "story".to_string(),
+        };
+        assert_eq!(get_item_url(&item), "https://rust-lang.org");
 
-#[test]
-fn test_to_hn_cli_item() {
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
+        let item = HackerNewsItem { url: None, ..item };
 
-    let item = HackerNewsItem {
-        id: 1,
-        by: "me".to_string(),
-        time: now,
-        kids: None,
-        url: Some("https://rust-lang.org".to_string()),
-        score: 9,
-        title: "Rust is awesome".to_string(),
-        descendants: Some(1),
-        r#type: "story".to_string(),
-    };
-    let item = to_hn_cli_item(item);
-    assert_eq!(item.title, "Rust is awesome");
-    assert_eq!(item.url, "https://rust-lang.org");
-    assert_eq!(item.author, "me");
-    assert_eq!(item.time, unix_epoch_to_datetime(now));
-    assert_eq!(item.time_ago, "0 seconds ago");
-    assert_eq!(item.score, 9);
-    assert_eq!(item.comments, Some(1));
+        assert_eq!(
+            get_item_url(&item),
+            "https://news.ycombinator.com/item?id=1"
+        );
+    }
+
+    #[test]
+    fn test_to_hn_cli_item() {
+        let now = now();
+
+        let item = HackerNewsItem {
+            id: 1,
+            by: "me".to_string(),
+            time: now,
+            kids: None,
+            url: Some("https://rust-lang.org".to_string()),
+            score: 9,
+            title: "Rust is awesome".to_string(),
+            descendants: Some(1),
+            r#type: "story".to_string(),
+        };
+        let item = to_hn_cli_item(item);
+        assert_eq!(item.title, "Rust is awesome");
+        assert_eq!(item.url, "https://rust-lang.org");
+        assert_eq!(item.author, "me");
+        assert_eq!(item.time, unix_epoch_to_datetime(now));
+        assert_eq!(item.time_ago, "0 seconds ago");
+        assert_eq!(item.score, 9);
+        assert_eq!(item.comments, Some(1));
+    }
 }

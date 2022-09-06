@@ -78,19 +78,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 }
 
-#[test]
-fn test_validate_args() {
-    let valid_story_types = get_valid_story_types();
-    for story_type in ["best", "new", "top", "not_ok", "invalid", "etc"].iter() {
-        let args = Cli {
-            story_type: story_type.to_string(),
-            length: 35, // length is validated by clap
-        };
-        let result = validate_args(&args);
-        if valid_story_types.contains(story_type) {
-            assert!(result.is_ok());
-        } else {
-            assert!(result.is_err());
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_validate_args() {
+        let valid_story_types = get_valid_story_types();
+        for story_type in ["best", "new", "top", "not_ok", "invalid", "etc"].iter() {
+            let args = Cli {
+                story_type: story_type.to_string(),
+                length: 35, // length is validated by clap
+            };
+            let result = validate_args(&args);
+            if valid_story_types.contains(story_type) {
+                assert!(result.is_ok());
+            } else {
+                assert!(result.is_err());
+            }
         }
     }
 }
