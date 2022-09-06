@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use async_trait::async_trait;
 use reqwest::{header::USER_AGENT, Client};
 use serde::{Deserialize, Serialize};
 
@@ -44,50 +45,67 @@ impl std::fmt::Display for HNCLIItem {
         write!(f, "{}\n{}\n{}", first_line, second_line, last_line)
     }
 }
-
-pub async fn get_stories(
-    client: &Client,
-    story_type: &str,
-) -> Result<Vec<i32>, Box<dyn std::error::Error>> {
-    let url = format!("{}/v0/{}stories.json", HN_API_URL, story_type);
-    let resp = client
-        .get(&url)
-        .header(USER_AGENT, "reqwest")
-        .send()
-        .await
-        .with_context(|| format!("Could not retrieve data from `{}`", url))?
-        .json::<Vec<i32>>()
-        .await?;
-    Ok(resp)
+#[async_trait]
+pub trait HackerNewsClient {
+    fn new() -> Self;
+    async fn get_stories(&self, story_type: &str) -> Result<Vec<i32>>;
+    async fn get_items(&self, ids: &[i32]) -> Result<Vec<HNCLIItem>, Box<dyn std::error::Error>>;
 }
 
-async fn get_item(client: &Client, id: &i32) -> Result<HackerNewsItem, Box<dyn std::error::Error>> {
-    let url = format!("{}/v0/item/{}.json", HN_API_URL, id);
-    let resp = client
-        .get(&url)
-        .header(USER_AGENT, "reqwest")
-        .send()
-        .await
-        .with_context(|| format!("Could not retrieve data from `{}`", url))?
-        .json::<HackerNewsItem>()
-        .await?;
-    Ok(resp)
+pub struct HackerNewsClientImpl {
+    client: Client,
 }
 
-pub async fn get_items(
-    client: &Client,
-    ids: &[i32],
-) -> Result<Vec<HNCLIItem>, Box<dyn std::error::Error>> {
-    let mut items = Vec::new();
-    let pb = indicatif::ProgressBar::new(ids.len() as u64);
-    for (idx, id) in ids.iter().enumerate() {
-        let item = get_item(client, id).await?;
-        let item = to_hn_cli_item(item);
-        items.push(item);
-        pb.println(format!("[+] fetched #{} | ETA {:?}", idx + 1, pb.eta()));
-        pb.inc(1);
+#[async_trait]
+impl HackerNewsClient for HackerNewsClientImpl {
+    fn new() -> Self {
+        Self {
+            client: Client::new(),
+        }
     }
-    Ok(items)
+
+    async fn get_stories(&self, story_type: &str) -> Result<Vec<i32>> {
+        let url = format!("{}/v0/{}stories.json", HN_API_URL, story_type);
+        let resp = self
+            .client
+            .get(&url)
+            .header(USER_AGENT, "reqwest")
+            .send()
+            .await
+            .with_context(|| format!("Could not retrieve data from `{}`", url))?
+            .json::<Vec<i32>>()
+            .await?;
+        Ok(resp)
+    }
+
+    async fn get_items(&self, ids: &[i32]) -> Result<Vec<HNCLIItem>, Box<dyn std::error::Error>> {
+        let mut items = Vec::new();
+        let pb = indicatif::ProgressBar::new(ids.len() as u64);
+        for (idx, id) in ids.iter().enumerate() {
+            let item = self.get_item(id).await?;
+            let item = to_hn_cli_item(item);
+            items.push(item);
+            pb.println(format!("[+] fetched #{} | ETA {:?}", idx + 1, pb.eta()));
+            pb.inc(1);
+        }
+        Ok(items)
+    }
+}
+
+impl HackerNewsClientImpl {
+    async fn get_item(&self, id: &i32) -> Result<HackerNewsItem, Box<dyn std::error::Error>> {
+        let url = format!("{}/v0/item/{}.json", HN_API_URL, id);
+        let resp = self
+            .client
+            .get(&url)
+            .header(USER_AGENT, "reqwest")
+            .send()
+            .await
+            .with_context(|| format!("Could not retrieve data from `{}`", url))?
+            .json::<HackerNewsItem>()
+            .await?;
+        Ok(resp)
+    }
 }
 
 fn get_item_url(item: &HackerNewsItem) -> String {

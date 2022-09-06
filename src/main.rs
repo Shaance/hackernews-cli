@@ -2,10 +2,9 @@ mod lib;
 
 use std::collections::HashSet;
 
-use crate::lib::{get_items, get_stories};
+use crate::lib::{HackerNewsClient, HackerNewsClientImpl};
 use anyhow::Result;
 use clap::Parser;
-use reqwest::Client;
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -27,14 +26,14 @@ fn get_valid_story_types() -> HashSet<&'static str> {
 }
 
 async fn fetch_top_n_stories(
-    client: &Client,
+    client: &impl HackerNewsClient,
     story_type: &str,
     n: u8,
 ) -> Result<Vec<lib::HNCLIItem>, Box<dyn std::error::Error>> {
-    let ids = get_stories(client, story_type).await?;
+    let ids = client.get_stories(story_type).await?;
     // fetches a lot of ids by default, limit that by length given in args
     let ids = &ids[..n as usize];
-    Ok(get_items(client, ids).await?)
+    Ok(client.get_items(ids).await?)
 }
 
 fn validate_args(args: &Cli) -> Result<(), anyhow::Error> {
@@ -45,8 +44,8 @@ fn validate_args(args: &Cli) -> Result<(), anyhow::Error> {
 }
 
 async fn run(args: Cli) -> Result<(), Box<dyn std::error::Error>> {
-    let client = Client::new();
-    let items = fetch_top_n_stories(&client, &args.story_type, args.length).await?;
+    let hn_client: HackerNewsClientImpl = HackerNewsClient::new();
+    let items = fetch_top_n_stories(&hn_client, &args.story_type, args.length).await?;
     for (idx, item) in items.iter().enumerate() {
         println!("\n#{} {}", idx + 1, item);
     }
