@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use async_trait::async_trait;
+use mockall::automock;
 use reqwest::{header::USER_AGENT, Client};
 use serde::{Deserialize, Serialize};
 
@@ -45,25 +46,20 @@ impl std::fmt::Display for HNCLIItem {
         write!(f, "{}\n{}\n{}", first_line, second_line, last_line)
     }
 }
+#[automock]
 #[async_trait]
 pub trait HackerNewsClient {
-    fn new() -> Self;
     async fn get_stories(&self, story_type: &str) -> Result<Vec<i32>>;
-    async fn get_items(&self, ids: &[i32]) -> Result<Vec<HNCLIItem>, Box<dyn std::error::Error>>;
+    async fn get_items(&self, ids: &[i32]) -> Result<Vec<HNCLIItem>>;
 }
 
+#[derive(Default)]
 pub struct HackerNewsClientImpl {
     client: Client,
 }
 
 #[async_trait]
 impl HackerNewsClient for HackerNewsClientImpl {
-    fn new() -> Self {
-        Self {
-            client: Client::new(),
-        }
-    }
-
     async fn get_stories(&self, story_type: &str) -> Result<Vec<i32>> {
         let url = format!("{}/v0/{}stories.json", HN_API_URL, story_type);
         let resp = self
@@ -78,7 +74,7 @@ impl HackerNewsClient for HackerNewsClientImpl {
         Ok(resp)
     }
 
-    async fn get_items(&self, ids: &[i32]) -> Result<Vec<HNCLIItem>, Box<dyn std::error::Error>> {
+    async fn get_items(&self, ids: &[i32]) -> Result<Vec<HNCLIItem>> {
         let mut items = Vec::new();
         let pb = indicatif::ProgressBar::new(ids.len() as u64);
         for (idx, id) in ids.iter().enumerate() {
@@ -93,7 +89,12 @@ impl HackerNewsClient for HackerNewsClientImpl {
 }
 
 impl HackerNewsClientImpl {
-    async fn get_item(&self, id: &i32) -> Result<HackerNewsItem, Box<dyn std::error::Error>> {
+    pub fn new() -> Self {
+        Self {
+            client: Client::new(),
+        }
+    }
+    async fn get_item(&self, id: &i32) -> Result<HackerNewsItem> {
         let url = format!("{}/v0/item/{}.json", HN_API_URL, id);
         let resp = self
             .client
@@ -117,7 +118,7 @@ fn get_item_url(item: &HackerNewsItem) -> String {
 
 fn to_hn_cli_item(item: HackerNewsItem) -> HNCLIItem {
     HNCLIItem {
-        title: (&item.title).to_string(),
+        title: item.title.to_string(),
         url: get_item_url(&item),
         author: item.by,
         time: unix_epoch_to_datetime(item.time),
@@ -127,16 +128,15 @@ fn to_hn_cli_item(item: HackerNewsItem) -> HNCLIItem {
     }
 }
 
-fn unix_epoch_to_datetime(unixepoch: u64) -> String {
-    let dt = chrono::DateTime::<chrono::Utc>::from_utc(
-        chrono::NaiveDateTime::from_timestamp(unixepoch as i64, 0),
-        chrono::Utc,
-    );
-    dt.format("%Y-%m-%d %H:%M:%S").to_string()
+fn unix_epoch_to_datetime(unix_epoch: u64) -> String {
+    chrono::DateTime::from_timestamp(unix_epoch as i64, 0)
+        .unwrap()
+        .format("%Y-%m-%d %H:%M:%S")
+        .to_string()
 }
 
 fn time_ago(epoch_time: u64) -> String {
-    let diff = now() - epoch_time as u64;
+    let diff = now() - epoch_time;
     match diff {
         0..=59 => format!("{} seconds ago", diff),
         60..=3599 => format!("{} minutes ago", diff / 60),
@@ -158,10 +158,7 @@ mod tests {
     use super::*;
     #[test]
     fn test_unix_epoch_to_datetime() {
-        let dt = chrono::DateTime::<chrono::Utc>::from_utc(
-            chrono::NaiveDateTime::from_timestamp(1588888888, 0),
-            chrono::Utc,
-        );
+        let dt = chrono::DateTime::from_timestamp(1588888888, 0).unwrap();
         assert_eq!(
             dt.format("%Y-%m-%d %H:%M:%S").to_string(),
             "2020-05-07 22:01:28"

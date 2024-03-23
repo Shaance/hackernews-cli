@@ -3,17 +3,26 @@ name = "hn"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "hn"
+path = "src/main.rs"
+
+[lib]
+name = "hn_lib"
+path = "src/lib.rs"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 anyhow = "1.0.61"
 async-trait = "0.1.57"
 chrono = "0.4.22"
-clap = { version = "3.2.17", features = ["derive"] }
+clap = { version = "4.5.3", features = ["derive"] }
 exitcode = "1.1.2"
 futures = "0.3.23"
 indicatif = "0.17.0"
-reqwest = { version = "0.11.11", features = ["blocking", "json"] }
+mockall = "0.12.1"
+reqwest = { version = "0.12.1", features = ["blocking", "json"] }
 serde = { version = "1.0.143", features = ["derive"] }
 serde_json = "1.0.83"
 tokio = { version = "1.20.1", features = ["full"] }
