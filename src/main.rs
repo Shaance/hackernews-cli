@@ -30,17 +30,20 @@ async fn fetch_top_n_stories(
     story_type: &str,
     n: u8,
 ) -> Result<Vec<HNCLIItem>> {
-    let ids = client.get_stories(story_type).await?;
+    let ids = client
+        .get_stories(story_type)
+        .await
+        .unwrap_or_else(|_| panic!("Failed to get ids from story type {}", story_type));
     // fetches a lot of ids by default, limit that by length given in args
     let ids = &ids[..n as usize];
     client.get_items(ids).await
 }
 
-fn validate_args(args: &Cli) -> Result<(), anyhow::Error> {
-    if !get_valid_story_types().contains(&args.story_type.as_str()) {
-        return Err(anyhow::anyhow!("Invalid story type: {}", args.story_type));
+fn validate_args(args: &Cli) -> Result<()> {
+    match get_valid_story_types().contains(&args.story_type.as_str()) {
+        true => Ok(()),
+        false => Err(anyhow::anyhow!("Invalid story type: {}", args.story_type)),
     }
-    Ok(())
 }
 
 async fn run(args: Cli) -> Result<()> {
@@ -59,17 +62,14 @@ async fn run(args: Cli) -> Result<()> {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Cli::parse();
-    let valid_args = validate_args(&args);
-    if valid_args.is_err() {
-        eprintln!("Error: {}", valid_args.err().unwrap());
+
+    if let Err(e) = validate_args(&args) {
+        eprintln!("Error: {}", e);
         std::process::exit(exitcode::USAGE);
     }
-    let result = run(args).await;
-    match result {
-        Ok(_) => {
-            println!("Done!");
-            std::process::exit(exitcode::OK);
-        }
+
+    match run(args).await {
+        Ok(_) => std::process::exit(exitcode::OK),
         Err(e) => {
             eprintln!("Error: {}", e);
             std::process::exit(exitcode::SOFTWARE);
