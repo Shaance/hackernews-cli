@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use async_trait::async_trait;
+use futures::future::join_all;
 use mockall::automock;
 use reqwest::{header::USER_AGENT, Client};
 use serde::{Deserialize, Serialize};
@@ -7,7 +8,7 @@ use serde::{Deserialize, Serialize};
 const HN_API_URL: &str = "https://hacker-news.firebaseio.com/";
 const YC_URL: &str = "https://news.ycombinator.com/";
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HackerNewsItem {
     pub by: String,
     pub score: i32,
@@ -75,16 +76,13 @@ impl HackerNewsClient for HackerNewsClientImpl {
     }
 
     async fn get_items(&self, ids: &[i32]) -> Result<Vec<HNCLIItem>> {
-        let mut items = Vec::new();
-        let pb = indicatif::ProgressBar::new(ids.len() as u64);
-        for (idx, id) in ids.iter().enumerate() {
-            let item = self.get_item(id).await?;
-            let item = to_hn_cli_item(item);
-            items.push(item);
-            pb.println(format!("[+] fetched #{} | ETA {:?}", idx + 1, pb.eta()));
-            pb.inc(1);
-        }
-        Ok(items)
+        let future_items = ids.iter().map(|id| self.get_item(id));
+        let items = join_all(future_items).await;
+
+        Ok(items
+            .into_iter()
+            .map(|x| to_hn_cli_item(x.unwrap()))
+            .collect())
     }
 }
 
