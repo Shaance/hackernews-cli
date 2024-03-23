@@ -1,10 +1,10 @@
-mod lib;
+extern crate hn_lib;
 
 use std::collections::HashSet;
 
-use crate::lib::{HackerNewsClient, HackerNewsClientImpl};
 use anyhow::Result;
 use clap::Parser;
+use hn_lib::{HNCLIItem, HackerNewsClient, HackerNewsClientImpl};
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -29,11 +29,11 @@ async fn fetch_top_n_stories(
     client: &impl HackerNewsClient,
     story_type: &str,
     n: u8,
-) -> Result<Vec<lib::HNCLIItem>, Box<dyn std::error::Error>> {
+) -> Result<Vec<HNCLIItem>> {
     let ids = client.get_stories(story_type).await?;
     // fetches a lot of ids by default, limit that by length given in args
     let ids = &ids[..n as usize];
-    Ok(client.get_items(ids).await?)
+    client.get_items(ids).await
 }
 
 fn validate_args(args: &Cli) -> Result<(), anyhow::Error> {
@@ -43,8 +43,8 @@ fn validate_args(args: &Cli) -> Result<(), anyhow::Error> {
     Ok(())
 }
 
-async fn run(args: Cli) -> Result<(), Box<dyn std::error::Error>> {
-    let hn_client: HackerNewsClientImpl = HackerNewsClient::new();
+async fn run(args: Cli) -> Result<()> {
+    let hn_client: HackerNewsClientImpl = HackerNewsClientImpl::new();
     let items = fetch_top_n_stories(&hn_client, &args.story_type, args.length).await?;
     for (idx, item) in items.iter().enumerate() {
         println!("\n#{} {}", idx + 1, item);
@@ -57,7 +57,7 @@ async fn run(args: Cli) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     let args = Cli::parse();
     let valid_args = validate_args(&args);
     if valid_args.is_err() {
@@ -80,6 +80,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use hn_lib::MockHackerNewsClient;
+    use mockall::predicate;
     #[test]
     fn test_validate_args() {
         let valid_story_types = get_valid_story_types();
@@ -95,5 +97,32 @@ mod tests {
                 assert!(result.is_err());
             }
         }
+    }
+
+    #[tokio::test]
+    async fn test_fetch_top_n_stories() {
+        let mut hn_client = MockHackerNewsClient::new();
+        hn_client
+            .expect_get_stories()
+            .with(predicate::eq("best"))
+            .times(1)
+            .returning(|_| Ok(vec![1]));
+
+        hn_client.expect_get_items().times(1).returning(|_| {
+            Ok(vec![HNCLIItem {
+                title: "".to_string(),
+                url: "".to_string(),
+                author: "".to_string(),
+                time: "".to_string(),
+                time_ago: "".to_string(),
+                score: 0,
+                comments: None,
+            }])
+        });
+
+        let items = fetch_top_n_stories(&hn_client, "best", 1).await;
+
+        assert!(items.is_ok());
+        assert_eq!(items.unwrap().len(), 1);
     }
 }
