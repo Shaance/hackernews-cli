@@ -1,8 +1,8 @@
 use crate::hn_client::{HackerNewsClient, HackerNewsClientImpl, HackerNewsItem};
+use crate::time_utils::{time_ago, unix_epoch_to_datetime};
 use anyhow::Result;
 use async_trait::async_trait;
 use std::collections::HashSet;
-use crate::time_utils::{time_ago, unix_epoch_to_datetime};
 
 mod hn_client;
 mod time_utils;
@@ -56,7 +56,7 @@ impl HackerNewsCliService for HackerNewsCliServiceImpl {
             .get_story_ids(story_type)
             .await
             .unwrap_or_else(|_| panic!("Failed to get ids from story type {}", story_type));
-        
+
         // fetches a lot of ids by default, limit that by length given in args
         let ids = &ids[..n as usize];
         Ok(self
@@ -113,8 +113,8 @@ impl HackerNewsCliServiceImpl {
 mod tests {
     use super::*;
     use crate::hn_client::MockHackerNewsClient;
-    use mockall::predicate;
     use crate::time_utils::now;
+    use mockall::predicate;
 
     #[test]
     fn test_unix_epoch_to_datetime() {
