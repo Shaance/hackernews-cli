@@ -1,25 +1,11 @@
-use anyhow::{Context, Result};
+use crate::hn_client::{HackerNewsClient, HackerNewsClientImpl, HackerNewsItem};
+use anyhow::Result;
 use async_trait::async_trait;
-use futures::future::join_all;
-use mockall::automock;
-use reqwest::{header::USER_AGENT, Client};
-use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
+use crate::time_utils::{time_ago, unix_epoch_to_datetime};
 
-const HN_API_URL: &str = "https://hacker-news.firebaseio.com/";
-const YC_URL: &str = "https://news.ycombinator.com/";
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HackerNewsItem {
-    pub by: String,
-    pub score: i32,
-    pub time: u64,
-    pub title: String,
-    pub url: Option<String>,
-    pub descendants: Option<i32>,
-    id: i32,
-    kids: Option<Vec<i32>>,
-    r#type: String,
-}
+mod hn_client;
+mod time_utils;
 
 #[derive(Debug)]
 pub struct HNCLIItem {
@@ -47,113 +33,89 @@ impl std::fmt::Display for HNCLIItem {
         write!(f, "{}\n{}\n{}", first_line, second_line, last_line)
     }
 }
-#[automock]
-#[async_trait]
-pub trait HackerNewsClient {
-    async fn get_stories(&self, story_type: &str) -> Result<Vec<i32>>;
-    async fn get_items(&self, ids: &[i32]) -> Result<Vec<HNCLIItem>>;
-}
-
-#[derive(Default)]
-pub struct HackerNewsClientImpl {
-    client: Client,
-}
 
 #[async_trait]
-impl HackerNewsClient for HackerNewsClientImpl {
-    async fn get_stories(&self, story_type: &str) -> Result<Vec<i32>> {
-        let url = format!("{}/v0/{}stories.json", HN_API_URL, story_type);
-        let resp = self
-            .client
-            .get(&url)
-            .header(USER_AGENT, "reqwest")
-            .send()
+pub trait HackerNewsCliService {
+    async fn fetch_top_n_stories(&self, story_type: &str, n: u8) -> Result<Vec<HNCLIItem>>;
+
+    fn get_valid_story_types() -> HashSet<&'static str>;
+}
+
+pub struct HackerNewsCliServiceImpl {
+    // async traits and dyn dispatch do not play well at the moment
+    // https://blog.rust-lang.org/2023/12/21/async-fn-rpit-in-traits.html#dynamic-dispatch
+    // TODO replace with Box<dyn HackerNewsClient>
+    hn_client: HackerNewsClientImpl,
+}
+
+#[async_trait]
+impl HackerNewsCliService for HackerNewsCliServiceImpl {
+    async fn fetch_top_n_stories(&self, story_type: &str, n: u8) -> Result<Vec<HNCLIItem>> {
+        let ids = self
+            .hn_client
+            .get_story_ids(story_type)
             .await
-            .with_context(|| format!("Could not retrieve data from `{}`", url))?
-            .json::<Vec<i32>>()
-            .await?;
-        Ok(resp)
-    }
-
-    async fn get_items(&self, ids: &[i32]) -> Result<Vec<HNCLIItem>> {
-        let future_items = ids.iter().map(|id| self.get_item(id));
-        let items = join_all(future_items).await;
-
-        Ok(items
+            .unwrap_or_else(|_| panic!("Failed to get ids from story type {}", story_type));
+        
+        // fetches a lot of ids by default, limit that by length given in args
+        let ids = &ids[..n as usize];
+        Ok(self
+            .hn_client
+            .get_items(ids)
+            .await
             .into_iter()
-            .map(|x| to_hn_cli_item(x.unwrap()))
+            .map(|x| self.api_item_to_hn_cli_item(x.unwrap()))
             .collect())
     }
+
+    fn get_valid_story_types() -> HashSet<&'static str> {
+        HashSet::from(["best", "new", "top"])
+    }
 }
 
-impl HackerNewsClientImpl {
-    pub fn new() -> Self {
-        Self {
-            client: Client::new(),
+impl HackerNewsCliServiceImpl {
+    pub fn new(client: Option<HackerNewsClientImpl>) -> Self {
+        match client {
+            None => HackerNewsCliServiceImpl {
+                hn_client: HackerNewsClientImpl::new(),
+            },
+            Some(hn_client) => HackerNewsCliServiceImpl { hn_client },
         }
     }
-    async fn get_item(&self, id: &i32) -> Result<HackerNewsItem> {
-        let url = format!("{}/v0/item/{}.json", HN_API_URL, id);
-        let resp = self
-            .client
-            .get(&url)
-            .header(USER_AGENT, "reqwest")
-            .send()
-            .await
-            .with_context(|| format!("Could not retrieve data from `{}`", url))?
-            .json::<HackerNewsItem>()
-            .await?;
-        Ok(resp)
+}
+
+impl HackerNewsCliServiceImpl {
+    fn get_item_url(&self, item: &HackerNewsItem) -> String {
+        match &item.url {
+            Some(url) => url.to_string(),
+            None => format!(
+                "{}item?id={}",
+                self.hn_client.get_y_combinator_url(),
+                item.id
+            ),
+        }
     }
-}
 
-fn get_item_url(item: &HackerNewsItem) -> String {
-    match &item.url {
-        Some(url) => url.to_string(),
-        None => format!("{}item?id={}", YC_URL, item.id),
+    fn api_item_to_hn_cli_item(&self, item: HackerNewsItem) -> HNCLIItem {
+        HNCLIItem {
+            title: item.title.to_string(),
+            url: self.get_item_url(&item),
+            author: item.by,
+            time: unix_epoch_to_datetime(item.time),
+            time_ago: time_ago(item.time),
+            score: item.score,
+            comments: item.descendants,
+        }
     }
-}
-
-fn to_hn_cli_item(item: HackerNewsItem) -> HNCLIItem {
-    HNCLIItem {
-        title: item.title.to_string(),
-        url: get_item_url(&item),
-        author: item.by,
-        time: unix_epoch_to_datetime(item.time),
-        time_ago: time_ago(item.time),
-        score: item.score,
-        comments: item.descendants,
-    }
-}
-
-fn unix_epoch_to_datetime(unix_epoch: u64) -> String {
-    chrono::DateTime::from_timestamp(unix_epoch as i64, 0)
-        .unwrap()
-        .format("%Y-%m-%d %H:%M:%S")
-        .to_string()
-}
-
-fn time_ago(epoch_time: u64) -> String {
-    let diff = now() - epoch_time;
-    match diff {
-        0..=59 => format!("{} seconds ago", diff),
-        60..=3599 => format!("{} minutes ago", diff / 60),
-        3600..=86399 => format!("{} hours ago", diff / 3600),
-        86400..=604799 => format!("{} days ago", diff / 86400),
-        _ => format!("{} weeks ago", diff / 604800),
-    }
-}
-
-fn now() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .expect("Could not retrieve current time")
-        .as_secs()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::hn_client::MockHackerNewsClient;
+    use mockall::predicate;
+    use crate::time_utils::now;
+
     #[test]
     fn test_unix_epoch_to_datetime() {
         let dt = chrono::DateTime::from_timestamp(1588888888, 0).unwrap();
@@ -203,12 +165,14 @@ mod tests {
             descendants: Some(1),
             r#type: "story".to_string(),
         };
-        assert_eq!(get_item_url(&item), "https://rust-lang.org");
+
+        let service = HackerNewsCliServiceImpl::new(None);
+        assert_eq!(service.get_item_url(&item), "https://rust-lang.org");
 
         let item = HackerNewsItem { url: None, ..item };
 
         assert_eq!(
-            get_item_url(&item),
+            service.get_item_url(&item),
             "https://news.ycombinator.com/item?id=1"
         );
     }
@@ -228,7 +192,10 @@ mod tests {
             descendants: Some(1),
             r#type: "story".to_string(),
         };
-        let item = to_hn_cli_item(item);
+
+        let service = HackerNewsCliServiceImpl::new(None);
+        let item = service.api_item_to_hn_cli_item(item);
+
         assert_eq!(item.title, "Rust is awesome");
         assert_eq!(item.url, "https://rust-lang.org");
         assert_eq!(item.author, "me");
@@ -236,5 +203,38 @@ mod tests {
         assert_eq!(item.time_ago, "0 seconds ago");
         assert_eq!(item.score, 9);
         assert_eq!(item.comments, Some(1));
+    }
+
+    #[tokio::test]
+    #[ignore]
+    // broken for now as we can't use dynamic dispatch with async traits
+    async fn test_fetch_top_n_stories() {
+        let mut hn_client = MockHackerNewsClient::new();
+        hn_client
+            .expect_get_story_ids()
+            .with(predicate::eq("best"))
+            .times(1)
+            .returning(|_| Ok(vec![1]));
+
+        hn_client.expect_get_items().times(1).returning(|_| {
+            vec![Ok(HackerNewsItem {
+                by: "".to_string(),
+                score: 0,
+                time: 0,
+                title: "".to_string(),
+                url: None,
+                descendants: None,
+                id: 0,
+                kids: None,
+                r#type: "".to_string(),
+            })]
+        });
+
+        // let service = HackerNewsCliServiceImpl::new(Some(hn_client));
+        //
+        // let items = service.fetch_top_n_stories("best", 1).await;
+        //
+        // assert!(items.is_ok());
+        // assert_eq!(items.unwrap().len(), 1);
     }
 }

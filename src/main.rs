@@ -4,7 +4,8 @@ use std::collections::HashSet;
 
 use anyhow::Result;
 use clap::Parser;
-use hn_lib::{HNCLIItem, HackerNewsClient, HackerNewsClientImpl};
+
+use hn_lib::{HackerNewsCliService, HackerNewsCliServiceImpl};
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -21,34 +22,17 @@ struct Cli {
     length: u8,
 }
 
-fn get_valid_story_types() -> HashSet<&'static str> {
-    HashSet::from(["best", "new", "top"])
-}
-
-async fn fetch_top_n_stories(
-    client: &impl HackerNewsClient,
-    story_type: &str,
-    n: u8,
-) -> Result<Vec<HNCLIItem>> {
-    let ids = client
-        .get_stories(story_type)
-        .await
-        .unwrap_or_else(|_| panic!("Failed to get ids from story type {}", story_type));
-    // fetches a lot of ids by default, limit that by length given in args
-    let ids = &ids[..n as usize];
-    client.get_items(ids).await
-}
-
-fn validate_args(args: &Cli) -> Result<()> {
-    match get_valid_story_types().contains(&args.story_type.as_str()) {
+fn validate_args(args: &Cli, valid_story_types: HashSet<&'static str>) -> Result<()> {
+    match valid_story_types.contains(&args.story_type.as_str()) {
         true => Ok(()),
         false => Err(anyhow::anyhow!("Invalid story type: {}", args.story_type)),
     }
 }
 
-async fn run(args: Cli) -> Result<()> {
-    let hn_client: HackerNewsClientImpl = HackerNewsClientImpl::new();
-    let items = fetch_top_n_stories(&hn_client, &args.story_type, args.length).await?;
+async fn run(args: Cli, service: &impl HackerNewsCliService) -> Result<()> {
+    let items = service
+        .fetch_top_n_stories(&args.story_type, args.length)
+        .await?;
     for (idx, item) in items.iter().enumerate() {
         println!("\n#{} {}", idx + 1, item);
     }
@@ -63,12 +47,14 @@ async fn run(args: Cli) -> Result<()> {
 async fn main() -> Result<()> {
     let args = Cli::parse();
 
-    if let Err(e) = validate_args(&args) {
+    let hn_cli_service = HackerNewsCliServiceImpl::new(None);
+
+    if let Err(e) = validate_args(&args, HackerNewsCliServiceImpl::get_valid_story_types()) {
         eprintln!("Error: {}", e);
         std::process::exit(exitcode::USAGE);
     }
 
-    match run(args).await {
+    match run(args, &hn_cli_service).await {
         Ok(_) => std::process::exit(exitcode::OK),
         Err(e) => {
             eprintln!("Error: {}", e);
@@ -80,49 +66,21 @@ async fn main() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hn_lib::MockHackerNewsClient;
-    use mockall::predicate;
+
     #[test]
     fn test_validate_args() {
-        let valid_story_types = get_valid_story_types();
-        for story_type in ["best", "new", "top", "not_ok", "invalid", "etc"].iter() {
+        let valid_story_types = HackerNewsCliServiceImpl::get_valid_story_types();
+        for story_type in ["best", "new", "top", "not_ok", "invalid", "etc"].into_iter() {
             let args = Cli {
                 story_type: story_type.to_string(),
                 length: 35, // length is validated by clap
             };
-            let result = validate_args(&args);
+            let result = validate_args(&args, valid_story_types.clone());
             if valid_story_types.contains(story_type) {
                 assert!(result.is_ok());
             } else {
                 assert!(result.is_err());
             }
         }
-    }
-
-    #[tokio::test]
-    async fn test_fetch_top_n_stories() {
-        let mut hn_client = MockHackerNewsClient::new();
-        hn_client
-            .expect_get_stories()
-            .with(predicate::eq("best"))
-            .times(1)
-            .returning(|_| Ok(vec![1]));
-
-        hn_client.expect_get_items().times(1).returning(|_| {
-            Ok(vec![HNCLIItem {
-                title: "".to_string(),
-                url: "".to_string(),
-                author: "".to_string(),
-                time: "".to_string(),
-                time_ago: "".to_string(),
-                score: 0,
-                comments: None,
-            }])
-        });
-
-        let items = fetch_top_n_stories(&hn_client, "best", 1).await;
-
-        assert!(items.is_ok());
-        assert_eq!(items.unwrap().len(), 1);
     }
 }
