@@ -20,26 +20,55 @@ struct Cli {
     #[clap(short, long, default_value_t=10, value_parser = clap::value_parser!(u8).range(1..=50))]
     /// The number of stories to retrieve. Should be between 1 and 50 inclusive
     length: u8,
+    #[clap(short, long, default_value_t = 1)]
+    /// Page number (starts from 1)
+    page: u32,
 }
 
 fn validate_args(args: &Cli, valid_story_types: HashSet<&'static str>) -> Result<()> {
-    match valid_story_types.contains(&args.story_type.as_str()) {
-        true => Ok(()),
-        false => Err(anyhow::anyhow!("Invalid story type: {}", args.story_type)),
+    if !valid_story_types.contains(&args.story_type.as_str()) {
+        return Err(anyhow::anyhow!("Invalid story type: {}", args.story_type));
     }
+
+    if args.page == 0 {
+        return Err(anyhow::anyhow!("Page number must be greater than 0"));
+    }
+
+    Ok(())
 }
 
 async fn run(args: Cli, service: &impl HackerNewsCliService) -> Result<()> {
     let items = service
-        .fetch_top_n_stories(&args.story_type, args.length)
+        .fetch_stories_page(&args.story_type, args.length, args.page)
         .await?;
-    for (idx, item) in items.iter().enumerate() {
-        println!("\n#{} {}", idx + 1, item);
+
+    if items.is_empty() {
+        println!("No more stories available on page {}", args.page);
+        return Ok(());
     }
+
+    for (idx, item) in items.iter().enumerate() {
+        let global_idx = ((args.page - 1) as usize * args.length as usize) + idx + 1;
+        println!("\n#{} {}", global_idx, item);
+    }
+
     print!(
-        "\n^ Enjoy the top {} {} HN stories! ^\n",
-        args.length, args.story_type
+        "\n^ Page {} of {} {} stories (showing {} items) ^\n",
+        args.page,
+        args.story_type,
+        items.len(),
+        args.length
     );
+
+    // Print navigation help
+    if args.page > 1 {
+        print!("Use -p {} for previous page. ", args.page - 1);
+    }
+    if !items.is_empty() && items.len() == args.length as usize {
+        print!("Use -p {} for next page.", args.page + 1);
+    }
+    println!();
+
     Ok(())
 }
 
@@ -73,7 +102,8 @@ mod tests {
         for story_type in ["best", "new", "top", "not_ok", "invalid", "etc"].into_iter() {
             let args = Cli {
                 story_type: story_type.to_string(),
-                length: 35, // length is validated by clap
+                length: 35,
+                page: 1,
             };
             let result = validate_args(&args, valid_story_types.clone());
             if valid_story_types.contains(story_type) {
