@@ -36,32 +36,50 @@ impl std::fmt::Display for HNCLIItem {
 
 #[async_trait]
 pub trait HackerNewsCliService {
-    async fn fetch_top_n_stories(&self, story_type: &str, n: u8) -> Result<Vec<HNCLIItem>>;
+    async fn fetch_stories_page(
+        &self,
+        story_type: &str,
+        page_size: u8,
+        page: u32,
+    ) -> Result<Vec<HNCLIItem>>;
 
     fn get_valid_story_types() -> HashSet<&'static str>;
 }
 
 pub struct HackerNewsCliServiceImpl {
-    // async traits and dyn dispatch do not play well at the moment
-    // https://blog.rust-lang.org/2023/12/21/async-fn-rpit-in-traits.html#dynamic-dispatch
-    // TODO replace with Box<dyn HackerNewsClient>
     hn_client: HackerNewsClientImpl,
 }
 
 #[async_trait]
 impl HackerNewsCliService for HackerNewsCliServiceImpl {
-    async fn fetch_top_n_stories(&self, story_type: &str, n: u8) -> Result<Vec<HNCLIItem>> {
+    async fn fetch_stories_page(
+        &self,
+        story_type: &str,
+        page_size: u8,
+        page: u32,
+    ) -> Result<Vec<HNCLIItem>> {
         let ids = self
             .hn_client
             .get_story_ids(story_type)
             .await
             .unwrap_or_else(|_| panic!("Failed to get ids from story type {}", story_type));
 
-        // fetches a lot of ids by default, limit that by length given in args
-        let ids = &ids[..n as usize];
+        // Calculate pagination offsets
+        let start = ((page - 1) as usize) * (page_size as usize);
+        let end = start + (page_size as usize);
+
+        // Check if we're trying to access beyond available stories
+        if start >= ids.len() {
+            return Ok(Vec::new());
+        }
+
+        // Get the slice for the current page
+        let end = end.min(ids.len());
+        let page_ids = &ids[start..end];
+
         Ok(self
             .hn_client
-            .get_items(ids)
+            .get_items(page_ids)
             .await
             .into_iter()
             .map(|x| self.api_item_to_hn_cli_item(x.unwrap()))
