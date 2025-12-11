@@ -16,8 +16,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Install Rust toolchain (from rust-toolchain.toml)
-      uses: dtolnay/rust-toolchain@master
     - name: Build
       run: cargo build --verbose
     - name: Run tests
