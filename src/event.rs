@@ -55,25 +55,25 @@ pub fn handle_stories_key(key: KeyCode) -> StoryAction {
         // Navigation
         KeyCode::Char('j') | KeyCode::Down => StoryAction::NextStory,
         KeyCode::Char('k') | KeyCode::Up => StoryAction::PrevStory,
-        
+
         // Pagination
         KeyCode::Char('n') | KeyCode::Right => StoryAction::NextPage,
         KeyCode::Char('p') | KeyCode::Left => StoryAction::PrevPage,
-        
+
         // Story type
         KeyCode::Char('1') => StoryAction::SetType(crate::app::StoryType::Top),
         KeyCode::Char('2') => StoryAction::SetType(crate::app::StoryType::New),
         KeyCode::Char('3') => StoryAction::SetType(crate::app::StoryType::Best),
-        
+
         // Actions
         KeyCode::Enter | KeyCode::Char('o') => StoryAction::OpenUrl,
         KeyCode::Char('c') => StoryAction::ViewComments,
         KeyCode::Char('r') => StoryAction::Refresh,
-        
+
         // UI
         KeyCode::Char('?') => StoryAction::ToggleHelp,
         KeyCode::Char('q') | KeyCode::Esc => StoryAction::Quit,
-        
+
         _ => StoryAction::None,
     }
 }
@@ -86,18 +86,20 @@ pub fn handle_comments_key(key: KeyCode) -> CommentAction {
         KeyCode::Char('k') | KeyCode::Up => CommentAction::PrevComment,
         KeyCode::Char('g') => CommentAction::FirstComment,
         KeyCode::Char('G') => CommentAction::LastComment,
-        
+
         // Expand/collapse
         KeyCode::Enter | KeyCode::Char('l') | KeyCode::Right => CommentAction::ToggleExpand,
         KeyCode::Char('c') => CommentAction::CollapseThread,
-        
+
         // Actions
         KeyCode::Char('o') => CommentAction::OpenUrl,
-        
+
         // UI
         KeyCode::Char('?') => CommentAction::ToggleHelp,
-        KeyCode::Char('q') | KeyCode::Esc | KeyCode::Char('h') | KeyCode::Left => CommentAction::Back,
-        
+        KeyCode::Char('q') | KeyCode::Esc | KeyCode::Char('h') | KeyCode::Left => {
+            CommentAction::Back
+        }
+
         _ => CommentAction::None,
     }
 }
