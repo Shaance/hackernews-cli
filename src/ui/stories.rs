@@ -34,7 +34,7 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
         render_stories_list(f, chunks[1], app);
     }
 
-    let status = widgets::render_stories_status(chunks[2], app.loading, app.story_type, tick);
+    let status = widgets::render_stories_status(chunks[2], app, tick);
     f.render_widget(status, chunks[2]);
 
     // Render help overlay if shown
@@ -45,19 +45,38 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
 
 /// Render title bar with current story type and page
 fn render_title(f: &mut Frame, area: Rect, app: &App, tick: usize) {
+    let (display_type, display_page) = app.displayed_story_context();
+    let stale = app.showing_stale_stories();
+
     let mut spans = vec![
         Span::raw(" HN: "),
         Span::styled(
-            format!("{} stories", app.story_type.display_name()),
+            format!("{} stories", display_type.display_name()),
             Style::default()
                 .fg(Color::Yellow)
                 .add_modifier(Modifier::BOLD),
         ),
-        Span::raw(format!(" │ Page {} ", app.current_page)),
+        Span::raw(format!(" │ Page {} ", display_page)),
     ];
 
-    if app.loading {
-        spans.push(Span::raw(format!(" {} Loading…", widgets::spinner_frame(tick))));
+    if stale {
+        spans.push(Span::raw("│ "));
+        spans.push(Span::styled(
+            format!(
+                "fetching {} p{}",
+                app.story_type.display_name(),
+                app.current_page
+            ),
+            Style::default().fg(Color::Cyan),
+        ));
+    }
+
+    if app.should_show_loading() {
+        spans.push(Span::raw(format!(
+            " {} {}",
+            widgets::spinner_frame(tick),
+            if stale { "Updating…" } else { "Loading…" }
+        )));
     }
 
     let title = Paragraph::new(Line::from(spans))
@@ -72,13 +91,20 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
     // Keep selection in view
     app.update_story_scroll(area.height as usize);
 
+    let (_, display_page) = app.displayed_story_context();
+    let list_style = if app.loading {
+        Style::default().fg(Color::Gray).add_modifier(Modifier::DIM)
+    } else {
+        Style::default()
+    };
+
     let items: Vec<ListItem> = app
         .stories
         .iter()
         .enumerate()
         .map(|(idx, story)| {
             let is_selected = idx == app.selected_index;
-            let global_idx = ((app.current_page - 1) as usize * app.page_size as usize) + idx + 1;
+            let global_idx = ((display_page - 1) as usize * app.page_size as usize) + idx + 1;
 
             // Build the story display
             let mut lines = vec![];
@@ -136,6 +162,7 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
         .collect();
 
     let list = List::new(items)
+        .style(list_style)
         .block(Block::default().borders(Borders::NONE))
         .highlight_style(
             Style::default()
@@ -146,6 +173,6 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
     let mut state = ListState::default()
         .with_selected(Some(app.selected_index))
         .with_offset(app.story_scroll);
-    
+
     f.render_stateful_widget(list, area, &mut state);
 }

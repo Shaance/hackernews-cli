@@ -2,6 +2,10 @@
 
 use crate::HNCLIItem;
 use std::collections::HashMap;
+use std::time::{Duration, Instant};
+
+// Delay before showing loading indicators to avoid flicker
+const LOADING_INDICATOR_DELAY_MS: u64 = 150;
 
 /// Current view in the application
 #[derive(Debug, Clone)]
@@ -123,6 +127,10 @@ pub struct App {
     pub page_size: u8,
     /// Cache of fetched stories keyed by (StoryType, page)
     pub story_cache: HashMap<(StoryType, u32), Vec<HNCLIItem>>,
+    /// Type/page that the currently displayed stories belong to (for stale detection)
+    pub stories_for: Option<(StoryType, u32)>,
+    /// When the current loading state started (for debouncing spinners)
+    pub loading_since: Option<Instant>,
 }
 
 impl Default for App {
@@ -134,14 +142,14 @@ impl Default for App {
 impl App {
     /// Create a new application instance
     pub fn new() -> Self {
-        Self {
+        let mut app = Self {
             view: View::Stories,
             story_type: StoryType::Best,
             stories: Vec::new(),
             selected_index: 0,
             story_scroll: 0,
             current_page: 1,
-            loading: true,
+            loading: false,
             error: None,
             comments: Vec::new(),
             visible_comments: Vec::new(),
@@ -151,7 +159,12 @@ impl App {
             show_help: false,
             page_size: 20,
             story_cache: HashMap::new(),
-        }
+            stories_for: None,
+            loading_since: None,
+        };
+
+        app.set_loading(true);
+        app
     }
 
     // === Story Navigation ===
@@ -169,11 +182,11 @@ impl App {
             self.selected_index -= 1;
         }
     }
-    
+
     /// Update scroll offset based on selected index and viewport height
     pub fn update_story_scroll(&mut self, viewport_height: usize) {
-        let visible_items = viewport_height.saturating_sub(4); // Account for UI chrome
-        
+        let visible_items = viewport_height.saturating_sub(1).max(1);
+
         // Ensure selected item is visible
         if self.selected_index < self.story_scroll {
             self.story_scroll = self.selected_index;
@@ -213,11 +226,27 @@ impl App {
         self.stories.get(self.selected_index)
     }
 
+    /// Get the story type/page that backs the currently displayed list (falls back to target)
+    pub fn displayed_story_context(&self) -> (StoryType, u32) {
+        self.stories_for
+            .unwrap_or((self.story_type, self.current_page))
+    }
+
+    /// Whether the visible stories are from a different type/page than the selected target
+    pub fn showing_stale_stories(&self) -> bool {
+        match self.stories_for {
+            Some((t, p)) => t != self.story_type || p != self.current_page,
+            None => false,
+        }
+    }
+
     // === Comment Navigation ===
 
     /// Move to next comment
     pub fn next_comment(&mut self) {
-        if !self.visible_comments.is_empty() && self.comment_cursor < self.visible_comments.len() - 1 {
+        if !self.visible_comments.is_empty()
+            && self.comment_cursor < self.visible_comments.len() - 1
+        {
             self.comment_cursor += 1;
         }
     }
@@ -240,11 +269,11 @@ impl App {
             self.comment_cursor = self.visible_comments.len() - 1;
         }
     }
-    
+
     /// Update scroll offset based on selected comment and viewport height
     pub fn update_comment_scroll(&mut self, viewport_height: usize) {
-        let visible_items = viewport_height.saturating_sub(6); // Account for UI chrome
-        
+        let visible_items = viewport_height.saturating_sub(1).max(1);
+
         // Ensure selected item is visible
         if self.comment_cursor < self.comment_scroll {
             self.comment_scroll = self.comment_cursor;
@@ -256,10 +285,11 @@ impl App {
     /// Get currently selected comment (mutable)
     pub fn selected_comment_mut(&mut self) -> Option<&mut Comment> {
         // Clone the path to avoid borrow conflicts
-        let path = self.visible_comments
+        let path = self
+            .visible_comments
             .get(self.comment_cursor)
             .map(|(p, _)| p.clone())?;
-        
+
         self.get_comment_mut_by_path(&path)
     }
 
@@ -379,7 +409,7 @@ impl App {
         self.comments.clear();
         self.visible_comments.clear();
         self.comment_cursor = 0;
-        self.loading = true;
+        self.set_loading(true);
     }
 
     /// Switch back to stories view
@@ -401,21 +431,32 @@ impl App {
     pub fn set_stories(&mut self, stories: Vec<HNCLIItem>) {
         self.stories = stories;
         self.loading = false;
+        self.loading_since = None;
         self.error = None;
-        
+
         // Ensure selected index is valid
         if self.selected_index >= self.stories.len() && !self.stories.is_empty() {
             self.selected_index = self.stories.len() - 1;
         }
     }
 
+    /// Set stories and record their source type/page
+    pub fn set_stories_for(&mut self, story_type: StoryType, page: u32, stories: Vec<HNCLIItem>) {
+        self.stories_for = Some((story_type, page));
+        self.set_stories(stories);
+    }
+
     /// Apply loaded stories for a given page/type and cache them
-    pub fn apply_stories_page(&mut self, story_type: StoryType, page: u32, stories: Vec<HNCLIItem>) {
-        self.story_cache
-            .insert((story_type, page), stories.clone());
+    pub fn apply_stories_page(
+        &mut self,
+        story_type: StoryType,
+        page: u32,
+        stories: Vec<HNCLIItem>,
+    ) {
+        self.story_cache.insert((story_type, page), stories.clone());
 
         if self.story_type == story_type && self.current_page == page {
-            self.set_stories(stories);
+            self.set_stories_for(story_type, page, stories);
         }
     }
 
@@ -431,6 +472,7 @@ impl App {
         self.comments = comments;
         self.rebuild_visible_comments();
         self.loading = false;
+        self.loading_since = None;
         self.error = None;
     }
 
@@ -438,6 +480,7 @@ impl App {
     pub fn set_error(&mut self, error: String) {
         self.error = Some(error);
         self.loading = false;
+        self.loading_since = None;
     }
 
     /// Clear error
@@ -450,6 +493,21 @@ impl App {
         self.loading = loading;
         if loading {
             self.error = None;
+            self.loading_since = Some(Instant::now());
+        } else {
+            self.loading_since = None;
+        }
+    }
+
+    /// Whether loading indicator should be visible (debounced)
+    pub fn should_show_loading(&self) -> bool {
+        if !self.loading {
+            return false;
+        }
+
+        match self.loading_since {
+            Some(started) => started.elapsed() >= Duration::from_millis(LOADING_INDICATOR_DELAY_MS),
+            None => true,
         }
     }
 }
@@ -504,13 +562,13 @@ mod tests {
     fn test_page_navigation() {
         let mut app = App::new();
         assert_eq!(app.current_page, 1);
-        
+
         app.next_page();
         assert_eq!(app.current_page, 2);
-        
+
         app.prev_page();
         assert_eq!(app.current_page, 1);
-        
+
         app.prev_page(); // Should not go below 1
         assert_eq!(app.current_page, 1);
     }
@@ -520,7 +578,7 @@ mod tests {
         let mut app = App::new();
         app.selected_index = 5;
         app.current_page = 3;
-        
+
         app.set_story_type(StoryType::New);
         assert_eq!(app.story_type, StoryType::New);
         assert_eq!(app.selected_index, 0); // Reset

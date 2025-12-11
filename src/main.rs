@@ -14,7 +14,9 @@ use tokio::sync::mpsc;
 
 use hn_lib::{
     app::{App, CommentState, StoryType, View},
-    event::{handle_comments_key, handle_stories_key, CommentAction, Event, EventHandler, StoryAction},
+    event::{
+        handle_comments_key, handle_stories_key, CommentAction, Event, EventHandler, StoryAction,
+    },
     HackerNewsCliService, HackerNewsCliServiceImpl,
 };
 
@@ -44,7 +46,7 @@ async fn main() -> Result<()> {
 
     // Create app state
     let mut app = App::new();
-    
+
     // Create channel for async task communication
     let (tx, mut rx) = mpsc::unbounded_channel();
 
@@ -85,11 +87,11 @@ async fn run_app(
 
         // Handle events (non-blocking poll)
         let event = event_handler.next()?;
-        
+
         match event {
             Event::Tick => {
                 tick_count = tick_count.wrapping_add(1);
-                
+
                 // Check for messages from async tasks
                 while let Ok(msg) = rx.try_recv() {
                     handle_app_message(app, msg);
@@ -153,9 +155,9 @@ async fn handle_story_action(
                 let story_id = story.id;
                 let story_title = story.title.clone();
                 let story_url = story.url.clone();
-                
+
                 app.view_comments(story_id, story_title, story_url);
-                
+
                 // Fetch comments
                 tokio::spawn(async move {
                     let service = HackerNewsCliServiceImpl::new();
@@ -181,22 +183,24 @@ fn request_stories(app: &mut App, tx: mpsc::UnboundedSender<AppMessage>, force_r
         app.story_cache.remove(&(app.story_type, app.current_page));
     }
 
+    let story_type = app.story_type;
+    let page = app.current_page;
+
     if !force_refresh {
         if let Some(cached) = app.cached_stories() {
-            app.set_stories(cached);
+            app.set_stories_for(story_type, page, cached);
             return;
         }
     }
 
     app.set_loading(true);
-    app.stories.clear();
 
-    let story_type = app.story_type;
-    let page = app.current_page;
     let page_size = app.page_size;
     tokio::spawn(async move {
         let service = HackerNewsCliServiceImpl::new();
-        let result = service.fetch_stories_page(story_type.as_str(), page_size, page).await;
+        let result = service
+            .fetch_stories_page(story_type.as_str(), page_size, page)
+            .await;
         let _ = tx.send(AppMessage::StoriesLoaded {
             story_type,
             page,
@@ -224,19 +228,17 @@ async fn handle_comment_action(
                             let ids = comment.child_ids.clone();
                             let depth = comment.depth + 1;
                             let comment_id = comment.id;
-                            
+
                             // Set to loading
                             comment.state = CommentState::Loading;
                             app.rebuild_visible_comments();
-                            
+
                             // Spawn task to fetch children
                             tokio::spawn(async move {
                                 let service = HackerNewsCliServiceImpl::new();
                                 let result = service.fetch_comment_children(&ids, depth).await;
-                                let _ = tx.send(AppMessage::CommentChildrenLoaded {
-                                    comment_id,
-                                    result,
-                                });
+                                let _ = tx
+                                    .send(AppMessage::CommentChildrenLoaded { comment_id, result });
                             });
                         }
                     }
@@ -273,34 +275,36 @@ async fn handle_comment_action(
 /// Handle messages from async tasks
 fn handle_app_message(app: &mut App, msg: AppMessage) {
     match msg {
-        AppMessage::StoriesLoaded { story_type, page, result } => {
-            match result {
-                Ok(stories) => {
-                    app.apply_stories_page(story_type, page, stories);
-                }
-                Err(e) => {
-                    if app.story_type == story_type && app.current_page == page {
-                        app.set_error(format!("Failed to load stories: {}", e));
-                        app.stories.clear();
-                    }
+        AppMessage::StoriesLoaded {
+            story_type,
+            page,
+            result,
+        } => match result {
+            Ok(stories) => {
+                app.apply_stories_page(story_type, page, stories);
+            }
+            Err(e) => {
+                if app.story_type == story_type && app.current_page == page {
+                    app.set_error(format!("Failed to load stories: {}", e));
+                    app.stories.clear();
                 }
             }
-        }
-        AppMessage::CommentsLoaded(result) => {
-            match result {
-                Ok(comments) => app.set_comments(comments),
-                Err(e) => app.set_error(format!("Failed to load comments: {}", e)),
-            }
-        }
+        },
+        AppMessage::CommentsLoaded(result) => match result {
+            Ok(comments) => app.set_comments(comments),
+            Err(e) => app.set_error(format!("Failed to load comments: {}", e)),
+        },
         AppMessage::CommentChildrenLoaded { comment_id, result } => {
             match result {
                 Ok(children) => {
                     // Find the comment at any level and update its state
                     app.update_comment_by_id(comment_id, |comment| {
-                        comment.state = CommentState::Expanded { children: children.clone() };
+                        comment.state = CommentState::Expanded {
+                            children: children.clone(),
+                        };
                     });
                     app.rebuild_visible_comments();
-                    app.loading = false;
+                    app.set_loading(false);
                 }
                 Err(e) => {
                     app.set_error(format!("Failed to load comment children: {}", e));

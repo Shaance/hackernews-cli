@@ -96,7 +96,11 @@ pub trait HackerNewsCliService {
     /// # Returns
     ///
     /// Vector of Comment structs
-    async fn fetch_comment_children(&self, comment_ids: &[i32], depth: usize) -> Result<Vec<app::Comment>>;
+    async fn fetch_comment_children(
+        &self,
+        comment_ids: &[i32],
+        depth: usize,
+    ) -> Result<Vec<app::Comment>>;
 
     /// Get the valid story types supported by the service
     ///
@@ -164,7 +168,7 @@ impl<C: HackerNewsClient + Sync> HackerNewsCliService for HackerNewsCliServiceIm
     async fn fetch_top_level_comments(&self, story_id: i32) -> Result<Vec<app::Comment>> {
         // First, fetch the story to get top-level comment IDs
         let story = self.hn_client.get_item(story_id).await?;
-        
+
         let comment_ids = match story.kids {
             Some(ids) => ids,
             None => return Ok(Vec::new()),
@@ -174,9 +178,13 @@ impl<C: HackerNewsClient + Sync> HackerNewsCliService for HackerNewsCliServiceIm
         self.fetch_comment_children(&comment_ids, 0).await
     }
 
-    async fn fetch_comment_children(&self, comment_ids: &[i32], depth: usize) -> Result<Vec<app::Comment>> {
+    async fn fetch_comment_children(
+        &self,
+        comment_ids: &[i32],
+        depth: usize,
+    ) -> Result<Vec<app::Comment>> {
         let items = self.hn_client.get_items(comment_ids).await;
-        
+
         let mut comments = Vec::new();
         for item_result in items {
             match item_result {
@@ -188,7 +196,7 @@ impl<C: HackerNewsClient + Sync> HackerNewsCliService for HackerNewsCliServiceIm
                 }
             }
         }
-        
+
         Ok(comments)
     }
 
@@ -270,10 +278,8 @@ impl<C: HackerNewsClient> HackerNewsCliServiceImpl<C> {
     }
 
     fn api_item_to_comment(&self, item: HackerNewsItem, depth: usize) -> app::Comment {
-        let text = item.text
-            .map(|t| decode_html(&t))
-            .unwrap_or_default();
-        
+        let text = item.text.map(|t| decode_html(&t)).unwrap_or_default();
+
         let child_ids = item.kids.unwrap_or_default();
 
         app::Comment {
@@ -293,14 +299,14 @@ impl<C: HackerNewsClient> HackerNewsCliServiceImpl<C> {
 fn decode_html(text: &str) -> String {
     // First decode HTML entities
     let decoded = html_escape::decode_html_entities(text);
-    
+
     // Convert <p> tags to double newlines
     let result = decoded.replace("<p>", "\n\n");
-    
+
     // Simple HTML tag stripping (iterate and remove everything between < and >)
     let mut clean = String::new();
     let mut in_tag = false;
-    
+
     for ch in result.chars() {
         match ch {
             '<' => in_tag = true,
@@ -309,7 +315,7 @@ fn decode_html(text: &str) -> String {
             _ => {}
         }
     }
-    
+
     clean.trim().to_string()
 }
 
