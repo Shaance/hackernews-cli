@@ -44,6 +44,8 @@ cargo run --release
 - **Expand/Collapse**: Press Enter or `l` (or →) to expand or collapse comment replies
 - **Smooth Navigation**: Navigate through comments with j/k keys; collapse a whole thread with `c`
 - **Jump to Top/Bottom**: Press 'g' for top, 'G' for bottom
+- **Skip Threads**: Jump to the next sibling thread with `]` or previous sibling with `[`
+- **Climb Threads**: Jump to the parent comment with `u`
 - **Thread Guides**: Tree lines with depth-based colors to follow nested conversations at a glance
 
 ### General
@@ -78,6 +80,9 @@ cargo run --release
 |-----|--------|
 | `j` / `↓` | Next comment |
 | `k` / `↑` | Previous comment |
+| `]` | Next sibling thread |
+| `[` | Previous sibling thread |
+| `u` | Jump to parent |
 | `g` | Go to top |
 | `G` | Go to bottom |
 | `Enter` / `l` / `→` | Expand/collapse replies |

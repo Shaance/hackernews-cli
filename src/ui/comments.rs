@@ -5,7 +5,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap},
+    widgets::{Block, Borders, Paragraph, Wrap},
     Frame,
 };
 
@@ -96,50 +96,68 @@ fn render_no_comments(f: &mut Frame, area: Rect) {
 
 /// Render the list of comments
 fn render_comments_list(f: &mut Frame, area: Rect, app: &mut App, tick: usize) {
-    // Keep selection in view
-    app.update_comment_scroll(area.height as usize);
-
     let list_style = if app.loading {
         Style::default().fg(Color::Gray).add_modifier(Modifier::DIM)
     } else {
         Style::default()
     };
 
-    let items: Vec<ListItem> = app
-        .visible_comments
-        .iter()
-        .enumerate()
-        .map(|(idx, (path, comment))| {
-            let is_selected = idx == app.comment_cursor;
-            render_comment(app, path, comment, is_selected, tick, area.width as usize)
-        })
-        .collect();
+    let highlight_style = Style::default()
+        .add_modifier(Modifier::BOLD | Modifier::REVERSED)
+        .fg(Color::Reset);
 
-    let list = List::new(items)
+    // Pre-render all comments to line buffers and track their line ranges
+    let mut rendered = Vec::with_capacity(app.visible_comments.len());
+    let mut line_ranges = Vec::with_capacity(app.visible_comments.len());
+    let mut line_cursor = 0usize;
+
+    for (idx, (path, comment)) in app.visible_comments.iter().enumerate() {
+        let is_selected = idx == app.comment_cursor;
+        let prepared =
+            render_comment(app, path, comment, is_selected, tick, area.width as usize, highlight_style);
+        let start = line_cursor;
+        line_cursor += prepared.height;
+        let end = line_cursor;
+        line_ranges.push((start, end));
+        rendered.push(prepared);
+    }
+
+    // Adjust scroll to keep the selection visible, even when a long comment would otherwise leave blank space
+    app.update_comment_scroll(&line_ranges, area.height as usize);
+
+    let total_lines = line_ranges.last().map(|(_, end)| *end).unwrap_or(0);
+    let scroll = app.comment_scroll.min(total_lines.saturating_sub(1));
+
+    // Flatten all lines
+    let mut lines = Vec::with_capacity(total_lines);
+    for item in rendered {
+        lines.extend(item.lines);
+    }
+
+    let paragraph = Paragraph::new(lines)
         .style(list_style)
         .block(Block::default().borders(Borders::NONE))
-        .highlight_style(
-            Style::default()
-                .add_modifier(Modifier::BOLD | Modifier::REVERSED)
-                .fg(Color::Reset),
-        );
+        .scroll((scroll as u16, 0));
 
-    let mut state = ListState::default()
-        .with_selected(Some(app.comment_cursor))
-        .with_offset(app.comment_scroll);
-
-    f.render_stateful_widget(list, area, &mut state);
+    f.render_widget(paragraph, area);
 }
 
-/// Render a single comment
-fn render_comment<'a>(
-    app: &'a App,
-    path: &'a [usize],
-    comment: &'a crate::app::Comment,
+/// A rendered comment ready for display
+struct RenderedComment {
+    lines: Vec<Line<'static>>,
+    height: usize,
+}
+
+/// Render a single comment into lines
+fn render_comment(
+    app: &App,
+    path: &[usize],
+    comment: &crate::app::Comment,
     is_selected: bool,
     tick: usize,
     max_width: usize,
-) -> ListItem<'a> {
+    highlight_style: Style,
+) -> RenderedComment {
     let guides = branch_guides(app, path);
     let mut lines = vec![];
 
@@ -156,10 +174,7 @@ fn render_comment<'a>(
 
     let (indicator_symbol, indicator_style) = match comment.state {
         CommentState::Collapsed => ("▸ ".to_string(), Style::default().fg(Color::Yellow)),
-        CommentState::Loading => (
-            format!("{} ", widgets::spinner_frame(tick)),
-            Style::default().fg(Color::Blue),
-        ),
+        CommentState::Loading => ("▸ ".to_string(), Style::default().fg(Color::Blue)),
         CommentState::Expanded { .. } => ("▾ ".to_string(), Style::default().fg(Color::Green)),
     };
 
@@ -235,7 +250,24 @@ fn render_comment<'a>(
     // Add spacing between comments
     lines.push(Line::from(""));
 
-    ListItem::new(lines)
+    let height = lines.len();
+    let lines = if is_selected {
+        apply_highlight(lines, highlight_style)
+    } else {
+        lines
+    };
+
+    RenderedComment { lines, height }
+}
+
+/// Apply highlight style across all spans in the provided lines
+fn apply_highlight(mut lines: Vec<Line<'static>>, highlight_style: Style) -> Vec<Line<'static>> {
+    for line in &mut lines {
+        line.spans.iter_mut().for_each(|span| {
+            span.style = span.style.patch(highlight_style);
+        });
+    }
+    lines
 }
 
 /// Build branch guides to know which ancestors have following siblings
