@@ -9,6 +9,8 @@ use ratatui::{
     Frame,
 };
 
+use textwrap::{wrap, Options};
+
 use super::widgets;
 
 /// Render the comments view
@@ -109,7 +111,7 @@ fn render_comments_list(f: &mut Frame, area: Rect, app: &mut App, tick: usize) {
         .enumerate()
         .map(|(idx, (path, comment))| {
             let is_selected = idx == app.comment_cursor;
-            render_comment(app, path, comment, is_selected, tick)
+            render_comment(app, path, comment, is_selected, tick, area.width as usize)
         })
         .collect();
 
@@ -136,6 +138,7 @@ fn render_comment<'a>(
     comment: &'a crate::app::Comment,
     is_selected: bool,
     tick: usize,
+    max_width: usize,
 ) -> ListItem<'a> {
     let guides = branch_guides(app, path);
     let mut lines = vec![];
@@ -182,14 +185,19 @@ fn render_comment<'a>(
 
         // Comment text
         let text_style = Style::default();
+        let prefix_width = visible_width(&text_prefix);
+        let wrap_width = max_width.saturating_sub(prefix_width).max(1);
 
         // Split text into lines and add indent
         for line in comment.text.lines() {
             if !line.trim().is_empty() {
-                lines.push(Line::from(vec![
-                    Span::styled(text_prefix.clone(), Style::default().fg(guide_color)),
-                    Span::styled(line.to_string(), text_style),
-                ]));
+                let wrapped_lines = wrap_with_indent(line, wrap_width);
+                for wrapped in wrapped_lines {
+                    lines.push(Line::from(vec![
+                        Span::styled(text_prefix.clone(), Style::default().fg(guide_color)),
+                        Span::styled(wrapped, text_style),
+                    ]));
+                }
             }
         }
 
@@ -295,4 +303,19 @@ fn depth_color(depth: usize) -> Color {
     ];
 
     PALETTE[depth % PALETTE.len()]
+}
+
+/// Wrap a line of comment text to the available width
+fn wrap_with_indent(line: &str, width: usize) -> Vec<String> {
+    let options = Options::new(width.max(1)).break_words(true);
+
+    wrap(line, options)
+        .into_iter()
+        .map(|segment| segment.into_owned())
+        .collect()
+}
+
+/// Approximate the visible width of a string (prefix uses only simple ASCII/line chars)
+fn visible_width(text: &str) -> usize {
+    text.chars().count()
 }
