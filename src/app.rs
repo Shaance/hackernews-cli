@@ -258,6 +258,80 @@ impl App {
         }
     }
 
+    /// Jump to the next sibling comment (skips over the current thread)
+    pub fn next_comment_sibling(&mut self) {
+        let Some((path, _)) = self.visible_comments.get(self.comment_cursor) else {
+            return;
+        };
+
+        let Some((_, parent_path)) = path.split_last() else {
+            return;
+        };
+
+        for (idx, (candidate_path, _)) in self
+            .visible_comments
+            .iter()
+            .enumerate()
+            .skip(self.comment_cursor + 1)
+        {
+            if candidate_path.len() != path.len() {
+                continue;
+            }
+
+            if candidate_path.starts_with(parent_path) {
+                self.comment_cursor = idx;
+                return;
+            }
+        }
+    }
+
+    /// Jump to the previous sibling comment
+    pub fn prev_comment_sibling(&mut self) {
+        let Some((path, _)) = self.visible_comments.get(self.comment_cursor) else {
+            return;
+        };
+
+        let Some((_, parent_path)) = path.split_last() else {
+            return;
+        };
+
+        let mut idx = self.comment_cursor;
+        while idx > 0 {
+            idx -= 1;
+            let candidate_path = &self.visible_comments[idx].0;
+            if candidate_path.len() != path.len() {
+                continue;
+            }
+
+            if candidate_path.starts_with(parent_path) {
+                self.comment_cursor = idx;
+                return;
+            }
+        }
+    }
+
+    /// Jump to the parent comment of the current selection
+    pub fn parent_comment(&mut self) {
+        let Some((path, _)) = self.visible_comments.get(self.comment_cursor) else {
+            return;
+        };
+
+        if path.len() < 2 {
+            return; // Already at top level
+        }
+
+        let parent_path = &path[..path.len() - 1];
+
+        if let Some((idx, _)) = self
+            .visible_comments
+            .iter()
+            .enumerate()
+            .find(|(_, (candidate_path, _))| candidate_path.as_slice() == parent_path)
+        {
+            self.comment_cursor = idx;
+        }
+    }
+
     /// Go to top comment
     pub fn first_comment(&mut self) {
         self.comment_cursor = 0;
@@ -270,16 +344,36 @@ impl App {
         }
     }
 
-    /// Update scroll offset based on selected comment and viewport height
-    pub fn update_comment_scroll(&mut self, viewport_height: usize) {
-        let visible_items = viewport_height.saturating_sub(1).max(1);
-
-        // Ensure selected item is visible
-        if self.comment_cursor < self.comment_scroll {
-            self.comment_scroll = self.comment_cursor;
-        } else if self.comment_cursor >= self.comment_scroll + visible_items {
-            self.comment_scroll = self.comment_cursor.saturating_sub(visible_items - 1);
+    /// Update scroll offset (in lines) based on selected comment and viewport height
+    pub fn update_comment_scroll(
+        &mut self,
+        line_ranges: &[(usize, usize)],
+        viewport_height: usize,
+    ) {
+        if line_ranges.is_empty() || self.comment_cursor >= line_ranges.len() {
+            self.comment_scroll = 0;
+            return;
         }
+
+        let view_height = viewport_height.max(1);
+        let (start, end) = line_ranges[self.comment_cursor];
+        let mut new_scroll = self.comment_scroll;
+
+        // Keep selected comment fully visible
+        if start < new_scroll {
+            new_scroll = start;
+        } else if end > new_scroll + view_height {
+            new_scroll = end.saturating_sub(view_height);
+        }
+
+        // Clamp to available content
+        let total_lines = line_ranges.last().map(|(_, end)| *end).unwrap_or(0);
+        let max_scroll = total_lines.saturating_sub(view_height);
+        if new_scroll > max_scroll {
+            new_scroll = max_scroll;
+        }
+
+        self.comment_scroll = new_scroll;
     }
 
     /// Get currently selected comment (mutable)
@@ -583,5 +677,155 @@ mod tests {
         assert_eq!(app.story_type, StoryType::New);
         assert_eq!(app.selected_index, 0); // Reset
         assert_eq!(app.current_page, 1); // Reset
+    }
+
+    #[test]
+    fn test_next_comment_sibling_skips_thread() {
+        let child_a = Comment {
+            id: 2,
+            author: "child_a".to_string(),
+            text: "First child".to_string(),
+            time_ago: "1m ago".to_string(),
+            state: CommentState::Collapsed,
+            depth: 1,
+            deleted: false,
+            child_ids: Vec::new(),
+        };
+
+        let child_b = Comment {
+            id: 3,
+            author: "child_b".to_string(),
+            text: "Second child".to_string(),
+            time_ago: "2m ago".to_string(),
+            state: CommentState::Collapsed,
+            depth: 1,
+            deleted: false,
+            child_ids: Vec::new(),
+        };
+
+        let top_level_a = Comment {
+            id: 1,
+            author: "parent".to_string(),
+            text: "Parent".to_string(),
+            time_ago: "now".to_string(),
+            state: CommentState::Expanded {
+                children: vec![child_a.clone(), child_b.clone()],
+            },
+            depth: 0,
+            deleted: false,
+            child_ids: vec![child_a.id, child_b.id],
+        };
+
+        let top_level_b = Comment {
+            id: 4,
+            author: "sibling".to_string(),
+            text: "Top-level sibling".to_string(),
+            time_ago: "5m ago".to_string(),
+            state: CommentState::Collapsed,
+            depth: 0,
+            deleted: false,
+            child_ids: Vec::new(),
+        };
+
+        let mut app = App::new();
+        app.set_comments(vec![top_level_a, top_level_b.clone()]);
+
+        // From the parent, jump to the next top-level sibling (skipping children)
+        app.next_comment_sibling();
+        assert_eq!(app.visible_comments[app.comment_cursor].1.id, top_level_b.id);
+
+        // From the first child, jump to its next sibling
+        app.comment_cursor = 1;
+        app.next_comment_sibling();
+        assert_eq!(app.visible_comments[app.comment_cursor].1.id, child_b.id);
+
+        // When at the last sibling, cursor should stay in place
+        app.comment_cursor = app.visible_comments.len() - 1;
+        app.next_comment_sibling();
+        assert_eq!(app.visible_comments[app.comment_cursor].1.id, top_level_b.id);
+    }
+
+    #[test]
+    fn test_prev_comment_sibling_moves_up() {
+        let child_a = Comment {
+            id: 2,
+            author: "child_a".to_string(),
+            text: "First child".to_string(),
+            time_ago: "1m ago".to_string(),
+            state: CommentState::Collapsed,
+            depth: 1,
+            deleted: false,
+            child_ids: Vec::new(),
+        };
+
+        let child_b = Comment {
+            id: 3,
+            author: "child_b".to_string(),
+            text: "Second child".to_string(),
+            time_ago: "2m ago".to_string(),
+            state: CommentState::Collapsed,
+            depth: 1,
+            deleted: false,
+            child_ids: Vec::new(),
+        };
+
+        let top_level = Comment {
+            id: 1,
+            author: "parent".to_string(),
+            text: "Parent".to_string(),
+            time_ago: "now".to_string(),
+            state: CommentState::Expanded {
+                children: vec![child_a.clone(), child_b.clone()],
+            },
+            depth: 0,
+            deleted: false,
+            child_ids: vec![child_a.id, child_b.id],
+        };
+
+        let mut app = App::new();
+        app.set_comments(vec![top_level]);
+
+        app.comment_cursor = 2; // child_b
+        app.prev_comment_sibling();
+        assert_eq!(app.visible_comments[app.comment_cursor].1.id, child_a.id);
+    }
+
+    #[test]
+    fn test_parent_comment_navigates_up_tree() {
+        let child = Comment {
+            id: 2,
+            author: "child".to_string(),
+            text: "Child".to_string(),
+            time_ago: "1m ago".to_string(),
+            state: CommentState::Collapsed,
+            depth: 1,
+            deleted: false,
+            child_ids: Vec::new(),
+        };
+
+        let parent = Comment {
+            id: 1,
+            author: "parent".to_string(),
+            text: "Parent".to_string(),
+            time_ago: "now".to_string(),
+            state: CommentState::Expanded {
+                children: vec![child.clone()],
+            },
+            depth: 0,
+            deleted: false,
+            child_ids: vec![child.id],
+        };
+
+        let mut app = App::new();
+        app.set_comments(vec![parent]);
+
+        // Move into child and then go to parent
+        app.comment_cursor = 1;
+        app.parent_comment();
+        assert_eq!(app.visible_comments[app.comment_cursor].1.id, 1);
+
+        // Top-level should no-op
+        app.parent_comment();
+        assert_eq!(app.visible_comments[app.comment_cursor].1.id, 1);
     }
 }

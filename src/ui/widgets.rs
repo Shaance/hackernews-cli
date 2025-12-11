@@ -80,6 +80,18 @@ pub fn render_help(f: &mut Frame, area: Rect, in_comments: bool) {
                 Span::raw("       Previous comment"),
             ]),
             Line::from(vec![
+                Span::styled("]", Style::default().add_modifier(Modifier::BOLD)),
+                Span::raw("         Next sibling thread"),
+            ]),
+            Line::from(vec![
+                Span::styled("[", Style::default().add_modifier(Modifier::BOLD)),
+                Span::raw("         Previous sibling thread"),
+            ]),
+            Line::from(vec![
+                Span::styled("u", Style::default().add_modifier(Modifier::BOLD)),
+                Span::raw("         Jump to parent"),
+            ]),
+            Line::from(vec![
                 Span::styled("g", Style::default().add_modifier(Modifier::BOLD)),
                 Span::raw("         Go to top"),
             ]),
@@ -255,6 +267,12 @@ pub fn render_comments_status(_area: Rect, app: &App, tick: usize) -> Paragraph<
         Span::raw("Enter/l expand "),
         Span::raw("│ "),
         Span::raw("c collapse thread "),
+        Span::raw("│ "),
+        Span::raw("] next sibling "),
+        Span::raw("│ "),
+        Span::raw("[ prev sibling "),
+        Span::raw("│ "),
+        Span::raw("u parent "),
         Span::raw("│ "),
         Span::raw("o open "),
         Span::raw("│ "),

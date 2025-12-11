@@ -218,6 +218,9 @@ async fn handle_comment_action(
     match action {
         CommentAction::NextComment => app.next_comment(),
         CommentAction::PrevComment => app.prev_comment(),
+        CommentAction::NextSibling => app.next_comment_sibling(),
+        CommentAction::PrevSibling => app.prev_comment_sibling(),
+        CommentAction::Parent => app.parent_comment(),
         CommentAction::FirstComment => app.first_comment(),
         CommentAction::LastComment => app.last_comment(),
         CommentAction::ToggleExpand => {
