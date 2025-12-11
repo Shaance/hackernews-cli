@@ -84,6 +84,9 @@ pub fn handle_comments_key(key: KeyCode) -> CommentAction {
         // Navigation
         KeyCode::Char('j') | KeyCode::Down => CommentAction::NextComment,
         KeyCode::Char('k') | KeyCode::Up => CommentAction::PrevComment,
+        KeyCode::Char(']') => CommentAction::NextSibling,
+        KeyCode::Char('[') => CommentAction::PrevSibling,
+        KeyCode::Char('u') => CommentAction::Parent,
         KeyCode::Char('g') => CommentAction::FirstComment,
         KeyCode::Char('G') => CommentAction::LastComment,
 
@@ -127,6 +130,9 @@ pub enum CommentAction {
     PrevComment,
     FirstComment,
     LastComment,
+    NextSibling,
+    PrevSibling,
+    Parent,
     ToggleExpand,
     CollapseThread,
     OpenUrl,
@@ -160,6 +166,18 @@ mod tests {
         assert!(matches!(
             handle_comments_key(KeyCode::Char('j')),
             CommentAction::NextComment
+        ));
+        assert!(matches!(
+            handle_comments_key(KeyCode::Char(']')),
+            CommentAction::NextSibling
+        ));
+        assert!(matches!(
+            handle_comments_key(KeyCode::Char('[')),
+            CommentAction::PrevSibling
+        ));
+        assert!(matches!(
+            handle_comments_key(KeyCode::Char('u')),
+            CommentAction::Parent
         ));
         assert!(matches!(
             handle_comments_key(KeyCode::Enter),
