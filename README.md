@@ -4,6 +4,11 @@
 
 An interactive terminal user interface (TUI) for browsing [HackerNews](https://news.ycombinator.com/). Built with Rust to provide a fast, keyboard-driven experience for reading HN stories and comments.
 
+## Screenshots
+
+<img width="835" height="1054" alt="image" src="https://github.com/user-attachments/assets/66b94295-9673-4af6-ac1f-b5fb704e0462" />
+
+
 ## Installation
 
 ### From Source
