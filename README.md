@@ -36,11 +36,13 @@ cargo run --release
 ### Comments View
 - **Nested Comments**: View comment threads with unlimited nesting depth
 - **Lazy Loading**: Comments and replies are loaded on-demand for faster initial load
-- **Expand/Collapse**: Press Enter to expand or collapse comment replies
-- **Smooth Navigation**: Navigate through comments with j/k keys
+- **Expand/Collapse**: Press Enter or `l` (or →) to expand or collapse comment replies
+- **Smooth Navigation**: Navigate through comments with j/k keys; collapse a whole thread with `c`
 - **Jump to Top/Bottom**: Press 'g' for top, 'G' for bottom
+- **Thread Guides**: Tree lines with depth-based colors to follow nested conversations at a glance
 
 ### General
+- **Gentle Loading**: Cached pages show instantly, lists stay visible/dim while updates stream in
 - **Asynchronous Loading**: Non-blocking API requests with loading indicators
 - **Error Handling**: Graceful error messages with retry options
 - **Help System**: Press '?' for keyboard shortcuts
@@ -74,6 +76,7 @@ cargo run --release
 | `g` | Go to top |
 | `G` | Go to bottom |
 | `Enter` / `l` / `→` | Expand/collapse replies |
+| `c` | Collapse current thread |
 | `o` | Open story URL in browser |
 | `Esc` / `q` / `h` / `←` | Back to stories |
 | `?` | Toggle help |

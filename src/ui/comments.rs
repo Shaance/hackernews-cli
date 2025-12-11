@@ -34,7 +34,7 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
         render_comments_list(f, chunks[1], app, tick);
     }
 
-    let status = widgets::render_comments_status(chunks[2]);
+    let status = widgets::render_comments_status(chunks[2], app, tick);
     f.render_widget(status, chunks[2]);
 
     // Render help overlay if shown
@@ -45,11 +45,7 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
 
 /// Render title bar with story title
 fn render_title(f: &mut Frame, area: Rect, app: &App, tick: usize) {
-    let title_text = if let View::Comments {
-        story_title,
-        ..
-    } = &app.view
-    {
+    let title_text = if let View::Comments { story_title, .. } = &app.view {
         let comment_count = app.visible_comments.len();
         vec![
             Line::from(vec![
@@ -58,7 +54,7 @@ fn render_title(f: &mut Frame, area: Rect, app: &App, tick: usize) {
             ]),
             Line::from(vec![
                 Span::raw(format!(" {} comments", comment_count)),
-                if app.loading {
+                if app.should_show_loading() {
                     Span::raw(format!(" {} Loading...", widgets::spinner_frame(tick)))
                 } else {
                     Span::raw("")
@@ -101,6 +97,12 @@ fn render_comments_list(f: &mut Frame, area: Rect, app: &mut App, tick: usize) {
     // Keep selection in view
     app.update_comment_scroll(area.height as usize);
 
+    let list_style = if app.loading {
+        Style::default().fg(Color::Gray).add_modifier(Modifier::DIM)
+    } else {
+        Style::default()
+    };
+
     let items: Vec<ListItem> = app
         .visible_comments
         .iter()
@@ -112,6 +114,7 @@ fn render_comments_list(f: &mut Frame, area: Rect, app: &mut App, tick: usize) {
         .collect();
 
     let list = List::new(items)
+        .style(list_style)
         .block(Block::default().borders(Borders::NONE))
         .highlight_style(
             Style::default()
@@ -122,7 +125,7 @@ fn render_comments_list(f: &mut Frame, area: Rect, app: &mut App, tick: usize) {
     let mut state = ListState::default()
         .with_selected(Some(app.comment_cursor))
         .with_offset(app.comment_scroll);
-    
+
     f.render_stateful_widget(list, area, &mut state);
 }
 
@@ -139,6 +142,7 @@ fn render_comment<'a>(
 
     let stem_prefix = guides_to_prefix(&guides, true);
     let text_prefix = guides_to_prefix(&guides, false);
+    let guide_color = depth_color(path.len().saturating_sub(1));
 
     // Comment header with author and time
     let header_style = if is_selected {
@@ -158,7 +162,7 @@ fn render_comment<'a>(
 
     if comment.deleted {
         lines.push(Line::from(vec![
-            Span::styled(stem_prefix.clone(), Style::default().fg(Color::Gray)),
+            Span::styled(stem_prefix.clone(), Style::default().fg(guide_color)),
             Span::styled(indicator_symbol.clone(), indicator_style),
             Span::styled(
                 "[deleted]",
@@ -167,17 +171,12 @@ fn render_comment<'a>(
         ]));
     } else {
         lines.push(Line::from(vec![
-            Span::styled(stem_prefix.clone(), Style::default().fg(Color::Gray)),
+            Span::styled(stem_prefix.clone(), Style::default().fg(guide_color)),
             Span::styled(indicator_symbol, indicator_style),
-            Span::styled(
-                format!("{} ", comment.author),
-                header_style.fg(Color::Cyan),
-            ),
+            Span::styled(format!("{} ", comment.author), header_style.fg(Color::Cyan)),
             Span::styled(
                 format!("• {}", comment.time_ago),
-                Style::default()
-                    .fg(Color::Gray)
-                    .add_modifier(Modifier::DIM),
+                Style::default().fg(Color::Gray).add_modifier(Modifier::DIM),
             ),
         ]));
 
@@ -188,7 +187,7 @@ fn render_comment<'a>(
         for line in comment.text.lines() {
             if !line.trim().is_empty() {
                 lines.push(Line::from(vec![
-                    Span::styled(text_prefix.clone(), Style::default().fg(Color::Gray)),
+                    Span::styled(text_prefix.clone(), Style::default().fg(guide_color)),
                     Span::styled(line.to_string(), text_style),
                 ]));
             }
@@ -219,7 +218,7 @@ fn render_comment<'a>(
             .add_modifier(Modifier::DIM);
 
             lines.push(Line::from(vec![
-                Span::styled(text_prefix, Style::default().fg(Color::Gray)),
+                Span::styled(text_prefix, Style::default().fg(guide_color)),
                 Span::styled(child_info, child_style),
             ]));
         }
@@ -281,4 +280,19 @@ fn guides_to_prefix(guides: &[bool], include_elbow: bool) -> String {
 
     prefix.push_str("  ");
     prefix
+}
+
+/// Pick a guide color based on depth (cycles through a palette)
+fn depth_color(depth: usize) -> Color {
+    // Keep to high-contrast, readable colors that vary with depth
+    const PALETTE: [Color; 6] = [
+        Color::Gray,
+        Color::Cyan,
+        Color::Green,
+        Color::Yellow,
+        Color::Magenta,
+        Color::LightBlue,
+    ];
+
+    PALETTE[depth % PALETTE.len()]
 }
