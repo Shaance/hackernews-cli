@@ -75,6 +75,8 @@ pub struct App {
     pub comment_scroll: usize,
     /// Monotonic token used to ignore stale async comment responses
     comment_view_generation: u64,
+    /// Monotonic token used to ignore stale async story responses
+    story_request_generation: u64,
     /// Monotonic token used to ignore stale child-comment responses
     comment_child_load_generation: u64,
     /// Should quit the application
@@ -112,6 +114,7 @@ impl App {
             comment_cursor: 0,
             comment_scroll: 0,
             comment_view_generation: 0,
+            story_request_generation: 0,
             comment_child_load_generation: 0,
             should_quit: false,
             show_help: false,
@@ -197,6 +200,24 @@ impl App {
             Some((t, p)) => t != self.story_type || p != self.current_page,
             None => false,
         }
+    }
+
+    /// Start a new story request and return the token async responses must echo.
+    pub fn next_story_request_generation(&mut self) -> u64 {
+        self.story_request_generation = self.story_request_generation.wrapping_add(1);
+        self.story_request_generation
+    }
+
+    /// Whether a story response still matches the latest request for the current page/type.
+    pub fn is_current_story_request(
+        &self,
+        story_type: StoryType,
+        page: u32,
+        request_generation: u64,
+    ) -> bool {
+        self.story_type == story_type
+            && self.current_page == page
+            && self.story_request_generation == request_generation
     }
 
     // === View Management ===
