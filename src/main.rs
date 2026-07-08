@@ -3,22 +3,21 @@
 //! An interactive terminal user interface for browsing HackerNews stories and comments.
 
 use anyhow::Result;
-use crossterm::{
-    event::DisableMouseCapture,
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io;
 use tokio::sync::mpsc;
+
+mod terminal_session;
 
 use hn_lib::{
     app::{App, CommentState, StoryType, View},
     event::{
         handle_comments_key, handle_stories_key, CommentAction, Event, EventHandler, StoryAction,
     },
+    url_open::open_story_url,
     HackerNewsCliService, HackerNewsCliServiceImpl,
 };
+use terminal_session::TerminalSession;
 
 /// Messages sent from async tasks to the main loop
 #[derive(Debug)]
@@ -45,33 +44,21 @@ enum AppMessage {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Setup terminal
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = TerminalSession::new()?;
 
     // Create app state
     let mut app = App::new();
+    let service = HackerNewsCliServiceImpl::new();
 
     // Create channel for async task communication
     let (tx, mut rx) = mpsc::unbounded_channel();
 
     // Load initial stories
-    request_stories(&mut app, tx.clone(), false);
+    request_stories(&mut app, tx.clone(), service.clone(), false);
 
     // Run the app
-    let result = run_app(&mut terminal, &mut app, tx, &mut rx).await;
-
-    // Restore terminal
-    disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
-    terminal.show_cursor()?;
+    let result = run_app(terminal.terminal_mut(), &mut app, tx, &mut rx, service).await;
+    terminal.restore();
 
     if let Err(err) = result {
         eprintln!("Error: {}", err);
@@ -85,6 +72,7 @@ async fn run_app(
     app: &mut App,
     tx: mpsc::UnboundedSender<AppMessage>,
     rx: &mut mpsc::UnboundedReceiver<AppMessage>,
+    service: HackerNewsCliServiceImpl,
 ) -> Result<()> {
     let event_handler = EventHandler::default();
     let mut tick_count = 0usize;
@@ -99,26 +87,23 @@ async fn run_app(
         match event {
             Event::Tick => {
                 tick_count = tick_count.wrapping_add(1);
-
-                // Check for messages from async tasks
-                while let Ok(msg) = rx.try_recv() {
-                    handle_app_message(app, msg);
-                }
             }
             Event::Key(key) => {
                 // Handle key based on current view
                 match &app.view {
                     View::Stories => {
                         let action = handle_stories_key(key);
-                        handle_story_action(app, action, tx.clone()).await?;
+                        handle_story_action(app, action, tx.clone(), service.clone()).await?;
                     }
                     View::Comments { .. } => {
                         let action = handle_comments_key(key);
-                        handle_comment_action(app, action, tx.clone()).await?;
+                        handle_comment_action(app, action, tx.clone(), service.clone()).await?;
                     }
                 }
             }
         }
+
+        drain_app_messages(app, rx);
 
         // Check if we should quit
         if app.should_quit {
@@ -134,28 +119,28 @@ async fn handle_story_action(
     app: &mut App,
     action: StoryAction,
     tx: mpsc::UnboundedSender<AppMessage>,
+    service: HackerNewsCliServiceImpl,
 ) -> Result<()> {
     match action {
         StoryAction::NextStory => app.next_story(),
         StoryAction::PrevStory => app.prev_story(),
         StoryAction::NextPage => {
             app.next_page();
-            request_stories(app, tx, false);
+            request_stories(app, tx, service, false);
         }
         StoryAction::PrevPage => {
             app.prev_page();
-            request_stories(app, tx, false);
+            request_stories(app, tx, service, false);
         }
         StoryAction::SetType(story_type) => {
             app.set_story_type(story_type);
-            request_stories(app, tx, false);
+            request_stories(app, tx, service, false);
         }
         StoryAction::OpenUrl => {
             if let Some(story) = app.selected_story() {
-                let url = story.url.clone();
-                tokio::spawn(async move {
-                    let _ = open::that(url);
-                });
+                if let Err(err) = open_story_url(&story.url, story.id) {
+                    app.set_story_error(err.to_string());
+                }
             }
         }
         StoryAction::ViewComments => {
@@ -163,13 +148,13 @@ async fn handle_story_action(
                 let story_id = story.id;
                 let story_title = story.title.clone();
                 let story_url = story.url.clone();
+                let service = service.clone();
 
                 app.view_comments(story_id, story_title, story_url);
                 let view_generation = app.comment_view_generation();
 
                 // Fetch comments
                 tokio::spawn(async move {
-                    let service = HackerNewsCliServiceImpl::new();
                     let result = service.fetch_top_level_comments(story_id).await;
                     let _ = tx.send(AppMessage::Comments {
                         story_id,
@@ -180,7 +165,7 @@ async fn handle_story_action(
             }
         }
         StoryAction::Refresh => {
-            request_stories(app, tx, true);
+            request_stories(app, tx, service, true);
         }
         StoryAction::ToggleHelp => app.toggle_help(),
         StoryAction::Quit => app.should_quit = true,
@@ -191,7 +176,12 @@ async fn handle_story_action(
 }
 
 /// Load stories for the current selection, using cache when available
-fn request_stories(app: &mut App, tx: mpsc::UnboundedSender<AppMessage>, force_refresh: bool) {
+fn request_stories(
+    app: &mut App,
+    tx: mpsc::UnboundedSender<AppMessage>,
+    service: HackerNewsCliServiceImpl,
+    force_refresh: bool,
+) {
     if force_refresh {
         app.story_cache.remove(&(app.story_type, app.current_page));
     }
@@ -211,7 +201,6 @@ fn request_stories(app: &mut App, tx: mpsc::UnboundedSender<AppMessage>, force_r
 
     let page_size = app.page_size;
     tokio::spawn(async move {
-        let service = HackerNewsCliServiceImpl::new();
         let result = service
             .fetch_stories_page(story_type.as_str(), page_size, page)
             .await;
@@ -229,6 +218,7 @@ async fn handle_comment_action(
     app: &mut App,
     action: CommentAction,
     tx: mpsc::UnboundedSender<AppMessage>,
+    service: HackerNewsCliServiceImpl,
 ) -> Result<()> {
     match action {
         CommentAction::NextComment => app.next_comment(),
@@ -253,6 +243,7 @@ async fn handle_comment_action(
                             let ids = comment.child_ids.clone();
                             let depth = comment.depth + 1;
                             let comment_id = comment.id;
+                            let service = service.clone();
 
                             // Set to loading
                             comment.state = CommentState::Loading {
@@ -263,7 +254,6 @@ async fn handle_comment_action(
 
                             // Spawn task to fetch children
                             tokio::spawn(async move {
-                                let service = HackerNewsCliServiceImpl::new();
                                 let result = service.fetch_comment_children(&ids, depth).await;
                                 let _ = tx.send(AppMessage::CommentChildren {
                                     story_id: active_story_id,
@@ -291,11 +281,15 @@ async fn handle_comment_action(
             app.collapse_current_thread();
         }
         CommentAction::OpenUrl => {
-            if let View::Comments { story_url, .. } = &app.view {
-                let url = story_url.clone();
-                tokio::spawn(async move {
-                    let _ = open::that(url);
-                });
+            if let View::Comments {
+                story_id,
+                story_url,
+                ..
+            } = &app.view
+            {
+                if let Err(err) = open_story_url(story_url, *story_id) {
+                    app.set_comment_error(err.to_string());
+                }
             }
         }
         CommentAction::ToggleHelp => app.toggle_help(),
@@ -324,8 +318,11 @@ fn handle_app_message(app: &mut App, msg: AppMessage) {
                     app.apply_stories_page(story_type, page, stories);
                 }
                 Err(e) => {
-                    app.set_story_error(format!("Failed to load stories: {}", e));
-                    app.stories.clear();
+                    app.apply_stories_error(
+                        story_type,
+                        page,
+                        format!("Failed to load stories: {}", e),
+                    );
                 }
             }
         }
@@ -380,6 +377,12 @@ fn handle_app_message(app: &mut App, msg: AppMessage) {
                 }
             }
         }
+    }
+}
+
+fn drain_app_messages(app: &mut App, rx: &mut mpsc::UnboundedReceiver<AppMessage>) {
+    while let Ok(msg) = rx.try_recv() {
+        handle_app_message(app, msg);
     }
 }
 

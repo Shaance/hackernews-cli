@@ -28,10 +28,12 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
 
     if app.is_loading() && app.comments.is_empty() {
         widgets::render_loading(f, chunks[1], "Loading comments...", tick);
-    } else if let Some(error) = app.error() {
-        widgets::render_error(f, chunks[1], error);
     } else if app.comments.is_empty() {
-        render_no_comments(f, chunks[1]);
+        if let Some(error) = app.error() {
+            widgets::render_error(f, chunks[1], error);
+        } else {
+            render_no_comments(f, chunks[1]);
+        }
     } else {
         render_comments_list(f, chunks[1], app, tick);
     }

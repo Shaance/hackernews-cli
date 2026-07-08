@@ -2,6 +2,8 @@
 
 pub mod comments;
 pub mod stories;
+#[cfg(test)]
+mod ui_tests;
 pub mod widgets;
 
 use crate::app::{App, View};
