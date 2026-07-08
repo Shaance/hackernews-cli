@@ -22,3 +22,27 @@ pub fn now() -> u64 {
         .expect("Could not retrieve current time")
         .as_secs()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_unix_epoch_to_datetime() {
+        let dt = chrono::DateTime::from_timestamp(1588888888, 0).unwrap();
+        assert_eq!(
+            dt.format("%Y-%m-%d %H:%M:%S").to_string(),
+            "2020-05-07 22:01:28"
+        );
+    }
+
+    #[test]
+    fn test_time_ago() {
+        let now = now();
+        assert_eq!(time_ago(now), "0 seconds ago");
+        assert_eq!(time_ago(now - 60), "1 minutes ago");
+        assert_eq!(time_ago(now - 3600), "1 hours ago");
+        assert_eq!(time_ago(now - 86400), "1 days ago");
+        assert_eq!(time_ago(now - 604800), "1 weeks ago");
+    }
+}
