@@ -26,6 +26,7 @@ enum AppMessage {
     Stories {
         story_type: StoryType,
         page: u32,
+        request_generation: u64,
         result: Result<Vec<hn_lib::HNCLIItem>>,
     },
     Comments {
@@ -205,7 +206,8 @@ fn request_stories(app: &mut App, tx: mpsc::UnboundedSender<AppMessage>, force_r
         }
     }
 
-    app.set_loading(true);
+    app.set_story_loading(true);
+    let request_generation = app.next_story_request_generation();
 
     let page_size = app.page_size;
     tokio::spawn(async move {
@@ -216,6 +218,7 @@ fn request_stories(app: &mut App, tx: mpsc::UnboundedSender<AppMessage>, force_r
         let _ = tx.send(AppMessage::Stories {
             story_type,
             page,
+            request_generation,
             result,
         });
     });
@@ -309,18 +312,23 @@ fn handle_app_message(app: &mut App, msg: AppMessage) {
         AppMessage::Stories {
             story_type,
             page,
+            request_generation,
             result,
-        } => match result {
-            Ok(stories) => {
-                app.apply_stories_page(story_type, page, stories);
+        } => {
+            if !app.is_current_story_request(story_type, page, request_generation) {
+                return;
             }
-            Err(e) => {
-                if app.story_type == story_type && app.current_page == page {
-                    app.set_error(format!("Failed to load stories: {}", e));
+
+            match result {
+                Ok(stories) => {
+                    app.apply_stories_page(story_type, page, stories);
+                }
+                Err(e) => {
+                    app.set_story_error(format!("Failed to load stories: {}", e));
                     app.stories.clear();
                 }
             }
-        },
+        }
         AppMessage::Comments {
             story_id,
             view_generation,

@@ -18,11 +18,6 @@ pub(super) struct ViewStatus {
 }
 
 impl App {
-    /// Set error
-    pub fn set_error(&mut self, error: String) {
-        self.set_story_error(error);
-    }
-
     /// Set story-view error
     pub fn set_story_error(&mut self, error: String) {
         self.set_scoped_error(StatusScope::Stories, error);
@@ -31,16 +26,6 @@ impl App {
     /// Set comment-view error
     pub fn set_comment_error(&mut self, error: String) {
         self.set_scoped_error(StatusScope::Comments, error);
-    }
-
-    /// Clear error
-    pub fn clear_error(&mut self) {
-        self.clear_scoped_error(self.active_status_scope());
-    }
-
-    /// Set loading state
-    pub fn set_loading(&mut self, loading: bool) {
-        self.set_story_loading(loading);
     }
 
     /// Set story-view loading state
@@ -90,10 +75,6 @@ impl App {
 
     fn clear_status(&mut self, scope: StatusScope) {
         *self.status_mut(scope) = ViewStatus::default();
-    }
-
-    fn clear_scoped_error(&mut self, scope: StatusScope) {
-        self.status_mut(scope).error = None;
     }
 
     fn active_status_scope(&self) -> StatusScope {
