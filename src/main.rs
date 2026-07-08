@@ -37,6 +37,7 @@ enum AppMessage {
         story_id: i32,
         view_generation: u64,
         comment_id: i32,
+        child_load_generation: u64,
         result: Result<Vec<hn_lib::app::Comment>>,
     },
 }
@@ -240,6 +241,7 @@ async fn handle_comment_action(
                 View::Stories => return Ok(()),
             };
             let view_generation = app.comment_view_generation();
+            let child_load_generation = app.next_comment_child_load_generation();
 
             if let Some(comment) = app.selected_comment_mut() {
                 match &comment.state {
@@ -250,8 +252,11 @@ async fn handle_comment_action(
                             let comment_id = comment.id;
 
                             // Set to loading
-                            comment.state = CommentState::Loading;
+                            comment.state = CommentState::Loading {
+                                generation: child_load_generation,
+                            };
                             app.rebuild_visible_comments();
+                            app.set_comment_loading(true);
 
                             // Spawn task to fetch children
                             tokio::spawn(async move {
@@ -261,6 +266,7 @@ async fn handle_comment_action(
                                     story_id: active_story_id,
                                     view_generation,
                                     comment_id,
+                                    child_load_generation,
                                     result,
                                 });
                             });
@@ -270,8 +276,9 @@ async fn handle_comment_action(
                         // Collapse - just change state back to collapsed (child_ids preserved)
                         comment.state = CommentState::Collapsed;
                         app.rebuild_visible_comments();
+                        app.recompute_comment_loading(app.has_loading_comments());
                     }
-                    CommentState::Loading => {
+                    CommentState::Loading { .. } => {
                         // Do nothing while loading
                     }
                 }
@@ -332,6 +339,7 @@ fn handle_app_message(app: &mut App, msg: AppMessage) {
             story_id,
             view_generation,
             comment_id,
+            child_load_generation,
             result,
         } => {
             if !is_current_comments_view(app, story_id, view_generation) {
@@ -340,24 +348,27 @@ fn handle_app_message(app: &mut App, msg: AppMessage) {
 
             match result {
                 Ok(children) => {
-                    // Find the comment at any level and update its state
-                    app.update_comment_by_id(comment_id, |comment| {
-                        comment.state = CommentState::Expanded {
-                            children: children.clone(),
-                        };
-                    });
-                    app.rebuild_visible_comments();
-                    app.set_comment_loading(false);
+                    let applied = app.replace_loading_comment_state(
+                        comment_id,
+                        child_load_generation,
+                        CommentState::Expanded { children },
+                    );
+                    if applied {
+                        app.rebuild_visible_comments();
+                        app.recompute_comment_loading(app.has_loading_comments());
+                    }
                 }
                 Err(e) => {
-                    app.set_comment_error(format!("Failed to load comment children: {}", e));
-                    // Revert the comment state back to collapsed
-                    app.update_comment_by_id(comment_id, |comment| {
-                        if let CommentState::Loading = comment.state {
-                            comment.state = CommentState::Collapsed;
-                        }
-                    });
-                    app.rebuild_visible_comments();
+                    let applied = app.replace_loading_comment_state(
+                        comment_id,
+                        child_load_generation,
+                        CommentState::Collapsed,
+                    );
+                    if applied {
+                        app.set_comment_error(format!("Failed to load comment children: {}", e));
+                        app.rebuild_visible_comments();
+                        app.recompute_comment_loading(app.has_loading_comments());
+                    }
                 }
             }
         }

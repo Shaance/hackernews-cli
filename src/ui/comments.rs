@@ -184,7 +184,7 @@ fn render_comment(
 
     let (indicator_symbol, indicator_style) = match comment.state {
         CommentState::Collapsed => ("▸ ".to_string(), Style::default().fg(Color::Yellow)),
-        CommentState::Loading => ("▸ ".to_string(), Style::default().fg(Color::Blue)),
+        CommentState::Loading { .. } => ("▸ ".to_string(), Style::default().fg(Color::Blue)),
         CommentState::Expanded { .. } => ("▾ ".to_string(), Style::default().fg(Color::Green)),
     };
 
@@ -237,7 +237,7 @@ fn render_comment(
                         if child_count == 1 { "reply" } else { "replies" }
                     )
                 }
-                CommentState::Loading => {
+                CommentState::Loading { .. } => {
                     format!("{} Loading replies...", widgets::spinner_frame(tick))
                 }
                 CommentState::Expanded { .. } => "▾ Collapse".to_string(),
@@ -245,7 +245,7 @@ fn render_comment(
 
             let child_style = match comment.state {
                 CommentState::Collapsed => Style::default().fg(Color::Yellow),
-                CommentState::Loading => Style::default().fg(Color::Blue),
+                CommentState::Loading { .. } => Style::default().fg(Color::Blue),
                 CommentState::Expanded { .. } => Style::default().fg(Color::Green),
             }
             .add_modifier(Modifier::DIM);
