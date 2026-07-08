@@ -28,6 +28,23 @@ fn hn_item(
     }
 }
 
+fn story_item(id: i32) -> HackerNewsItem {
+    HackerNewsItem {
+        id,
+        by: "test_user".to_string(),
+        time: 1234567890,
+        kids: None,
+        url: Some("https://example.com".to_string()),
+        score: 10,
+        title: format!("Test Story {}", id),
+        descendants: Some(5),
+        r#type: "story".to_string(),
+        text: None,
+        deleted: false,
+        dead: false,
+    }
+}
+
 #[test]
 fn test_display() {
     let item = HNCLIItem {
@@ -104,6 +121,7 @@ fn test_to_hn_cli_item() {
     let service = HackerNewsCliServiceImpl::new_with_client(client);
     let item = service.api_item_to_hn_cli_item(item);
 
+    assert_eq!(item.id, 1);
     assert_eq!(item.title, "Rust is awesome");
     assert_eq!(item.url, "https://rust-lang.org");
     assert_eq!(item.author, "me");
@@ -133,26 +151,11 @@ async fn fetch_stories_page_returns_requested_page_items() {
         .times(1)
         .returning(|_| Ok(vec![1, 2, 3]));
 
-    hn_client.expect_get_items().times(1).returning(|ids| {
-        ids.iter()
-            .map(|_| {
-                Ok(HackerNewsItem {
-                    by: "test_user".to_string(),
-                    score: 10,
-                    time: 1234567890,
-                    title: "Test Story".to_string(),
-                    url: Some("https://example.com".to_string()),
-                    descendants: Some(5),
-                    id: 1,
-                    kids: None,
-                    r#type: "story".to_string(),
-                    text: None,
-                    deleted: false,
-                    dead: false,
-                })
-            })
-            .collect()
-    });
+    hn_client
+        .expect_get_items()
+        .times(1)
+        .withf(|ids| ids == [1, 2])
+        .returning(|ids| ids.iter().map(|id| Ok(story_item(*id))).collect());
 
     // Create service with mock client
     let service = HackerNewsCliServiceImpl::new_with_client(hn_client);
@@ -165,9 +168,40 @@ async fn fetch_stories_page_returns_requested_page_items() {
     assert_eq!(items.len(), 2);
 
     // Verify the items are properly converted
-    assert_eq!(items[0].title, "Test Story");
+    assert_eq!(items[0].id, 1);
+    assert_eq!(items[0].title, "Test Story 1");
     assert_eq!(items[0].author, "test_user");
     assert_eq!(items[0].score, 10);
+    assert_eq!(items[1].id, 2);
+    assert_eq!(items[1].title, "Test Story 2");
+}
+
+#[tokio::test]
+async fn fetch_stories_page_returns_tail_page_items() {
+    let mut hn_client = MockHackerNewsClient::new();
+
+    hn_client
+        .expect_get_story_ids()
+        .with(predicate::eq("best"))
+        .times(1)
+        .returning(|_| Ok(vec![1, 2, 3]));
+
+    hn_client
+        .expect_get_items()
+        .times(1)
+        .withf(|ids| ids == [3])
+        .returning(|ids| ids.iter().map(|id| Ok(story_item(*id))).collect());
+
+    let service = HackerNewsCliServiceImpl::new_with_client(hn_client);
+
+    let items = service
+        .fetch_stories_page("best", 2, 2)
+        .await
+        .expect("tail page should load");
+
+    assert_eq!(items.len(), 1);
+    assert_eq!(items[0].id, 3);
+    assert_eq!(items[0].title, "Test Story 3");
 }
 
 #[tokio::test]
