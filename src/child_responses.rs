@@ -121,9 +121,7 @@ fn retrying_child_load_clears_previous_child_error() {
     assert!(matches!(app.comments[0].state, CommentState::Collapsed));
     assert!(app.error().is_some());
 
-    app.update_comment_by_id(10, |comment| {
-        comment.state = loading(2);
-    });
+    app.comments[0].state = loading(2);
     app.rebuild_visible_comments();
     app.set_comment_loading(true);
 
@@ -159,9 +157,7 @@ fn ignores_stale_child_response_after_reexpanding_same_comment() {
     app.set_comment_loading(true);
 
     app.collapse_current_thread();
-    app.update_comment_by_id(10, |comment| {
-        comment.state = loading(2);
-    });
+    app.comments[0].state = loading(2);
     app.rebuild_visible_comments();
     app.set_comment_loading(true);
 
