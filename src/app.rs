@@ -2,15 +2,15 @@
 
 use crate::HNCLIItem;
 use std::collections::HashMap;
-use std::time::{Duration, Instant};
 
+#[cfg(test)]
+mod app_tests;
 mod comment_view_state;
 #[cfg(test)]
 mod comment_view_state_tests;
+mod view_status;
 pub use comment_view_state::{Comment, CommentState};
-
-// Delay before showing loading indicators to avoid flicker
-const LOADING_INDICATOR_DELAY_MS: u64 = 150;
+use view_status::ViewStatus;
 
 /// Current view in the application
 #[derive(Debug, Clone)]
@@ -65,10 +65,6 @@ pub struct App {
     pub story_scroll: usize,
     /// Current page number
     pub current_page: u32,
-    /// Loading state
-    pub loading: bool,
-    /// Error message, if any
-    pub error: Option<String>,
     /// Comments for current story
     pub comments: Vec<Comment>,
     /// Paths to comments visible in the flattened render/navigation order
@@ -77,6 +73,8 @@ pub struct App {
     pub comment_cursor: usize,
     /// Scroll offset for comments view
     pub comment_scroll: usize,
+    /// Monotonic token used to ignore stale async comment responses
+    comment_view_generation: u64,
     /// Should quit the application
     pub should_quit: bool,
     /// Show help overlay
@@ -87,8 +85,8 @@ pub struct App {
     pub story_cache: HashMap<(StoryType, u32), Vec<HNCLIItem>>,
     /// Type/page that the currently displayed stories belong to (for stale detection)
     pub stories_for: Option<(StoryType, u32)>,
-    /// When the current loading state started (for debouncing spinners)
-    pub loading_since: Option<Instant>,
+    story_status: ViewStatus,
+    comment_status: ViewStatus,
 }
 
 impl Default for App {
@@ -107,21 +105,21 @@ impl App {
             selected_index: 0,
             story_scroll: 0,
             current_page: 1,
-            loading: false,
-            error: None,
             comments: Vec::new(),
             visible_comment_paths: Vec::new(),
             comment_cursor: 0,
             comment_scroll: 0,
+            comment_view_generation: 0,
             should_quit: false,
             show_help: false,
             page_size: 20,
             story_cache: HashMap::new(),
             stories_for: None,
-            loading_since: None,
+            story_status: ViewStatus::default(),
+            comment_status: ViewStatus::default(),
         };
 
-        app.set_loading(true);
+        app.set_story_loading(true);
         app
     }
 
@@ -202,23 +200,32 @@ impl App {
 
     /// Switch to comments view
     pub fn view_comments(&mut self, story_id: i32, story_title: String, story_url: String) {
+        self.reset_comment_view_state();
         self.view = View::Comments {
             story_id,
             story_title,
             story_url,
         };
-        self.comments.clear();
-        self.visible_comment_paths.clear();
-        self.comment_cursor = 0;
-        self.set_loading(true);
+        self.set_comment_loading(true);
     }
 
     /// Switch back to stories view
     pub fn view_stories(&mut self) {
+        self.reset_comment_view_state();
+        self.clear_comment_status();
         self.view = View::Stories;
+    }
+
+    fn reset_comment_view_state(&mut self) {
         self.comments.clear();
         self.visible_comment_paths.clear();
         self.comment_cursor = 0;
+        self.comment_view_generation = self.comment_view_generation.wrapping_add(1);
+    }
+
+    /// Token for the current comments view. Async responses must echo this to be applied.
+    pub fn comment_view_generation(&self) -> u64 {
+        self.comment_view_generation
     }
 
     /// Toggle help overlay
@@ -231,9 +238,7 @@ impl App {
     /// Set stories
     pub fn set_stories(&mut self, stories: Vec<HNCLIItem>) {
         self.stories = stories;
-        self.loading = false;
-        self.loading_since = None;
-        self.error = None;
+        self.clear_story_status();
 
         // Ensure selected index is valid
         if self.selected_index >= self.stories.len() && !self.stories.is_empty() {
@@ -272,117 +277,6 @@ impl App {
     pub fn set_comments(&mut self, comments: Vec<Comment>) {
         self.comments = comments;
         self.rebuild_visible_comments();
-        self.loading = false;
-        self.loading_since = None;
-        self.error = None;
-    }
-
-    /// Set error
-    pub fn set_error(&mut self, error: String) {
-        self.error = Some(error);
-        self.loading = false;
-        self.loading_since = None;
-    }
-
-    /// Clear error
-    pub fn clear_error(&mut self) {
-        self.error = None;
-    }
-
-    /// Set loading state
-    pub fn set_loading(&mut self, loading: bool) {
-        self.loading = loading;
-        if loading {
-            self.error = None;
-            self.loading_since = Some(Instant::now());
-        } else {
-            self.loading_since = None;
-        }
-    }
-
-    /// Whether loading indicator should be visible (debounced)
-    pub fn should_show_loading(&self) -> bool {
-        if !self.loading {
-            return false;
-        }
-
-        match self.loading_since {
-            Some(started) => started.elapsed() >= Duration::from_millis(LOADING_INDICATOR_DELAY_MS),
-            None => true,
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_story_type_conversion() {
-        assert_eq!(StoryType::Best.as_str(), "best");
-        assert_eq!(StoryType::New.as_str(), "new");
-        assert_eq!(StoryType::Top.as_str(), "top");
-    }
-
-    #[test]
-    fn test_app_navigation() {
-        let mut app = App::new();
-        app.stories = vec![
-            HNCLIItem {
-                id: 1,
-                title: "Story 1".to_string(),
-                url: "http://example.com".to_string(),
-                author: "user1".to_string(),
-                time: "2023-01-01".to_string(),
-                time_ago: "1h ago".to_string(),
-                score: 100,
-                comments: Some(10),
-            },
-            HNCLIItem {
-                id: 2,
-                title: "Story 2".to_string(),
-                url: "http://example.com".to_string(),
-                author: "user2".to_string(),
-                time: "2023-01-01".to_string(),
-                time_ago: "2h ago".to_string(),
-                score: 200,
-                comments: Some(20),
-            },
-        ];
-
-        assert_eq!(app.selected_index, 0);
-        app.next_story();
-        assert_eq!(app.selected_index, 1);
-        app.next_story(); // Should not go beyond bounds
-        assert_eq!(app.selected_index, 1);
-        app.prev_story();
-        assert_eq!(app.selected_index, 0);
-    }
-
-    #[test]
-    fn test_page_navigation() {
-        let mut app = App::new();
-        assert_eq!(app.current_page, 1);
-
-        app.next_page();
-        assert_eq!(app.current_page, 2);
-
-        app.prev_page();
-        assert_eq!(app.current_page, 1);
-
-        app.prev_page(); // Should not go below 1
-        assert_eq!(app.current_page, 1);
-    }
-
-    #[test]
-    fn test_story_type_switch() {
-        let mut app = App::new();
-        app.selected_index = 5;
-        app.current_page = 3;
-
-        app.set_story_type(StoryType::New);
-        assert_eq!(app.story_type, StoryType::New);
-        assert_eq!(app.selected_index, 0); // Reset
-        assert_eq!(app.current_page, 1); // Reset
+        self.clear_comment_status();
     }
 }

@@ -1,7 +1,6 @@
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use futures::future::join_all;
-use mockall::automock;
 use reqwest::header::USER_AGENT;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -32,7 +31,7 @@ pub struct HackerNewsItem {
     pub dead: bool,
 }
 
-#[automock]
+#[cfg_attr(test, mockall::automock)]
 #[async_trait]
 pub trait HackerNewsClient {
     async fn get_story_ids(&self, story_type: &str) -> Result<Vec<i32>>;
