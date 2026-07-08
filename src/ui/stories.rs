@@ -26,10 +26,12 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
 
     if app.is_loading() && app.stories.is_empty() {
         widgets::render_loading(f, chunks[1], "Loading stories...", tick);
-    } else if let Some(error) = app.error() {
-        widgets::render_error(f, chunks[1], error);
     } else if app.stories.is_empty() {
-        widgets::render_error(f, chunks[1], "No stories found");
+        if let Some(error) = app.error() {
+            widgets::render_error(f, chunks[1], error);
+        } else {
+            widgets::render_error(f, chunks[1], "No stories found");
+        }
     } else {
         render_stories_list(f, chunks[1], app);
     }
@@ -63,7 +65,12 @@ fn render_title(f: &mut Frame, area: Rect, app: &App, tick: usize) {
         spans.push(Span::raw("│ "));
         spans.push(Span::styled(
             format!(
-                "fetching {} p{}",
+                "{} {} p{}",
+                if app.error().is_some() && !app.is_loading() {
+                    "failed"
+                } else {
+                    "fetching"
+                },
                 app.story_type.display_name(),
                 app.current_page
             ),

@@ -111,6 +111,7 @@ pub trait HackerNewsCliService {
 ///
 /// This struct provides the concrete implementation of the HackerNewsCliService trait,
 /// handling the business logic for fetching and formatting HackerNews stories.
+#[derive(Clone)]
 pub struct HackerNewsCliServiceImpl<C: HackerNewsClient = HackerNewsClientImpl> {
     hn_client: C,
 }

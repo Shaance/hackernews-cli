@@ -205,7 +205,16 @@ pub fn render_stories_status(_area: Rect, app: &App, tick: usize) -> Paragraph<'
     let (display_type, display_page) = app.displayed_story_context();
     let stale = app.showing_stale_stories();
 
-    let mut segments = vec![
+    let mut segments = Vec::new();
+    if let Some(error) = app.error() {
+        segments.push(Span::styled(
+            error.to_string(),
+            Style::default().fg(Color::Red),
+        ));
+        segments.push(Span::raw(" │ "));
+    }
+
+    segments.extend([
         Span::raw(" j/k navigate "),
         Span::raw("│ "),
         Span::raw("n/p page "),
@@ -228,13 +237,18 @@ pub fn render_stories_status(_area: Rect, app: &App, tick: usize) -> Paragraph<'
             ),
             Style::default().fg(Color::Yellow),
         ),
-    ];
+    ]);
 
     if stale {
         segments.push(Span::raw(" → "));
         segments.push(Span::styled(
             format!(
-                "fetching {} · p{}",
+                "{} {} · p{}",
+                if app.error().is_some() && !app.is_loading() {
+                    "failed"
+                } else {
+                    "fetching"
+                },
                 app.story_type.display_name(),
                 app.current_page
             ),
@@ -261,7 +275,16 @@ pub fn render_stories_status(_area: Rect, app: &App, tick: usize) -> Paragraph<'
 
 /// Render status bar for comments view
 pub fn render_comments_status(_area: Rect, app: &App, tick: usize) -> Paragraph<'static> {
-    let mut segments = vec![
+    let mut segments = Vec::new();
+    if let Some(error) = app.error() {
+        segments.push(Span::styled(
+            error.to_string(),
+            Style::default().fg(Color::Red),
+        ));
+        segments.push(Span::raw(" │ "));
+    }
+
+    segments.extend([
         Span::raw(" j/k scroll "),
         Span::raw("│ "),
         Span::raw("Enter/l expand "),
@@ -279,7 +302,7 @@ pub fn render_comments_status(_area: Rect, app: &App, tick: usize) -> Paragraph<
         Span::raw("Esc back "),
         Span::raw("│ "),
         Span::raw("?:help"),
-    ];
+    ]);
 
     if app.should_show_loading() {
         segments.push(Span::raw(" │ "));

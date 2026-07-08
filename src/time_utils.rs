@@ -1,12 +1,16 @@
 pub fn unix_epoch_to_datetime(unix_epoch: u64) -> String {
-    chrono::DateTime::from_timestamp(unix_epoch as i64, 0)
-        .unwrap()
-        .format("%Y-%m-%d %H:%M:%S")
-        .to_string()
+    let Some(epoch) = i64::try_from(unix_epoch).ok() else {
+        return "unknown time".to_string();
+    };
+
+    match chrono::DateTime::from_timestamp(epoch, 0) {
+        Some(datetime) => datetime.format("%Y-%m-%d %H:%M:%S").to_string(),
+        None => "unknown time".to_string(),
+    }
 }
 
 pub fn time_ago(epoch_time: u64) -> String {
-    let diff = now() - epoch_time;
+    let diff = now().saturating_sub(epoch_time);
     match diff {
         0..=59 => format!("{} seconds ago", diff),
         60..=3599 => format!("{} minutes ago", diff / 60),
@@ -19,7 +23,7 @@ pub fn time_ago(epoch_time: u64) -> String {
 pub fn now() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .expect("Could not retrieve current time")
+        .unwrap_or_default()
         .as_secs()
 }
 
@@ -29,11 +33,7 @@ mod tests {
 
     #[test]
     fn test_unix_epoch_to_datetime() {
-        let dt = chrono::DateTime::from_timestamp(1588888888, 0).unwrap();
-        assert_eq!(
-            dt.format("%Y-%m-%d %H:%M:%S").to_string(),
-            "2020-05-07 22:01:28"
-        );
+        assert_eq!(unix_epoch_to_datetime(1588888888), "2020-05-07 22:01:28");
     }
 
     #[test]
@@ -44,5 +44,15 @@ mod tests {
         assert_eq!(time_ago(now - 3600), "1 hours ago");
         assert_eq!(time_ago(now - 86400), "1 days ago");
         assert_eq!(time_ago(now - 604800), "1 weeks ago");
+    }
+
+    #[test]
+    fn future_time_is_not_negative() {
+        assert_eq!(time_ago(now() + 60), "0 seconds ago");
+    }
+
+    #[test]
+    fn out_of_range_epoch_is_unknown_instead_of_panicking() {
+        assert_eq!(unix_epoch_to_datetime(u64::MAX), "unknown time");
     }
 }
