@@ -269,18 +269,6 @@ impl App {
         }
     }
 
-    pub fn update_comment_by_id<F>(&mut self, comment_id: i32, updater: F) -> bool
-    where
-        F: Fn(&mut Comment),
-    {
-        for comment in &mut self.comments {
-            if Self::update_comment_recursive(comment, comment_id, &updater) {
-                return true;
-            }
-        }
-        false
-    }
-
     pub fn replace_loading_comment_state(
         &mut self,
         comment_id: i32,
@@ -340,26 +328,6 @@ impl App {
             CommentState::Expanded { children } => children.iter().any(Self::comment_has_loading),
             CommentState::Collapsed => false,
         }
-    }
-
-    fn update_comment_recursive<F>(comment: &mut Comment, target_id: i32, updater: &F) -> bool
-    where
-        F: Fn(&mut Comment),
-    {
-        if comment.id == target_id {
-            updater(comment);
-            return true;
-        }
-
-        if let CommentState::Expanded { children } = &mut comment.state {
-            for child in children {
-                if Self::update_comment_recursive(child, target_id, updater) {
-                    return true;
-                }
-            }
-        }
-
-        false
     }
 
     /// Rebuild the flattened visible comments list
