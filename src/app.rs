@@ -290,6 +290,15 @@ impl App {
         }
     }
 
+    /// Apply a story page load failure without discarding currently usable stories.
+    pub fn apply_stories_error(&mut self, story_type: StoryType, page: u32, error: String) {
+        if self.stories.is_empty() {
+            self.stories_for = Some((story_type, page));
+        }
+
+        self.set_story_error(error);
+    }
+
     /// Get cached stories for the current selection, if available
     pub fn cached_stories(&self) -> Option<Vec<HNCLIItem>> {
         self.story_cache

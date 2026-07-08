@@ -102,3 +102,28 @@ fn applies_current_story_success() {
     assert_eq!(app.stories_for, Some((StoryType::Best, 1)));
     assert!(!app.is_loading());
 }
+
+#[test]
+fn story_page_failure_preserves_existing_visible_stories() {
+    let mut app = ready_app();
+    app.set_stories_for(StoryType::Best, 1, vec![test_story(1)]);
+    app.next_page();
+    let request_generation = app.next_story_request_generation();
+
+    handle_app_message(
+        &mut app,
+        AppMessage::Stories {
+            story_type: StoryType::Best,
+            page: 2,
+            request_generation,
+            result: Err(anyhow!("page failed")),
+        },
+    );
+
+    assert_eq!(app.stories.len(), 1);
+    assert_eq!(app.stories[0].id, 1);
+    assert_eq!(app.stories_for, Some((StoryType::Best, 1)));
+    assert!(app.showing_stale_stories());
+    assert_eq!(app.error(), Some("Failed to load stories: page failed"));
+    assert!(!app.is_loading());
+}

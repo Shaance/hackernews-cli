@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use async_trait::async_trait;
-use futures::future::join_all;
+use futures::{stream, StreamExt};
 use reqwest::header::USER_AGENT;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 const HN_API_URL: &str = "https://hacker-news.firebaseio.com/";
 /// YCombinator base URL for item links
 const YC_URL: &str = "https://news.ycombinator.com/";
+const MAX_ITEM_FETCH_CONCURRENCY: usize = 32;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HackerNewsItem {
@@ -64,7 +65,7 @@ impl Default for HackerNewsClientConfig {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct HackerNewsClientImpl {
     client: Client,
     config: HackerNewsClientConfig,
@@ -87,8 +88,10 @@ impl HackerNewsClient for HackerNewsClientImpl {
     }
 
     async fn get_items(&self, ids: &[i32]) -> Vec<Result<HackerNewsItem>> {
-        let future_items = ids.iter().map(|id| self.get_item(*id));
-        return join_all(future_items).await;
+        stream::iter(ids.iter().copied().map(|id| self.get_item(id)))
+            .buffered(MAX_ITEM_FETCH_CONCURRENCY)
+            .collect()
+            .await
     }
 
     async fn get_item(&self, id: i32) -> Result<HackerNewsItem> {
@@ -130,5 +133,44 @@ impl HackerNewsClientImpl {
             .expect("Failed to create HTTP client");
 
         Self { client, config }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::MAX_ITEM_FETCH_CONCURRENCY;
+    use futures::{stream, StreamExt};
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
+    use tokio::time::{sleep, Duration};
+
+    #[tokio::test]
+    async fn bounded_fetches_preserve_order() {
+        let current = Arc::new(AtomicUsize::new(0));
+        let max_seen = Arc::new(AtomicUsize::new(0));
+
+        let results: Vec<usize> = stream::iter((0usize..80).map(|idx| {
+            let current = Arc::clone(&current);
+            let max_seen = Arc::clone(&max_seen);
+
+            async move {
+                let active = current.fetch_add(1, Ordering::SeqCst) + 1;
+                max_seen.fetch_max(active, Ordering::SeqCst);
+
+                let delay_ms = ((80 - idx) % 5) as u64;
+                sleep(Duration::from_millis(delay_ms)).await;
+
+                current.fetch_sub(1, Ordering::SeqCst);
+                idx
+            }
+        }))
+        .buffered(MAX_ITEM_FETCH_CONCURRENCY)
+        .collect()
+        .await;
+
+        assert_eq!(results, (0usize..80).collect::<Vec<_>>());
+        assert!(max_seen.load(Ordering::SeqCst) <= MAX_ITEM_FETCH_CONCURRENCY);
     }
 }
