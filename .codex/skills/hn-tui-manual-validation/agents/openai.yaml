@@ -1,0 +1,4 @@
+interface:
+  display_name: "HN TUI Manual Validation"
+  short_description: "Validate HackerNews TUI behavior through a live PTY smoke test."
+  default_prompt: "Use the HN TUI manual validation skill to smoke test the current terminal behavior."

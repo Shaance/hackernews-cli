@@ -113,8 +113,8 @@ pub struct App {
     pub error: Option<String>,
     /// Comments for current story
     pub comments: Vec<Comment>,
-    /// Flattened list of visible comments (for rendering/navigation)
-    pub visible_comments: Vec<(Vec<usize>, Comment)>, // (path to comment, comment)
+    /// Paths to comments visible in the flattened render/navigation order
+    visible_comment_paths: Vec<Vec<usize>>,
     /// Currently selected comment in visible list
     pub comment_cursor: usize,
     /// Scroll offset for comments view
@@ -152,7 +152,7 @@ impl App {
             loading: false,
             error: None,
             comments: Vec::new(),
-            visible_comments: Vec::new(),
+            visible_comment_paths: Vec::new(),
             comment_cursor: 0,
             comment_scroll: 0,
             should_quit: false,
@@ -244,8 +244,8 @@ impl App {
 
     /// Move to next comment
     pub fn next_comment(&mut self) {
-        if !self.visible_comments.is_empty()
-            && self.comment_cursor < self.visible_comments.len() - 1
+        if !self.visible_comment_paths.is_empty()
+            && self.comment_cursor < self.visible_comment_paths.len() - 1
         {
             self.comment_cursor += 1;
         }
@@ -260,7 +260,7 @@ impl App {
 
     /// Jump to the next sibling comment (skips over the current thread)
     pub fn next_comment_sibling(&mut self) {
-        let Some((path, _)) = self.visible_comments.get(self.comment_cursor) else {
+        let Some(path) = self.visible_comment_paths.get(self.comment_cursor) else {
             return;
         };
 
@@ -268,8 +268,8 @@ impl App {
             return;
         };
 
-        for (idx, (candidate_path, _)) in self
-            .visible_comments
+        for (idx, candidate_path) in self
+            .visible_comment_paths
             .iter()
             .enumerate()
             .skip(self.comment_cursor + 1)
@@ -287,7 +287,7 @@ impl App {
 
     /// Jump to the previous sibling comment
     pub fn prev_comment_sibling(&mut self) {
-        let Some((path, _)) = self.visible_comments.get(self.comment_cursor) else {
+        let Some(path) = self.visible_comment_paths.get(self.comment_cursor) else {
             return;
         };
 
@@ -298,7 +298,7 @@ impl App {
         let mut idx = self.comment_cursor;
         while idx > 0 {
             idx -= 1;
-            let candidate_path = &self.visible_comments[idx].0;
+            let candidate_path = &self.visible_comment_paths[idx];
             if candidate_path.len() != path.len() {
                 continue;
             }
@@ -312,7 +312,7 @@ impl App {
 
     /// Jump to the parent comment of the current selection
     pub fn parent_comment(&mut self) {
-        let Some((path, _)) = self.visible_comments.get(self.comment_cursor) else {
+        let Some(path) = self.visible_comment_paths.get(self.comment_cursor) else {
             return;
         };
 
@@ -323,10 +323,10 @@ impl App {
         let parent_path = &path[..path.len() - 1];
 
         if let Some((idx, _)) = self
-            .visible_comments
+            .visible_comment_paths
             .iter()
             .enumerate()
-            .find(|(_, (candidate_path, _))| candidate_path.as_slice() == parent_path)
+            .find(|(_, candidate_path)| candidate_path.as_slice() == parent_path)
         {
             self.comment_cursor = idx;
         }
@@ -339,8 +339,8 @@ impl App {
 
     /// Go to bottom comment
     pub fn last_comment(&mut self) {
-        if !self.visible_comments.is_empty() {
-            self.comment_cursor = self.visible_comments.len() - 1;
+        if !self.visible_comment_paths.is_empty() {
+            self.comment_cursor = self.visible_comment_paths.len() - 1;
         }
     }
 
@@ -380,11 +380,42 @@ impl App {
     pub fn selected_comment_mut(&mut self) -> Option<&mut Comment> {
         // Clone the path to avoid borrow conflicts
         let path = self
-            .visible_comments
+            .visible_comment_paths
             .get(self.comment_cursor)
-            .map(|(p, _)| p.clone())?;
+            .cloned()?;
 
         self.get_comment_mut_by_path(&path)
+    }
+
+    /// Get a visible comment and its path by flattened index
+    pub fn visible_comment_at(&self, index: usize) -> Option<(&[usize], &Comment)> {
+        let path = self.visible_comment_paths.get(index)?;
+        let comment = self.get_comment_by_path(path)?;
+        Some((path.as_slice(), comment))
+    }
+
+    /// Count comments visible in the flattened render/navigation order
+    pub fn visible_comment_count(&self) -> usize {
+        self.visible_comment_paths.len()
+    }
+
+    /// Get an immutable reference to a comment by path
+    fn get_comment_by_path(&self, path: &[usize]) -> Option<&Comment> {
+        if path.is_empty() {
+            return None;
+        }
+
+        let mut current = self.comments.get(path[0])?;
+
+        for &child_idx in &path[1..] {
+            if let CommentState::Expanded { children } = &current.state {
+                current = children.get(child_idx)?;
+            } else {
+                return None;
+            }
+        }
+
+        Some(current)
     }
 
     /// Get a mutable reference to a comment by path
@@ -410,7 +441,7 @@ impl App {
 
     /// Collapse the nearest expanded ancestor (or current comment) in the thread
     pub fn collapse_current_thread(&mut self) {
-        let Some((path, _)) = self.visible_comments.get(self.comment_cursor).cloned() else {
+        let Some(path) = self.visible_comment_paths.get(self.comment_cursor).cloned() else {
             return;
         };
 
@@ -422,7 +453,7 @@ impl App {
                         self.rebuild_visible_comments();
                         self.comment_cursor = self
                             .comment_cursor
-                            .min(self.visible_comments.len().saturating_sub(1));
+                            .min(self.visible_comment_paths.len().saturating_sub(1));
                         return;
                     }
                     _ => {}
@@ -467,26 +498,30 @@ impl App {
 
     /// Rebuild the flattened visible comments list
     pub fn rebuild_visible_comments(&mut self) {
-        self.visible_comments.clear();
-        let comments = self.comments.clone();
-        for (idx, comment) in comments.iter().enumerate() {
-            Self::add_visible_comment_recursive(&mut self.visible_comments, vec![idx], comment);
+        self.visible_comment_paths.clear();
+        for (idx, comment) in self.comments.iter().enumerate() {
+            let mut path = vec![idx];
+            Self::add_visible_comment_path_recursive(
+                &mut self.visible_comment_paths,
+                &mut path,
+                comment,
+            );
         }
     }
 
-    /// Recursively add comments to visible list (static method)
-    fn add_visible_comment_recursive(
-        visible_comments: &mut Vec<(Vec<usize>, Comment)>,
-        path: Vec<usize>,
+    /// Recursively add comment paths to the visible list
+    fn add_visible_comment_path_recursive(
+        visible_comment_paths: &mut Vec<Vec<usize>>,
+        path: &mut Vec<usize>,
         comment: &Comment,
     ) {
-        visible_comments.push((path.clone(), comment.clone()));
+        visible_comment_paths.push(path.clone());
 
         if let CommentState::Expanded { children } = &comment.state {
             for (child_idx, child) in children.iter().enumerate() {
-                let mut child_path = path.clone();
-                child_path.push(child_idx);
-                Self::add_visible_comment_recursive(visible_comments, child_path, child);
+                path.push(child_idx);
+                Self::add_visible_comment_path_recursive(visible_comment_paths, path, child);
+                path.pop();
             }
         }
     }
@@ -501,7 +536,7 @@ impl App {
             story_url,
         };
         self.comments.clear();
-        self.visible_comments.clear();
+        self.visible_comment_paths.clear();
         self.comment_cursor = 0;
         self.set_loading(true);
     }
@@ -510,7 +545,7 @@ impl App {
     pub fn view_stories(&mut self) {
         self.view = View::Stories;
         self.comments.clear();
-        self.visible_comments.clear();
+        self.visible_comment_paths.clear();
         self.comment_cursor = 0;
     }
 
@@ -610,6 +645,27 @@ impl App {
 mod tests {
     use super::*;
 
+    fn visible_comment_id(app: &App, index: usize) -> i32 {
+        app.visible_comment_at(index).unwrap().1.id
+    }
+
+    fn test_comment(id: i32, author: &str, depth: usize, children: Vec<Comment>) -> Comment {
+        Comment {
+            id,
+            author: author.to_string(),
+            text: format!("Comment {}", id),
+            time_ago: "now".to_string(),
+            child_ids: children.iter().map(|child| child.id).collect(),
+            state: if children.is_empty() {
+                CommentState::Collapsed
+            } else {
+                CommentState::Expanded { children }
+            },
+            depth,
+            deleted: false,
+        }
+    }
+
     #[test]
     fn test_story_type_conversion() {
         assert_eq!(StoryType::Best.as_str(), "best");
@@ -680,141 +736,60 @@ mod tests {
     }
 
     #[test]
+    fn test_selected_comment_mut_updates_visible_comment_source() {
+        let mut app = App::new();
+        app.set_comments(vec![test_comment(1, "original", 0, Vec::new())]);
+
+        app.selected_comment_mut().unwrap().author = "updated".to_string();
+
+        let (_, visible_comment) = app.visible_comment_at(0).unwrap();
+        assert_eq!(visible_comment.author, "updated");
+        assert_eq!(app.comments[0].author, "updated");
+    }
+
+    #[test]
     fn test_next_comment_sibling_skips_thread() {
-        let child_a = Comment {
-            id: 2,
-            author: "child_a".to_string(),
-            text: "First child".to_string(),
-            time_ago: "1m ago".to_string(),
-            state: CommentState::Collapsed,
-            depth: 1,
-            deleted: false,
-            child_ids: Vec::new(),
-        };
-
-        let child_b = Comment {
-            id: 3,
-            author: "child_b".to_string(),
-            text: "Second child".to_string(),
-            time_ago: "2m ago".to_string(),
-            state: CommentState::Collapsed,
-            depth: 1,
-            deleted: false,
-            child_ids: Vec::new(),
-        };
-
-        let top_level_a = Comment {
-            id: 1,
-            author: "parent".to_string(),
-            text: "Parent".to_string(),
-            time_ago: "now".to_string(),
-            state: CommentState::Expanded {
-                children: vec![child_a.clone(), child_b.clone()],
-            },
-            depth: 0,
-            deleted: false,
-            child_ids: vec![child_a.id, child_b.id],
-        };
-
-        let top_level_b = Comment {
-            id: 4,
-            author: "sibling".to_string(),
-            text: "Top-level sibling".to_string(),
-            time_ago: "5m ago".to_string(),
-            state: CommentState::Collapsed,
-            depth: 0,
-            deleted: false,
-            child_ids: Vec::new(),
-        };
+        let child_a = test_comment(2, "child_a", 1, Vec::new());
+        let child_b = test_comment(3, "child_b", 1, Vec::new());
+        let top_level_a = test_comment(1, "parent", 0, vec![child_a.clone(), child_b.clone()]);
+        let top_level_b = test_comment(4, "sibling", 0, Vec::new());
 
         let mut app = App::new();
         app.set_comments(vec![top_level_a, top_level_b.clone()]);
 
         // From the parent, jump to the next top-level sibling (skipping children)
         app.next_comment_sibling();
-        assert_eq!(app.visible_comments[app.comment_cursor].1.id, top_level_b.id);
+        assert_eq!(visible_comment_id(&app, app.comment_cursor), top_level_b.id);
 
         // From the first child, jump to its next sibling
         app.comment_cursor = 1;
         app.next_comment_sibling();
-        assert_eq!(app.visible_comments[app.comment_cursor].1.id, child_b.id);
+        assert_eq!(visible_comment_id(&app, app.comment_cursor), child_b.id);
 
         // When at the last sibling, cursor should stay in place
-        app.comment_cursor = app.visible_comments.len() - 1;
+        app.comment_cursor = app.visible_comment_count() - 1;
         app.next_comment_sibling();
-        assert_eq!(app.visible_comments[app.comment_cursor].1.id, top_level_b.id);
+        assert_eq!(visible_comment_id(&app, app.comment_cursor), top_level_b.id);
     }
 
     #[test]
     fn test_prev_comment_sibling_moves_up() {
-        let child_a = Comment {
-            id: 2,
-            author: "child_a".to_string(),
-            text: "First child".to_string(),
-            time_ago: "1m ago".to_string(),
-            state: CommentState::Collapsed,
-            depth: 1,
-            deleted: false,
-            child_ids: Vec::new(),
-        };
-
-        let child_b = Comment {
-            id: 3,
-            author: "child_b".to_string(),
-            text: "Second child".to_string(),
-            time_ago: "2m ago".to_string(),
-            state: CommentState::Collapsed,
-            depth: 1,
-            deleted: false,
-            child_ids: Vec::new(),
-        };
-
-        let top_level = Comment {
-            id: 1,
-            author: "parent".to_string(),
-            text: "Parent".to_string(),
-            time_ago: "now".to_string(),
-            state: CommentState::Expanded {
-                children: vec![child_a.clone(), child_b.clone()],
-            },
-            depth: 0,
-            deleted: false,
-            child_ids: vec![child_a.id, child_b.id],
-        };
+        let child_a = test_comment(2, "child_a", 1, Vec::new());
+        let child_b = test_comment(3, "child_b", 1, Vec::new());
+        let top_level = test_comment(1, "parent", 0, vec![child_a.clone(), child_b.clone()]);
 
         let mut app = App::new();
         app.set_comments(vec![top_level]);
 
         app.comment_cursor = 2; // child_b
         app.prev_comment_sibling();
-        assert_eq!(app.visible_comments[app.comment_cursor].1.id, child_a.id);
+        assert_eq!(visible_comment_id(&app, app.comment_cursor), child_a.id);
     }
 
     #[test]
     fn test_parent_comment_navigates_up_tree() {
-        let child = Comment {
-            id: 2,
-            author: "child".to_string(),
-            text: "Child".to_string(),
-            time_ago: "1m ago".to_string(),
-            state: CommentState::Collapsed,
-            depth: 1,
-            deleted: false,
-            child_ids: Vec::new(),
-        };
-
-        let parent = Comment {
-            id: 1,
-            author: "parent".to_string(),
-            text: "Parent".to_string(),
-            time_ago: "now".to_string(),
-            state: CommentState::Expanded {
-                children: vec![child.clone()],
-            },
-            depth: 0,
-            deleted: false,
-            child_ids: vec![child.id],
-        };
+        let child = test_comment(2, "child", 1, Vec::new());
+        let parent = test_comment(1, "parent", 0, vec![child.clone()]);
 
         let mut app = App::new();
         app.set_comments(vec![parent]);
@@ -822,10 +797,10 @@ mod tests {
         // Move into child and then go to parent
         app.comment_cursor = 1;
         app.parent_comment();
-        assert_eq!(app.visible_comments[app.comment_cursor].1.id, 1);
+        assert_eq!(visible_comment_id(&app, app.comment_cursor), 1);
 
         // Top-level should no-op
         app.parent_comment();
-        assert_eq!(app.visible_comments[app.comment_cursor].1.id, 1);
+        assert_eq!(visible_comment_id(&app, app.comment_cursor), 1);
     }
 }

@@ -48,7 +48,7 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
 /// Render title bar with story title
 fn render_title(f: &mut Frame, area: Rect, app: &App, tick: usize) {
     let title_text = if let View::Comments { story_title, .. } = &app.view {
-        let comment_count = app.visible_comments.len();
+        let comment_count = app.visible_comment_count();
         vec![
             Line::from(vec![
                 Span::styled(" Comments: ", Style::default().add_modifier(Modifier::BOLD)),
@@ -107,14 +107,24 @@ fn render_comments_list(f: &mut Frame, area: Rect, app: &mut App, tick: usize) {
         .fg(Color::Reset);
 
     // Pre-render all comments to line buffers and track their line ranges
-    let mut rendered = Vec::with_capacity(app.visible_comments.len());
-    let mut line_ranges = Vec::with_capacity(app.visible_comments.len());
+    let mut rendered = Vec::with_capacity(app.visible_comment_count());
+    let mut line_ranges = Vec::with_capacity(app.visible_comment_count());
     let mut line_cursor = 0usize;
 
-    for (idx, (path, comment)) in app.visible_comments.iter().enumerate() {
+    for idx in 0..app.visible_comment_count() {
+        let Some((path, comment)) = app.visible_comment_at(idx) else {
+            continue;
+        };
         let is_selected = idx == app.comment_cursor;
-        let prepared =
-            render_comment(app, path, comment, is_selected, tick, area.width as usize, highlight_style);
+        let prepared = render_comment(
+            app,
+            path,
+            comment,
+            is_selected,
+            tick,
+            area.width as usize,
+            highlight_style,
+        );
         let start = line_cursor;
         line_cursor += prepared.height;
         let end = line_cursor;
