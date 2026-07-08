@@ -281,24 +281,42 @@ impl<C: HackerNewsClient> HackerNewsCliServiceImpl<C> {
 
 /// Decode HTML entities and strip basic HTML tags from comment text
 fn decode_html(text: &str) -> String {
-    // First decode HTML entities
-    let decoded = html_escape::decode_html_entities(text);
+    let without_tags = strip_html_tags(text);
+    html_escape::decode_html_entities(&without_tags)
+        .trim()
+        .to_string()
+}
 
-    // Convert <p> tags to double newlines
-    let result = decoded.replace("<p>", "\n\n");
-
-    // Simple HTML tag stripping (iterate and remove everything between < and >)
+fn strip_html_tags(text: &str) -> String {
     let mut clean = String::new();
     let mut in_tag = false;
+    let mut tag = String::new();
 
-    for ch in result.chars() {
+    let mut chars = text.chars().peekable();
+    while let Some(ch) = chars.next() {
+        if in_tag {
+            if ch == '>' {
+                if tag.trim().eq_ignore_ascii_case("p") {
+                    clean.push_str("\n\n");
+                }
+                tag.clear();
+                in_tag = false;
+            } else {
+                tag.push(ch);
+            }
+            continue;
+        }
+
         match ch {
-            '<' => in_tag = true,
-            '>' => in_tag = false,
-            _ if !in_tag => clean.push(ch),
-            _ => {}
+            '<' if chars
+                .peek()
+                .is_some_and(|next| next.is_ascii_alphabetic() || *next == '/' || *next == '!') =>
+            {
+                in_tag = true;
+            }
+            _ => clean.push(ch),
         }
     }
 
-    clean.trim().to_string()
+    clean
 }

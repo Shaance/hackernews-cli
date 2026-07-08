@@ -24,9 +24,9 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
 
     render_title(f, chunks[0], app, tick);
 
-    if app.loading && app.stories.is_empty() {
+    if app.is_loading() && app.stories.is_empty() {
         widgets::render_loading(f, chunks[1], "Loading stories...", tick);
-    } else if let Some(error) = &app.error {
+    } else if let Some(error) = app.error() {
         widgets::render_error(f, chunks[1], error);
     } else if app.stories.is_empty() {
         widgets::render_error(f, chunks[1], "No stories found");
@@ -92,7 +92,7 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
     app.update_story_scroll(area.height as usize);
 
     let (_, display_page) = app.displayed_story_context();
-    let list_style = if app.loading {
+    let list_style = if app.is_loading() {
         Style::default().fg(Color::Gray).add_modifier(Modifier::DIM)
     } else {
         Style::default()
