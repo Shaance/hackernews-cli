@@ -94,7 +94,7 @@ fn test_parent_comment_navigates_up_tree() {
 fn test_update_comment_by_id_expands_loading_comment_and_rebuilds_visible_paths() {
     let mut child = test_comment(2, "child", 1, Vec::new());
     child.child_ids = vec![3];
-    child.state = CommentState::Loading;
+    child.state = CommentState::Loading { generation: 1 };
     let parent = test_comment(1, "parent", 0, vec![child]);
     let grandchild = test_comment(3, "grandchild", 2, Vec::new());
 

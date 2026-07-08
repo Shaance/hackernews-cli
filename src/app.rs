@@ -75,6 +75,8 @@ pub struct App {
     pub comment_scroll: usize,
     /// Monotonic token used to ignore stale async comment responses
     comment_view_generation: u64,
+    /// Monotonic token used to ignore stale child-comment responses
+    comment_child_load_generation: u64,
     /// Should quit the application
     pub should_quit: bool,
     /// Show help overlay
@@ -110,6 +112,7 @@ impl App {
             comment_cursor: 0,
             comment_scroll: 0,
             comment_view_generation: 0,
+            comment_child_load_generation: 0,
             should_quit: false,
             show_help: false,
             page_size: 20,

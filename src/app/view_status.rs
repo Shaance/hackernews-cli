@@ -53,6 +53,11 @@ impl App {
         self.set_scoped_loading(StatusScope::Comments, loading);
     }
 
+    /// Recompute comment loading without dismissing current errors.
+    pub fn recompute_comment_loading(&mut self, loading: bool) {
+        self.set_scoped_loading_preserving_error(StatusScope::Comments, loading);
+    }
+
     pub(super) fn clear_story_status(&mut self) {
         self.clear_status(StatusScope::Stories);
     }
@@ -68,6 +73,12 @@ impl App {
         if loading {
             status.error = None;
         }
+    }
+
+    fn set_scoped_loading_preserving_error(&mut self, scope: StatusScope, loading: bool) {
+        let status = self.status_mut(scope);
+        status.loading = loading;
+        status.loading_since = if loading { Some(Instant::now()) } else { None };
     }
 
     fn set_scoped_error(&mut self, scope: StatusScope, error: String) {

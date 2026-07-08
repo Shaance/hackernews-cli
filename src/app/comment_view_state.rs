@@ -6,7 +6,7 @@ pub enum CommentState {
     /// Children not yet fetched
     Collapsed,
     /// Currently fetching children
-    Loading,
+    Loading { generation: u64 },
     /// Children fetched and available
     Expanded { children: Vec<Comment> },
 }
@@ -43,7 +43,7 @@ impl Comment {
 
     /// Check if loading
     pub fn is_loading(&self) -> bool {
-        matches!(self.state, CommentState::Loading)
+        matches!(self.state, CommentState::Loading { .. })
     }
 }
 
@@ -254,12 +254,13 @@ impl App {
         for depth in (0..path.len()).rev() {
             if let Some(comment) = self.get_comment_mut_by_path(&path[..=depth]) {
                 match comment.state {
-                    CommentState::Expanded { .. } | CommentState::Loading => {
+                    CommentState::Expanded { .. } | CommentState::Loading { .. } => {
                         comment.state = CommentState::Collapsed;
                         self.rebuild_visible_comments();
                         self.comment_cursor = self
                             .comment_cursor
                             .min(self.visible_comment_paths.len().saturating_sub(1));
+                        self.recompute_comment_loading(self.has_loading_comments());
                         return;
                     }
                     _ => {}
@@ -268,7 +269,6 @@ impl App {
         }
     }
 
-    /// Find and update a comment by ID (recursively searches all levels)
     pub fn update_comment_by_id<F>(&mut self, comment_id: i32, updater: F) -> bool
     where
         F: Fn(&mut Comment),
@@ -281,7 +281,67 @@ impl App {
         false
     }
 
-    /// Recursively search and update a comment
+    pub fn replace_loading_comment_state(
+        &mut self,
+        comment_id: i32,
+        expected_generation: u64,
+        new_state: CommentState,
+    ) -> bool {
+        let mut new_state = Some(new_state);
+        Self::replace_loading_comment_state_recursive(
+            &mut self.comments,
+            comment_id,
+            expected_generation,
+            &mut new_state,
+        )
+    }
+
+    fn replace_loading_comment_state_recursive(
+        comments: &mut [Comment],
+        comment_id: i32,
+        expected_generation: u64,
+        new_state: &mut Option<CommentState>,
+    ) -> bool {
+        for comment in comments {
+            if comment.id == comment_id {
+                match comment.state {
+                    CommentState::Loading { generation } if generation == expected_generation => {
+                        comment.state = new_state
+                            .take()
+                            .expect("replacement state should be available");
+                        return true;
+                    }
+                    _ => return false,
+                }
+            }
+
+            if let CommentState::Expanded { ref mut children } = comment.state {
+                if Self::replace_loading_comment_state_recursive(
+                    children,
+                    comment_id,
+                    expected_generation,
+                    new_state,
+                ) {
+                    return true;
+                }
+            }
+        }
+
+        false
+    }
+
+    pub fn has_loading_comments(&self) -> bool {
+        self.comments.iter().any(Self::comment_has_loading)
+    }
+
+    fn comment_has_loading(comment: &Comment) -> bool {
+        match &comment.state {
+            CommentState::Loading { .. } => true,
+            CommentState::Expanded { children } => children.iter().any(Self::comment_has_loading),
+            CommentState::Collapsed => false,
+        }
+    }
+
     fn update_comment_recursive<F>(comment: &mut Comment, target_id: i32, updater: &F) -> bool
     where
         F: Fn(&mut Comment),
@@ -315,7 +375,6 @@ impl App {
         }
     }
 
-    /// Recursively add comment paths to the visible list
     fn add_visible_comment_path_recursive(
         visible_comment_paths: &mut Vec<Vec<usize>>,
         path: &mut Vec<usize>,
@@ -330,5 +389,10 @@ impl App {
                 path.pop();
             }
         }
+    }
+
+    pub fn next_comment_child_load_generation(&mut self) -> u64 {
+        self.comment_child_load_generation = self.comment_child_load_generation.wrapping_add(1);
+        self.comment_child_load_generation
     }
 }
