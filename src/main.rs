@@ -28,8 +28,14 @@ enum AppMessage {
         page: u32,
         result: Result<Vec<hn_lib::HNCLIItem>>,
     },
-    Comments(Result<Vec<hn_lib::app::Comment>>),
+    Comments {
+        story_id: i32,
+        view_generation: u64,
+        result: Result<Vec<hn_lib::app::Comment>>,
+    },
     CommentChildren {
+        story_id: i32,
+        view_generation: u64,
         comment_id: i32,
         result: Result<Vec<hn_lib::app::Comment>>,
     },
@@ -157,12 +163,17 @@ async fn handle_story_action(
                 let story_url = story.url.clone();
 
                 app.view_comments(story_id, story_title, story_url);
+                let view_generation = app.comment_view_generation();
 
                 // Fetch comments
                 tokio::spawn(async move {
                     let service = HackerNewsCliServiceImpl::new();
                     let result = service.fetch_top_level_comments(story_id).await;
-                    let _ = tx.send(AppMessage::Comments(result));
+                    let _ = tx.send(AppMessage::Comments {
+                        story_id,
+                        view_generation,
+                        result,
+                    });
                 });
             }
         }
@@ -224,6 +235,12 @@ async fn handle_comment_action(
         CommentAction::FirstComment => app.first_comment(),
         CommentAction::LastComment => app.last_comment(),
         CommentAction::ToggleExpand => {
+            let active_story_id = match &app.view {
+                View::Comments { story_id, .. } => *story_id,
+                View::Stories => return Ok(()),
+            };
+            let view_generation = app.comment_view_generation();
+
             if let Some(comment) = app.selected_comment_mut() {
                 match &comment.state {
                     CommentState::Collapsed => {
@@ -240,7 +257,12 @@ async fn handle_comment_action(
                             tokio::spawn(async move {
                                 let service = HackerNewsCliServiceImpl::new();
                                 let result = service.fetch_comment_children(&ids, depth).await;
-                                let _ = tx.send(AppMessage::CommentChildren { comment_id, result });
+                                let _ = tx.send(AppMessage::CommentChildren {
+                                    story_id: active_story_id,
+                                    view_generation,
+                                    comment_id,
+                                    result,
+                                });
                             });
                         }
                     }
@@ -292,11 +314,30 @@ fn handle_app_message(app: &mut App, msg: AppMessage) {
                 }
             }
         },
-        AppMessage::Comments(result) => match result {
-            Ok(comments) => app.set_comments(comments),
-            Err(e) => app.set_error(format!("Failed to load comments: {}", e)),
-        },
-        AppMessage::CommentChildren { comment_id, result } => {
+        AppMessage::Comments {
+            story_id,
+            view_generation,
+            result,
+        } => {
+            if !is_current_comments_view(app, story_id, view_generation) {
+                return;
+            }
+
+            match result {
+                Ok(comments) => app.set_comments(comments),
+                Err(e) => app.set_comment_error(format!("Failed to load comments: {}", e)),
+            }
+        }
+        AppMessage::CommentChildren {
+            story_id,
+            view_generation,
+            comment_id,
+            result,
+        } => {
+            if !is_current_comments_view(app, story_id, view_generation) {
+                return;
+            }
+
             match result {
                 Ok(children) => {
                     // Find the comment at any level and update its state
@@ -306,10 +347,10 @@ fn handle_app_message(app: &mut App, msg: AppMessage) {
                         };
                     });
                     app.rebuild_visible_comments();
-                    app.set_loading(false);
+                    app.set_comment_loading(false);
                 }
                 Err(e) => {
-                    app.set_error(format!("Failed to load comment children: {}", e));
+                    app.set_comment_error(format!("Failed to load comment children: {}", e));
                     // Revert the comment state back to collapsed
                     app.update_comment_by_id(comment_id, |comment| {
                         if let CommentState::Loading = comment.state {
@@ -322,3 +363,14 @@ fn handle_app_message(app: &mut App, msg: AppMessage) {
         }
     }
 }
+
+fn is_current_comments_view(app: &App, expected_story_id: i32, expected_generation: u64) -> bool {
+    matches!(
+        &app.view,
+        View::Comments { story_id, .. } if *story_id == expected_story_id
+    ) && app.comment_view_generation() == expected_generation
+}
+
+#[cfg(test)]
+#[path = "main_tests.rs"]
+mod tests;
