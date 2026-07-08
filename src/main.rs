@@ -23,13 +23,13 @@ use hn_lib::{
 /// Messages sent from async tasks to the main loop
 #[derive(Debug)]
 enum AppMessage {
-    StoriesLoaded {
+    Stories {
         story_type: StoryType,
         page: u32,
         result: Result<Vec<hn_lib::HNCLIItem>>,
     },
-    CommentsLoaded(Result<Vec<hn_lib::app::Comment>>),
-    CommentChildrenLoaded {
+    Comments(Result<Vec<hn_lib::app::Comment>>),
+    CommentChildren {
         comment_id: i32,
         result: Result<Vec<hn_lib::app::Comment>>,
     },
@@ -162,7 +162,7 @@ async fn handle_story_action(
                 tokio::spawn(async move {
                     let service = HackerNewsCliServiceImpl::new();
                     let result = service.fetch_top_level_comments(story_id).await;
-                    let _ = tx.send(AppMessage::CommentsLoaded(result));
+                    let _ = tx.send(AppMessage::Comments(result));
                 });
             }
         }
@@ -201,7 +201,7 @@ fn request_stories(app: &mut App, tx: mpsc::UnboundedSender<AppMessage>, force_r
         let result = service
             .fetch_stories_page(story_type.as_str(), page_size, page)
             .await;
-        let _ = tx.send(AppMessage::StoriesLoaded {
+        let _ = tx.send(AppMessage::Stories {
             story_type,
             page,
             result,
@@ -240,8 +240,7 @@ async fn handle_comment_action(
                             tokio::spawn(async move {
                                 let service = HackerNewsCliServiceImpl::new();
                                 let result = service.fetch_comment_children(&ids, depth).await;
-                                let _ = tx
-                                    .send(AppMessage::CommentChildrenLoaded { comment_id, result });
+                                let _ = tx.send(AppMessage::CommentChildren { comment_id, result });
                             });
                         }
                     }
@@ -278,7 +277,7 @@ async fn handle_comment_action(
 /// Handle messages from async tasks
 fn handle_app_message(app: &mut App, msg: AppMessage) {
     match msg {
-        AppMessage::StoriesLoaded {
+        AppMessage::Stories {
             story_type,
             page,
             result,
@@ -293,11 +292,11 @@ fn handle_app_message(app: &mut App, msg: AppMessage) {
                 }
             }
         },
-        AppMessage::CommentsLoaded(result) => match result {
+        AppMessage::Comments(result) => match result {
             Ok(comments) => app.set_comments(comments),
             Err(e) => app.set_error(format!("Failed to load comments: {}", e)),
         },
-        AppMessage::CommentChildrenLoaded { comment_id, result } => {
+        AppMessage::CommentChildren { comment_id, result } => {
             match result {
                 Ok(children) => {
                     // Find the comment at any level and update its state
