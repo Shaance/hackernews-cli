@@ -71,6 +71,7 @@ fn clears_active_comment_error_when_returning_to_stories() {
 #[test]
 fn preserves_story_error_that_arrives_while_comments_are_active() {
     let mut app = ready_app();
+    let request_generation = app.next_story_request_generation();
     app.view_comments(1, "old story".to_string(), "https://old".to_string());
 
     handle_app_message(
@@ -78,6 +79,7 @@ fn preserves_story_error_that_arrives_while_comments_are_active() {
         AppMessage::Stories {
             story_type: StoryType::Best,
             page: 1,
+            request_generation,
             result: Err(anyhow!("story fetch failed")),
         },
     );

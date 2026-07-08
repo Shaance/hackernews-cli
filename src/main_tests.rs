@@ -1,6 +1,7 @@
 use super::*;
 
 mod child_responses;
+mod story_responses;
 mod view_scope;
 
 pub(super) fn test_comment(id: i32, state: CommentState) -> hn_lib::app::Comment {
