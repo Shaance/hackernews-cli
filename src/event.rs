@@ -35,14 +35,11 @@ impl EventHandler {
     pub fn next(&self) -> Result<Event> {
         // Poll for events with timeout
         if event::poll(self.tick_rate)? {
-            match event::read()? {
-                CrosstermEvent::Key(key) => {
-                    // Only handle key press events (ignore release)
-                    if key.kind == KeyEventKind::Press {
-                        return Ok(Event::Key(key.code));
-                    }
+            if let CrosstermEvent::Key(key) = event::read()? {
+                // Only handle key press events (ignore release)
+                if key.kind == KeyEventKind::Press {
+                    return Ok(Event::Key(key.code));
                 }
-                _ => {}
             }
         }
         Ok(Event::Tick)
