@@ -129,7 +129,7 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
 
             // Second line: metadata
             let comment_str = match story.comments {
-                Some(n) if n == 1 => "1 comment".to_string(),
+                Some(1) => "1 comment".to_string(),
                 Some(n) => format!("{} comments", n),
                 None => "discuss".to_string(),
             };
