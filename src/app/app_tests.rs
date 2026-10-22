@@ -59,7 +59,7 @@ fn test_story_type_switch() {
 
     app.set_story_type(StoryType::New);
     assert_eq!(app.story_type, StoryType::New);
-    assert_eq!(app.selected_index, 0); // Reset
+    assert_eq!(app.selected_index, 5); // Keep the displayed selection until success
     assert_eq!(app.current_page, 1); // Reset
 }
 

@@ -74,7 +74,7 @@ pub fn render_help(f: &mut Frame, area: Rect, in_comments: bool) {
             Line::from("o Article · O Browser · L Links"),
             Line::from("S Summary · J/K Scroll · M Settings"),
             Line::from("Tab Sources · Enter Open · Esc Back"),
-            Line::from("s Save/unsave · r Retry failures"),
+            Line::from("s Save/unsave · r Refresh comments"),
             Line::from("Esc/q/h/← Back · ? Close help"),
         ]
     } else {
