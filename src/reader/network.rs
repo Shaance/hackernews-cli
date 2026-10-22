@@ -1,7 +1,7 @@
-//! OpenRouter transport. The endpoint is injected at construction in boundary tests.
+//! Summary provider HTTP boundary. Endpoints are injected in boundary tests.
 use super::{
-    config::Profile, sources, summary_prompts, Article, ArticleCapture, Discussion,
-    DiscussionCapture, Failure,
+    config::{Profile, Provider},
+    sources, summary_prompts, Article, ArticleCapture, Discussion, DiscussionCapture, Failure,
 };
 use hn_lib::HackerNewsCliServiceImpl;
 use reqwest::Client;
@@ -17,6 +17,7 @@ pub struct Network {
     pub client: Client,
     pub service: HackerNewsCliServiceImpl,
     pub endpoint: String,
+    pub anthropic_endpoint: String,
     pub response_log_dir: Option<PathBuf>,
 }
 impl Default for Network {
@@ -29,6 +30,7 @@ impl Default for Network {
                 .build()
                 .expect("HTTP client"),
             endpoint: "https://openrouter.ai/api/v1/chat/completions".into(),
+            anthropic_endpoint: "https://api.anthropic.com/v1/messages".into(),
             response_log_dir: std::env::var_os("XDG_STATE_HOME")
                 .filter(|v| !v.is_empty())
                 .map(PathBuf::from)
@@ -40,6 +42,7 @@ impl Default for Network {
 impl Network {
     pub async fn article(
         &self,
+        provider: Provider,
         key: &str,
         profile: Profile,
         captured: &ArticleCapture,
@@ -52,6 +55,7 @@ impl Network {
         let schema = json!({"type":"object","properties":{"summary":{"type":"string"}},"required":["summary"],"additionalProperties":false});
         let output = self
             .complete(
+                provider,
                 key,
                 profile,
                 summary_prompts::ARTICLE,
@@ -69,6 +73,7 @@ impl Network {
     }
     pub async fn discussion(
         &self,
+        provider: Provider,
         key: &str,
         profile: Profile,
         captured: &DiscussionCapture,
@@ -89,7 +94,8 @@ impl Network {
             .map(|s| json!({"id":s.id,"parent":s.parent,"author":s.author,"text":s.excerpt}))
             .collect();
         let mut schema = json!({"type":"object","properties":{"overview":{"type":"string"},"points":{"type":"array","minItems":1,"items":{"type":"object","properties":{"text":{"type":"string"},"sources":{"type":"array","minItems":1,"items":{"type":"integer","enum":readable.iter().map(|source| source.id).collect::<Vec<_>>()}}},"required":["text","sources"],"additionalProperties":false}}},"required":["overview","points"],"additionalProperties":false});
-        if profile == Profile::Fast {
+        // Native Anthropic JSON outputs do not support maxItems; the Fast prompt still asks for 1–3.
+        if profile == Profile::Fast && provider == Provider::OpenRouter {
             schema["properties"]["points"]["maxItems"] = json!(3);
         }
         let prompt = match profile {
@@ -98,6 +104,7 @@ impl Network {
         };
         let output = self
             .complete(
+                provider,
                 key,
                 profile,
                 prompt,
@@ -128,27 +135,45 @@ impl Network {
     }
     async fn complete(
         &self,
+        provider: Provider,
         key: &str,
         profile: Profile,
         prompt: &str,
         input: Value,
         schema: Value,
     ) -> Result<Value, Failure> {
-        let body = json!({"model":profile.model(),"messages":[{"role":"system","content":prompt},{"role":"user","content":input.to_string()}],
-            "max_tokens":4096,"reasoning":{"effort":"low","exclude":true},
-            "provider":{"require_parameters":true},"response_format":{"type":"json_schema","json_schema":{"name":"summary","strict":true,"schema":schema}}});
-        let response = self
-            .client
-            .post(&self.endpoint)
+        let label = provider.label();
+        let body = match provider {
+            Provider::OpenRouter => {
+                json!({"model":profile.model(provider),"messages":[{"role":"system","content":prompt},{"role":"user","content":input.to_string()}],
+                "max_tokens":4096,"reasoning":{"effort":"low","exclude":true},
+                "provider":{"require_parameters":true},"response_format":{"type":"json_schema","json_schema":{"name":"summary","strict":true,"schema":schema}}})
+            }
+            Provider::Anthropic => json!({"model":profile.model(provider),"system":prompt,
+                "messages":[{"role":"user","content":input.to_string()}],"max_tokens":4096,
+                "thinking":{"type":"adaptive","display":"omitted"},
+                "output_config":{"effort":"low","format":{"type":"json_schema","schema":schema}}}),
+        };
+        let request = match provider {
+            Provider::OpenRouter => self.client.post(&self.endpoint),
+            Provider::Anthropic => self
+                .client
+                .post(&self.anthropic_endpoint)
+                .header("anthropic-version", "2026-10-21"),
+        };
+        let response = request
             .bearer_auth(key)
             .json(&body)
             .send()
             .await
-            .map_err(|_| Failure::new("Cannot reach OpenRouter. r Retry"))?;
+            .map_err(|_| Failure::new(format!("Cannot reach {label}. r Retry")))?;
         let status = response.status();
         let request_id = response
             .headers()
-            .get("x-request-id")
+            .get(match provider {
+                Provider::OpenRouter => "x-request-id",
+                Provider::Anthropic => "request-id",
+            })
             .and_then(|v| v.to_str().ok())
             .map(str::to_owned);
         let raw = response.bytes().await;
@@ -159,7 +184,7 @@ impl Network {
         if let (Some(directory), Ok(raw)) = (&self.response_log_dir, &raw) {
             let record = json!({
                 "timestamp": chrono::Utc::now().to_rfc3339(),
-                "model": profile.model(), "profile": profile.label(),
+                "provider": label, "model": profile.model(provider), "profile": profile.label(),
                 "section": if input.get("comments").is_some() { "discussion" } else { "article" },
                 "title": input.get("title").and_then(Value::as_str), "http_status": status.as_u16(),
                 "request_id": request_id, "generation_id": value.as_ref().and_then(|v| v.get("id")).and_then(Value::as_str),
@@ -171,32 +196,52 @@ impl Network {
         if !status.is_success() {
             return Err(match status.as_u16() {
                 401 | 403 => Failure {
-                    message: "OpenRouter rejected the key. M Edit key".into(),
+                    message: format!("{label} rejected the key. M Edit key"),
                     auth: true,
                 },
-                402 => Failure::new("OpenRouter credits unavailable. Add credits, then r Retry"),
-                429 => Failure::new("OpenRouter is rate limited. Try r again shortly"),
+                402 => Failure::new(format!(
+                    "{label} credits unavailable. Add credits, then r Retry"
+                )),
+                429 => Failure::new(format!("{label} is rate limited. Try r again shortly")),
                 _ => Failure::new(format!(
-                    "OpenRouter returned HTTP {}. r Retry",
+                    "{label} returned HTTP {}. r Retry",
                     status.as_u16()
                 )),
             });
         }
-        let value =
-            value.ok_or_else(|| Failure::new("OpenRouter response could not be read. r Retry"))?;
+        let value = value
+            .ok_or_else(|| Failure::new(format!("{label} response could not be read. r Retry")))?;
         // OpenRouter can commit HTTP 200 before an upstream provider fails.
         if value.get("error").is_some_and(|error| !error.is_null()) {
-            return Err(Failure::new(
-                "OpenRouter provider could not complete the summary. r Retry",
-            ));
+            return Err(Failure::new(format!(
+                "{label} provider could not complete the summary. r Retry"
+            )));
         }
-        if value["choices"][0]["finish_reason"] == "length" {
-            return Err(Failure::new("Summary was cut short. r Retry"));
+        let text = match provider {
+            Provider::OpenRouter => {
+                if value["choices"][0]["finish_reason"] == "length" {
+                    return Err(Failure::new("Summary was cut short. r Retry"));
+                }
+                value["choices"][0]["message"]["content"]
+                    .as_str()
+                    .map(str::to_owned)
+            }
+            Provider::Anthropic => {
+                if value["stop_reason"] == "max_tokens" {
+                    return Err(Failure::new("Summary was cut short. r Retry"));
+                }
+                value["content"].as_array().map(|blocks| {
+                    blocks
+                        .iter()
+                        .filter(|block| block["type"] == "text")
+                        .filter_map(|block| block["text"].as_str())
+                        .collect::<String>()
+                })
+            }
         }
-        let text = value["choices"][0]["message"]["content"]
-            .as_str()
-            .ok_or_else(|| Failure::new("OpenRouter returned no summary. r Retry"))?;
-        serde_json::from_str(text).map_err(|_| Failure::new("Summary format was invalid. r Retry"))
+        .filter(|text| !text.is_empty())
+        .ok_or_else(|| Failure::new(format!("{label} returned no summary. r Retry")))?;
+        serde_json::from_str(&text).map_err(|_| Failure::new("Summary format was invalid. r Retry"))
     }
 }
 
@@ -240,3 +285,7 @@ fn write_response_log(directory: &Path, mut record: Value, key: &str) -> std::io
 #[cfg(test)]
 #[path = "network_tests.rs"]
 pub(super) mod tests;
+
+#[cfg(test)]
+#[path = "anthropic_tests.rs"]
+mod anthropic_tests;
