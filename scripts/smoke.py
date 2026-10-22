@@ -1,46 +1,10 @@
 # Live HN/provider smoke test; makes paid model requests. Run with uv run --with pyte.
 import argparse
-import os, pty, fcntl, termios, struct, select, time, json, tempfile, codecs, re, signal
+import os, time, json, tempfile, re
 from pathlib import Path
-import pyte
 ROOT=Path(__file__).resolve().parents[1]
 EVIDENCE=Path(tempfile.mkdtemp(prefix="hn-live-evidence-"))
-class TUI:
-    def __init__(self, data, width=80, height=24):
-        self.screen=pyte.Screen(width,height);self.stream=pyte.Stream(self.screen)
-        self.decoder=codecs.getincrementaldecoder("utf-8")("replace");self.raw=b""
-        self.pid,self.fd=pty.fork()
-        if self.pid==0:
-            os.environ.update({"XDG_CONFIG_HOME":str(data/"config"),"XDG_DATA_HOME":str(data),"XDG_STATE_HOME":str(data/"state"),"TERM":"xterm-256color","TERM_PROGRAM":"hn-pty-test"})
-            os.chdir(ROOT);os.execv(str(ROOT/'target/debug/hn'),['hn'])
-        fcntl.ioctl(self.fd,termios.TIOCSWINSZ,struct.pack("HHHH",height,width,0,0))
-    def text(self): return "\n".join(self.screen.display)
-    def pump(self,duration=0.3):
-        end=time.monotonic()+duration
-        while time.monotonic()<end:
-            if select.select([self.fd],[],[],min(0.1,max(0,end-time.monotonic())))[0]:
-                try: data=os.read(self.fd,65536)
-                except OSError: break
-                self.raw+=data;self.stream.feed(self.decoder.decode(data))
-        return self.text()
-    def wait(self,predicate,timeout=20):
-        end=time.monotonic()+timeout
-        while time.monotonic()<end:
-            text=self.pump()
-            if predicate(text): return text
-        raise AssertionError("Timed out:\n"+self.text())
-    def key(self,key): os.write(self.fd,key.encode());return self.pump()
-    def capture(self,name): (EVIDENCE/(name+".txt")).write_text(self.text()+"\n")
-    def quit(self):
-        self.key("qq");self.pump()
-        pid,status=os.waitpid(self.pid,0)
-        assert os.waitstatus_to_exitcode(status)==0
-        assert b"\x1b[?1049l" in self.raw,"alternate screen was not restored"
-        os.close(self.fd)
-    def abort(self):
-        try: os.kill(self.pid,15);os.waitpid(self.pid,0)
-        except ProcessLookupError: pass
-        os.close(self.fd)
+from terminal_capture import TUI
 
 
 import urllib.request
@@ -68,7 +32,7 @@ story=dict(id=item['id'],title=item['title'],url=item['url'],author=item.get('by
 work=Path(tempfile.mkdtemp(prefix=f'hn-{provider}-live-'))
 (work/'data/hn').mkdir(parents=True)
 (work/'data/hn/saved.json').write_text(json.dumps([story]))
-app=TUI(work/'data',160,50)
+app=TUI(work/'data',160,50,output=EVIDENCE)
 try:
     app.wait(lambda t:'points' in t,timeout=30);app.key('4');app.wait(lambda t:item['title'] in t)
     started=time.monotonic();app.key('c')

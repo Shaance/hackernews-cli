@@ -199,3 +199,9 @@ The app uses ratatui and crossterm for terminal rendering and input, Tokio for a
 ## About
 
 This project was created as a learning exercise to explore Rust and terminal UI development.
+
+## Verify the reader locally
+
+Run `scripts/verify-reader.sh` to exercise the real terminal UI with recorded discussions and summaries. It needs Rust and uv, but no API key. The command runs the tests, replays loading and failure states, and saves styled captures at 240×80 and 200×60 terminal cells. Use `--size 220x70` to match your window.
+
+See [recorded reader verification](tests/reader/README.md) for the scenarios, artifacts and separate live-provider checks.

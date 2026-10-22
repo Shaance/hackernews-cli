@@ -1,0 +1,466 @@
+{
+  "provenance": {
+    "story_id": 50141581,
+    "url": "https://news.ycombinator.com/item?id=50141581",
+    "captured": "2026-10-20T13:30:54.354883+00:00",
+    "coverage": "59 comment excerpts (partial)",
+    "input_sha256": "25c3f76df8e845d4d41f7ee0af003617c69f1191c34b6787a19981fc97b5803d",
+    "models": {
+      "fast": "anthropic/claude-haiku-5.5",
+      "thorough": "anthropic/claude-sonnet-5.5"
+    },
+    "reasoning": "low",
+    "run": "discussion-profile-split-20261020, repetition 2",
+    "article": "Synthetic control text; discussion inputs and model outputs are saved real examples."
+  },
+  "input": {
+    "comments": [
+      {
+        "author": "tywr",
+        "id": 50163214,
+        "parent": null,
+        "text": "Wow, I didn't really expect to see my project there this morning! I'm normally a simple lurker, but I wanted to say thanks for the kind words about the project.\n\nI know some people might want to modify or tweak the project to their liking. The project is meant to provide a Python sandbox more than just font files, so feel free to fork it or submit a PR if you feel like some glyphs need tweaking! You don't need any external tools to draw/visualize the glyphs."
+      },
+      {
+        "author": "abainbridge",
+        "id": 50164278,
+        "parent": null,
+        "text": "I prefer bitmap fonts for coding / terminal. My monitor is 100 DPI and I like to cram as much on screen as possible. Here's a comparison of a bitmap font vs Nordwand https://gist.github.com/abainbridge/a4b2647ea91e661a7576417b...\n\nI know I'm a bit weird, but the internet is full of weird people. It seems strange to me that nobody is interested in bitmap fonts these days.\n\nWhat I really want is a hand anti-aliased bitmap font which prioritizes sharpness."
+      },
+      {
+        "author": "rootlocus",
+        "id": 50162114,
+        "parent": null,
+        "text": "It's 99% JetBrains Mono from my quick comparison. I can barely see the difference except for $&# and a few others.\n\nLE: Ok, so it's a little more different that JetBrains Mono as this comparison shows https://claude.ai/artifact/HPiALZ7AZ2f5FxSZtcTdNa"
+      },
+      {
+        "author": "jan_m_savage",
+        "id": 50163051,
+        "parent": null,
+        "text": "It's a bit like the paid font Berkeley Mono which I've been using for a while now. But I think Nordwand feels softer and nicer, it embodies a message in the font (thus the fluency effect is more potent).\n\nThe message may be subjective but it strikes me as: \"I, the font, contain important data [due to the sharp curvatures and uniform size of letter elements]. Not sure if others think about fonts in this way.\n\nBerkeley Mono's message to me feels like \"I'm just doing my job, don't mind me, focus on your thing\"."
+      },
+      {
+        "author": "msephton",
+        "id": 50165849,
+        "parent": null,
+        "text": "I’m not sure I’ll use this (I’m an MD IO Trial user) but I will say that finding a font you can read without thinking is one of the greatest productivity boosts as a developer."
+      },
+      {
+        "author": "shoobiedoo",
+        "id": 50162206,
+        "parent": null,
+        "text": "Looks nice. I just fell in love with Pragmasevka, a mix of Pragmata Pro and Iosevka. It's pretty much a free Pragmata Pro\n\nhttps://github.com/shytikov/pragmasevka"
+      },
+      {
+        "author": "voidUpdate",
+        "id": 50164691,
+        "parent": null,
+        "text": "I get why its for coders, but what makes it \"for adventurers\"?"
+      },
+      {
+        "author": "abcd_f",
+        "id": 50162610,
+        "parent": null,
+        "text": "> I'm very passionate about the font I am using for my terminal and overall neovim experience\n\nAnd who isn't?\n\nSquints - m is too weird - tab closed :)"
+      },
+      {
+        "author": "Qision",
+        "id": 50165819,
+        "parent": null,
+        "text": "I really did not expect to see Les Drus on Github let alone for a font project! Very nice"
+      },
+      {
+        "author": "JoshTriplett",
+        "id": 50162278,
+        "parent": null,
+        "text": "I like that this isn't trying to be aggressively narrow like so many other fonts do. I currently use DejaVu Mono because it feels comfortably spaced."
+      },
+      {
+        "author": "kqr",
+        "id": 50162865,
+        "parent": null,
+        "text": "I have been going back and forth between Luxi Mono (serif monospace fonts are rare but look great on high-resolution monitors) and Hack (like Helvetica, it has virtually no personality and thus fits well everywhere). Everything else I've seen has looked... weird or off somehow. But this is one of the first alternatives I'm entertaining the idea of trying.\n\nMy main concern is that the tall glyphs for less than < and greater than > will disambiguate badly with actual Unicode left 〈 and right angle brackets 〉.\n\nEdit: I also realised just now the ASCII hyphen-minus - is quite long with this typeface, which makes it ambiguous with the longer dashes. (It looks freakin' great in pure ASCII environments, though!)"
+      },
+      {
+        "author": "delta_p_delta_x",
+        "id": 50162345,
+        "parent": null,
+        "text": "The overall shape of the glyphs (excluding lowercase 'l', that is, 'ell', not 'eye') is that of Berkeley Mono.[1]\n\n[1]: https://usgraphics.com/products/berkeley-mono"
+      },
+      {
+        "author": "hawk_3221",
+        "id": 50162283,
+        "parent": null,
+        "text": "I don't see myself moving away from Ioskeley Mono\n\nhttps://github.com/ahatem/IoskeleyMono"
+      },
+      {
+        "author": "ThePhysicist",
+        "id": 50162981,
+        "parent": null,
+        "text": "Are people vibecoding fonts now? Just wondering as I see at least one new font pop up here every day almost..."
+      },
+      {
+        "author": "trumbitta2",
+        "id": 50162989,
+        "parent": null,
+        "text": "I used to be a coder like you, but then I took a Claude to the knee."
+      },
+      {
+        "author": "bronlund",
+        "id": 50163002,
+        "parent": null,
+        "text": "I love my ligatures, I will not be using a font without them."
+      },
+      {
+        "author": "sombragris",
+        "id": 50164973,
+        "parent": null,
+        "text": "Looks nice, I installed it and will test it to see how it fares."
+      },
+      {
+        "author": "Findecanor",
+        "id": 50163542,
+        "parent": null,
+        "text": "It gives me the vibes of output from 1970's typewriters that my dad used.\n\nHaving aging eyes, I wish monospace fonts made 8 and 0 (zero) more different from each other. I notice that I have started to confuse those two glyphs when in small sizes."
+      },
+      {
+        "author": "piskov",
+        "id": 50163632,
+        "parent": null,
+        "text": "Operator Mono is still very, very nice.\n\nhttps://www.typography.com/blog/introducing-operator"
+      },
+      {
+        "author": "vishnuharidas",
+        "id": 50162805,
+        "parent": null,
+        "text": "Looks good, please put up on a simple web page with a few code samples and allowing us to edit and try."
+      },
+      {
+        "author": "pookieinc",
+        "id": 50162391,
+        "parent": null,
+        "text": "As someone who isn't super into fonts, this font reminds me a lot of Berkeley Mono, which is an incredible terminal font"
+      },
+      {
+        "author": "fercircularbuf",
+        "id": 50162868,
+        "parent": null,
+        "text": "Nice work. I unfortunately wouldn't be able to use it for programming because I find the parenthesis and square bracket look too similar, and it would definitely increase extraneous cognitive load."
+      },
+      {
+        "author": "rbanffy",
+        "id": 50162853,
+        "parent": null,
+        "text": "It reminds me of an old Olivetti typewriter my aunt gave me to play with."
+      },
+      {
+        "author": "rogue_agent",
+        "id": 50162569,
+        "parent": null,
+        "text": "Funny, I found this font last week on the programming fonts website before it blew up. Was using IoskeleyMono before, and think this is my endgame for now! Amazing readable font."
+      },
+      {
+        "author": "Altern4tiveAcc",
+        "id": 50163627,
+        "parent": null,
+        "text": "Looks good. Suggestion: make parenthesis and brackets more different from each other."
+      },
+      {
+        "author": "matltc",
+        "id": 50164912,
+        "parent": null,
+        "text": "Looks like jetbrains"
+      },
+      {
+        "author": "igleria",
+        "id": 50162768,
+        "parent": null,
+        "text": "never ever tried a different font in my terminal but for some reason I feel compelled to start with this one."
+      },
+      {
+        "author": "swimmingbrain",
+        "id": 50162593,
+        "parent": null,
+        "text": "Definitely going to use it in my tools and for my projects, the flexibility offered in the repo looks so great!"
+      },
+      {
+        "author": "polyterative",
+        "id": 50162677,
+        "parent": null,
+        "text": "Nice font, it reminds me the kind of fonts they are using when showing code in movies"
+      },
+      {
+        "author": "bartvk",
+        "id": 50162577,
+        "parent": null,
+        "text": "If you want something actually more narrow, check out Anka/Coder Narrow."
+      },
+      {
+        "author": "plastic041",
+        "id": 50162152,
+        "parent": null,
+        "text": "I like the shape of the lowercase italic 'w'!\n\nPdf preview doesn't work on GitHub."
+      },
+      {
+        "author": "tarcon",
+        "id": 50162257,
+        "parent": null,
+        "text": "Spacing looks good for monospace, but it's too wide for my taste."
+      },
+      {
+        "author": "Gualdrapo",
+        "id": 50162182,
+        "parent": null,
+        "text": "It reminds me of OpenBSD's Spleen fonts"
+      },
+      {
+        "author": "gorgoiler",
+        "id": 50162290,
+        "parent": null,
+        "text": "Brilliant project.  The face looks good.  The code looks good.  It’s nice to see it in Python too.  I don’t especially love the language but I have a great fondness for seeing life things codified with a standard API in a typed (or at least, type-able) language.  Needing to draw an “A” in something without having to pull in font libraries (that is to say passing a compatible draw context to this project’s LowercaseAGlyph.draw) sounds nice."
+      },
+      {
+        "author": "bitwize",
+        "id": 50162060,
+        "parent": null,
+        "text": "Y'know, I didn't think anything was gonna pull me away from Iosevka but... here we are. Gonna give this a real go. Helping its case is that it looks a bit like Berkeley Mono."
+      },
+      {
+        "author": "villgax",
+        "id": 50163543,
+        "parent": null,
+        "text": "I actually fricking love this font"
+      },
+      {
+        "author": "traxler",
+        "id": 50162002,
+        "parent": null,
+        "text": "`Only two minimal ligatures are exposed with \"->\" and \"=>\".`\n\nI like that, I usually have ligatures turned off, because I don't like all of them, especially the ones for == or ===. (Otoh I do like != ligatures...) but I do like the arrows.\n\nThis is probably were somebody tells me how easy it is to configure singular ligatures on a font and I'll facepalm in embarrassment for never finding out."
+      },
+      {
+        "author": "fithisux",
+        "id": 50162916,
+        "parent": null,
+        "text": "Is there a font manager program for Windows?\n\nI see repeated posts on various fonts these days and I would like to try them.\n\nIs manual installation the only option?"
+      },
+      {
+        "author": "coolguy4",
+        "id": 50144840,
+        "parent": null,
+        "text": "Very nice."
+      },
+      {
+        "author": "nelsonfigueroa",
+        "id": 50162512,
+        "parent": null,
+        "text": "While this is nice, I'm gonna take the opportunity to plug Commit Mono because it's my favorite monospace font https://commitmono.com/."
+      },
+      {
+        "author": "katspaugh",
+        "id": 50166096,
+        "parent": 50163214,
+        "text": "What a beautiful font! Thanks so much for open-sourcing it!"
+      },
+      {
+        "author": "eddyg",
+        "id": 50164961,
+        "parent": 50164278,
+        "text": "You should look at Pragmata Pro⁽¹⁾.\n\nHand-hinted by Fabrizio:\n”More than 9000 characters optimized from 9pt to 48pt to guarantee the best possible readability.”\n\nIt is the ultimate “programmer’s font” and well worth the money for something you stare at every day and the next best thing to a bitmap font in today’s “Retina resolution” world.\n\nAccept no imitations.\n\n⁽¹⁾ https://fsd.it/shop/fonts/pragmatapro/"
+      },
+      {
+        "author": "lukeify",
+        "id": 50163121,
+        "parent": 50162114,
+        "text": "Setting aside the other ways AI is upending society, I absolutely love how we can all share and build on simple artifacts and micro-apps now that can be built entirely from our brain's vision expressed in plain English.\n\nThat's a really fun tool."
+      },
+      {
+        "author": "bayindirh",
+        "id": 50163238,
+        "parent": 50163051,
+        "text": "> Berkeley Mono's message to me feels like \"I'm just doing my job, don't mind me, focus on your thing\".\n\nIt's a font inspired by older terminals and \"no nonsense\" hardware of that era. I put its design philosophy as \"it's so good that it's invisible\". Using it for years now, and it feels natural and neutral.\n\nWith Gruvbox dark, it really feels like I'm using an old terminal. Like how I like it."
+      },
+      {
+        "author": "rbanffy",
+        "id": 50162863,
+        "parent": 50162610,
+        "text": "Passionate?\n\nBitch please… https://github.com/rbanffy/3270font."
+      },
+      {
+        "author": "nvarsj",
+        "id": 50163237,
+        "parent": 50162278,
+        "text": "I love narrow fonts with coding, but it's all preference in the end. Obligatory \"PragmataPro is the best\" plug."
+      },
+      {
+        "author": "chirayuk",
+        "id": 50164113,
+        "parent": 50162865,
+        "text": "The hyphen is as wide as the em dash (it's one pixel higher than the em-dash—the only visible difference to my eyes).  And the $ symbol doesn't have a line that goes through all the way through.  It doesn't work for me for daily use, but looks quite clean and nice overall."
+      },
+      {
+        "author": "JdeBP",
+        "id": 50162980,
+        "parent": 50162345,
+        "text": "I don't know about that.  In some places ('m', '0') it is closer to Ubuntu Mono."
+      },
+      {
+        "author": "oblio",
+        "id": 50163052,
+        "parent": 50162981,
+        "text": "Most likely. People are throwing LLMs at everything and seeing what sticks.\n\nAs one YouTuber said: it's the first time we can create (somewhat) coherent, context dependent and new content using something else than other humans.\n\nI can't say I'm too keen on wading through piles of crap, I'm also not keen on the AI bubble and its popping nor on AI's impact on employment, but if we survive all of this, we might end up with a lot of new stuff that could actually be good. 1% of this garbage will be good, but since the entire pile will be so large, that 1% might double or more our options in various fields."
+      },
+      {
+        "author": "jaapz",
+        "id": 50163252,
+        "parent": 50162989,
+        "text": "we still have to look at a terminal though so a nice monospace font is always welcome\n\n(although I'll keep using Fira)"
+      },
+      {
+        "author": "mstkllah",
+        "id": 50163797,
+        "parent": 50163632,
+        "text": "And way more expensive."
+      },
+      {
+        "author": "alexalx666",
+        "id": 50162951,
+        "parent": 50162391,
+        "text": "I was super hyped to try their other fonts after getting Berkeley Mono but it seems like \"Coming soon.\" means maybe never"
+      },
+      {
+        "author": "piskov",
+        "id": 50163614,
+        "parent": 50163543,
+        "text": "It is basically jetbrains mono"
+      },
+      {
+        "author": "sophrosyne42",
+        "id": 50162183,
+        "parent": 50162002,
+        "text": "You can edit a font and remove the ligatures you dislike using fontforge [1].\n\n[1] https://github.com/fontforge/fontforge"
+      },
+      {
+        "author": "dancek",
+        "id": 50162659,
+        "parent": 50162512,
+        "text": "Thanks for mentioning it! First time I heard about Commit Mono. The first paragraph already had me wondering how a monospace font can read this well.\n\nTurns out it has smart kerning, ie. character positions are subtly adjusted to compensate for different character widths. For example, i is narrow and m is wide. That causes words like \"commit\" to look bad in standard monospace fonts. The m's in the middle are very densely spaced and there are wide gaps around the i.\n\nI'll be testing Commit Mono in my editors. Maybe it will even make me switch SilverBullet back to a monospace config."
+      },
+      {
+        "author": "bayindirh",
+        "id": 50163340,
+        "parent": 50163214,
+        "text": "The font looks great and has its own character, kudos!\n\nHowever, it doesn't support all the characters I need, so I can't use it as a terminal font. However, I starred your repo, and will watch it.\n\nThanks again for the effort, it looks really nice."
+      },
+      {
+        "author": "bbrks",
+        "id": 50164486,
+        "parent": 50164278,
+        "text": "I always felt crazy for preferring bitmap fonts. The sharpness is unparalleled even against a 4k screen.\n\nI really like using Cozette - it has great glyph support and a hi-dpi version\n\nhttps://github.com/the-moonwitch/Cozette\n\nI just wish more editors had support for true bitmap fonts! Turning off anti-aliasing on a bitmap->vector converted font is OK but not quite the same."
+      },
+      {
+        "author": "agilek",
+        "id": 50165962,
+        "parent": 50162114,
+        "text": "It is like saying Arial is the same as Verdana. These fonts are at a glance similar but different."
+      },
+      {
+        "author": "durdn",
+        "id": 50164032,
+        "parent": 50162206,
+        "text": "Dude, word! I've been in love with Pragmasevka the moment a friend recommended it. Only thing to adjust is the `cell width` of your terminal."
+      }
+    ],
+    "post": "",
+    "title": "Nordwand Mono – A monospace font for coders and adventurers"
+  },
+  "fast": {
+    "overview": "Discussion of Nordwand Mono, a new open-source monospace font for coding and terminal use, mostly comparing it to existing programming fonts.",
+    "points": [
+      {
+        "sources": [
+          50162114,
+          50163051,
+          50162345
+        ],
+        "text": "Several commenters see strong resemblance to other fonts: one says it is basically JetBrains Mono, another says its overall shape resembles Berkeley Mono, while one commenter judges Berkeley Mono's feel differently."
+      },
+      {
+        "sources": [
+          50162865,
+          50164113
+        ],
+        "text": "One user worried the tall angle brackets and long hyphen may be ambiguous; another noted the hyphen matches the em dash width and the $ lacks a full vertical stroke, so it was not right for daily use."
+      },
+      {
+        "sources": [
+          50163542,
+          50162868,
+          50163627
+        ],
+        "text": "Readability concerns included confusing 8 and 0 at small sizes, and parentheses and square brackets looking too similar, which one user said would increase cognitive load."
+      }
+    ]
+  },
+  "thorough": {
+    "overview": "Discussion of Nordwand Mono, a new open-source monospace coding font, comparing it to existing fonts and noting readability and glyph concerns.",
+    "points": [
+      {
+        "sources": [
+          50162345,
+          50162391,
+          50162060,
+          50162980
+        ],
+        "text": "Many commenters compare it to Berkeley Mono for its overall shape; one sees Ubuntu Mono in some glyphs ('m', '0'), and one says it looks like JetBrains Mono."
+      },
+      {
+        "sources": [
+          50162114,
+          50165962
+        ],
+        "text": "One commenter calls it 99% JetBrains Mono, though a comparison shows more differences; another says similar-looking fonts can still differ, as Arial and Verdana do."
+      },
+      {
+        "sources": [
+          50162868,
+          50163627
+        ],
+        "text": "Parentheses and square brackets look too similar, which could add cognitive load when coding."
+      },
+      {
+        "sources": [
+          50162865,
+          50164113
+        ],
+        "text": "Glyph concerns: the tall angle brackets may be ambiguous with Unicode angle brackets, and the hyphen is as wide as the em dash. The $ lacks a through-line."
+      },
+      {
+        "sources": [
+          50163542
+        ],
+        "text": "A reader with aging eyes wants 8 and 0 to differ more in monospace fonts, since they confuse them at small sizes."
+      },
+      {
+        "sources": [
+          50162002,
+          50162183
+        ],
+        "text": "Only two ligatures are exposed, '->' and '=>', which pleases one commenter who dislikes ligatures like '=='. Ligatures can be removed from fonts with fontforge."
+      },
+      {
+        "sources": [
+          50164278,
+          50164486,
+          50164961
+        ],
+        "text": "Some prefer bitmap fonts for sharpness and density, even on high-resolution screens; Cozette and hand-hinted Pragmata Pro are suggested."
+      },
+      {
+        "sources": [
+          50163340
+        ],
+        "text": "One user cannot use it as a terminal font because it lacks characters they need."
+      }
+    ]
+  }
+}
