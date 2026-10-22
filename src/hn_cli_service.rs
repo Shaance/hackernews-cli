@@ -14,7 +14,7 @@ mod tests;
 /// This struct represents a HackerNews story item formatted for CLI display,
 /// containing all the relevant information about a story.
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 /// Struct representing a HackerNews story item for CLI display
 pub struct HNCLIItem {
     /// Story ID
@@ -33,6 +33,11 @@ pub struct HNCLIItem {
     pub score: i32,
     /// Number of comments, if available
     pub comments: Option<i32>,
+    /// Decoded text of a self post (for example, Ask HN).
+    #[serde(default)]
+    pub text: String,
+    #[serde(default)]
+    pub links: Vec<String>,
 }
 
 impl std::fmt::Display for HNCLIItem {
@@ -164,13 +169,7 @@ impl<C: HackerNewsClient + Sync> HackerNewsCliService for HackerNewsCliServiceIm
     }
 
     async fn fetch_top_level_comments(&self, story_id: i32) -> Result<Vec<app::Comment>> {
-        // First, fetch the story to get top-level comment IDs
-        let story = self.hn_client.get_item(story_id).await?;
-
-        let comment_ids = match story.kids {
-            Some(ids) => ids,
-            None => return Ok(Vec::new()),
-        };
+        let comment_ids = self.top_level_comment_ids(story_id).await?;
 
         // Fetch top-level comments
         self.fetch_comment_children(&comment_ids, 0).await
@@ -204,6 +203,23 @@ impl<C: HackerNewsClient + Sync> HackerNewsCliService for HackerNewsCliServiceIm
 }
 
 impl<C: HackerNewsClient> HackerNewsCliServiceImpl<C> {
+    /// Fetch IDs separately so the summary experiment can bound work before fetching.
+    pub async fn top_level_comment_ids(&self, story_id: i32) -> Result<Vec<i32>> {
+        Ok(self
+            .hn_client
+            .get_item(story_id)
+            .await?
+            .kids
+            .unwrap_or_default())
+    }
+
+    /// Fetch current story metadata and root IDs from the same HN item.
+    pub async fn story_with_comment_ids(&self, story_id: i32) -> Result<(HNCLIItem, Vec<i32>)> {
+        let item = self.hn_client.get_item(story_id).await?;
+        let roots = item.kids.clone().unwrap_or_default();
+        Ok((self.api_item_to_hn_cli_item(item), roots))
+    }
+
     /// Create a new HackerNews CLI service with a custom client
     ///
     /// # Arguments
@@ -250,6 +266,9 @@ impl<C: HackerNewsClient> HackerNewsCliServiceImpl<C> {
     }
 
     fn api_item_to_hn_cli_item(&self, item: HackerNewsItem) -> HNCLIItem {
+        let raw_text = item.text.as_deref().unwrap_or_default();
+        let links = web_links(raw_text);
+        let text = decode_html(raw_text);
         HNCLIItem {
             id: item.id,
             title: item.title.to_string(),
@@ -259,11 +278,15 @@ impl<C: HackerNewsClient> HackerNewsCliServiceImpl<C> {
             time_ago: time_ago(item.time),
             score: item.score,
             comments: item.descendants,
+            text,
+            links,
         }
     }
 
     fn api_item_to_comment(&self, item: HackerNewsItem, depth: usize) -> app::Comment {
-        let text = item.text.map(|t| decode_html(&t)).unwrap_or_default();
+        let raw_text = item.text.as_deref().unwrap_or_default();
+        let links = web_links(raw_text);
+        let text = decode_html(raw_text);
 
         let child_ids = item.kids.unwrap_or_default();
 
@@ -271,6 +294,7 @@ impl<C: HackerNewsClient> HackerNewsCliServiceImpl<C> {
             id: item.id,
             author: item.by,
             text,
+            links,
             time_ago: time_ago(item.time),
             state: app::CommentState::Collapsed,
             depth,
@@ -284,7 +308,7 @@ impl<C: HackerNewsClient> HackerNewsCliServiceImpl<C> {
 fn decode_html(text: &str) -> String {
     let without_tags = strip_html_tags(text);
     html_escape::decode_html_entities(&without_tags)
-        .trim()
+        .trim_matches(['\n', '\r'])
         .to_string()
 }
 
@@ -297,8 +321,14 @@ fn strip_html_tags(text: &str) -> String {
     while let Some(ch) = chars.next() {
         if in_tag {
             if ch == '>' {
-                if tag.trim().eq_ignore_ascii_case("p") {
-                    clean.push_str("\n\n");
+                match tag.trim().to_ascii_lowercase().as_str() {
+                    "p" | "/p" if !clean.ends_with("\n\n") => {
+                        clean.push_str("\n\n");
+                    }
+                    "br" | "br/" | "br /" | "pre" | "/pre" if !clean.ends_with('\n') => {
+                        clean.push('\n');
+                    }
+                    _ => {}
                 }
                 tag.clear();
                 in_tag = false;
@@ -320,4 +350,35 @@ fn strip_html_tags(text: &str) -> String {
     }
 
     clean
+}
+
+/// HN emits quoted href attributes. Keep web destinations even when the label is abbreviated.
+fn web_links(html: &str) -> Vec<String> {
+    let mut links = Vec::new();
+    for tag in html
+        .split('<')
+        .skip(1)
+        .filter_map(|part| part.split_once('>'))
+    {
+        let tag = tag.0.trim();
+        if !tag.starts_with("a ") {
+            continue;
+        }
+        let Some((_, value)) = tag.split_once("href=") else {
+            continue;
+        };
+        let Some(quote @ ('\'' | '"')) = value.chars().next() else {
+            continue;
+        };
+        let Some((url, _)) = value[1..].split_once(quote) else {
+            continue;
+        };
+        let url = html_escape::decode_html_entities(url).into_owned();
+        if reqwest::Url::parse(&url).is_ok_and(|parsed| matches!(parsed.scheme(), "http" | "https"))
+            && !links.contains(&url)
+        {
+            links.push(url);
+        }
+    }
+    links
 }

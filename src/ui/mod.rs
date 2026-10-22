@@ -1,6 +1,7 @@
 //! UI rendering module
 
 pub mod comments;
+pub mod links;
 pub mod stories;
 #[cfg(test)]
 mod ui_tests;

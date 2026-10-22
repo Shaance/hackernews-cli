@@ -1,0 +1,150 @@
+<style>
+#hn-mocks{--hn-bg:light-dark(#faf9f5,#141719);--hn-fg:light-dark(#24292c,#e1e5e5);--hn-dim:light-dark(#616b70,#a1acb0);--hn-line:light-dark(#d4d9d8,#353d40);--hn-accent:light-dark(#995015,#f3b77b);--hn-sel:light-dark(#e9eeec,#25322f);--hn-link:light-dark(#006b79,#80c9d5);color:var(--hn-fg);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px;line-height:1.65}
+#hn-mocks *{box-sizing:border-box}
+#hn-mocks button,#hn-mocks select{font:inherit;cursor:pointer;color:inherit}
+#hn-mocks .preview-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 100px 16px 0}
+#hn-mocks .preview-bar label{color:var(--hn-dim);font-size:12px}
+#hn-mocks select{background:var(--hn-bg);border:1px solid var(--hn-line);padding:5px 9px;border-radius:4px;max-width:100%}
+#hn-mocks .terminal{background:var(--hn-bg);border:1px solid var(--hn-line);border-radius:8px;overflow:hidden;max-width:100%;margin:0 auto}
+#hn-mocks .window{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:8px 20px;background:var(--hn-sel);color:var(--hn-dim);font-size:12px;border-bottom:1px solid var(--hn-line)}
+#hn-mocks .screen{padding:16px 22px 0}
+#hn-mocks .top{display:flex;gap:14px;align-items:baseline;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+#hn-mocks .title{font-weight:500;color:var(--hn-accent)}
+#hn-mocks .muted{color:var(--hn-dim)}
+#hn-mocks .small{font-size:12px}
+#hn-mocks .tabs{display:flex;gap:18px;flex-wrap:wrap;border-bottom:1px solid var(--hn-line);padding-bottom:10px;margin-bottom:16px}
+#hn-mocks button{background:transparent;border:0;padding:2px 0;text-align:left}
+#hn-mocks button:hover{text-decoration:underline;text-underline-offset:4px}
+#hn-mocks button:focus-visible,#hn-mocks select:focus-visible{outline:2px solid var(--hn-link);outline-offset:4px}
+#hn-mocks .active{color:var(--hn-accent);font-weight:500}
+#hn-mocks .key{color:var(--hn-accent)}
+#hn-mocks .content{min-height:340px;overflow-wrap:anywhere;padding-bottom:20px}
+#hn-mocks p{font:inherit;margin:0 0 15px}
+#hn-mocks h3{font:inherit;font-weight:500;margin:0 0 12px}
+#hn-mocks .reading{max-width:76ch}
+#hn-mocks .story{display:block;width:100%;padding:10px 12px;margin:0 0 5px}
+#hn-mocks .story.selected{background:var(--hn-sel);box-shadow:inset 2px 0 var(--hn-accent)}
+#hn-mocks .story .meta{display:block;padding-left:3ch;color:var(--hn-dim);font-size:12px}
+#hn-mocks .story-title{display:block}
+#hn-mocks .footer{border-top:1px solid var(--hn-line);padding:10px 0 12px;display:flex;gap:8px 20px;flex-wrap:wrap;font-size:12px}
+#hn-mocks .footer button{white-space:normal}
+#hn-mocks .section-label{color:var(--hn-dim);font-size:12px;letter-spacing:.06em;margin-bottom:14px}
+#hn-mocks .summary-point{display:block;width:100%;padding:10px 12px;margin:0 0 8px;color:var(--hn-fg)}
+#hn-mocks .summary-point.selected{background:var(--hn-sel);box-shadow:inset 2px 0 var(--hn-accent)}
+#hn-mocks .citation{color:var(--hn-link)}
+#hn-mocks .thread{border-left:1px solid var(--hn-line);padding-left:16px;margin:14px 0 22px 10px}
+#hn-mocks .selected-comment{background:var(--hn-sel);padding:10px 14px;margin-bottom:12px}
+#hn-mocks .rule{border-top:1px solid var(--hn-line);margin:20px 0}
+#hn-mocks .status{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--hn-dim);font-size:12px;margin-bottom:16px}
+#hn-mocks .parent{font-size:12px;color:var(--hn-dim);padding-left:14px;border-left:1px solid var(--hn-line);margin-bottom:18px}
+#hn-mocks .caption{font-size:12px;color:var(--hn-dim);margin:10px 0 0}
+#hn-mocks .notice{color:var(--hn-link);margin-bottom:12px}
+@media(max-width:540px){#hn-mocks .screen{padding:12px 12px 0}#hn-mocks .window{padding:8px 12px}#hn-mocks .content{min-height:380px}#hn-mocks .tabs{gap:12px}#hn-mocks .preview-bar{margin-right:90px}#hn-mocks .story{padding:10px 6px}}
+@media(pointer:coarse){#hn-mocks button{min-height:44px}#hn-mocks select{min-height:44px}}
+</style>
+<div id="hn-mocks" aria-label="Hacker News story reader concept">
+  <div class="preview-bar"><label for="hn-scene">Mock screen</label><select id="hn-scene">
+    <option value="feed">Feed</option><option value="article">Reading an article</option><option value="loading">Summarizing while reading</option><option value="article-summary">Article summary</option><option value="discussion-summary">Discussion summary</option><option value="source">Cited source</option><option value="discussion">Discussion</option><option value="failure">Partial failure</option><option value="unavailable">Article unavailable</option>
+  </select></div>
+  <div class="terminal" aria-label="Terminal reader mockup">
+    <div class="window"><span>hn · story reader</span><span>Concept · fictional sample content</span></div>
+    <div class="screen"><div id="hn-header"></div><main class="content" id="hn-content"></main><footer class="footer" id="hn-footer"></footer></div>
+  </div>
+  <div class="caption" id="hn-caption" aria-live="polite"></div>
+</div>
+<script>
+(()=>{
+ const root=document.getElementById('hn-mocks');
+ const header=root.querySelector('#hn-header'),body=root.querySelector('#hn-content'),footer=root.querySelector('#hn-footer'),caption=root.querySelector('#hn-caption'),picker=root.querySelector('#hn-scene');
+ const defaults={scene:'feed',section:'article',ready:false,requested:false,saved:false,page:0,discussionPage:0,returnSection:'article',sourceOrigin:'discussion-summary',expanded:true};
+ let st={...defaults};let timer;let notice='';const layout={width:'Wide'};
+ const validScenes=Array.from(picker.options).map(o=>o.value);
+ const button=(label,action,cl='')=>`<button type="button" class="${cl}" data-action="${action}">${label}</button>`;
+ const key=(k,label,action)=>button(`<span class="key">${k}</span> ${label}`,action);
+ function save(){if(window.openai?.setWidgetState)window.openai.setWidgetState({modelContent:{screen:st.scene,terminalWidth:layout.width},privateContent:st}).catch(()=>{});}
+ function baseSection(){return st.scene==='source'?'discussion':st.scene.includes('discussion')||st.scene==='failure'?'discussion':st.section;}
+ function goSection(section){st.section=section;st.scene=section;notice='';}
+ function reading(){return st.page===0?`<h3>Keeping software understandable</h3><p>A fast editor helps you change code. A useful editor also helps you understand what will happen when you do.</p><p>This article explores a small programming environment built around that distinction. Navigation, live values and quick experiments stay close to the code, so testing an idea does not require leaving the place where it began.</p><p>Its author argues that a short feedback loop matters more than a long list of features.</p>`:`<h3>Shortening the feedback loop</h3><p>The most useful tools preserve the question you were trying to answer. You can inspect a value, follow it into a function, and return to the expression you started with.</p><p>That continuity makes small experiments cheap. You can change one assumption, see what happened, and decide whether to keep going.</p><p>The prototype is intentionally narrow. It works well for exploring a running program, but the author has not yet shown how the same approach holds up across a large team.</p>`;}
+ function articleSummary(){return `<div class="section-label">AI SUMMARY · ARTICLE</div><div class="reading"><p>The author proposes a programming environment that keeps code navigation, live values and small experiments together. Its central idea is that understanding a program depends on short feedback loops and retaining context. The prototype demonstrates this for individual exploration, while larger projects and team workflows remain untested.</p><div class="rule"></div><p class="muted small">Your article position is saved.</p>${button('Return to article →','resume','citation')}</div>`;}
+ const points=[['The debugger example shows why immediate feedback matters.','[1]'],['One reader asks whether the same workflow scales to a large codebase.','[2]'],['Another reader wants a clearer path for learning the tools.','[3]']];
+ function discussionSummary(){return `<div class="section-label">AI SUMMARY · DISCUSSION</div><p class="muted small">Based on 18 comment excerpts · partial discussion</p>${points.map((p,i)=>button(`${i===0?'›':'·'} ${p[0]} <span class="citation">${p[1]}</span>`,'source-'+i,'summary-point '+(i===0?'selected':''))).join('')}<div class="rule"></div><p class="muted small">Enter opens the selected source. Esc resumes your reading.</p>`;}
+ function discussion(){return `<div class="status"><span>42 comments</span><span>${st.ready?'Summary ready · S Show':'S Summarize story'}</span></div><div class="selected-comment"><span class="citation">▾ riverbend</span> <span class="muted small">· 2 hours ago</span><p>Being able to inspect a value without leaving the code is the part I keep coming back to. The shorter loop changes how willing I am to experiment.</p>${button(st.expanded?'Enter Collapse replies':'Enter Expand replies','expand','small muted')}</div>${st.expanded?'<div class="thread"><span class="citation">moss</span> <span class="muted small">· 1 hour ago</span><p>I had a similar experience building a debugger. I could test an idea immediately instead of setting up a separate project.</p></div>':''}<div><span class="citation">▸ kepler</span> <span class="muted small">· 1 hour ago · 4 replies</span><p>I would like to see this tried on a much larger codebase before drawing conclusions about team workflows.</p></div>`;}
+ function source(){const index=st.sourceIndex||0;const quotes=['I had a similar experience building a debugger. I could test an idea immediately instead of setting up a separate project.','I would like to see this tried on a much larger codebase before drawing conclusions about team workflows.','The demo makes sense once you know the tools. I would like a guided example that starts from a fresh install.'];return `<div class="section-label">SOURCE USED FOR SUMMARY · [${index+1}]</div>${index===0?'<div class="parent">Parent · riverbend<br>“The shorter loop changes how willing I am to experiment.”</div>':'<div class="muted small">Top-level comment</div>'}<div class="reading"><h3>${['moss','kepler','fern'][index]} <span class="muted small">· captured with this summary</span></h3><p>${quotes[index]}</p><div class="rule"></div>${button('View current thread →','thread','citation')}</div>`;}
+ function render(){
+  root.querySelector('.terminal').style.maxWidth=layout.width==='Narrow'?'460px':'100%';
+  picker.value=st.scene;
+  if(st.scene==='feed'){
+   header.innerHTML='<div class="top"><span class="title">hn</span><span class="muted small">Top · page 1</span></div><div class="tabs"><span class="active">[1 Top]</span><span class="muted">2 New</span><span class="muted">3 Best</span><span class="muted">4 Saved</span></div>';
+   body.innerHTML=button('<span class="story-title">› Keeping software understandable</span><span class="meta">example.org · 128 points · 42 comments'+(st.saved?' · saved':'')+'</span>','article','story selected')+'<div class="story"><span class="story-title">2 A small database built for learning</span><span class="meta">example.net · 96 points · 31 comments</span></div><div class="story"><span class="story-title">3 Ask HN: What did you build this weekend?</span><span class="meta">84 points · 67 comments</span></div><div class="story"><span class="story-title">4 Notes from restoring an old computer</span><span class="meta">example.org · 73 points · 19 comments</span></div>';
+   footer.innerHTML=key('Enter','Read','article')+key('c','Discussion','discussion')+key('o','Browser','browser')+key('s',st.saved?'Unsave':'Save','save');
+   caption.textContent=notice||'Start with Enter / Read. The selected story stays selected when you return.';return;
+  }
+  const section=baseSection();
+  header.innerHTML=`<div class="top"><span class="title">Keeping software understandable</span>${key('o','Browser','browser')}</div><div class="tabs">${button(section==='article'?'[a Article]':'a Article','article',section==='article'?'active':'muted')}${button(section==='discussion'?'[d Discussion · 42]':'d Discussion · 42','discussion',section==='discussion'?'active':'muted')}<span class="muted small">${st.saved?'saved':'example.org'}</span></div>`;
+  let back='Stories',controls='';
+  if(st.scene==='article'||st.scene==='loading'){
+   body.innerHTML=`<div class="status"><span>ARTICLE · ${st.page?'35%':'Start'}</span><span>${st.requested?(st.ready?'Summary ready · S Show':'Summarizing article + discussion…'):'S Summarize story'}</span></div><div class="reading">${reading()}</div>`;
+   controls=key('PgDn','Read further','page')+key('S',st.ready?'Show summary':'Summarize','summary');
+   caption.textContent=notice||(st.scene==='loading'?'Summary completion changes only the status. The passage stays in place.':'Article text lives inside the reader. Try Read further, then Summarize.');
+  } else if(st.scene==='article-summary'||st.scene==='discussion-summary'){
+   body.innerHTML=st.scene==='article-summary'?articleSummary():discussionSummary();back='Resume reading';
+   controls=st.scene==='discussion-summary'?key('Enter','Read source','source-0'):'';
+   controls+=key('S','Resume reading','resume');
+   caption.textContent=notice||'Same story and section. Back restores the passage you left.';
+  } else if(st.scene==='source'){
+   body.innerHTML=source();back='Summary';controls=key('Enter','Current thread','thread');
+   caption.textContent=notice||'A temporary evidence view. Back returns to the same summary point.';
+  } else if(st.scene==='failure'){
+   body.innerHTML='<div class="section-label">AI SUMMARY · DISCUSSION</div><p>Could not summarize the discussion.</p><p class="muted">The article summary is ready. Your comments are still available.</p>'+button('r Retry discussion','retry','citation')+'<div class="rule"></div>'+button('Continue reading comments →','resume');back='Resume reading';controls=key('a','Article summary','article-summary');caption.textContent='Only the failed discussion request retries. The article result remains available.';
+  } else if(st.scene==='unavailable'){
+   body.innerHTML='<div class="section-label">ARTICLE</div><h3>This article is unavailable in the reader.</h3><p class="muted">You can open the original website or continue to the discussion.</p>'+key('o','Open in browser','browser')+'<div class="rule"></div>'+key('d','Read discussion · 42 comments','discussion');caption.textContent=notice||'The reader stays useful when article extraction fails.';
+  } else {
+   body.innerHTML=discussion();controls=key('Enter',st.expanded?'Collapse replies':'Expand replies','expand')+key('S',st.ready?'Show summary':'Summarize','summary');caption.textContent=notice||'Regular discussion reading keeps its own place, separate from citation visits.';
+  }
+  footer.innerHTML=key('Esc',back,'back')+controls+key('s',st.saved?'Unsave':'Save','save');
+ }
+ function request(){
+  if(st.ready){st.returnSection=st.section;st.scene=st.section+'-summary';return;}
+  if(st.requested)return;
+  st.requested=true;notice='';
+  timer=setTimeout(()=>{st.ready=true;if(st.scene==='loading')st.scene='article';render();save();},1800);
+ }
+ function act(action){
+  notice='';
+  if(action==='article'||action==='discussion')goSection(action);
+  else if(action==='summary')request();
+  else if(action==='page')st.page=st.page?0:1;
+  else if(action==='save')st.saved=!st.saved;
+  else if(action==='expand')st.expanded=!st.expanded;
+  else if(action==='resume'){goSection(st.returnSection);}
+  else if(action==='back'){
+   if(st.scene==='source')st.scene=st.sourceOrigin;
+   else if(st.scene.endsWith('-summary')||st.scene==='failure')goSection(st.returnSection);
+   else st.scene='feed';
+  }else if(action.startsWith('source-')){st.sourceOrigin='discussion-summary';st.sourceIndex=Number(action.slice(7));st.scene='source';}
+  else if(action==='thread'){goSection('discussion');notice='Current thread opened. The mock shows the same sample comment.';}
+  else if(action==='retry'){st.scene='discussion-summary';st.ready=true;notice='Discussion retry complete. Article summary unchanged.';}
+  else if(action==='article-summary'){st.section='article';st.scene='article-summary';}
+  else if(action==='browser')notice='Browser handoff preview: the real app opens the original URL and keeps your place here.';
+  render();save();
+ }
+ root.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(b)act(b.dataset.action);});
+ picker.addEventListener('change',()=>{
+  clearTimeout(timer);notice='';st={...defaults,scene:picker.value,page:1};
+  st.section=picker.value.includes('discussion')||picker.value==='failure'||picker.value==='source'?'discussion':'article';st.returnSection=st.section;
+  if(['article-summary','discussion-summary','source','failure','discussion'].includes(st.scene)){st.requested=true;st.ready=true;}
+  if(st.scene==='loading')request();render();save();
+ });
+ document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='SELECT'||e.altKey||e.metaKey||e.ctrlKey||e.key==='Tab')return;
+  let action={'a':'article','d':'discussion','s':'save','S':'summary','o':'browser','Escape':'back','PageDown':'page','r':st.scene==='failure'?'retry':undefined}[e.key];
+  if(e.key==='c'&&st.scene==='feed')action='discussion';
+  if(e.key==='Enter'&&e.target.tagName!=='BUTTON')action=st.scene==='feed'?'article':st.scene==='discussion-summary'?'source-0':st.scene==='source'?'thread':'expand';
+  if(action){e.preventDefault();act(action);}
+ });
+ function restore(value){const saved=value?.privateContent;if(saved&&validScenes.includes(saved.scene))st={...defaults,...saved};if(st.requested&&!st.ready)st.ready=true;render();}
+ restore(window.openai?.widgetState);
+ window.addEventListener('openai:set_globals',e=>{if(e.detail?.globals?.widgetState)restore(e.detail.globals.widgetState);});
+ if(globalThis.Tweak){const tweak=new Tweak({container:root,onChange:()=>{render();save();}});tweak.addSelect(layout,'width',{label:'Terminal width',options:['Wide','Narrow']});}
+})();
+</script>

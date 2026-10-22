@@ -16,7 +16,7 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(1), // Title bar
+            Constraint::Length(2), // Title and divider
             Constraint::Min(0),    // Stories list
             Constraint::Length(2), // Status bar
         ])
@@ -30,7 +30,15 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
         if let Some(error) = app.error() {
             widgets::render_error(f, chunks[1], error);
         } else {
-            widgets::render_error(f, chunks[1], "No stories found");
+            let message = if app.story_type == crate::app::StoryType::Saved {
+                "No saved stories yet. Press s on a story to save it."
+            } else {
+                "No stories found"
+            };
+            f.render_widget(
+                Paragraph::new(message).wrap(ratatui::widgets::Wrap { trim: true }),
+                chunks[1],
+            );
         }
     } else {
         render_stories_list(f, chunks[1], app);
@@ -132,6 +140,11 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
                 indicator,
                 Span::styled(format!("{}. ", global_idx), title_style),
                 Span::styled(&story.title, title_style),
+                Span::raw(if app.is_bookmarked(story.id) {
+                    " ★"
+                } else {
+                    ""
+                }),
             ]));
 
             // Second line: metadata
