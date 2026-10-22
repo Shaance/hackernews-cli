@@ -202,4 +202,5 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
         .with_offset(app.story_scroll);
 
     f.render_stateful_widget(list, area, &mut state);
+    app.story_scroll = state.offset();
 }

@@ -2,7 +2,14 @@ use super::*;
 
 #[test]
 fn pinned_summary_keeps_comment_anchor_and_source_back_at_all_sizes() {
-    for (w, h) in [(40, 12), (80, 24), (120, 40), (160, 50)] {
+    for (w, h) in [
+        (40, 12),
+        (80, 24),
+        (120, 40),
+        (160, 50),
+        (200, 60),
+        (240, 80),
+    ] {
         let mut p = ready();
         let mut app = comments_app();
         p.browser_notice = "Article open in split pane".into();
@@ -159,7 +166,7 @@ async fn coordinator_reopens_fresh_metadata_without_moving_comments_or_evidence(
 #[test]
 fn focused_citation_token_is_visible_after_wrapping_and_source_comparison() {
     use ratatui::style::Modifier;
-    for (w, h) in [(80, 24), (120, 40)] {
+    for (w, h) in [(80, 24), (120, 40), (200, 60), (240, 80)] {
         let mut p = ready();
         let r = p.readings.get_mut(&1).unwrap();
         let result = r.discussion.result.as_mut().unwrap();

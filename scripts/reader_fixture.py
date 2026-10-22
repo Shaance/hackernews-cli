@@ -11,6 +11,9 @@ class ReaderFixture:
     def __init__(self):
         self.data = json.loads(FIXTURE.read_text())
         self.calls = []
+        self.gets = []
+        self.get_gates = {}
+        self.fail_item = None
         self.errors = []
         self.gates = {("fast", "discussion"): threading.Event(),
                       ("thorough", "article"): threading.Event(),
@@ -43,10 +46,25 @@ class ReaderFixture:
         self.base = f"http://127.0.0.1:{self.server.server_port}/"
 
     def get(self, path):
+        self.gets.append(path)
+        gate = self.get_gates.get(path)
+        if gate is not None and not gate.wait(30):
+            self.errors.append(f"Unreleased GET gate {path}")
+            return 500, {"error": "Fixture gate timed out"}
+        if path == "/v0/topstories.json":
+            return 200, list(range(90010001, 90010061))
+        if path == "/v0/newstories.json":
+            return 503, {"error": "Synthetic delayed feed failure"}
         if path.startswith("/v0/") and path.endswith("stories.json"):
             return 200, [self.data["provenance"]["story_id"]]
         if path.startswith("/v0/item/") and path.endswith(".json"):
             ident = int(path.split("/")[-1][:-5])
+            if ident == self.fail_item:
+                return 503, {"error": "Synthetic child fetch failure"}
+            if 90010001 <= ident <= 90010060:
+                return 200, {"id": ident, "type": "story", "title": f"Synthetic feed control {ident - 90010000:02}",
+                             "by": "replay_control", "time": 1792497600, "score": 123,
+                             "url": "https://subdomain.example.com/control", "descendants": 0}
             comments = self.data["input"]["comments"]
             kids = lambda parent: [c["id"] for c in comments if c["parent"] == parent]
             if ident == self.data["provenance"]["story_id"]:
@@ -88,7 +106,7 @@ class ReaderFixture:
         return 200, {"choices": [{"finish_reason": "stop", "message": {"content": json.dumps(result)}}]}
 
     def close(self):
-        for gate in self.gates.values():
+        for gate in [*self.gates.values(), *self.get_gates.values()]:
             gate.set()
         self.server.shutdown()
         self.server.server_close()
