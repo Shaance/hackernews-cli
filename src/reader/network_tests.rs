@@ -202,6 +202,13 @@ async fn provider_failures_offer_key_repair_or_retry_without_leaking_response() 
             .unwrap_err();
         assert_eq!(error.auth, auth);
         assert!(error.message.contains(message), "{}", error.message);
+        if !auth {
+            assert!(
+                error.message.contains("M → Enter Retry"),
+                "{}",
+                error.message
+            );
+        }
         assert!(!error.message.contains("secret"));
         request.await.unwrap();
     }

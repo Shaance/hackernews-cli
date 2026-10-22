@@ -190,8 +190,14 @@ async fn abandoning_preparation_never_submits_and_retry_does_not_start_manual_wo
 
 #[test]
 fn s_toggles_partial_results_without_work_even_when_credentials_need_repair() {
-    for (article_only, missing_key) in [(true, true), (true, false), (false, true), (false, false)]
-    {
+    for (article_only, credentials) in [
+        (true, 0),
+        (true, 1),
+        (true, 2),
+        (false, 0),
+        (false, 1),
+        (false, 2),
+    ] {
         let mut p = ready();
         let r = p.readings.get_mut(&1).unwrap();
         if article_only {
@@ -199,9 +205,9 @@ fn s_toggles_partial_results_without_work_even_when_credentials_need_repair() {
         } else {
             r.article = Section::default();
         }
-        if missing_key {
+        if credentials == 0 {
             p.config.api_key.clear();
-        } else {
+        } else if credentials == 1 {
             p.auth_failed = true;
         }
         let mut app = comments_app();
@@ -210,6 +216,10 @@ fn s_toggles_partial_results_without_work_even_when_credentials_need_repair() {
             assert_eq!(p.readings[&1].shown, shown);
             assert!(!p.settings_open());
             let rendered = screen(&mut p, &mut app, 120, 40);
+            assert!(
+                !rendered.contains("M → Enter Retry"),
+                "An idle section is not a failure"
+            );
             assert_eq!(
                 rendered.contains(if article_only {
                     "Article claim."

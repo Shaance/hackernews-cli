@@ -221,8 +221,13 @@ impl Reader {
                 Color::Yellow,
             )
         } else {
+            let retry = if reading.article.failed() || reading.discussion.failed() {
+                " · M → Enter Retry"
+            } else {
+                ""
+            };
             (
-                format!("Summary incomplete · {action} · M → Enter Retry"),
+                format!("Summary incomplete · {action}{retry}"),
                 Color::Yellow,
             )
         };

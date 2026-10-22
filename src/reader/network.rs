@@ -202,7 +202,9 @@ impl Network {
                 402 => Failure::new(format!(
                     "{label} credits unavailable. Add credits, then M → Enter Retry"
                 )),
-                429 => Failure::new(format!("{label} is rate limited. Try r again shortly")),
+                429 => Failure::new(format!(
+                    "{label} is rate limited. Wait briefly, then M → Enter Retry"
+                )),
                 _ => Failure::new(format!(
                     "{label} returned HTTP {}. M → Enter Retry",
                     status.as_u16()
