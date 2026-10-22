@@ -95,18 +95,19 @@ def run(binary, output, width, height):
         expanded = count()
         app.key("j]ucg")
         app.wait(lambda t: count() == initial)
+        collapsed = count()
         capture("10-comments")
         app.key("\x1b")
         app.quit()
         assert not fixture.errors, fixture.errors
         receipt = {"size": [width, height], "provider_calls": fixture.calls,
-                   "reply_counts": [initial, expanded, count()], "captures": captured,
+                   "reply_counts": [initial, expanded, collapsed], "captures": captured,
                    "exit": "clean", "network": "Loopback fixtures; external HTTP blocked"}
         (output / "result.json").write_text(json.dumps(receipt, indent=2) + "\n")
         print(f"PASS {width}×{height}: recorded Fast, partial failure, independent Thorough, source/back, retained position, replies, clean exit", flush=True)
     except BaseException:
-        capture("failure")
         (output / "requests.json").write_text(json.dumps(fixture.calls, indent=2))
+        capture("failure")
         raise
     finally:
         app.abort()

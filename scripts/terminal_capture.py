@@ -73,7 +73,8 @@ class TUI:
         return self.pump(0.3)
 
     def capture(self, name):
-        self.wait(lambda _: True)
+        if self.fd is not None:
+            self.wait(lambda _: True)
         (self.output / (name + ".txt")).write_text(self.text() + "\n")
         rows = []
         for y in range(self.screen.lines):
@@ -108,6 +109,7 @@ class TUI:
             if pid:
                 self.pid = None
                 os.close(self.fd)
+                self.fd = None
                 assert os.waitstatus_to_exitcode(status) == 0
                 assert b"\x1b[?1049l" in self.raw, "alternate screen was not restored"
                 return
@@ -122,3 +124,4 @@ class TUI:
                 pass
             self.pid = None
             os.close(self.fd)
+            self.fd = None
