@@ -154,8 +154,15 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
                 None => "discuss".to_string(),
             };
 
+            let host = reqwest::Url::parse(&story.url)
+                .ok()
+                .and_then(|url| url.host_str().map(str::to_owned))
+                .filter(|host| host != "news.ycombinator.com")
+                .unwrap_or_else(|| "HN discussion".into());
             lines.push(Line::from(vec![
                 Span::raw("     "),
+                Span::styled(host, Style::default().add_modifier(Modifier::DIM)),
+                Span::raw(" │ "),
                 Span::styled("by ", Style::default().add_modifier(Modifier::DIM)),
                 Span::styled(&story.author, Style::default().fg(Color::Cyan)),
                 Span::raw(" │ "),
