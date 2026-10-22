@@ -18,12 +18,15 @@ impl Reader {
                 let network = self.network.clone();
                 if let Some(capture) = reading.article.capture.clone() {
                     let key = self.config.key().to_owned();
+                    let provider = self.config.provider;
                     self.jobs.spawn(async move {
                         Completion {
                             story: story.id,
                             attempt,
                             output: Output::Article(
-                                network.article(&key, attempt.profile, &capture.input).await,
+                                network
+                                    .article(provider, &key, attempt.profile, &capture.input)
+                                    .await,
                             ),
                         }
                     });
@@ -48,13 +51,14 @@ impl Reader {
                 let network = self.network.clone();
                 if let Some(capture) = reading.discussion.capture.clone() {
                     let key = self.config.key().to_owned();
+                    let provider = self.config.provider;
                     self.jobs.spawn(async move {
                         Completion {
                             story: story.id,
                             attempt,
                             output: Output::Discussion(
                                 network
-                                    .discussion(&key, attempt.profile, &capture.input)
+                                    .discussion(provider, &key, attempt.profile, &capture.input)
                                     .await,
                             ),
                         }

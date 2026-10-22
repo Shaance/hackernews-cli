@@ -1,4 +1,7 @@
-use super::{config::Profile, Progress, Reader, Request};
+use super::{
+    config::{Profile, Provider},
+    Progress, Reader, Request,
+};
 use crossterm::event::KeyCode;
 use ratatui::{
     style::{Color, Style},
@@ -8,7 +11,8 @@ use ratatui::{
 };
 
 pub struct Settings {
-    key: String,
+    keys: [String; 2],
+    provider: Provider,
     automatic: bool,
     profile: Profile,
     cursor: usize,
@@ -17,13 +21,17 @@ pub struct Settings {
 impl Reader {
     pub(super) fn edit_settings(&mut self) {
         self.settings = Some(Settings {
-            key: self.config.key().to_owned(),
+            keys: [
+                self.config.key_for(Provider::OpenRouter).to_owned(),
+                self.config.key_for(Provider::Anthropic).to_owned(),
+            ],
+            provider: self.config.provider,
             automatic: self.config.automatic,
             profile: self.config.profile,
             cursor: if self.config.key().is_empty() || self.auth_failed {
-                0
-            } else {
                 1
+            } else {
+                2
             },
             error: self.settings_error.clone(),
         });
@@ -36,26 +44,35 @@ impl Reader {
             KeyCode::Esc => {
                 self.settings = None;
             }
-            KeyCode::Tab | KeyCode::Down => s.cursor = (s.cursor + 1) % 4,
-            KeyCode::BackTab | KeyCode::Up => s.cursor = (s.cursor + 3) % 4,
-            KeyCode::Backspace if s.cursor == 0 => {
-                s.key.pop();
+            KeyCode::Tab | KeyCode::Down => s.cursor = (s.cursor + 1) % 5,
+            KeyCode::BackTab | KeyCode::Up => s.cursor = (s.cursor + 4) % 5,
+            KeyCode::Backspace if s.cursor == 1 => {
+                s.keys[s.provider as usize].pop();
             }
-            KeyCode::Delete if s.cursor == 0 => s.key.clear(),
-            KeyCode::Char(c) if s.cursor == 0 && !c.is_control() => s.key.push(c),
-            KeyCode::Char(' ') | KeyCode::Left | KeyCode::Right if s.cursor == 1 => {
-                s.automatic = !s.automatic
+            KeyCode::Delete if s.cursor == 1 => s.keys[s.provider as usize].clear(),
+            KeyCode::Char(c) if s.cursor == 1 && !c.is_control() => {
+                s.keys[s.provider as usize].push(c)
             }
             KeyCode::Char(' ') | KeyCode::Left | KeyCode::Right if s.cursor == 2 => {
+                s.automatic = !s.automatic
+            }
+            KeyCode::Char(' ') | KeyCode::Left | KeyCode::Right if s.cursor == 3 => {
                 s.profile = if s.profile == Profile::Fast {
                     Profile::Thorough
                 } else {
                     Profile::Fast
                 }
             }
+            KeyCode::Char(' ') | KeyCode::Left | KeyCode::Right if s.cursor == 0 => {
+                s.provider = if s.provider == Provider::OpenRouter {
+                    Provider::Anthropic
+                } else {
+                    Provider::OpenRouter
+                };
+            }
             KeyCode::Enter => {
-                let refresh = s.cursor == 3;
-                let generate = s.cursor == 2;
+                let refresh = s.cursor == 4;
+                let generate = s.cursor == 3;
                 self.apply_settings(refresh, generate);
             }
             _ => {}
@@ -72,11 +89,24 @@ impl Reader {
             .is_some_and(|r| r.article.requested() || r.discussion.requested());
         let auto_disabled = self.config.automatic && !s.automatic;
         let profile_changed = s.profile != config.profile;
-        let changed_key = s.key.trim() != config.key();
-        if changed_key {
-            config.api_key = s.key.trim().to_owned();
-            config.environment_key.clear();
+        let changed_key = s.provider != config.provider
+            || s.keys[s.provider as usize].trim() != config.key_for(s.provider);
+        for provider in [Provider::OpenRouter, Provider::Anthropic] {
+            let key = s.keys[provider as usize].trim();
+            if key != config.key_for(provider) {
+                match provider {
+                    Provider::OpenRouter => {
+                        config.api_key = key.to_owned();
+                        config.environment_key.clear();
+                    }
+                    Provider::Anthropic => {
+                        config.anthropic_api_key = key.to_owned();
+                        config.anthropic_environment_key.clear();
+                    }
+                }
+            }
         }
+        config.provider = s.provider;
         config.profile = s.profile;
         config.automatic = s.automatic;
         let result = self
@@ -164,13 +194,16 @@ impl Reader {
         let Some(s) = &self.settings else {
             return;
         };
+        let key = &s.keys[s.provider as usize];
         let values = [
+            format!("Provider: {}", s.provider.label()),
             format!(
-                "OpenRouter key: {}",
-                if s.key.is_empty() {
+                "{} key: {}",
+                s.provider.label(),
+                if key.is_empty() {
                     "[paste key]".into()
                 } else {
-                    "•".repeat(s.key.chars().count().min(20))
+                    "•".repeat(key.chars().count().min(20))
                 }
             ),
             format!(
@@ -198,16 +231,17 @@ impl Reader {
         lines.extend([
             Line::raw(""),
             Line::raw(match s.cursor {
-                0 => "Type/paste key · Delete clears · input is masked",
-                1 => "Off stops new automatic requests. Submitted work can finish.",
-                2 => {
+                1 => "Type/paste key · Delete clears · input is masked",
+                2 => "Off stops new automatic requests. Submitted work can finish.",
+                3 => {
                     if s.profile == Profile::Fast {
                         "Fast: Haiku 5.5 · quick overview of the main insights"
                     } else {
                         "Thorough: Sonnet 5.5 · broader coverage and useful qualifications"
                     }
                 }
-                _ => "Fetch newer article and comments, then replace their summaries.",
+                4 => "Fetch newer article and comments, then replace their summaries.",
+                _ => "Provider for new requests. Completed summaries stay available.",
             }),
             Line::raw(""),
             Line::raw("Tab/↑↓ Select · Space/←→ Change"),
