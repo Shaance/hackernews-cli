@@ -1,0 +1,35 @@
+--- a/cli/dist/main.js
++++ b/cli/dist/main.js
+@@ -927,7 +927,7 @@
+         },
+         async split({ from, direction, command, size }) {
+           const startDir = directories.get(from.id) ?? process.cwd();
+-          const wrapped = (0, shared_1.shellQuote)(["/bin/sh", "-c", `${(0, shared_1.shellQuote)(command)}; exit $?`]);
++          const wrapped = (0, shared_1.shellQuote)(["/bin/sh", "-c", "printf '\\033[2J\\033[H'; " + (0, shared_1.shellQuote)(command) + "; exit $?"]);
+           const opened2 = await ghosttyCommand("split", [from.id, DIRECTION_CODES[direction], startDir, wrapped]);
+           if (!opened2 || opened2 === "not-found") {
+             throw new Error("this pane went away before we could split it");
+@@ -25229,6 +25229,23 @@
+ async function attachHere(argv) {
+   const tty = process.env.PIXEL_TTY ?? ownTtyPath();
+   if (!tty) throw new Error("not running on a tty");
++  // HN prototype: direct launch stays quiet; close only this dedicated split.
++  const parentTty = flagEq(argv, "--parent-tty");
++  const terminal = (0, import_terminal5.detect)();
++  if (terminal?.name === "ghostty" && flagEq(argv, "--split-dir") && parentTty && parentTty !== tty) {
++    const pane = await terminal.getCurrentPane({ tty, cwd: process.cwd() });
++    if (!pane) throw new Error("could not identify the browser split");
++    process.once("exit", (code) => {
++      if (code !== 0) return;
++      try {
++        (0, import_node_child_process5.execFileSync)("osascript", [
++          "-e", "on run argv",
++          "-e", 'tell application "Ghostty" to close (first terminal whose id is item 1 of argv)',
++          "-e", "end run", pane.id
++        ], { stdio: "ignore", timeout: 5000 });
++      } catch {}
++    });
++  }
+   const { socket, reply } = await openSession(argv, tty);
+   if (reply.ok === false || !reply.session) {
+     socket.destroy();
