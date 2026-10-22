@@ -20,27 +20,39 @@ async fn setup_cancel_save_and_rejected_key_repair_resume_same_story() {
     assert!(!p.settings_open());
     assert_eq!(p.active, Some(1));
     assert_eq!(p.jobs.len(), 2);
-    let attempt = match p.readings[&1].article.progress {
-        Progress::Preparing(a, _, _) | Progress::Running(a) => a,
-        _ => panic!(),
-    };
-    p.readings.get_mut(&1).unwrap().article.progress = Progress::Running(attempt);
-    p.complete(jobs::Completion {
-        story: 1,
-        attempt,
-        output: jobs::Output::Article(Err(Failure {
-            message: "bad key".into(),
-            auth: true,
-        })),
-    });
-    p.key(KeyCode::Char('M'));
-    p.key(KeyCode::Delete);
-    for c in "replacement-key".chars() {
-        p.key(KeyCode::Char(c));
+    for changed_key in [false, true] {
+        let attempt = match p.readings[&1].article.progress {
+            Progress::Preparing(a, _, _) | Progress::Running(a) => a,
+            _ => panic!(),
+        };
+        p.readings.get_mut(&1).unwrap().article.progress = Progress::Running(attempt);
+        p.complete(jobs::Completion {
+            story: 1,
+            attempt,
+            output: jobs::Output::Article(Err(Failure {
+                message: "bad key".into(),
+                auth: true,
+            })),
+        });
+        p.key(KeyCode::Char('M'));
+        p.key(KeyCode::Tab);
+        p.key(KeyCode::Enter);
+        assert!(
+            p.auth_failed,
+            "ordinary settings save is not a credential repair"
+        );
+        assert!(p.readings[&1].article.failed());
+        p.key(KeyCode::Char('M'));
+        if changed_key {
+            p.key(KeyCode::Delete);
+            for c in "replacement-key".chars() {
+                p.key(KeyCode::Char(c));
+            }
+        }
+        p.key(KeyCode::Enter);
+        assert!(!p.auth_failed);
+        assert!(p.readings[&1].article.pending());
     }
-    p.key(KeyCode::Enter);
-    assert!(!p.auth_failed);
-    assert!(p.readings[&1].article.pending());
     let saved = std::fs::read_to_string(p.config_path.as_ref().unwrap()).unwrap();
     assert!(saved.contains("replacement-key"));
     assert!(!saved.contains("environment_key"));
@@ -292,4 +304,215 @@ async fn switching_provider_reuses_captures_and_ignores_old_pending_completion()
     assert!(p.jobs.is_empty());
     server.abort();
     std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[tokio::test]
+async fn comment_refresh_is_free_and_explicit_summary_retry_only_retries_failures() {
+    for failed in [1, 2, 3] {
+        let (network, mut requests, server) = network::tests::serve(|path, body, _| {
+            let output = if path == "/chat/completions" {
+                let input: Value = serde_json::from_str(body["messages"][1]["content"].as_str().unwrap()).unwrap();
+                let content = if input.get("article").is_some() { json!({"summary":"Retried article"}) }
+                    else { json!({"overview":"Context","points":[{"text":"Retried discussion","sources":[11]}]}) };
+                json!({"choices":[{"message":{"content":content.to_string()}}]})
+            } else if path.ends_with("/1.json") {
+                json!({"id":1,"time":0,"type":"story","kids":[10]})
+            } else { json!({"id":10,"time":0,"type":"comment","text":"Fresh readable comment"}) };
+            (200, output.to_string())
+        }).await;
+        let mut p = ready();
+        p.network = network;
+        p.config.automatic = true;
+        let folder =
+            std::env::temp_dir().join(format!("hn-explicit-retry-{}-{failed}", std::process::id()));
+        p.config_path = Some(folder.join("summary.json"));
+        let attempt = Attempt {
+            id: 50,
+            profile: Profile::Fast,
+            automatic: false,
+            refresh: false,
+        };
+        let r = p.readings.get_mut(&1).unwrap();
+        r.shown = failed == 1;
+        if failed & 1 != 0 {
+            r.article.progress = Progress::Failed(attempt, Failure::new("failed"));
+        }
+        if failed & 2 != 0 {
+            r.discussion.progress = Progress::Failed(attempt, Failure::new("failed"));
+        }
+        let article_capture = r.article.capture.clone().unwrap();
+        let discussion_capture = r.discussion.capture.clone().unwrap();
+        let service = p.network.service.clone();
+        let mut app = comments_app();
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+        let mut bookmark_path = None;
+        let keys = [
+            KeyCode::Char('r'),
+            KeyCode::Char('M'),
+            KeyCode::Up,
+            KeyCode::Up,
+            KeyCode::Up,
+            KeyCode::Enter, // ordinary settings save, no retry
+            KeyCode::Char('M'),
+            KeyCode::Up,
+            KeyCode::Up,
+            KeyCode::Char(' '),
+            KeyCode::Down,
+            KeyCode::Down,
+            KeyCode::Enter,
+        ]; // change preference but explicitly retry only failures
+        for (step, key) in keys.into_iter().enumerate() {
+            crate::reader_actions::handle(
+                &mut p,
+                &mut app,
+                key,
+                tx.clone(),
+                service.clone(),
+                &mut bookmark_path,
+            )
+            .await
+            .unwrap();
+            if step == 0 {
+                let msg = tokio::time::timeout(std::time::Duration::from_secs(5), rx.recv())
+                    .await
+                    .unwrap()
+                    .unwrap();
+                crate::handle_app_message(&mut app, msg);
+                assert_eq!(app.comments[0].text, "Fresh readable comment");
+                assert!(p.jobs.is_empty());
+                let mut count = 0;
+                while let Ok((path, _)) = requests.try_recv() {
+                    assert!(path.starts_with("/v0/item/"));
+                    count += 1;
+                }
+                assert_eq!(count, 2, "r fetched only the story and visible root");
+            }
+            if step == 1 {
+                assert!(screen(&mut p, &mut app, 240, 80).contains("> Retry failed summary"));
+            }
+            if step == 5 {
+                assert!(p.jobs.is_empty());
+                assert!(requests.try_recv().is_err());
+            }
+        }
+        tokio::time::timeout(std::time::Duration::from_secs(5), async {
+            while let Some(result) = p.jobs.join_next().await {
+                p.complete(result.unwrap());
+            }
+        })
+        .await
+        .unwrap();
+        let r = &p.readings[&1];
+        assert_eq!(
+            r.article.result.as_ref().unwrap().value.text,
+            if failed & 1 != 0 {
+                "Retried article"
+            } else {
+                "Article claim."
+            }
+        );
+        assert_eq!(
+            r.discussion.result.as_ref().unwrap().value.points[0].text,
+            if failed & 2 != 0 {
+                "Retried discussion"
+            } else {
+                "A concrete disagreement."
+            }
+        );
+        assert!(Arc::ptr_eq(
+            &article_capture,
+            r.article.capture.as_ref().unwrap()
+        ));
+        assert!(Arc::ptr_eq(
+            &discussion_capture,
+            r.discussion.capture.as_ref().unwrap()
+        ));
+        let mut count = 0;
+        while let Ok((path, body)) = requests.try_recv() {
+            assert_eq!(path, "/chat/completions");
+            assert_eq!(body["model"], Profile::Thorough.model(Provider::OpenRouter));
+            count += 1;
+        }
+        assert_eq!(count, (failed as u32).count_ones());
+        server.abort();
+        std::fs::remove_dir_all(folder).unwrap();
+    }
+}
+
+#[tokio::test]
+async fn refresh_fetches_expanded_branches_and_keeps_the_whole_tree_on_item_failure() {
+    use hn_lib::app::CommentState;
+    for fail_id in [0, 10, 11] {
+        let (network, mut requests, server) = network::tests::serve(move |path, _, _| {
+            let id: i32 = path
+                .rsplit('/')
+                .next()
+                .unwrap()
+                .trim_end_matches(".json")
+                .parse()
+                .unwrap();
+            if id == fail_id {
+                return (503, "null".into());
+            }
+            let kids = match id {
+                1 => vec![10, 20],
+                10 => vec![11, 12],
+                20 => vec![21],
+                _ => vec![],
+            };
+            (
+                200,
+                json!({"id":id,"time":0,"type":"comment","text":format!("fresh {id}"),"kids":kids})
+                    .to_string(),
+            )
+        })
+        .await;
+        let mut p = ready();
+        p.network = network;
+        let service = p.network.service.clone();
+        let mut app = comments_app();
+        let mut root = app.comments[0].clone();
+        root.id = 10;
+        root.child_ids = vec![11];
+        root.text = "old parent".into();
+        let mut child = root.clone();
+        child.id = 11;
+        child.child_ids.clear();
+        child.text = "old readable reply".into();
+        root.state = CommentState::Expanded {
+            children: vec![child],
+        };
+        app.set_comments(vec![root]);
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+        crate::reader_actions::handle(&mut p, &mut app, KeyCode::Char('r'), tx, service, &mut None)
+            .await
+            .unwrap();
+        assert!(app.is_loading());
+        let msg = tokio::time::timeout(std::time::Duration::from_secs(5), rx.recv())
+            .await
+            .unwrap()
+            .unwrap();
+        crate::handle_app_message(&mut app, msg);
+        assert!(!app.is_loading());
+        if fail_id == 0 {
+            assert_eq!(app.visible_comment_count(), 4);
+            assert_eq!(app.visible_comment_at(2).unwrap().1.text, "fresh 12");
+            assert!(matches!(app.comments[1].state, CommentState::Collapsed));
+        } else {
+            assert_eq!(app.visible_comment_count(), 2);
+            assert_eq!(
+                app.visible_comment_at(1).unwrap().1.text,
+                "old readable reply"
+            );
+            assert!(app.error().is_some());
+        }
+        while let Ok((path, _)) = requests.try_recv() {
+            assert!(path.starts_with("/v0/item/"));
+            assert!(
+                !path.ends_with("/21.json"),
+                "unopened branches stay unfetched"
+            );
+        }
+        server.abort();
+    }
 }

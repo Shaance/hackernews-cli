@@ -192,13 +192,13 @@ fn render_comments_list(
         let start = line_cursor;
         line_cursor += prepared.height;
         let end = line_cursor;
-        line_ranges.push((start, end));
+        line_ranges.push((comment.id, start, end));
         rendered.push(prepared);
     }
 
     // Adjust scroll to keep the selection visible, even when a long comment would otherwise leave blank space
     if line_ranges.is_empty() {
-        app.update_comment_scroll(&[(0, post_lines.len())], area.height as usize);
+        app.update_comment_scroll(&[(0, 0, post_lines.len())], area.height as usize);
     } else {
         app.update_comment_scroll(&line_ranges, area.height as usize);
     }

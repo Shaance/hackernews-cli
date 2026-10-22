@@ -13,10 +13,6 @@ impl Reader {
             self.edit_settings();
             return true;
         }
-        if key == KeyCode::Char('r') && self.active.is_some() {
-            self.request(Request::Retry);
-            return false;
-        }
         if key == KeyCode::Char('S') {
             let retained = self
                 .active

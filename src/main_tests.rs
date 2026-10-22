@@ -53,7 +53,7 @@ async fn reader_keys_page_text_and_link_picker_can_be_closed() {
     )
     .await
     .unwrap();
-    app.update_comment_scroll(&[(0, 60)], 19);
+    app.update_comment_scroll(&[(10, 0, 60)], 19);
     assert_eq!(app.comment_scroll, 18);
     handle_comment_action(
         &mut app,

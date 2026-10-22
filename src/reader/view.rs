@@ -222,7 +222,7 @@ impl Reader {
             )
         } else {
             (
-                format!("Summary incomplete · {action} · r Retry"),
+                format!("Summary incomplete · {action} · M → Enter Retry"),
                 Color::Yellow,
             )
         };

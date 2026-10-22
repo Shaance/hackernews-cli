@@ -208,7 +208,7 @@ impl<T, C> Section<T, C> {
                 a.profile.label()
             ),
             Progress::Failed(a, _) if a.refresh => format!(
-                "{} · Refresh failed · r Retry",
+                "{} · Refresh failed · M → Enter Retry",
                 actual.unwrap_or(a.profile.label())
             ),
             Progress::Failed(a, _) => format!(
