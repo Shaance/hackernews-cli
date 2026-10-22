@@ -17,6 +17,7 @@ pub struct Comment {
     pub id: i32,
     pub author: String,
     pub text: String,
+    pub links: Vec<String>,
     pub time_ago: String,
     pub state: CommentState,
     pub depth: usize,
@@ -50,6 +51,7 @@ impl Comment {
 impl App {
     /// Move to next comment
     pub fn next_comment(&mut self) {
+        self.follow_comment_selection = true;
         if !self.visible_comment_paths.is_empty()
             && self.comment_cursor < self.visible_comment_paths.len() - 1
         {
@@ -59,6 +61,7 @@ impl App {
 
     /// Move to previous comment
     pub fn prev_comment(&mut self) {
+        self.follow_comment_selection = true;
         if self.comment_cursor > 0 {
             self.comment_cursor -= 1;
         }
@@ -66,6 +69,7 @@ impl App {
 
     /// Jump to the next sibling comment (skips over the current thread)
     pub fn next_comment_sibling(&mut self) {
+        self.follow_comment_selection = true;
         let Some(path) = self.visible_comment_paths.get(self.comment_cursor) else {
             return;
         };
@@ -93,6 +97,7 @@ impl App {
 
     /// Jump to the previous sibling comment
     pub fn prev_comment_sibling(&mut self) {
+        self.follow_comment_selection = true;
         let Some(path) = self.visible_comment_paths.get(self.comment_cursor) else {
             return;
         };
@@ -118,6 +123,7 @@ impl App {
 
     /// Jump to the parent comment of the current selection
     pub fn parent_comment(&mut self) {
+        self.follow_comment_selection = true;
         let Some(path) = self.visible_comment_paths.get(self.comment_cursor) else {
             return;
         };
@@ -141,10 +147,13 @@ impl App {
     /// Go to top comment
     pub fn first_comment(&mut self) {
         self.comment_cursor = 0;
+        self.comment_scroll = 0;
+        self.follow_comment_selection = false;
     }
 
     /// Go to bottom comment
     pub fn last_comment(&mut self) {
+        self.follow_comment_selection = true;
         if !self.visible_comment_paths.is_empty() {
             self.comment_cursor = self.visible_comment_paths.len() - 1;
         }
@@ -156,25 +165,28 @@ impl App {
         line_ranges: &[(usize, usize)],
         viewport_height: usize,
     ) {
-        if line_ranges.is_empty() || self.comment_cursor >= line_ranges.len() {
-            self.comment_scroll = 0;
-            return;
-        }
-
         let view_height = viewport_height.max(1);
-        let (start, end) = line_ranges[self.comment_cursor];
         let mut new_scroll = self.comment_scroll;
-
-        // Keep selected comment fully visible
-        if start < new_scroll {
-            new_scroll = start;
-        } else if end > new_scroll + view_height {
-            new_scroll = end.saturating_sub(view_height);
+        if self.follow_comment_selection {
+            if let Some(&(start, end)) = line_ranges.get(self.comment_cursor) {
+                if start < new_scroll || end - start > view_height {
+                    new_scroll = start;
+                } else if end > new_scroll + view_height {
+                    new_scroll = end.saturating_sub(view_height);
+                }
+            }
+            self.follow_comment_selection = false;
         }
-
-        // Clamp to available content
+        let page_delta =
+            self.pending_comment_pages as isize * view_height.saturating_sub(1).max(1) as isize;
+        new_scroll = new_scroll.saturating_add_signed(page_delta);
+        self.pending_comment_pages = 0;
         let total_lines = line_ranges.last().map(|(_, end)| *end).unwrap_or(0);
-        let max_scroll = total_lines.saturating_sub(view_height);
+        // Growing the viewport (for example, hiding the pinned summary) must
+        // not move the reader backward just to fill the newly available space.
+        let max_scroll = total_lines
+            .saturating_sub(view_height)
+            .max(self.comment_scroll.min(total_lines.saturating_sub(1)));
         if new_scroll > max_scroll {
             new_scroll = max_scroll;
         }
@@ -247,6 +259,7 @@ impl App {
 
     /// Collapse the nearest expanded ancestor (or current comment) in the thread
     pub fn collapse_current_thread(&mut self) {
+        self.follow_comment_selection = true;
         let Some(path) = self.visible_comment_paths.get(self.comment_cursor).cloned() else {
             return;
         };

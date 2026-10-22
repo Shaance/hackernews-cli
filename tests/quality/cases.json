@@ -1,0 +1,71 @@
+[
+  {
+    "id": "validation_counts",
+    "sources": [
+      {
+        "url": "https://community.letsencrypt.org/t/lets-encrypt-is-adding-two-additional-remote-perspectives-for-domain-validation/252166",
+        "excerpt": "we will make seven total validation requests, one from the primary datacenter and six from remote perspectives (previously four)."
+      }
+    ],
+    "observed_bad_claim_paraphrase": "Total validation requests increase from six to seven.",
+    "accept": [
+      "Totals are five before and seven after, if stated.",
+      "Remote perspectives are four before and six after; distinguish the primary perspective."
+    ]
+  },
+  {
+    "id": "proposal_not_requirement",
+    "sources": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50151745",
+        "excerpt": "Interestingly my colleagues propose that embodied learning will lead to grounding, alignment, and AI safety."
+      }
+    ],
+    "observed_bad_claim_paraphrase": "Embodied data is needed for grounding and safety.",
+    "accept": [
+      "Keep the proposal attributed to the commenter’s colleagues.",
+      "Do not turn a proposed benefit into an established requirement."
+    ]
+  },
+  {
+    "id": "no_invented_causation",
+    "sources": [
+      {
+        "url": "https://phys.org/news/2026-10-rabbits-medieval-royal-luxury-england.html",
+        "excerpts": [
+          "In 1390, following the Peasants' Revolt of 1381",
+          "make plots and conspiracies of rebellion",
+          "manuscript illuminated in London in the 1340s"
+        ]
+      }
+    ],
+    "context_paraphrase": "The article links hunting restrictions to fear of rebellion. It separately describes rabbit satire and later increasing rabbit availability.",
+    "observed_bad_claim_paraphrase": "Growing rabbit abundance inspired satirical illustrations and spurred hunting bans.",
+    "accept": [
+      "Do not infer that abundance caused legislation or imagery.",
+      "Preserve the stated rebellion rationale if explaining hunting restrictions.",
+      "Do not claim all of the 1340s preceded the 1346–1353 Black Death interval."
+    ]
+  },
+  {
+    "id": "citation_support",
+    "sources": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50144669",
+        "id": 50144669,
+        "excerpt": "What's a software factory? Honestly I have no idea."
+      },
+      {
+        "url": "https://news.ycombinator.com/item?id=50144748",
+        "id": 50144748,
+        "excerpt": "A system of work where triggers, not humans, start agent sessions"
+      }
+    ],
+    "observed_bad_claim_paraphrase": "A factory uses triggers instead of humans to start agent sessions, citing only comments asking what a factory means.",
+    "accept": [
+      "The trigger-started-session claim must cite supporting evidence such as 50144748 or be omitted.",
+      "A valid captured ID alone does not establish support.",
+      "Inspect each clause against its cited excerpt, not the entire source packet."
+    ]
+  }
+]

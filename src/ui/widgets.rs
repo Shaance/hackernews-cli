@@ -66,142 +66,55 @@ pub fn render_error(f: &mut Frame, area: Rect, error: &str) {
 pub fn render_help(f: &mut Frame, area: Rect, in_comments: bool) {
     let help_text = if in_comments {
         vec![
-            Line::from(vec![Span::styled(
-                "Comments View",
-                Style::default().add_modifier(Modifier::BOLD),
-            )]),
-            Line::from(""),
-            Line::from(vec![
-                Span::styled("j/↓", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("       Next comment"),
-            ]),
-            Line::from(vec![
-                Span::styled("k/↑", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("       Previous comment"),
-            ]),
-            Line::from(vec![
-                Span::styled("]", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("         Next sibling thread"),
-            ]),
-            Line::from(vec![
-                Span::styled("[", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("         Previous sibling thread"),
-            ]),
-            Line::from(vec![
-                Span::styled("u", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("         Jump to parent"),
-            ]),
-            Line::from(vec![
-                Span::styled("g", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("         Go to top"),
-            ]),
-            Line::from(vec![
-                Span::styled("G", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("         Go to bottom"),
-            ]),
-            Line::from(vec![
-                Span::styled("Enter/l", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw(" Expand/collapse replies"),
-            ]),
-            Line::from(vec![
-                Span::styled("c", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("         Collapse thread"),
-            ]),
-            Line::from(vec![
-                Span::styled("o", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("         Open story URL"),
-            ]),
-            Line::from(vec![
-                Span::styled("Esc/q", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("     Back to stories"),
-            ]),
-            Line::from(vec![
-                Span::styled("?", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("         Toggle this help"),
-            ]),
+            Line::from("Comments"),
+            Line::from("j/k/↑/↓  Select comment"),
+            Line::from("PgUp/PgDn  Read text"),
+            Line::from("Enter/l/→  Replies · c Collapse"),
+            Line::from("[/] Siblings · u Parent"),
+            Line::from("o Article · O Browser · L Links"),
+            Line::from("S Summary · J/K Scroll · M Settings"),
+            Line::from("Tab Sources · Enter Open · Esc Back"),
+            Line::from("s Save/unsave · r Retry failures"),
+            Line::from("Esc/q/h/← Back · ? Close help"),
         ]
     } else {
         vec![
-            Line::from(vec![Span::styled(
-                "Stories View",
-                Style::default().add_modifier(Modifier::BOLD),
-            )]),
-            Line::from(""),
-            Line::from(vec![
-                Span::styled("j/↓", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("       Next story"),
-            ]),
-            Line::from(vec![
-                Span::styled("k/↑", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("       Previous story"),
-            ]),
-            Line::from(vec![
-                Span::styled("n/→", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("       Next page"),
-            ]),
-            Line::from(vec![
-                Span::styled("p/←", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("       Previous page"),
-            ]),
-            Line::from(vec![
-                Span::styled("1/2/3", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("     1:Top  2:New  3:Best"),
-            ]),
-            Line::from(vec![
-                Span::styled("Enter/o", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("   Open story URL"),
-            ]),
-            Line::from(vec![
-                Span::styled("c", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("         View comments"),
-            ]),
-            Line::from(vec![
-                Span::styled("r", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("         Refresh"),
-            ]),
-            Line::from(vec![
-                Span::styled("q", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("         Quit"),
-            ]),
-            Line::from(vec![
-                Span::styled("?", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw("         Toggle this help"),
-            ]),
+            Line::from("Stories"),
+            Line::from("j/k/↑/↓  Select story"),
+            Line::from("n/p/→/←  Page"),
+            Line::from("1 Top · 2 New · 3 Best · 4 Saved"),
+            Line::from("Enter/o Read · O Browser"),
+            Line::from("c Comments · s Save/unsave"),
+            Line::from("r Refresh/retry"),
+            Line::from("q/Esc Quit · ? Close help"),
         ]
     };
 
     let block = Block::default().title(" Help ").borders(Borders::ALL);
 
+    let height = (help_text.len() as u16 + 2).min(area.height);
+    let width = 74.min(area.width);
     let paragraph = Paragraph::new(help_text)
         .block(block)
         .wrap(Wrap { trim: true });
 
-    // Center the help dialog
-    let vertical_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage(20),
-            Constraint::Min(15),
-            Constraint::Percentage(20),
-        ])
-        .split(area);
-
-    let horizontal_layout = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage(20),
-            Constraint::Min(50),
-            Constraint::Percentage(20),
-        ])
-        .split(vertical_layout[1]);
-
-    // Clear the area underneath so text isn't visible through the help overlay
-    f.render_widget(Clear, horizontal_layout[1]);
-    f.render_widget(paragraph, horizontal_layout[1]);
+    let dialog = Rect::new(
+        area.x + (area.width - width) / 2,
+        area.y + (area.height - height) / 2,
+        width,
+        height,
+    );
+    f.render_widget(Clear, dialog);
+    f.render_widget(paragraph, dialog);
 }
 
 /// Render status bar for stories view
-pub fn render_stories_status(_area: Rect, app: &App, tick: usize) -> Paragraph<'static> {
+pub fn render_stories_status(area: Rect, app: &App, tick: usize) -> Paragraph<'static> {
+    if let Some(notice) = &app.bookmark_notice {
+        return Paragraph::new(format!(" Saved: 4 then r retry · {notice}"))
+            .style(Style::default().fg(Color::Red))
+            .block(Block::default().borders(Borders::TOP));
+    }
     let (display_type, display_page) = app.displayed_story_context();
     let stale = app.showing_stale_stories();
 
@@ -215,20 +128,12 @@ pub fn render_stories_status(_area: Rect, app: &App, tick: usize) -> Paragraph<'
     }
 
     segments.extend([
-        Span::raw(" j/k navigate "),
-        Span::raw("│ "),
-        Span::raw("n/p page "),
-        Span::raw("│ "),
-        Span::raw("1:Top 2:New 3:Best "),
-        Span::raw("│ "),
-        Span::raw("o open "),
-        Span::raw("│ "),
-        Span::raw("c comments "),
-        Span::raw("│ "),
-        Span::raw("?:help "),
-        Span::raw("│ "),
-        Span::raw("q quit "),
-        Span::raw("│ "),
+        Span::raw(if area.width < 80 {
+            " ? help · j/k nav · s save · 4 Saved"
+        } else {
+            " j/k nav · n/p page · 1–4 feeds · s save · Enter/o read · c discuss · ? help · q quit"
+        }),
+        Span::raw(" │ "),
         Span::styled(
             format!(
                 "showing {} · p{}",
@@ -274,7 +179,12 @@ pub fn render_stories_status(_area: Rect, app: &App, tick: usize) -> Paragraph<'
 }
 
 /// Render status bar for comments view
-pub fn render_comments_status(_area: Rect, app: &App, tick: usize) -> Paragraph<'static> {
+pub fn render_comments_status(area: Rect, app: &App, tick: usize) -> Paragraph<'static> {
+    if let Some(notice) = &app.bookmark_notice {
+        return Paragraph::new(format!(" Saved: Esc, 4 then r retry · {notice}"))
+            .style(Style::default().fg(Color::Red))
+            .block(Block::default().borders(Borders::TOP));
+    }
     let mut segments = Vec::new();
     if let Some(error) = app.error() {
         segments.push(Span::styled(
@@ -284,25 +194,11 @@ pub fn render_comments_status(_area: Rect, app: &App, tick: usize) -> Paragraph<
         segments.push(Span::raw(" │ "));
     }
 
-    segments.extend([
-        Span::raw(" j/k scroll "),
-        Span::raw("│ "),
-        Span::raw("Enter/l expand "),
-        Span::raw("│ "),
-        Span::raw("c collapse thread "),
-        Span::raw("│ "),
-        Span::raw("] next sibling "),
-        Span::raw("│ "),
-        Span::raw("[ prev sibling "),
-        Span::raw("│ "),
-        Span::raw("u parent "),
-        Span::raw("│ "),
-        Span::raw("o open "),
-        Span::raw("│ "),
-        Span::raw("Esc back "),
-        Span::raw("│ "),
-        Span::raw("?:help"),
-    ]);
+    segments.push(Span::raw(if area.width < 80 {
+        " ? help · PgUp/Dn · L links · s save"
+    } else {
+        " j/k nav · PgUp/PgDn read · Enter replies · L links · s save · Esc back · ? help"
+    }));
 
     if app.should_show_loading() {
         segments.push(Span::raw(" │ "));
