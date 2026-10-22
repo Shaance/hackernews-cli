@@ -70,7 +70,7 @@ Completed summaries and their captured inputs stay in memory for the current run
 
 Applying a model choice in `M` uses that story's retained input and sets the default for future summaries. Only the latest result is retained, so explicitly switching back to a previous model can require another paid request. Saving unrelated settings does not replace an existing summary.
 
-Choose **Refresh sources & summary** in `M` to fetch newer article and discussion content and generate new results. Press `r` to retry failed work using any successful capture already available. Existing summaries stay readable during replacement or failure, and a citation you are viewing keeps its captured text until you leave it.
+Choose **Refresh sources & summary** in `M` to fetch newer article and discussion content and generate new results. Press `r` to refresh visible comments without making summary requests. After a summary failure, press `M`, then Enter on **Retry failed summary** to retry only failed sections using any successful capture already available. Existing summaries stay readable during replacement or failure, and a citation you are viewing keeps its captured text until you leave it.
 
 Restarting hn begins a new reading session. Saved stories and summary settings persist; captured sources, summaries, and comment positions do not reload from disk.
 
@@ -126,7 +126,7 @@ Keys are case-sensitive: `s` saves a story, `S` controls its summary; `o` opens 
 | `J` / `K` | Scroll an overflowing summary |
 | `L` | Choose a link from the post or selected comment |
 | `s` | Save or unsave current story |
-| `r` | Retry failed summary or comment loading |
+| `r` | Refresh comments without generating summaries |
 | `Esc` / `q` / `h` / `←` | Back from a source to the discussion, or from the discussion to the feed |
 | `?` | Toggle help |
 

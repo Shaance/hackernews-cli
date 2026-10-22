@@ -310,8 +310,9 @@ async fn handle_comment_action(
         CommentAction::Refresh => {
             if let View::Comments { story_id, .. } = app.view {
                 let view_generation = app.begin_comment_refresh();
+                let previous = app.comments.clone();
                 tokio::spawn(async move {
-                    let result = service.fetch_top_level_comments(story_id).await;
+                    let result = service.refresh_comments(story_id, &previous).await;
                     let _ = tx.send(AppMessage::Comments {
                         story_id,
                         view_generation,
@@ -410,11 +411,7 @@ fn handle_app_message(app: &mut App, msg: AppMessage) {
                     app.apply_stories_page(story_type, page, stories);
                 }
                 Err(e) => {
-                    app.apply_stories_error(
-                        story_type,
-                        page,
-                        format!("Failed to load stories: {}", e),
-                    );
+                    app.apply_stories_error(format!("Failed to load stories: {}", e));
                 }
             }
         }
@@ -429,7 +426,7 @@ fn handle_app_message(app: &mut App, msg: AppMessage) {
 
             match result {
                 Ok(comments) => app.set_comments(comments),
-                Err(e) => app.set_comment_error(format!("Failed to load comments: {}", e)),
+                Err(e) => app.apply_comment_error(format!("Failed to load comments: {}", e)),
             }
         }
         AppMessage::CommentChildren {

@@ -21,13 +21,12 @@ pub async fn article(client: &Client, story: &HNCLIItem) -> Result<(String, bool
                     "This article format is not supported. o opens the original.",
                 ));
             }
-            let mut response =
-                client.get(url.clone()).send().await.map_err(|_| {
-                    Failure::new("Could not fetch this article. r Retry · o Original")
-                })?;
+            let mut response = client.get(url.clone()).send().await.map_err(|_| {
+                Failure::new("Could not fetch this article. M → Enter Retry · o Original")
+            })?;
             if !response.status().is_success() {
                 return Err(Failure::new(format!(
-                    "Article returned HTTP {}. r Retry · o Original",
+                    "Article returned HTTP {}. M → Enter Retry · o Original",
                     response.status().as_u16()
                 )));
             }
@@ -36,7 +35,7 @@ pub async fn article(client: &Client, story: &HNCLIItem) -> Result<(String, bool
             while let Some(chunk) = response
                 .chunk()
                 .await
-                .map_err(|_| Failure::new("Article download interrupted. r Retry"))?
+                .map_err(|_| Failure::new("Article download interrupted. M → Enter Retry"))?
             {
                 if html.len() + chunk.len() > 5 * 1024 * 1024 {
                     return Err(Failure::new(
@@ -47,7 +46,7 @@ pub async fn article(client: &Client, story: &HNCLIItem) -> Result<(String, bool
             }
             tokio::task::spawn_blocking(move || extract(&html, &final_url))
                 .await
-                .map_err(|_| Failure::new("Article reader failed. r Retry"))??
+                .map_err(|_| Failure::new("Article reader failed. M → Enter Retry"))??
         };
     let text = clean(&text);
     let partial = text.chars().count() > 24_000;
@@ -71,7 +70,7 @@ pub async fn article_capture(
             .service
             .story_with_comment_ids(story.id)
             .await
-            .map_err(|_| Failure::new("Could not refresh story. r Retry"))?
+            .map_err(|_| Failure::new("Could not refresh story. M → Enter Retry"))?
             .0;
     }
     let (text, partial) = article(&network.client, &story).await?;
@@ -90,7 +89,7 @@ pub async fn discussion(
     let (current, roots) = service
         .story_with_comment_ids(story.id)
         .await
-        .map_err(|_| Failure::new("Could not load discussion. r Retry"))?;
+        .map_err(|_| Failure::new("Could not load discussion. M → Enter Retry"))?;
     if refresh {
         story = current;
     }
@@ -131,7 +130,7 @@ pub async fn discussion(
         let comments = service
             .fetch_comment_children(&ids, 0)
             .await
-            .map_err(|_| Failure::new("Could not load discussion. r Retry"))?;
+            .map_err(|_| Failure::new("Could not load discussion. M → Enter Retry"))?;
         partial |= comments.len() != ids.len();
         for comment in comments {
             let &(thread, parent, _) = batch.iter().find(|(_, _, id)| *id == comment.id).unwrap();
@@ -154,7 +153,9 @@ pub async fn discussion(
     }
     let count = sources.iter().filter(|s| !s.excerpt.is_empty()).count();
     if sources.is_empty() && partial {
-        return Err(Failure::new("Comments could not be loaded. r Retry"));
+        return Err(Failure::new(
+            "Comments could not be loaded. M → Enter Retry",
+        ));
     }
     partial |= !roots.is_empty() || threads.iter().any(|q| !q.is_empty());
     let coverage = format!(

@@ -220,6 +220,44 @@ impl<C: HackerNewsClient> HackerNewsCliServiceImpl<C> {
         Ok((self.api_item_to_hn_cli_item(item), roots))
     }
 
+    /// Refresh only the branches already open, retaining the old tree on any fetch error.
+    pub async fn refresh_comments(
+        &self,
+        story_id: i32,
+        previous: &[app::Comment],
+    ) -> Result<Vec<app::Comment>> {
+        let ids = self.top_level_comment_ids(story_id).await?;
+        self.refresh_comment_branch(&ids, previous, 0).await
+    }
+
+    async fn refresh_comment_branch(
+        &self,
+        ids: &[i32],
+        previous: &[app::Comment],
+        depth: usize,
+    ) -> Result<Vec<app::Comment>> {
+        let mut comments = Vec::new();
+        for item in self.hn_client.get_items(ids).await {
+            let mut comment = self.api_item_to_comment(item?, depth);
+            if let Some(app::Comment {
+                state: app::CommentState::Expanded { children },
+                ..
+            }) = previous.iter().find(|old| old.id == comment.id)
+            {
+                comment.state = app::CommentState::Expanded {
+                    children: Box::pin(self.refresh_comment_branch(
+                        &comment.child_ids,
+                        children,
+                        depth + 1,
+                    ))
+                    .await?,
+                };
+            }
+            comments.push(comment);
+        }
+        Ok(comments)
+    }
+
     /// Create a new HackerNews CLI service with a custom client
     ///
     /// # Arguments
