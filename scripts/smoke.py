@@ -10,7 +10,7 @@ class TUI:
         self.decoder=codecs.getincrementaldecoder("utf-8")("replace");self.raw=b""
         self.pid,self.fd=pty.fork()
         if self.pid==0:
-            os.environ.update({"XDG_CONFIG_HOME":str(data/"config"),"XDG_DATA_HOME":str(data),"TERM":"xterm-256color","TERM_PROGRAM":"hn-pty-test"})
+            os.environ.update({"XDG_CONFIG_HOME":str(data/"config"),"XDG_DATA_HOME":str(data),"XDG_STATE_HOME":str(data/"state"),"TERM":"xterm-256color","TERM_PROGRAM":"hn-pty-test"})
             os.chdir(ROOT);os.execv(str(ROOT/'target/debug/hn'),['hn'])
         fcntl.ioctl(self.fd,termios.TIOCSWINSZ,struct.pack("HHHH",height,width,0,0))
     def text(self): return "\n".join(self.screen.display)
@@ -70,7 +70,12 @@ try:
     app.capture('fast-ready');assert 'Summary ready' in app.text(),app.text()
     assert 'ARTICLE · Fast' in app.text() and 'DISCUSSION · Fast' in app.text()
     print(f'PASS live Fast article + discussion in {time.monotonic()-started:.1f}s',flush=True)
-    app.key('jjj');before=app.text();app.key('S');assert 'S View' in app.text();app.key('S')
+    app.key('jjj')
+    before=re.split(r'^╰[^\n]*\n',app.text(),maxsplit=1,flags=re.M)[1]
+    app.key('S');assert 'S View' in app.text();app.key('S')
+    after=re.split(r'^╰[^\n]*\n',app.text(),maxsplit=1,flags=re.M)[1]
+    assert after==before, 'Summary toggle moved the visible comments'
+    print('PASS summary hide/show preserves visible comments',flush=True)
     app.key('\t');app.key('\r');assert 'CITED COMMENT' in app.text();app.capture('captured-source');app.key('\x1b')
     assert 'Summary ready' in app.text();app.capture('fast-source-back')
     app.key('M');assert key not in app.text();app.key('\t');assert 'Haiku 5.5' in app.text();app.capture('settings-fast');app.key(' ');assert 'Sonnet 5.5' in app.text();app.capture('settings-thorough');started=time.monotonic();app.key('\r')
@@ -108,4 +113,4 @@ except BaseException:
 finally:
     os.environ.pop('OPENROUTER_API_KEY',None)
 print('Evidence:',EVIDENCE,flush=True)
-print('Isolated settings:',work,flush=True)
+print('Isolated settings and diagnostic logs:',work,flush=True)
