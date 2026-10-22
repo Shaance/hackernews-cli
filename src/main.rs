@@ -3,10 +3,14 @@
 //! An interactive terminal user interface for browsing HackerNews stories and comments.
 
 use anyhow::Result;
+use crossterm::event::KeyCode;
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io;
+use std::path::{Path, PathBuf};
 use tokio::sync::mpsc;
 
+mod reader;
+mod reader_actions;
 mod terminal_session;
 
 use hn_lib::{
@@ -48,6 +52,7 @@ async fn main() -> Result<()> {
 
     // Create app state
     let mut app = App::new();
+    let mut bookmark_path = hn_lib::bookmarks::reload(&mut app);
     let service = HackerNewsCliServiceImpl::new();
 
     // Create channel for async task communication
@@ -57,7 +62,15 @@ async fn main() -> Result<()> {
     request_stories(&mut app, tx.clone(), service.clone(), false);
 
     // Run the app
-    let result = run_app(terminal.terminal_mut(), &mut app, tx, &mut rx, service).await;
+    let result = run_app(
+        terminal.terminal_mut(),
+        &mut app,
+        tx,
+        &mut rx,
+        service,
+        &mut bookmark_path,
+    )
+    .await;
     terminal.restore();
 
     if let Err(err) = result {
@@ -73,13 +86,22 @@ async fn run_app(
     tx: mpsc::UnboundedSender<AppMessage>,
     rx: &mut mpsc::UnboundedReceiver<AppMessage>,
     service: HackerNewsCliServiceImpl,
+    bookmark_path: &mut Option<PathBuf>,
 ) -> Result<()> {
     let event_handler = EventHandler::default();
     let mut tick_count = 0usize;
+    let mut summaries = reader::Reader::default();
 
     loop {
         // Render UI
-        terminal.draw(|f| hn_lib::ui::render(f, app, tick_count))?;
+        summaries.poll();
+        terminal.draw(|f| {
+            if summaries.is_open() {
+                summaries.render(f, app, tick_count);
+            } else {
+                hn_lib::ui::render(f, app, tick_count);
+            }
+        })?;
 
         // Handle events (non-blocking poll)
         let event = event_handler.next()?;
@@ -89,15 +111,47 @@ async fn run_app(
                 tick_count = tick_count.wrapping_add(1);
             }
             Event::Key(key) => {
+                if reader_actions::handle(
+                    &mut summaries,
+                    app,
+                    key,
+                    tx.clone(),
+                    service.clone(),
+                    bookmark_path,
+                )
+                .await?
+                {
+                    drain_app_messages(app, rx);
+                    continue;
+                }
+                if app.show_links {
+                    handle_link_key(app, key);
+                    drain_app_messages(app, rx);
+                    continue;
+                }
                 // Handle key based on current view
                 match &app.view {
                     View::Stories => {
                         let action = handle_stories_key(key);
-                        handle_story_action(app, action, tx.clone(), service.clone()).await?;
+                        handle_story_action(
+                            app,
+                            action,
+                            tx.clone(),
+                            service.clone(),
+                            bookmark_path,
+                        )
+                        .await?;
                     }
                     View::Comments { .. } => {
                         let action = handle_comments_key(key);
-                        handle_comment_action(app, action, tx.clone(), service.clone()).await?;
+                        handle_comment_action(
+                            app,
+                            action,
+                            tx.clone(),
+                            service.clone(),
+                            bookmark_path.as_deref(),
+                        )
+                        .await?;
                     }
                 }
             }
@@ -120,6 +174,7 @@ async fn handle_story_action(
     action: StoryAction,
     tx: mpsc::UnboundedSender<AppMessage>,
     service: HackerNewsCliServiceImpl,
+    bookmark_path: &mut Option<PathBuf>,
 ) -> Result<()> {
     match action {
         StoryAction::NextStory => app.next_story(),
@@ -151,6 +206,9 @@ async fn handle_story_action(
                 let service = service.clone();
 
                 app.view_comments(story_id, story_title, story_url);
+                if !app.is_loading() {
+                    return Ok(());
+                }
                 let view_generation = app.comment_view_generation();
 
                 // Fetch comments
@@ -165,8 +223,14 @@ async fn handle_story_action(
             }
         }
         StoryAction::Refresh => {
-            request_stories(app, tx, service, true);
+            if app.story_type == StoryType::Saved {
+                *bookmark_path = hn_lib::bookmarks::reload(app);
+                app.show_saved_stories();
+            } else {
+                request_stories(app, tx, service, true);
+            }
         }
+        StoryAction::ToggleBookmark => toggle_bookmark(app, bookmark_path.as_deref()),
         StoryAction::ToggleHelp => app.toggle_help(),
         StoryAction::Quit => app.should_quit = true,
         StoryAction::None => {}
@@ -182,6 +246,10 @@ fn request_stories(
     service: HackerNewsCliServiceImpl,
     force_refresh: bool,
 ) {
+    if app.story_type == StoryType::Saved {
+        app.show_saved_stories();
+        return;
+    }
     if force_refresh {
         app.story_cache.remove(&(app.story_type, app.current_page));
     }
@@ -219,6 +287,7 @@ async fn handle_comment_action(
     action: CommentAction,
     tx: mpsc::UnboundedSender<AppMessage>,
     service: HackerNewsCliServiceImpl,
+    bookmark_path: Option<&Path>,
 ) -> Result<()> {
     match action {
         CommentAction::NextComment => app.next_comment(),
@@ -228,6 +297,26 @@ async fn handle_comment_action(
         CommentAction::Parent => app.parent_comment(),
         CommentAction::FirstComment => app.first_comment(),
         CommentAction::LastComment => app.last_comment(),
+        CommentAction::PageDown => app.scroll_comment_page(true),
+        CommentAction::PageUp => app.scroll_comment_page(false),
+        CommentAction::ToggleBookmark => toggle_bookmark(app, bookmark_path),
+        CommentAction::ShowLinks => {
+            app.show_links = true;
+            app.link_cursor = 0;
+        }
+        CommentAction::Refresh => {
+            if let View::Comments { story_id, .. } = app.view {
+                let view_generation = app.begin_comment_refresh();
+                tokio::spawn(async move {
+                    let result = service.fetch_top_level_comments(story_id).await;
+                    let _ = tx.send(AppMessage::Comments {
+                        story_id,
+                        view_generation,
+                        result,
+                    });
+                });
+            }
+        }
         CommentAction::ToggleExpand => {
             let active_story_id = match &app.view {
                 View::Comments { story_id, .. } => *story_id,
@@ -383,6 +472,32 @@ fn handle_app_message(app: &mut App, msg: AppMessage) {
 fn drain_app_messages(app: &mut App, rx: &mut mpsc::UnboundedReceiver<AppMessage>) {
     while let Ok(msg) = rx.try_recv() {
         handle_app_message(app, msg);
+    }
+}
+
+fn toggle_bookmark(app: &mut App, path: Option<&Path>) {
+    if let Err(error) = hn_lib::bookmarks::toggle(app, path) {
+        app.bookmark_notice = Some(error.to_string());
+    }
+}
+
+fn handle_link_key(app: &mut App, key: KeyCode) {
+    let links = app.current_links();
+    match key {
+        KeyCode::Char('j') | KeyCode::Down => {
+            app.link_cursor = (app.link_cursor + 1).min(links.len().saturating_sub(1));
+        }
+        KeyCode::Char('k') | KeyCode::Up => app.link_cursor = app.link_cursor.saturating_sub(1),
+        KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('L') => app.show_links = false,
+        KeyCode::Enter | KeyCode::Char('o') => {
+            if let Some(url) = links.get(app.link_cursor) {
+                if let Err(error) = open_story_url(url, 0) {
+                    app.set_comment_error(error.to_string());
+                }
+            }
+            app.show_links = false;
+        }
+        _ => {}
     }
 }
 

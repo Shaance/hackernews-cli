@@ -5,7 +5,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph, Wrap},
+    widgets::{Block, Borders, Paragraph},
     Frame,
 };
 
@@ -25,17 +25,21 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
         .split(f.area());
 
     render_title(f, chunks[0], app, tick);
+    let has_post = app
+        .discussion_story
+        .as_ref()
+        .is_some_and(|story| !story.text.is_empty());
 
-    if app.is_loading() && app.comments.is_empty() {
+    if app.is_loading() && app.comments.is_empty() && !has_post {
         widgets::render_loading(f, chunks[1], "Loading comments...", tick);
-    } else if app.comments.is_empty() {
+    } else if app.comments.is_empty() && !has_post {
         if let Some(error) = app.error() {
             widgets::render_error(f, chunks[1], error);
         } else {
             render_no_comments(f, chunks[1]);
         }
     } else {
-        render_comments_list(f, chunks[1], app, tick);
+        render_comments_list(f, chunks[1], app, tick, None);
     }
 
     let status = widgets::render_comments_status(chunks[2], app, tick);
@@ -45,6 +49,32 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
     if app.show_help {
         widgets::render_help(f, f.area(), true);
     }
+    if app.show_links {
+        super::links::render(f, app);
+    }
+}
+
+/// Render the existing discussion tree inside the prototype reader.
+pub fn render_reader_content(
+    f: &mut Frame,
+    area: Rect,
+    app: &mut App,
+    tick: usize,
+    mut prefix: Vec<Line<'static>>,
+) {
+    if app.comments.is_empty() {
+        let message = if app.is_loading() {
+            "Loading comments..."
+        } else if let Some(error) = app.error() {
+            error
+        } else {
+            "No comments yet"
+        };
+        for line in textwrap::wrap(message, usize::from(area.width).max(1)) {
+            prefix.push(Line::raw(line.into_owned()));
+        }
+    }
+    render_comments_list(f, area, app, tick, Some(prefix));
 }
 
 /// Render title bar with story title
@@ -55,9 +85,19 @@ fn render_title(f: &mut Frame, area: Rect, app: &App, tick: usize) {
             Line::from(vec![
                 Span::styled(" Comments: ", Style::default().add_modifier(Modifier::BOLD)),
                 Span::raw(story_title),
+                Span::raw(
+                    if app
+                        .bookmark_story()
+                        .is_some_and(|story| app.is_bookmarked(story.id))
+                    {
+                        " ★ Saved"
+                    } else {
+                        ""
+                    },
+                ),
             ]),
             Line::from(vec![
-                Span::raw(format!(" {} comments", comment_count)),
+                Span::raw(format!(" {} loaded comments", comment_count)),
                 if app.should_show_loading() {
                     Span::raw(format!(" {} Loading...", widgets::spinner_frame(tick)))
                 } else {
@@ -71,8 +111,7 @@ fn render_title(f: &mut Frame, area: Rect, app: &App, tick: usize) {
 
     let title = Paragraph::new(title_text)
         .style(Style::default())
-        .block(Block::default().borders(Borders::BOTTOM))
-        .wrap(Wrap { trim: true });
+        .block(Block::default().borders(Borders::BOTTOM));
 
     f.render_widget(title, area);
 }
@@ -97,7 +136,13 @@ fn render_no_comments(f: &mut Frame, area: Rect) {
 }
 
 /// Render the list of comments
-fn render_comments_list(f: &mut Frame, area: Rect, app: &mut App, tick: usize) {
+fn render_comments_list(
+    f: &mut Frame,
+    area: Rect,
+    app: &mut App,
+    tick: usize,
+    prefix: Option<Vec<Line<'static>>>,
+) {
     let list_style = if app.is_loading() {
         Style::default().fg(Color::Gray).add_modifier(Modifier::DIM)
     } else {
@@ -111,7 +156,24 @@ fn render_comments_list(f: &mut Frame, area: Rect, app: &mut App, tick: usize) {
     // Pre-render all comments to line buffers and track their line ranges
     let mut rendered = Vec::with_capacity(app.visible_comment_count());
     let mut line_ranges = Vec::with_capacity(app.visible_comment_count());
-    let mut line_cursor = 0usize;
+    let mut post_lines = Vec::new();
+    if let Some(prefix) = prefix {
+        post_lines = prefix;
+    } else if let Some(story) = &app.discussion_story {
+        if !story.text.is_empty() {
+            post_lines.push(Line::styled(
+                "Original post",
+                Style::default().add_modifier(Modifier::BOLD),
+            ));
+            for line in story.text.lines() {
+                for wrapped in wrap_with_indent(line, area.width as usize) {
+                    post_lines.push(Line::raw(wrapped));
+                }
+            }
+            post_lines.push(Line::raw(""));
+        }
+    }
+    let mut line_cursor = post_lines.len();
 
     for idx in 0..app.visible_comment_count() {
         let Some((path, comment)) = app.visible_comment_at(idx) else {
@@ -135,13 +197,17 @@ fn render_comments_list(f: &mut Frame, area: Rect, app: &mut App, tick: usize) {
     }
 
     // Adjust scroll to keep the selection visible, even when a long comment would otherwise leave blank space
-    app.update_comment_scroll(&line_ranges, area.height as usize);
+    if line_ranges.is_empty() {
+        app.update_comment_scroll(&[(0, post_lines.len())], area.height as usize);
+    } else {
+        app.update_comment_scroll(&line_ranges, area.height as usize);
+    }
 
-    let total_lines = line_ranges.last().map(|(_, end)| *end).unwrap_or(0);
+    let total_lines = line_cursor;
     let scroll = app.comment_scroll.min(total_lines.saturating_sub(1));
 
     // Flatten all lines
-    let mut lines = Vec::with_capacity(total_lines);
+    let mut lines = post_lines;
     for item in rendered {
         lines.extend(item.lines);
     }
@@ -217,7 +283,12 @@ fn render_comment(
 
         // Split text into lines and add indent
         for line in comment.text.lines() {
-            if !line.trim().is_empty() {
+            if line.trim().is_empty() {
+                lines.push(Line::from(Span::styled(
+                    text_prefix.clone(),
+                    Style::default().fg(guide_color),
+                )));
+            } else {
                 let wrapped_lines = wrap_with_indent(line, wrap_width);
                 for wrapped in wrapped_lines {
                     lines.push(Line::from(vec![

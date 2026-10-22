@@ -55,6 +55,8 @@ fn test_display() {
         time: "2020-05-07 22:01:28".to_string(),
         time_ago: "0 seconds ago".to_string(),
         score: 9,
+        text: String::new(),
+        links: vec![],
         comments: Some(1),
     };
     assert_eq!(
@@ -298,4 +300,34 @@ async fn fetch_comment_children_skips_failed_items_and_sets_depth() {
     assert!(comments[0].child_ids.is_empty());
     assert!(matches!(comments[0].state, app::CommentState::Collapsed));
     assert!(comments[0].deleted);
+}
+
+#[tokio::test]
+async fn stories_and_comments_preserve_post_text_code_and_web_destinations() {
+    let html="<p>Question &amp; context<p><pre><code>    one\n      two</code></pre><p><a href=\"https://example.com/full?a=1&amp;b=2\">short label</a>";
+    let mut client = MockHackerNewsClient::new();
+    client.expect_get_story_ids().returning(|_| Ok(vec![1]));
+    let story_html = html.to_string();
+    client.expect_get_items().returning(move |_| {
+        vec![Ok(hn_item(
+            1,
+            "author",
+            Some(&story_html),
+            None,
+            false,
+            false,
+        ))]
+    });
+    let service = HackerNewsCliServiceImpl::new_with_client(client);
+    let story = service
+        .fetch_stories_page("top", 20, 1)
+        .await
+        .unwrap()
+        .remove(0);
+    assert!(story.text.contains("Question & context\n\n"));
+    assert!(story.text.contains("    one\n      two"));
+    assert_eq!(story.links, vec!["https://example.com/full?a=1&b=2"]);
+    let comments = service.fetch_comment_children(&[1], 0).await.unwrap();
+    assert_eq!(comments[0].text, story.text);
+    assert_eq!(comments[0].links, story.links);
 }

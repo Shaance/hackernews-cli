@@ -61,11 +61,13 @@ pub fn handle_stories_key(key: KeyCode) -> StoryAction {
         KeyCode::Char('1') => StoryAction::SetType(crate::app::StoryType::Top),
         KeyCode::Char('2') => StoryAction::SetType(crate::app::StoryType::New),
         KeyCode::Char('3') => StoryAction::SetType(crate::app::StoryType::Best),
+        KeyCode::Char('4') => StoryAction::SetType(crate::app::StoryType::Saved),
 
         // Actions
-        KeyCode::Enter | KeyCode::Char('o') => StoryAction::OpenUrl,
+        KeyCode::Enter | KeyCode::Char('o') | KeyCode::Char('O') => StoryAction::OpenUrl,
         KeyCode::Char('c') => StoryAction::ViewComments,
         KeyCode::Char('r') => StoryAction::Refresh,
+        KeyCode::Char('s') => StoryAction::ToggleBookmark,
 
         // UI
         KeyCode::Char('?') => StoryAction::ToggleHelp,
@@ -86,6 +88,8 @@ pub fn handle_comments_key(key: KeyCode) -> CommentAction {
         KeyCode::Char('u') => CommentAction::Parent,
         KeyCode::Char('g') => CommentAction::FirstComment,
         KeyCode::Char('G') => CommentAction::LastComment,
+        KeyCode::PageDown => CommentAction::PageDown,
+        KeyCode::PageUp => CommentAction::PageUp,
 
         // Expand/collapse
         KeyCode::Enter | KeyCode::Char('l') | KeyCode::Right => CommentAction::ToggleExpand,
@@ -93,6 +97,9 @@ pub fn handle_comments_key(key: KeyCode) -> CommentAction {
 
         // Actions
         KeyCode::Char('o') => CommentAction::OpenUrl,
+        KeyCode::Char('L') => CommentAction::ShowLinks,
+        KeyCode::Char('s') => CommentAction::ToggleBookmark,
+        KeyCode::Char('r') => CommentAction::Refresh,
 
         // UI
         KeyCode::Char('?') => CommentAction::ToggleHelp,
@@ -115,6 +122,7 @@ pub enum StoryAction {
     OpenUrl,
     ViewComments,
     Refresh,
+    ToggleBookmark,
     ToggleHelp,
     Quit,
     None,
@@ -127,12 +135,17 @@ pub enum CommentAction {
     PrevComment,
     FirstComment,
     LastComment,
+    PageDown,
+    PageUp,
     NextSibling,
     PrevSibling,
     Parent,
     ToggleExpand,
     CollapseThread,
     OpenUrl,
+    ShowLinks,
+    ToggleBookmark,
+    Refresh,
     ToggleHelp,
     Back,
     None,

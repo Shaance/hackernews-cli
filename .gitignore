@@ -1,2 +1,8 @@
 /target
 .idea
+
+# Local API credentials
+.env.local
+
+# Optional local browser distribution
+.tools/
