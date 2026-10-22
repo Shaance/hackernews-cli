@@ -5,6 +5,7 @@ use std::collections::HashMap;
 
 #[cfg(test)]
 mod app_tests;
+mod comment_refresh;
 mod comment_view_state;
 #[cfg(test)]
 mod comment_view_state_tests;
@@ -56,6 +57,14 @@ impl StoryType {
     }
 }
 
+/// Last successfully displayed location in one feed for this session.
+struct FeedPosition {
+    page: u32,
+    selected_id: Option<i32>,
+    index: usize,
+    scroll: usize,
+}
+
 /// Main application state
 pub struct App {
     /// Current view
@@ -84,6 +93,11 @@ pub struct App {
     pub bookmarks: Vec<HNCLIItem>,
     pub bookmark_notice: Option<String>,
     reading_sessions: HashMap<i32, ReadingSession>,
+    feed_positions: HashMap<StoryType, FeedPosition>,
+    comment_line_ranges: Vec<(i32, usize, usize)>,
+    comment_viewport_height: usize,
+    comment_anchor: Option<(i32, usize)>,
+    refreshing_comments: bool,
     follow_comment_selection: bool,
     pending_comment_pages: i32,
     /// Monotonic token used to ignore stale async comment responses
@@ -132,6 +146,11 @@ impl App {
             bookmarks: Vec::new(),
             bookmark_notice: None,
             reading_sessions: HashMap::new(),
+            feed_positions: HashMap::new(),
+            comment_line_ranges: Vec::new(),
+            comment_viewport_height: 0,
+            comment_anchor: None,
+            refreshing_comments: false,
             follow_comment_selection: false,
             pending_comment_pages: 0,
             comment_view_generation: 0,
@@ -184,8 +203,6 @@ impl App {
             return;
         }
         self.current_page += 1;
-        self.selected_index = 0;
-        self.story_scroll = 0;
     }
 
     /// Go to previous page
@@ -195,18 +212,15 @@ impl App {
         }
         if self.current_page > 1 {
             self.current_page -= 1;
-            self.selected_index = 0;
-            self.story_scroll = 0;
         }
     }
 
     /// Switch story type
     pub fn set_story_type(&mut self, story_type: StoryType) {
         if self.story_type != story_type {
+            self.remember_feed_position();
             self.story_type = story_type;
-            self.current_page = 1;
-            self.selected_index = 0;
-            self.story_scroll = 0;
+            self.current_page = self.feed_positions.get(&story_type).map_or(1, |p| p.page);
         }
     }
 
@@ -278,6 +292,9 @@ impl App {
 
     fn reset_comment_view_state(&mut self) {
         self.comments.clear();
+        self.comment_line_ranges.clear();
+        self.comment_anchor = None;
+        self.refreshing_comments = false;
         self.visible_comment_paths.clear();
         self.comment_cursor = 0;
         self.comment_scroll = 0;
@@ -313,8 +330,34 @@ impl App {
 
     /// Set stories and record their source type/page
     pub fn set_stories_for(&mut self, story_type: StoryType, page: u32, stories: Vec<HNCLIItem>) {
+        self.remember_feed_position();
+        let position = self
+            .feed_positions
+            .get(&story_type)
+            .filter(|p| p.page == page);
+        self.selected_index = position.map_or(0, |p| {
+            p.selected_id
+                .and_then(|id| stories.iter().position(|story| story.id == id))
+                .unwrap_or(p.index)
+                .min(stories.len().saturating_sub(1))
+        });
+        self.story_scroll = position.map_or(0, |p| p.scroll.min(stories.len().saturating_sub(1)));
         self.stories_for = Some((story_type, page));
         self.set_stories(stories);
+    }
+
+    fn remember_feed_position(&mut self) {
+        if let Some((feed, page)) = self.stories_for {
+            self.feed_positions.insert(
+                feed,
+                FeedPosition {
+                    page,
+                    selected_id: self.selected_story().map(|s| s.id),
+                    index: self.selected_index,
+                    scroll: self.story_scroll,
+                },
+            );
+        }
     }
 
     /// Apply loaded stories for a given page/type and cache them
@@ -332,11 +375,7 @@ impl App {
     }
 
     /// Apply a story page load failure without discarding currently usable stories.
-    pub fn apply_stories_error(&mut self, story_type: StoryType, page: u32, error: String) {
-        if self.stories.is_empty() {
-            self.stories_for = Some((story_type, page));
-        }
-
+    pub fn apply_stories_error(&mut self, error: String) {
         self.set_story_error(error);
     }
 
@@ -349,11 +388,16 @@ impl App {
 
     /// Set comments
     pub fn set_comments(&mut self, comments: Vec<Comment>) {
+        if self.refreshing_comments {
+            self.apply_comment_refresh(comments);
+            return;
+        }
         self.comments = comments;
         self.rebuild_visible_comments();
         self.comment_cursor = self
             .comment_cursor
             .min(self.visible_comment_count().saturating_sub(1));
         self.clear_comment_status();
+        self.recompute_comment_loading(self.has_loading_comments());
     }
 }

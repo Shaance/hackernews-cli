@@ -95,6 +95,12 @@ async fn refresh_survives_revisit_and_profile_switch_ignores_old_completion() {
 #[test]
 fn source_snapshot_and_parent_publish_together_on_return() {
     let mut p = ready();
+    let mut app = comments_app();
+    let mut original = discussion_capture();
+    original.sources[1].text = "Reply evidence.\n".repeat(60);
+    original.sources[1].excerpt = original.sources[1].text.clone();
+    let reading = p.readings.get_mut(&1).unwrap();
+    reading.discussion.result.as_mut().unwrap().capture = Arc::new(Capture::new(original));
     p.key(KeyCode::Tab);
     p.key(KeyCode::Enter);
     let attempt = Attempt {
@@ -118,7 +124,22 @@ fn source_snapshot_and_parent_publish_together_on_return() {
         .source_lines(11, 80)
         .iter()
         .any(|l| l.to_string().contains("Reply evidence.")));
+    let reading = p.readings.get_mut(&1).unwrap();
+    reading.article.result.as_mut().unwrap().profile = Profile::Thorough;
+    let source = screen(&mut p, &mut app, 120, 40);
+    assert!(source.contains("Source 1 of 1 · reply · Fast"));
+    assert!(source.contains("Updated summary ready"));
+    p.key(KeyCode::PageDown);
+    screen(&mut p, &mut app, 120, 40);
+    let scroll = p.readings[&1].source_scroll;
+    assert!(scroll > 0);
+    for key in [KeyCode::Tab, KeyCode::BackTab] {
+        p.key(key);
+        assert!(screen(&mut p, &mut app, 120, 40).contains("Reply evidence."));
+        assert_eq!(p.readings[&1].source_scroll, scroll);
+    }
     p.key(KeyCode::Esc);
+    assert!(!p.readings[&1].reveal_citation);
     assert!(!p.readings[&1].citation_focus);
     assert!(!p.key(KeyCode::Enter));
     assert_eq!(
@@ -167,16 +188,72 @@ async fn abandoning_preparation_never_submits_and_retry_does_not_start_manual_wo
     assert!(p.jobs.is_empty());
 }
 
-#[tokio::test]
-async fn manual_generation_fills_missing_section_without_replacing_existing_result() {
+#[test]
+fn s_toggles_partial_results_without_work_even_when_credentials_need_repair() {
+    for (article_only, credentials) in [
+        (true, 0),
+        (true, 1),
+        (true, 2),
+        (false, 0),
+        (false, 1),
+        (false, 2),
+    ] {
+        let mut p = ready();
+        let r = p.readings.get_mut(&1).unwrap();
+        if article_only {
+            r.discussion = Section::default();
+        } else {
+            r.article = Section::default();
+        }
+        if credentials == 0 {
+            p.config.api_key.clear();
+        } else if credentials == 1 {
+            p.auth_failed = true;
+        }
+        let mut app = comments_app();
+        for shown in [false, true] {
+            p.key(KeyCode::Char('S'));
+            assert_eq!(p.readings[&1].shown, shown);
+            assert!(!p.settings_open());
+            let rendered = screen(&mut p, &mut app, 120, 40);
+            assert!(
+                !rendered.contains("M → Enter Retry"),
+                "An idle section is not a failure"
+            );
+            assert_eq!(
+                rendered.contains(if article_only {
+                    "Article claim."
+                } else {
+                    "A concrete disagreement."
+                }),
+                shown
+            );
+        }
+        assert_eq!(p.next_attempt, 0);
+        assert!(p.jobs.is_empty());
+    }
+}
+
+#[test]
+fn revisiting_retained_results_names_actual_profiles_and_partial_updates() {
     let mut p = ready();
-    p.readings.get_mut(&1).unwrap().discussion = Section::default();
+    p.open(story(2));
     p.config.profile = Profile::Thorough;
-    p.key(KeyCode::Char('S'));
-    assert!(p.readings[&1].discussion.pending());
-    assert!(!p.readings[&1].article.pending());
-    assert_eq!(
-        p.readings[&1].article.result.as_ref().unwrap().profile,
-        Profile::Fast
-    );
+    p.open(story(1));
+    let mut app = comments_app();
+    for _ in 0..2 {
+        let rendered = screen(&mut p, &mut app, 120, 40);
+        assert!(rendered.contains("Summary ready"));
+        assert!(rendered.contains("Fast"));
+        assert!(!rendered.contains("Thorough"));
+        p.key(KeyCode::Char('S'));
+    }
+    let reading = p.readings.get_mut(&1).unwrap();
+    reading.article.result.as_mut().unwrap().profile = Profile::Thorough;
+    let rendered = screen(&mut p, &mut app, 120, 40);
+    assert!(rendered.contains("Summary partially updated"));
+    assert!(rendered.contains("Article Thorough · Discussion Fast"));
+    assert!(!rendered.contains("Summary ready"));
+    assert_eq!(p.next_attempt, 0);
+    assert!(p.jobs.is_empty());
 }

@@ -1,7 +1,7 @@
 use super::{Progress, Reading, Section};
 use ratatui::{
     style::{Color, Modifier, Style},
-    text::Line,
+    text::{Line, Span},
 };
 
 pub(super) fn append(lines: &mut Vec<Line<'static>>, text: &str, width: usize, style: Style) {
@@ -75,9 +75,6 @@ impl Reading {
             for point in &discussion.points {
                 let active =
                     self.citation_focus && selected.is_some_and(|id| point.sources.contains(id));
-                if active && target.is_none() {
-                    target = Some(lines.len());
-                }
                 let refs = point
                     .sources
                     .iter()
@@ -85,16 +82,41 @@ impl Reading {
                     .map(|i| format!("[{}]", i + 1))
                     .collect::<Vec<_>>()
                     .join(" ");
-                append(
-                    &mut lines,
-                    &format!("{} {} {refs}", if active { ">" } else { "•" }, point.text),
-                    width,
-                    if active {
-                        normal.fg(Color::Cyan).add_modifier(Modifier::BOLD)
-                    } else {
-                        normal
-                    },
-                );
+                let body = format!("{} {} ", if active { ">" } else { "•" }, point.text);
+                let token = format!("[{}]", self.citation + 1);
+                let focus = active.then(|| refs.find(&token)).flatten().map(|i| {
+                    let start = body.len() + i;
+                    start..start + token.len()
+                });
+                let text = format!("{body}{refs}");
+                let point_style = if active {
+                    normal.fg(Color::Cyan)
+                } else {
+                    normal
+                };
+                let mut consumed = 0;
+                for row in textwrap::wrap(&text, width) {
+                    let start = consumed + text[consumed..].find(row.as_ref()).unwrap();
+                    consumed = start + row.len();
+                    let mut line = Line::styled(row.to_string(), point_style);
+                    if let Some(focus) = &focus {
+                        let left = focus.start.max(start);
+                        let right = focus.end.min(consumed);
+                        if left < right {
+                            target.get_or_insert(lines.len());
+                            line = Line::from(vec![
+                                Span::styled(row[..left - start].to_owned(), point_style),
+                                Span::styled(
+                                    row[left - start..right - start].to_owned(),
+                                    point_style.add_modifier(Modifier::BOLD | Modifier::REVERSED),
+                                ),
+                                Span::styled(row[right - start..].to_owned(), point_style),
+                            ]);
+                        }
+                    }
+                    lines.push(line);
+                }
+                lines.push(Line::raw(""));
             }
         }
         self.discussion.append_status(&mut lines, width);
@@ -186,7 +208,7 @@ impl<T, C> Section<T, C> {
                 a.profile.label()
             ),
             Progress::Failed(a, _) if a.refresh => format!(
-                "{} · Refresh failed · r Retry",
+                "{} · Refresh failed · M → Enter Retry",
                 actual.unwrap_or(a.profile.label())
             ),
             Progress::Failed(a, _) => format!(
@@ -213,7 +235,7 @@ impl<T, C> Section<T, C> {
                 if self.pending() {
                     "Working…"
                 } else {
-                    "S Generate"
+                    "M Settings"
                 },
                 width,
                 Style::default(),

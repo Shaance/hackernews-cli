@@ -64,3 +64,37 @@ fn short_narrow_terminal_shows_help_and_comment_count() {
         assert!(text.contains(shortcut), "missing {shortcut}");
     }
 }
+
+#[test]
+fn feed_metadata_shows_external_subdomains_and_native_discussions() {
+    for width in [80, 120, 160] {
+        let mut app = App::new();
+        app.set_stories(
+            [
+                "https://research.example.com/paper",
+                "https://news.ycombinator.com/item?id=2",
+                "",
+            ]
+            .iter()
+            .enumerate()
+            .map(|(id, url)| crate::HNCLIItem {
+                id: id as i32,
+                title: format!("Story {id}"),
+                url: (*url).into(),
+                author: "reader".into(),
+                time: String::new(),
+                time_ago: "now".into(),
+                score: 1,
+                text: String::new(),
+                links: vec![],
+                comments: Some(2),
+            })
+            .collect(),
+        );
+        let mut terminal = Terminal::new(TestBackend::new(width, 24)).unwrap();
+        terminal.draw(|frame| render(frame, &mut app, 0)).unwrap();
+        let text = buffer_text(terminal.backend().buffer());
+        assert!(text.contains("research.example.com"));
+        assert_eq!(text.matches("HN discussion").count(), 2);
+    }
+}

@@ -145,16 +145,53 @@ impl Reader {
         let ready =
             reading.article.result.is_some() as u8 + reading.discussion.result.is_some() as u8;
         let loading = reading.article.pending() || reading.discussion.pending();
-        let (label, color) = if reading.source.is_some() {
-            ("Summary source · Esc Back".to_owned(), Color::Cyan)
-        } else if self.config.key().is_empty() {
-            ("AI summary · S Set up summaries".to_owned(), Color::Yellow)
-        } else if self.auth_failed {
+        let article = reading.article.label();
+        let discussion = reading.discussion.label();
+        let profiles = if article == discussion {
+            article
+        } else {
+            format!("Article {article} · Discussion {discussion}")
+        };
+        let (label, color) = if let Some(id) = reading.source {
+            let result = reading.discussion.result.as_ref().unwrap();
+            let author = &result
+                .capture
+                .input
+                .sources
+                .iter()
+                .find(|s| s.id == id)
+                .unwrap()
+                .author;
             (
-                format!("{} key rejected · M Edit key", self.config.provider.label()),
+                format!(
+                    "Source {} of {} · {author} · {} · Esc Back · S Hide",
+                    reading.citation + 1,
+                    reading.citations().len(),
+                    result.profile.label()
+                ),
+                Color::Cyan,
+            )
+        } else if self.config.key().is_empty() {
+            (
+                if ready > 0 || loading {
+                    format!("AI summary · {action} · M Set up summaries")
+                } else {
+                    "AI summary · S Set up summaries".to_owned()
+                },
                 Color::Yellow,
             )
-        } else if !reading.article.requested() || !reading.discussion.requested() {
+        } else if self.auth_failed {
+            (
+                format!(
+                    "{} key rejected · {action} · M Edit key",
+                    self.config.provider.label()
+                ),
+                Color::Yellow,
+            )
+        } else if ready == 0
+            && !loading
+            && (!reading.article.requested() || !reading.discussion.requested())
+        {
             ("AI summary · S Generate".to_owned(), Color::Yellow)
         } else if loading {
             let state = if ready == 2 {
@@ -171,28 +208,46 @@ impl Reader {
                 ),
                 Color::Yellow,
             )
-        } else if ready == 2 && !reading.article.failed() && !reading.discussion.failed() {
+        } else if ready == 2
+            && !reading.article.failed()
+            && !reading.discussion.failed()
+            && reading.article.result.as_ref().unwrap().profile
+                == reading.discussion.result.as_ref().unwrap().profile
+        {
             (format!("✓ Summary ready · {action}"), Color::Green)
-        } else {
+        } else if ready == 2 && !reading.article.failed() && !reading.discussion.failed() {
             (
-                format!("Summary incomplete · {action} · r Retry"),
+                format!("Summary partially updated · {action}"),
+                Color::Yellow,
+            )
+        } else {
+            let retry = if reading.article.failed() || reading.discussion.failed() {
+                " · M → Enter Retry"
+            } else {
+                ""
+            };
+            (
+                format!("Summary incomplete · {action}{retry}"),
                 Color::Yellow,
             )
         };
-        frame.render_widget(
-            Paragraph::new(format!(
-                "{label} · {} · Auto {} · M Settings",
-                self.config.profile.label(),
+        let header = if reading.source.is_some() {
+            label
+        } else {
+            format!(
+                "{label} · {profiles} · Auto {} · M Settings",
                 if self.config.automatic { "on" } else { "off" }
-            ))
-            .style(Style::default().fg(color)),
+            )
+        };
+        frame.render_widget(
+            Paragraph::new(header).style(Style::default().fg(color)),
             areas[1],
         );
         let status = if reading.source.is_some() {
             if reading.staged.is_some() {
-                "Summary updated · Esc Back".to_owned()
+                "Updated summary ready · Esc Back".to_owned()
             } else {
-                "Esc Back to summary · PgUp/Dn Scroll".to_owned()
+                "Tab/Shift-Tab Sources · Esc Back · PgUp/Dn Scroll".to_owned()
             }
         } else if let Some(error) = app.error() {
             error.to_owned()

@@ -38,17 +38,14 @@ pub async fn handle(
             return Ok(true);
         }
         if key == KeyCode::Char('r') {
-            reader.key(key);
-            if app.error().is_some() {
-                handle_comment_action(
-                    app,
-                    handle_comments_key(key),
-                    tx,
-                    service,
-                    bookmark_path.as_deref(),
-                )
-                .await?;
-            }
+            handle_comment_action(
+                app,
+                handle_comments_key(key),
+                tx,
+                service,
+                bookmark_path.as_deref(),
+            )
+            .await?;
             return Ok(true);
         }
         let key = if key == KeyCode::Char('O') {

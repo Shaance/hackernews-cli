@@ -17,10 +17,16 @@ pub struct Settings {
     profile: Profile,
     cursor: usize,
     error: String,
+    retry: bool,
 }
 impl Reader {
     pub(super) fn edit_settings(&mut self) {
+        let retry = self
+            .active
+            .and_then(|id| self.readings.get(&id))
+            .is_some_and(|r| r.article.failed() || r.discussion.failed());
         self.settings = Some(Settings {
+            retry,
             keys: [
                 self.config.key_for(Provider::OpenRouter).to_owned(),
                 self.config.key_for(Provider::Anthropic).to_owned(),
@@ -30,6 +36,8 @@ impl Reader {
             profile: self.config.profile,
             cursor: if self.config.key().is_empty() || self.auth_failed {
                 1
+            } else if retry {
+                5
             } else {
                 2
             },
@@ -40,12 +48,13 @@ impl Reader {
         let Some(s) = self.settings.as_mut() else {
             return;
         };
+        let rows = if s.retry { 6 } else { 5 };
         match key {
             KeyCode::Esc => {
                 self.settings = None;
             }
-            KeyCode::Tab | KeyCode::Down => s.cursor = (s.cursor + 1) % 5,
-            KeyCode::BackTab | KeyCode::Up => s.cursor = (s.cursor + 4) % 5,
+            KeyCode::Tab | KeyCode::Down => s.cursor = (s.cursor + 1) % rows,
+            KeyCode::BackTab | KeyCode::Up => s.cursor = (s.cursor + rows - 1) % rows,
             KeyCode::Backspace if s.cursor == 1 => {
                 s.keys[s.provider as usize].pop();
             }
@@ -71,17 +80,19 @@ impl Reader {
                 };
             }
             KeyCode::Enter => {
-                let refresh = s.cursor == 4;
-                let generate = s.cursor == 3;
-                self.apply_settings(refresh, generate);
+                self.apply_settings();
             }
             _ => {}
         }
     }
-    fn apply_settings(&mut self, refresh: bool, generate: bool) {
+    fn apply_settings(&mut self) {
         let Some(s) = self.settings.as_ref() else {
             return;
         };
+        let refresh = s.cursor == 4;
+        let generate = s.cursor == 3;
+        let retry = s.cursor == 5;
+        let repair = s.cursor == 1;
         let mut config = self.config.clone();
         let requested = self
             .active
@@ -118,7 +129,7 @@ impl Reader {
             self.settings.as_mut().unwrap().error = error.to_string();
             return;
         }
-        let repaired = changed_key || self.auth_failed;
+        let repaired = changed_key || (repair && self.auth_failed);
         self.config = config;
         self.settings = None;
         self.settings_error.clear();
@@ -179,8 +190,10 @@ impl Reader {
                 }
             }
         }
-        if refresh || generate || self.config.automatic || (profile_changed && requested) {
-            self.request(if refresh {
+        if retry || refresh || generate || self.config.automatic || (profile_changed && requested) {
+            self.request(if retry {
+                Request::Retry
+            } else if refresh {
                 Request::Refresh
             } else if generate || (profile_changed && requested) {
                 Request::Generate
@@ -195,7 +208,7 @@ impl Reader {
             return;
         };
         let key = &s.keys[s.provider as usize];
-        let values = [
+        let mut values = vec![
             format!("Provider: {}", s.provider.label()),
             format!(
                 "{} key: {}",
@@ -213,6 +226,9 @@ impl Reader {
             format!("Model preference: {}", s.profile.label()),
             "Refresh sources & summary".into(),
         ];
+        if s.retry {
+            values.push("Retry failed summary".into());
+        }
         let mut lines = vec![
             Line::raw(""),
             Line::raw("For this story and future summaries"),
@@ -241,6 +257,7 @@ impl Reader {
                     }
                 }
                 4 => "Fetch newer article and comments, then replace their summaries.",
+                5 => "Retry failed sections using available captures; keep successful summaries.",
                 _ => "Provider for new requests. Completed summaries stay available.",
             }),
             Line::raw(""),

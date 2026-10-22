@@ -66,7 +66,7 @@ impl Network {
         let summary = output["summary"]
             .as_str()
             .filter(|v| !v.trim().is_empty())
-            .ok_or_else(|| Failure::new("Empty article summary. r Retry"))?;
+            .ok_or_else(|| Failure::new("Empty article summary. M → Enter Retry"))?;
         Ok(Article {
             text: sources::clean(summary),
         })
@@ -113,7 +113,7 @@ impl Network {
             )
             .await?;
         let mut output: Discussion = serde_json::from_value(output)
-            .map_err(|_| Failure::new("Discussion response could not be read. r Retry"))?;
+            .map_err(|_| Failure::new("Discussion response could not be read. M → Enter Retry"))?;
         if output.points.is_empty()
             || output.points.iter().any(|p| {
                 p.text.trim().is_empty()
@@ -124,7 +124,7 @@ impl Network {
             })
         {
             return Err(Failure::new(
-                "Discussion citations could not be verified. r Retry",
+                "Discussion citations could not be verified. M → Enter Retry",
             ));
         }
         output.overview = sources::clean(&output.overview);
@@ -166,7 +166,7 @@ impl Network {
             .json(&body)
             .send()
             .await
-            .map_err(|_| Failure::new(format!("Cannot reach {label}. r Retry")))?;
+            .map_err(|_| Failure::new(format!("Cannot reach {label}. M → Enter Retry")))?;
         let status = response.status();
         let request_id = response
             .headers()
@@ -200,27 +200,32 @@ impl Network {
                     auth: true,
                 },
                 402 => Failure::new(format!(
-                    "{label} credits unavailable. Add credits, then r Retry"
+                    "{label} credits unavailable. Add credits, then M → Enter Retry"
                 )),
-                429 => Failure::new(format!("{label} is rate limited. Try r again shortly")),
+                429 => Failure::new(format!(
+                    "{label} is rate limited. Wait briefly, then M → Enter Retry"
+                )),
                 _ => Failure::new(format!(
-                    "{label} returned HTTP {}. r Retry",
+                    "{label} returned HTTP {}. M → Enter Retry",
                     status.as_u16()
                 )),
             });
         }
-        let value = value
-            .ok_or_else(|| Failure::new(format!("{label} response could not be read. r Retry")))?;
+        let value = value.ok_or_else(|| {
+            Failure::new(format!(
+                "{label} response could not be read. M → Enter Retry"
+            ))
+        })?;
         // OpenRouter can commit HTTP 200 before an upstream provider fails.
         if value.get("error").is_some_and(|error| !error.is_null()) {
             return Err(Failure::new(format!(
-                "{label} provider could not complete the summary. r Retry"
+                "{label} provider could not complete the summary. M → Enter Retry"
             )));
         }
         let text = match provider {
             Provider::OpenRouter => {
                 if value["choices"][0]["finish_reason"] == "length" {
-                    return Err(Failure::new("Summary was cut short. r Retry"));
+                    return Err(Failure::new("Summary was cut short. M → Enter Retry"));
                 }
                 value["choices"][0]["message"]["content"]
                     .as_str()
@@ -228,7 +233,7 @@ impl Network {
             }
             Provider::Anthropic => {
                 if value["stop_reason"] == "max_tokens" {
-                    return Err(Failure::new("Summary was cut short. r Retry"));
+                    return Err(Failure::new("Summary was cut short. M → Enter Retry"));
                 }
                 value["content"].as_array().map(|blocks| {
                     blocks
@@ -240,8 +245,9 @@ impl Network {
             }
         }
         .filter(|text| !text.is_empty())
-        .ok_or_else(|| Failure::new(format!("{label} returned no summary. r Retry")))?;
-        serde_json::from_str(&text).map_err(|_| Failure::new("Summary format was invalid. r Retry"))
+        .ok_or_else(|| Failure::new(format!("{label} returned no summary. M → Enter Retry")))?;
+        serde_json::from_str(&text)
+            .map_err(|_| Failure::new("Summary format was invalid. M → Enter Retry"))
     }
 }
 
