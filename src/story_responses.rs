@@ -10,6 +10,8 @@ fn test_story(id: i32) -> hn_lib::HNCLIItem {
         time: "2023-01-01".to_string(),
         time_ago: "1h ago".to_string(),
         score: 100,
+        text: String::new(),
+        links: vec![],
         comments: Some(10),
     }
 }

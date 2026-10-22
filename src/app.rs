@@ -8,8 +8,10 @@ mod app_tests;
 mod comment_view_state;
 #[cfg(test)]
 mod comment_view_state_tests;
+mod reading_session;
 mod view_status;
 pub use comment_view_state::{Comment, CommentState};
+use reading_session::ReadingSession;
 use view_status::ViewStatus;
 
 /// Current view in the application
@@ -31,6 +33,7 @@ pub enum StoryType {
     Best,
     New,
     Top,
+    Saved,
 }
 
 impl StoryType {
@@ -39,6 +42,7 @@ impl StoryType {
             StoryType::Best => "best",
             StoryType::New => "new",
             StoryType::Top => "top",
+            StoryType::Saved => "saved",
         }
     }
 
@@ -47,6 +51,7 @@ impl StoryType {
             StoryType::Best => "Best",
             StoryType::New => "New",
             StoryType::Top => "Top",
+            StoryType::Saved => "Saved",
         }
     }
 }
@@ -73,6 +78,14 @@ pub struct App {
     pub comment_cursor: usize,
     /// Scroll offset for comments view
     pub comment_scroll: usize,
+    pub discussion_story: Option<HNCLIItem>,
+    pub show_links: bool,
+    pub link_cursor: usize,
+    pub bookmarks: Vec<HNCLIItem>,
+    pub bookmark_notice: Option<String>,
+    reading_sessions: HashMap<i32, ReadingSession>,
+    follow_comment_selection: bool,
+    pending_comment_pages: i32,
     /// Monotonic token used to ignore stale async comment responses
     comment_view_generation: u64,
     /// Monotonic token used to ignore stale async story responses
@@ -113,6 +126,14 @@ impl App {
             visible_comment_paths: Vec::new(),
             comment_cursor: 0,
             comment_scroll: 0,
+            discussion_story: None,
+            show_links: false,
+            link_cursor: 0,
+            bookmarks: Vec::new(),
+            bookmark_notice: None,
+            reading_sessions: HashMap::new(),
+            follow_comment_selection: false,
+            pending_comment_pages: 0,
             comment_view_generation: 0,
             story_request_generation: 0,
             comment_child_load_generation: 0,
@@ -159,6 +180,9 @@ impl App {
 
     /// Go to next page
     pub fn next_page(&mut self) {
+        if self.story_type == StoryType::Saved {
+            return;
+        }
         self.current_page += 1;
         self.selected_index = 0;
         self.story_scroll = 0;
@@ -166,6 +190,9 @@ impl App {
 
     /// Go to previous page
     pub fn prev_page(&mut self) {
+        if self.story_type == StoryType::Saved {
+            return;
+        }
         if self.current_page > 1 {
             self.current_page -= 1;
             self.selected_index = 0;
@@ -230,11 +257,20 @@ impl App {
             story_title,
             story_url,
         };
+        self.discussion_story = self
+            .stories
+            .iter()
+            .find(|story| story.id == story_id)
+            .cloned();
+        if self.restore_reading_session(story_id) {
+            return;
+        }
         self.set_comment_loading(true);
     }
 
     /// Switch back to stories view
     pub fn view_stories(&mut self) {
+        self.store_reading_session();
         self.reset_comment_view_state();
         self.clear_comment_status();
         self.view = View::Stories;
@@ -244,6 +280,11 @@ impl App {
         self.comments.clear();
         self.visible_comment_paths.clear();
         self.comment_cursor = 0;
+        self.comment_scroll = 0;
+        self.discussion_story = None;
+        self.show_links = false;
+        self.follow_comment_selection = false;
+        self.pending_comment_pages = 0;
         self.comment_view_generation = self.comment_view_generation.wrapping_add(1);
     }
 
@@ -310,6 +351,9 @@ impl App {
     pub fn set_comments(&mut self, comments: Vec<Comment>) {
         self.comments = comments;
         self.rebuild_visible_comments();
+        self.comment_cursor = self
+            .comment_cursor
+            .min(self.visible_comment_count().saturating_sub(1));
         self.clear_comment_status();
     }
 }
