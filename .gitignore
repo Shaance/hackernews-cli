@@ -6,3 +6,6 @@
 
 # Optional local browser distribution
 .tools/
+
+# Python verification helpers
+__pycache__/

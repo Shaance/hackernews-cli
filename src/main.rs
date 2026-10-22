@@ -61,6 +61,8 @@ async fn main() -> Result<()> {
     // Load initial stories
     request_stories(&mut app, tx.clone(), service.clone(), false);
 
+    let mut summaries = reader::Reader::default();
+
     // Run the app
     let result = run_app(
         terminal.terminal_mut(),
@@ -69,6 +71,7 @@ async fn main() -> Result<()> {
         &mut rx,
         service,
         &mut bookmark_path,
+        &mut summaries,
     )
     .await;
     terminal.restore();
@@ -87,10 +90,10 @@ async fn run_app(
     rx: &mut mpsc::UnboundedReceiver<AppMessage>,
     service: HackerNewsCliServiceImpl,
     bookmark_path: &mut Option<PathBuf>,
+    summaries: &mut reader::Reader,
 ) -> Result<()> {
     let event_handler = EventHandler::default();
     let mut tick_count = 0usize;
-    let mut summaries = reader::Reader::default();
 
     loop {
         // Render UI
@@ -112,7 +115,7 @@ async fn run_app(
             }
             Event::Key(key) => {
                 if reader_actions::handle(
-                    &mut summaries,
+                    summaries,
                     app,
                     key,
                     tx.clone(),
