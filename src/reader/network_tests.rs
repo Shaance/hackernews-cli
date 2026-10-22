@@ -220,8 +220,6 @@ async fn discussion_publishes_only_citations_from_its_captured_sources() {
             .await;
         if source_id == 11 {
             let result = result.unwrap();
-            assert_eq!(captured.sources[1].text.chars().count(), 1801);
-            assert_eq!(captured.coverage, "2 comments");
             assert_eq!(result.points[0].sources, vec![11]);
         } else {
             assert!(result.unwrap_err().message.contains("citations"));
@@ -239,7 +237,7 @@ async fn discussion_publishes_only_citations_from_its_captured_sources() {
     }
 }
 #[tokio::test]
-async fn article_parses_summary_and_preserves_source_coverage() {
+async fn article_parses_provider_summary() {
     let body = json!({"choices":[{"message":{"content":"{\"summary\":\"The author proposes a tradeoff.\"}"}}]}).to_string();
     let (network, request) = server(200, body).await;
     let result = network

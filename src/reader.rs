@@ -11,6 +11,7 @@ mod preparation;
 mod sampling_tests;
 mod settings;
 mod sources;
+mod summary_prompts;
 #[cfg(test)]
 mod tests;
 mod text;

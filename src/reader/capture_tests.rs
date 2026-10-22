@@ -172,3 +172,20 @@ async fn failed_refresh_does_not_publish_staged_result_or_reuse_old_capture() {
         matches!(p.readings[&1].discussion.progress, Progress::Queued(a) | Progress::Preparing(a, _, _) if a.refresh)
     );
 }
+
+#[test]
+fn extraction_discards_markup_and_control_characters() {
+    let paragraph =
+        "This article explains a specific engineering tradeoff, with evidence and examples. "
+            .repeat(30);
+    let html=format!("<html><head><title>Story</title></head><body><nav>MENU HOME LOGIN</nav><article><h1>Story</h1><p>{paragraph}</p><script>secretNoise()</script></article></body></html>");
+    let text = sources::extract(
+        html.as_bytes(),
+        &reqwest::Url::parse("https://example.com").unwrap(),
+    )
+    .unwrap();
+    assert!(text.contains("engineering tradeoff"));
+    assert!(!text.contains("<p>"));
+    assert!(!text.contains("secretNoise"));
+    assert_eq!(sources::clean("safe\u{1b}[31m\ntext"), "safe[31m\ntext");
+}
