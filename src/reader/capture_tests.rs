@@ -38,7 +38,7 @@ fn inputs(sent: &[(String, Value)]) -> Vec<String> {
 async fn captures_survive_model_choices_revisit_retry_and_key_repair() {
     let status = Arc::new(AtomicU16::new(200));
     let response_status = status.clone();
-    let (network, mut requests, server) = network::tests::serve(move |path, body| {
+    let (network, mut requests, server) = network::tests::serve(move |path, body, _| {
         if path == "/chat/completions" {
             let input: Value = serde_json::from_str(body["messages"][1]["content"].as_str().unwrap()).unwrap();
             let result = if input.get("article").is_some() { json!({"summary":"Article result"}) }

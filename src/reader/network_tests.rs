@@ -6,7 +6,7 @@ use tokio::{
 
 // Only the external HTTP boundary is replaced; serialization and parsing are real.
 async fn server(status: u16, body: String) -> (Network, tokio::task::JoinHandle<Value>) {
-    let (network, mut requests, server) = serve(move |_, _| (status, body.clone())).await;
+    let (network, mut requests, server) = serve(move |_, _, _| (status, body.clone())).await;
     let task = tokio::spawn(async move {
         let (_, request) = requests.recv().await.unwrap();
         server.abort();
@@ -15,7 +15,7 @@ async fn server(status: u16, body: String) -> (Network, tokio::task::JoinHandle<
     (network, task)
 }
 pub(crate) async fn serve(
-    handler: impl Fn(&str, &Value) -> (u16, String) + Send + 'static,
+    handler: impl Fn(&str, &Value, &str) -> (u16, String) + Send + 'static,
 ) -> (
     Network,
     tokio::sync::mpsc::UnboundedReceiver<(String, Value)>,
@@ -57,8 +57,9 @@ pub(crate) async fn serve(
             } else {
                 serde_json::from_slice(&request[offset..offset + length]).unwrap()
             };
-            let (status, body) = handler(&path, &value);
-            let response = format!("HTTP/1.1 {status} Result\r\nContent-Type: application/json\r\nX-Request-Id: request-test-1\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len());
+            let (status, body) =
+                handler(&path, &value, &String::from_utf8_lossy(&request[..offset]));
+            let response = format!("HTTP/1.1 {status} Result\r\nContent-Type: application/json\r\nX-Request-Id: request-test-1\r\nRequest-Id: native-request-test-1\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len());
             stream.write_all(response.as_bytes()).await.unwrap();
             tx.send((path, value)).unwrap();
         }
@@ -66,6 +67,7 @@ pub(crate) async fn serve(
     let network = Network {
         client: Client::new(),
         endpoint: format!("{base}chat/completions"),
+        anthropic_endpoint: format!("{base}messages"),
         response_log_dir: None,
         service: HackerNewsCliServiceImpl::new_with_client(HackerNewsClientImpl::with_config(
             HackerNewsClientConfig {
@@ -86,6 +88,7 @@ async fn profiles_send_structured_requests_and_parse_provider_content() {
         let (network, request) = server(200, body).await;
         let output = network
             .complete(
+                Provider::OpenRouter,
                 "test-key",
                 profile,
                 "Summarize",
@@ -120,7 +123,7 @@ async fn discussion_profiles_select_tested_prompts_and_keep_source_input_indepen
         let body = json!({"choices":[{"message":{"content":content.to_string()}}]}).to_string();
         let (network, request) = server(200, body).await;
         let output = network
-            .discussion("test-key", profile, &captured)
+            .discussion(Provider::OpenRouter, "test-key", profile, &captured)
             .await
             .unwrap();
         assert_eq!(output.points.len(), count, "Keep every returned insight");
@@ -187,7 +190,14 @@ async fn provider_failures_offer_key_repair_or_retry_without_leaking_response() 
     for (status, body, auth, message) in cases {
         let (network, request) = server(status, body.into()).await;
         let error = network
-            .complete("test-key", Profile::Fast, "Summarize", json!({}), json!({}))
+            .complete(
+                Provider::OpenRouter,
+                "test-key",
+                Profile::Fast,
+                "Summarize",
+                json!({}),
+                json!({}),
+            )
             .await
             .unwrap_err();
         assert_eq!(error.auth, auth);
@@ -216,7 +226,7 @@ async fn discussion_publishes_only_citations_from_its_captured_sources() {
         captured.sources[1].text = "文".repeat(1801);
         captured.sources[1].excerpt = "文".repeat(1800);
         let result = network
-            .discussion("test-key", Profile::Fast, &captured)
+            .discussion(Provider::OpenRouter, "test-key", Profile::Fast, &captured)
             .await;
         if source_id == 11 {
             let result = result.unwrap();
@@ -242,6 +252,7 @@ async fn article_parses_provider_summary() {
     let (network, request) = server(200, body).await;
     let result = network
         .article(
+            Provider::OpenRouter,
             "test-key",
             Profile::Thorough,
             &ArticleCapture {
@@ -288,6 +299,7 @@ async fn response_logs_preserve_bodies_and_ids_without_credentials_or_behavior_c
         network.response_log_dir = Some(path.clone());
         let output = network
             .complete(
+                Provider::OpenRouter,
                 key,
                 Profile::Thorough,
                 "Summarize",
@@ -309,7 +321,10 @@ async fn response_logs_preserve_bodies_and_ids_without_credentials_or_behavior_c
         let record: Value = serde_json::from_str(&text).unwrap();
         assert_eq!(record["http_status"], status);
         assert_eq!(record["request_id"], "request-test-1");
-        assert_eq!(record["model"], Profile::Thorough.model());
+        assert_eq!(
+            record["model"],
+            Profile::Thorough.model(Provider::OpenRouter)
+        );
         assert_eq!(record["section"], "discussion");
         assert_eq!(record["title"], "[REDACTED]");
         assert!(
@@ -346,7 +361,14 @@ async fn response_logs_preserve_bodies_and_ids_without_credentials_or_behavior_c
     let (mut network, request) = server(200, success).await;
     network.response_log_dir = Some(blocked.clone());
     let output = network
-        .complete(key, Profile::Fast, "Summarize", json!({}), json!({}))
+        .complete(
+            Provider::OpenRouter,
+            key,
+            Profile::Fast,
+            "Summarize",
+            json!({}),
+            json!({}),
+        )
         .await
         .unwrap();
     assert_eq!(output["summary"], "placeholder");
