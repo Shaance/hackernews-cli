@@ -8,6 +8,8 @@ mod jobs;
 mod network;
 mod preparation;
 #[cfg(test)]
+mod replay;
+#[cfg(test)]
 mod sampling_tests;
 mod settings;
 mod sources;
