@@ -179,11 +179,12 @@ impl Reading {
         }
     }
     fn leave_source(&mut self) {
-        self.source = None;
+        self.reveal_citation = self.source.take().is_some() && self.citation_focus;
         if let Some(result) = self.staged.take() {
             self.discussion.result = Some(result);
             self.citation = 0;
             self.citation_focus = false;
+            self.reveal_citation = false;
         }
     }
     fn citations(&self) -> Vec<i32> {

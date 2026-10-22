@@ -9,9 +9,7 @@ impl Reader {
             self.settings_key(key);
             return true;
         }
-        if key == KeyCode::Char('M')
-            || (key == KeyCode::Char('S') && (self.config.key().is_empty() || self.auth_failed))
-        {
+        if key == KeyCode::Char('M') {
             self.edit_settings();
             return true;
         }
@@ -20,16 +18,36 @@ impl Reader {
             return false;
         }
         if key == KeyCode::Char('S') {
-            let generate = self
+            let retained = self
                 .active
                 .and_then(|id| self.readings.get(&id))
-                .is_some_and(|r| !r.article.requested() || !r.discussion.requested());
+                .is_some_and(|r| {
+                    r.article.result.is_some()
+                        || r.discussion.result.is_some()
+                        || r.article.pending()
+                        || r.discussion.pending()
+                });
+            if !retained && (self.config.key().is_empty() || self.auth_failed) {
+                self.edit_settings();
+                return true;
+            }
+            let generate = !retained
+                && self
+                    .active
+                    .and_then(|id| self.readings.get(&id))
+                    .is_some_and(|r| !r.article.requested() || !r.discussion.requested());
             if generate {
                 self.request(Request::Missing);
             }
             if let Some(r) = self.active.and_then(|id| self.readings.get_mut(&id)) {
-                r.shown = generate || !r.shown;
+                r.shown = if r.source.is_some() {
+                    r.leave_source();
+                    false
+                } else {
+                    generate || !r.shown
+                };
                 r.citation_focus = false;
+                r.reveal_citation = false;
             }
             return true;
         }
@@ -46,8 +64,9 @@ impl Reader {
                     self.active = None;
                 }
             }
-            KeyCode::Tab | KeyCode::BackTab if reading.source.is_none() => {
-                let count = reading.citations().len();
+            KeyCode::Tab | KeyCode::BackTab => {
+                let citations = reading.citations();
+                let count = citations.len();
                 if count > 0 {
                     reading.shown = true;
                     if reading.citation_focus {
@@ -57,6 +76,12 @@ impl Reader {
                     }
                     reading.citation_focus = true;
                     reading.reveal_citation = true;
+                    if reading.source.is_some()
+                        && reading.source != Some(citations[reading.citation])
+                    {
+                        reading.source = Some(citations[reading.citation]);
+                        reading.source_scroll = 0;
+                    }
                 }
             }
             KeyCode::Enter if reading.source.is_none() && reading.citation_focus => {
