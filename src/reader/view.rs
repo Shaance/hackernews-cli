@@ -151,7 +151,7 @@ impl Reader {
             ("AI summary · S Set up summaries".to_owned(), Color::Yellow)
         } else if self.auth_failed {
             (
-                "OpenRouter key rejected · M Edit key".to_owned(),
+                format!("{} key rejected · M Edit key", self.config.provider.label()),
                 Color::Yellow,
             )
         } else if !reading.article.requested() || !reading.discussion.requested() {

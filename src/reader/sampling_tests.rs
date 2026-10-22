@@ -9,7 +9,7 @@ async fn sampling_reserves_replies_redistributes_budget_and_keeps_unavailable_pa
         (2, 40, 2, 58),
         (2, 1, 2, 3),
     ] {
-        let (network, mut requests, server) = network::tests::serve(move |path, _| {
+        let (network, mut requests, server) = network::tests::serve(move |path, _, _| {
             let id: i32 = path.trim_start_matches("/v0/item/").trim_end_matches(".json").parse().unwrap();
             if roots == 80 && replies == 2 && id == 4 { return (404, "null".into()); }
             let kids = if id == 101 && replies == 1 { vec![10001] } else if id == 999 { (1..=roots).collect::<Vec<_>>() }
