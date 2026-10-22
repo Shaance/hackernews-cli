@@ -1,6 +1,6 @@
 # HackerNews TUI
 
-Read [Hacker News](https://news.ycombinator.com/) stories and comment threads in your terminal. Save stories for later, keep your place in a discussion, and optionally generate article and discussion summaries through OpenRouter.
+Read [Hacker News](https://news.ycombinator.com/) stories and comment threads in your terminal. Save stories for later, keep your place in a discussion, and optionally generate article and discussion summaries through OpenRouter or Anthropic.
 
 On macOS with Ghostty, you can open the original article in a companion browser pane beside the discussion. Other setups open it in your default browser.
 
@@ -39,9 +39,11 @@ If the saved file cannot be read, hn preserves it and displays a notice. After c
 
 ## Optional AI summaries
 
-Open a story, press `M`, enter an OpenRouter API key, and press Enter. You can also supply the key through `OPENROUTER_API_KEY`. A key saved in settings takes precedence over the environment variable. Environment keys are not copied into the settings file unless you replace them through the form.
+Open a story, press `M`, choose **OpenRouter** or **Anthropic** under Provider, enter that provider's API key, and press Enter. For Anthropic, use a personal key scoped to a workspace in the [Claude Console](https://platform.claude.com/settings/keys).
 
-Summaries send extracted article text and sampled comment excerpts to OpenRouter using your credits. The app calls OpenRouter directly; no separate summary service is required.
+You can also supply `OPENROUTER_API_KEY` or `ANTHROPIC_API_KEY`. On a fresh setup, an Anthropic key alone selects Anthropic; otherwise OpenRouter is the default. Saved provider choices take precedence. Each provider keeps its own key, and a key saved in settings takes precedence over that provider's environment variable. Environment keys are not copied into settings unless you edit them through the form.
+
+Summaries send extracted article text and sampled comment excerpts directly to the selected provider using your API credits. No separate summary service is required. Changing provider preserves completed summaries and applies to new requests; there is no automatic fallback to the other provider.
 
 Automatic summaries are on by default once a key is available. They start when you open a story, while you continue reading. In `M`, use Tab or the arrow keys to select a setting, Space or left/right to change it, Enter to apply, and Esc to cancel. Turn Automatic summaries off to generate them only when requested with `S`. Requests already submitted can still finish.
 
@@ -52,7 +54,7 @@ Automatic summaries are on by default once a key is available. They start when y
 | Fast (default) | Claude Haiku 5.5, low reasoning | Up to three main insights, including disagreements when they affect the takeaway. |
 | Thorough | Claude Sonnet 5.5, low reasoning | Broader coverage, with extra points when they preserve a useful reason or qualification. |
 
-Both profiles also generate a compact article summary. Thorough works independently from the captured sources; it does not take the Fast summary as a draft. The model IDs are `anthropic/claude-haiku-5.5` and `anthropic/claude-sonnet-5.5`.
+Both profiles also generate a compact article summary. Thorough works independently from the captured sources; it does not take the Fast summary as a draft. OpenRouter uses `anthropic/claude-haiku-5.5` and `anthropic/claude-sonnet-5.5`; Anthropic uses `claude-haiku-5-5` and `claude-sonnet-5-5`. The prompts are identical across providers. Fast asks for at most three insights. OpenRouter also receives that limit in the JSON schema; Anthropic does not support that schema constraint, so its limit relies on the prompt.
 
 ### Read and check a summary
 
@@ -118,7 +120,7 @@ Keys are case-sensitive: `s` saves a story, `S` controls its summary; `o` opens 
 | `o` | Open or focus article companion |
 | `O` | Open story in default browser |
 | `S` | Set up, generate, or show/hide summary |
-| `M` | Summary key, automatic mode, profile, and refresh |
+| `M` | Summary provider, key, automatic mode, profile, and refresh |
 | `Tab` / `Shift-Tab` | Select next / previous summary citation |
 | `Enter` on a citation | Read captured comment and parent context |
 | `J` / `K` | Scroll an overflowing summary |
@@ -136,12 +138,12 @@ While viewing a cited source, `j/k`, Page Up/Down, and `g/G` scroll its text. In
 |---|---|---|
 | Saved story details | `~/.local/share/hn/saved.json` | Until unsaved or deleted |
 | Summary settings and any key entered in the form | `~/.config/hn/summary.json` | Across restarts |
-| OpenRouter response diagnostics | `~/.local/state/hn/openrouter/` | Until manually deleted |
+| Summary response diagnostics (both providers) | `~/.local/state/hn/openrouter/` | Until manually deleted |
 | Captured inputs, summaries, replies, and reading positions | Memory only | Current run |
 
 `XDG_DATA_HOME`, `XDG_CONFIG_HOME`, and `XDG_STATE_HOME` override the corresponding directory roots. Settings and diagnostic files use owner-only permissions on Unix. A key entered through the form is stored in the settings file; it is not an OS keychain entry.
 
-Each diagnostic JSON file records the timestamp, model, story title, HTTP status, generation ID, request ID when supplied, and raw response body. It can contain summary or error text. Request headers and full prompts/article/comment inputs are not logged, and an echoed active key is redacted. Logging failures do not interrupt reading or trigger another request.
+The diagnostic directory retains its original `openrouter` name. Each JSON file records the timestamp, provider, model, story title, HTTP status, generation ID, request ID when supplied, and raw response body. It can contain summary or error text. Request headers and full prompts/article/comment inputs are not logged, and an echoed active key is redacted. Logging failures do not interrupt reading or trigger another request.
 
 Diagnostics are for investigation and are not used as a summary cache. Deleting the diagnostic directory is safe.
 
@@ -153,7 +155,7 @@ From a checkout, run:
 ./scripts/dev.sh
 ```
 
-The runner builds and starts hn. It optionally reads an ignored `.env.local` containing `OPENROUTER_API_KEY=value`, with optional quotes, and adds `.tools/terminal-browser/bin` to PATH when present. An existing environment key takes precedence over the env file. The file is read as data, never executed. Pass another env-file path as the first argument if needed.
+The runner builds and starts hn. It optionally reads an ignored `.env.local` containing `OPENROUTER_API_KEY=value` and/or `ANTHROPIC_API_KEY=value`, with optional quotes, and adds `.tools/terminal-browser/bin` to PATH when present. An existing environment key takes precedence over the env file. The file is read as data, never executed. Pass another env-file path as the first argument if needed.
 
 Run the deterministic checks:
 
@@ -163,13 +165,15 @@ cargo test
 cargo build
 ```
 
-With an OpenRouter key available and `uv` installed, run the live terminal smoke test:
+With the selected provider's key available and `uv` installed, run the live terminal smoke test:
 
 ```sh
-uv run --with pyte python scripts/smoke.py
+uv run --with pyte python scripts/smoke.py --provider openrouter
+# Or test direct Anthropic access:
+uv run --with pyte python scripts/smoke.py --provider anthropic
 ```
 
-This command calls live Hacker News and OpenRouter and makes paid model requests. It uses temporary settings, saved items, and diagnostic logs, and prints the paths to those files and its terminal captures. It checks Fast/Thorough, summary toggling without moving comments, retained results, citations, refresh, reply navigation, and clean exit.
+This command calls live Hacker News and the selected provider and makes six paid model requests. It uses temporary settings, saved items, and diagnostic logs, and prints the paths to those files and its terminal captures. It checks Fast/Thorough, summary toggling without moving comments, retained results, citations, refresh, reply navigation, and clean exit.
 
 Native Ghostty focus and pane closure need the manual checks in the [companion setup guide](scripts/ghostty/README.md). Summary accuracy needs the source-grounded review in [tests/quality/README.md](tests/quality/README.md); a successful smoke test does not establish factual accuracy.
 

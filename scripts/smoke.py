@@ -1,4 +1,5 @@
-# Live HN/OpenRouter smoke test; makes paid model requests. Run with uv run --with pyte.
+# Live HN/provider smoke test; makes paid model requests. Run with uv run --with pyte.
+import argparse
 import os, pty, fcntl, termios, struct, select, time, json, tempfile, codecs, re, signal
 from pathlib import Path
 import pyte
@@ -44,14 +45,19 @@ class TUI:
 
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
-key=os.environ.get("OPENROUTER_API_KEY", "")
+parser=argparse.ArgumentParser()
+parser.add_argument('--provider',choices=['openrouter','anthropic'],default='openrouter')
+provider=parser.parse_args().provider
+key_name='ANTHROPIC_API_KEY' if provider=='anthropic' else 'OPENROUTER_API_KEY'
+key=os.environ.get(key_name, "")
 keyfile=ROOT/".env.local"
 if not key and keyfile.exists():
     for line in keyfile.read_text().splitlines():
-        if line.startswith("OPENROUTER_API_KEY="):
+        if line.startswith(key_name+"="):
             key=line.split("=",1)[1].strip().strip("\"'")
-assert key, "Set OPENROUTER_API_KEY or add it to .env.local"
-os.environ['OPENROUTER_API_KEY']=key
+assert key, f"Set {key_name} or add it to .env.local"
+os.environ[key_name]=key
+os.environ.pop('OPENROUTER_API_KEY' if provider=='anthropic' else 'ANTHROPIC_API_KEY',None)
 
 def fetch(url):
     with urllib.request.urlopen(url,timeout=25) as response:return json.load(response)
@@ -59,7 +65,7 @@ item=fetch('https://hacker-news.firebaseio.com/v0/item/50150809.json')
 assert item and item.get('url')
 print('Live story:',item['id'],item['title'],item['url'],flush=True)
 story=dict(id=item['id'],title=item['title'],url=item['url'],author=item.get('by',''),time='',time_ago='today',score=item['score'],text='',links=[],comments=item['descendants'])
-work=Path(tempfile.mkdtemp(prefix='hn-openrouter-live-'))
+work=Path(tempfile.mkdtemp(prefix=f'hn-{provider}-live-'))
 (work/'data/hn').mkdir(parents=True)
 (work/'data/hn/saved.json').write_text(json.dumps([story]))
 app=TUI(work/'data',160,50)
@@ -87,7 +93,7 @@ try:
     # A revisit must reuse the completed snapshot, with no loading state.
     app.key('\x1b');app.key('c');assert 'Summary ready' in app.text();assert 'Updating' not in app.text()
     app.key('M');app.key(' ');app.key('\r');assert 'Auto off' in app.text()
-    config=json.loads((work/'data/config/hn/summary.json').read_text());assert not config['automatic'];assert config['profile']=='thorough';assert not config['api_key']
+    config=json.loads((work/'data/config/hn/summary.json').read_text());assert not config['automatic'];assert config['profile']=='thorough';assert not config['api_key'];assert not config['anthropic_api_key'];assert config['provider']=={'openrouter':'open_router','anthropic':'anthropic'}[provider]
     print('PASS source/back, retained result on revisit, Auto off, environment key not persisted',flush=True)
     app.key('M');app.key('\t\t');started=time.monotonic();app.key('\r')
     app.wait(lambda t:'Summary ready' in t or 'Summary incomplete' in t,timeout=120)
@@ -111,6 +117,11 @@ try:
 except BaseException:
     app.capture('failure');app.abort();raise
 finally:
-    os.environ.pop('OPENROUTER_API_KEY',None)
+    os.environ.pop(key_name,None)
+records=[json.loads(p.read_text()) for p in (work/'data/state/hn/openrouter').glob('*.json')]
+assert len(records)==6, f"Expected exactly six requests, got {len(records)}"
+assert all(r['provider'].lower()==provider and r['http_status']==200 for r in records)
+assert all(key not in json.dumps(r) for r in records)
+print(f'PASS six successful {provider} requests, no extra call on revisit, no key in logs',flush=True)
 print('Evidence:',EVIDENCE,flush=True)
 print('Isolated settings and diagnostic logs:',work,flush=True)
