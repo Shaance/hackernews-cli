@@ -162,13 +162,21 @@ impl App {
     /// Update scroll offset (in lines) based on selected comment and viewport height
     pub fn update_comment_scroll(
         &mut self,
-        line_ranges: &[(usize, usize)],
+        line_ranges: &[(i32, usize, usize)],
         viewport_height: usize,
     ) {
         let view_height = viewport_height.max(1);
+        if let Some((id, offset)) = self.comment_anchor.take() {
+            if let Some(&(_, start, end)) = line_ranges.iter().find(|r| r.0 == id) {
+                self.comment_scroll = start + offset.min(end.saturating_sub(start + 1));
+            }
+        }
         let mut new_scroll = self.comment_scroll;
         if self.follow_comment_selection {
-            if let Some(&(start, end)) = line_ranges.get(self.comment_cursor) {
+            let selected = self
+                .visible_comment_at(self.comment_cursor)
+                .map(|(_, c)| c.id);
+            if let Some(&(_, start, end)) = line_ranges.iter().find(|r| Some(r.0) == selected) {
                 if start < new_scroll || end - start > view_height {
                     new_scroll = start;
                 } else if end > new_scroll + view_height {
@@ -181,7 +189,7 @@ impl App {
             self.pending_comment_pages as isize * view_height.saturating_sub(1).max(1) as isize;
         new_scroll = new_scroll.saturating_add_signed(page_delta);
         self.pending_comment_pages = 0;
-        let total_lines = line_ranges.last().map(|(_, end)| *end).unwrap_or(0);
+        let total_lines = line_ranges.last().map(|(_, _, end)| *end).unwrap_or(0);
         // Growing the viewport (for example, hiding the pinned summary) must
         // not move the reader backward just to fill the newly available space.
         let max_scroll = total_lines
@@ -192,6 +200,8 @@ impl App {
         }
 
         self.comment_scroll = new_scroll;
+        self.comment_line_ranges = line_ranges.to_vec();
+        self.comment_viewport_height = view_height;
     }
 
     /// Get currently selected comment (mutable)

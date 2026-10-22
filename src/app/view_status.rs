@@ -40,7 +40,10 @@ impl App {
 
     /// Recompute comment loading without dismissing current errors.
     pub fn recompute_comment_loading(&mut self, loading: bool) {
-        self.set_scoped_loading_preserving_error(StatusScope::Comments, loading);
+        self.set_scoped_loading_preserving_error(
+            StatusScope::Comments,
+            loading || self.refreshing_comments,
+        );
     }
 
     pub(super) fn clear_story_status(&mut self) {
