@@ -7,8 +7,8 @@ mod view_scope;
 pub(super) fn test_comment(id: i32, state: CommentState) -> hn_lib::app::Comment {
     hn_lib::app::Comment {
         id,
-        author: format!("user{}", id),
-        text: format!("comment {}", id),
+        author: format!("user{id}"),
+        text: format!("comment {id}"),
         links: vec![],
         time_ago: "now".to_string(),
         state,
@@ -70,4 +70,28 @@ async fn reader_keys_page_text_and_link_picker_can_be_closed() {
     handle_link_key(&mut app, KeyCode::Esc);
     assert!(!app.show_links);
     assert_eq!(app.comment_scroll, 18);
+}
+
+#[test]
+fn motion_deadline_table() {
+    let started = Instant::now();
+    for elapsed in [0, 79, 80, 145] {
+        let now = started + Duration::from_millis(elapsed);
+        for (animating, pending, expected) in [
+            (true, false, Some(now + Duration::from_millis(16))),
+            (true, true, Some(now + Duration::from_millis(16))),
+            (
+                false,
+                true,
+                Some(started + Duration::from_millis((elapsed / 80 + 1) * 80)),
+            ),
+            (false, false, None),
+        ] {
+            assert_eq!(
+                next_deadline(now, started, animating, pending),
+                expected,
+                "elapsed={elapsed}, animating={animating}, pending={pending}"
+            );
+        }
+    }
 }

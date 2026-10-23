@@ -36,7 +36,7 @@ fn story_item(id: i32) -> HackerNewsItem {
         kids: None,
         url: Some("https://example.com".to_string()),
         score: 10,
-        title: format!("Test Story {}", id),
+        title: format!("Test Story {id}"),
         descendants: Some(5),
         r#type: "story".to_string(),
         text: None,
@@ -53,7 +53,7 @@ fn test_display() {
         url: "https://rust-lang.org".to_string(),
         author: "me".to_string(),
         time: "2020-05-07 22:01:28".to_string(),
-        time_ago: "0 seconds ago".to_string(),
+        time_ago: "0s".to_string(),
         score: 9,
         text: String::new(),
         links: vec![],
@@ -61,7 +61,7 @@ fn test_display() {
     };
     assert_eq!(
         item.to_string(),
-        "Rust is awesome by me\n[9 points] - 1 comments - 0 seconds ago\n-> https://rust-lang.org"
+        "Rust is awesome by me\n[9 points] - 1 comments - 0s\n-> https://rust-lang.org"
     );
 }
 
@@ -128,7 +128,7 @@ fn test_to_hn_cli_item() {
     assert_eq!(item.url, "https://rust-lang.org");
     assert_eq!(item.author, "me");
     assert_eq!(item.time, unix_epoch_to_datetime(now));
-    assert_eq!(item.time_ago, "0 seconds ago");
+    assert_eq!(item.time_ago, "0s");
     assert_eq!(item.score, 9);
     assert_eq!(item.comments, Some(1));
 }

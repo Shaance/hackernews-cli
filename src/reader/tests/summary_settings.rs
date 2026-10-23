@@ -78,7 +78,8 @@ fn missing_key_and_save_failure_never_block_reading_or_expose_key() {
     p.open(story(5));
     assert!(!p.readings[&5].article.requested());
     let mut app = comments_app();
-    assert!(screen(&mut p, &mut app, 120, 40).contains("Set up summaries"));
+    let rendered = screen(&mut p, &mut app, 120, 40);
+    assert!(rendered.contains("S summary") && !rendered.contains("Set up"));
     p.config_path = None;
     p.key(KeyCode::Char('M'));
     for c in "secret-value".chars() {
@@ -154,8 +155,11 @@ async fn provider_selection_keeps_keys_separate_and_completed_reading_intact() {
     p.key(KeyCode::BackTab); // provider
     p.key(KeyCode::Char(' '));
     let rendered = screen(&mut p, &mut app, 80, 24);
-    assert!(rendered.contains("Provider: Anthropic"));
-    assert!(rendered.contains("Anthropic key:"));
+    assert!(rendered.chars().collect::<Vec<_>>().chunks(80).any(|row| {
+        let row = row.iter().collect::<String>();
+        row.contains("Provider") && row.contains("Anthropic")
+    }));
+    assert!(rendered.contains("Anthropic key"));
     assert!(!rendered.contains("env-secret"));
     p.key(KeyCode::Tab); // native key
     p.key(KeyCode::Delete);
@@ -388,7 +392,7 @@ async fn comment_refresh_is_free_and_explicit_summary_retry_only_retries_failure
                 assert_eq!(count, 2, "r fetched only the story and visible root");
             }
             if step == 1 {
-                assert!(screen(&mut p, &mut app, 240, 80).contains("> Retry failed summary"));
+                assert!(screen(&mut p, &mut app, 240, 80).contains("▎ Retry failed summary"));
             }
             if step == 5 {
                 assert!(p.jobs.is_empty());

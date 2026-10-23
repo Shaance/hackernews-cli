@@ -198,9 +198,19 @@ fn bookmarks_toggle_in_both_views_and_survive_reload() {
     restarted.bookmarks = bookmarks::load(&path).unwrap();
     restarted.set_story_type(StoryType::Saved);
     restarted.show_saved_stories();
-    let saved_screen = render(&mut restarted, 80, 24);
-    assert!(saved_screen.contains("Saved stories"));
-    assert!(saved_screen.contains("s save") && saved_screen.contains("? help"));
+    let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
+    let frame = terminal.draw(|f| ui::render(f, &mut restarted, 0)).unwrap();
+    let buffer = frame.buffer;
+    let saved_screen: String = buffer.content().iter().map(|cell| cell.symbol()).collect();
+    assert!(saved_screen.contains("4 Saved"));
+    for x in 33..38 {
+        assert_eq!(buffer[(x, 0)].fg, restarted.theme().accent.fg.unwrap());
+        assert!(buffer[(x, 0)]
+            .modifier
+            .contains(ratatui::style::Modifier::BOLD | ratatui::style::Modifier::UNDERLINED));
+    }
+    assert!(saved_screen.contains("s save") && saved_screen.contains("? keys"));
+    assert!(!saved_screen.contains('★') && !saved_screen.contains("n/p"));
     assert!(render(&mut restarted, 80, 24).contains("Ask HN: Reading"));
     restarted.view_comments(1, "Ask HN: Reading".into(), "https://example.com".into());
     restarted.set_comments(vec![]);
@@ -210,7 +220,25 @@ fn bookmarks_toggle_in_both_views_and_survive_reload() {
     bookmarks::toggle(&mut restarted, Some(&path)).unwrap();
     assert_eq!(bookmarks::load(&path).unwrap()[0].text, story().text);
     restarted.view_stories();
-    assert!(render(&mut restarted, 80, 24).contains("★"));
+    let frame = terminal.draw(|f| ui::render(f, &mut restarted, 0)).unwrap();
+    let text: String = frame.buffer.content.iter().map(|c| c.symbol()).collect();
+    assert!(text.contains("Ask HN: Reading") && restarted.is_bookmarked(1));
+    assert!(!text.contains('★') && !text.contains("n/p"));
+    for displayed in [StoryType::Best, StoryType::Saved] {
+        restarted.set_stories_for(displayed, 1, vec![story()]);
+        // Render by the displayed feed even while another feed is requested.
+        restarted.set_story_type(if displayed == StoryType::Saved {
+            StoryType::Best
+        } else {
+            StoryType::Saved
+        });
+        let frame = terminal.draw(|f| ui::render(f, &mut restarted, 0)).unwrap();
+        let text: String = frame.buffer.content.iter().map(|c| c.symbol()).collect();
+        assert!(text.contains("Ask HN: Reading"));
+        assert_eq!(text.contains('★'), displayed == StoryType::Best);
+        assert_eq!(text.contains("n/p page"), displayed == StoryType::Best);
+    }
+    restarted.set_story_type(StoryType::Saved);
     bookmarks::toggle(&mut restarted, Some(&path)).unwrap();
     assert!(render(&mut restarted, 80, 24).contains("No saved stories yet"));
 }
