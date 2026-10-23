@@ -38,6 +38,7 @@ supports-color = "3.0.2"
 terminal-colorsaurus = "1.0.3"
 textwrap = "0.16"
 tokio = { version = "1.20.1", features = ["full"] }
+tui-popup = "0.7.7"
 writeable = { version = "0.6", features = ["alloc"] }
 
 [dev-dependencies]

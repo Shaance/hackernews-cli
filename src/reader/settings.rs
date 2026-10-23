@@ -4,8 +4,8 @@ use super::{
 };
 use crossterm::event::KeyCode;
 use ratatui::{
-    text::Line,
-    widgets::{Block, Borders, Paragraph, Wrap},
+    style::Modifier,
+    text::{Line, Span},
     Frame,
 };
 
@@ -203,49 +203,70 @@ impl Reader {
         self.start_queued();
     }
     pub(super) fn render_settings(&self, frame: &mut Frame) {
-        let Some(s) = &self.settings else {
-            return;
-        };
-        let key = &s.keys[s.provider as usize];
-        let mut values = vec![
-            format!("Provider: {}", s.provider.label()),
-            format!(
-                "{} key: {}",
-                s.provider.label(),
-                if key.is_empty() {
-                    "[paste key]".into()
-                } else {
-                    "•".repeat(key.chars().count().min(20))
-                }
-            ),
-            format!(
-                "Automatic summaries: {}",
-                if s.automatic { "On" } else { "Off" }
-            ),
-            format!("Model preference: {}", s.profile.label()),
-            "Refresh sources & summary".into(),
-        ];
-        if s.retry {
-            values.push("Retry failed summary".into());
+        if let Some(settings) = &self.settings {
+            settings.render(frame, self.theme);
         }
-        let mut lines = vec![
-            Line::raw(""),
-            Line::raw("For this story and future summaries"),
-            Line::raw(""),
-        ];
-        for (i, value) in values.iter().enumerate() {
-            lines.push(Line::styled(
-                format!("{} {value}", if i == s.cursor { ">" } else { " " }),
-                if i == s.cursor {
-                    self.theme.accent
+    }
+}
+
+impl Settings {
+    fn render(&self, frame: &mut Frame, theme: hn_lib::theme::Theme) {
+        let s = self;
+        hn_lib::ui::widgets::render_modal(frame, theme, "Summary settings", |width, _| {
+            let width = width.min(64);
+            let key = &s.keys[s.provider as usize];
+            let values = [
+                ("Provider".to_owned(), s.provider.label().to_owned()),
+                (
+                    format!("{} key", s.provider.label()),
+                    if key.is_empty() {
+                        "paste a key".into()
+                    } else {
+                        "•".repeat(key.chars().count().min(20))
+                    },
+                ),
+                (
+                    "Automatic summaries".into(),
+                    if s.automatic { "On" } else { "Off" }.into(),
+                ),
+                (
+                    "Model".into(),
+                    match s.profile {
+                        Profile::Fast => "Fast · Haiku 5.5",
+                        Profile::Thorough => "Thorough · Sonnet 5.5",
+                    }
+                    .into(),
+                ),
+            ];
+            let mut lines = vec![
+                Line::styled("Applies to this story and future summaries.", theme.dim),
+                Line::raw(""),
+            ];
+            for (index, (label, value)) in values.into_iter().enumerate() {
+                let value = if index == s.cursor && index != 1 {
+                    format!("‹ {value} ›")
                 } else {
-                    self.theme.fg
-                },
-            ));
-        }
-        lines.extend([
-            Line::raw(""),
-            Line::raw(match s.cursor {
+                    value
+                };
+                lines.push(Line::from(vec![
+                    Span::styled(format!("{label:22}"), theme.dim),
+                    Span::styled(
+                        value,
+                        if index == 1 && key.is_empty() {
+                            theme.dim.add_modifier(Modifier::ITALIC)
+                        } else {
+                            theme.fg
+                        },
+                    ),
+                ]));
+            }
+            lines.push(Line::raw(""));
+            lines.push(Line::styled("Refresh sources & summary", theme.fg));
+            if s.retry {
+                lines.push(Line::styled("Retry failed summary", theme.fg));
+            }
+            lines.push(Line::raw(""));
+            let description = match s.cursor {
                 1 => "Type/paste key · Delete clears · input is masked",
                 2 => "Off stops new automatic requests. Submitted work can finish.",
                 3 => {
@@ -258,21 +279,106 @@ impl Reader {
                 4 => "Fetch newer article and comments, then replace their summaries.",
                 5 => "Retry failed sections using available captures; keep successful summaries.",
                 _ => "Provider for new requests. Completed summaries stay available.",
-            }),
-            Line::raw(""),
-            Line::raw("Tab/↑↓ Select · Space/←→ Change"),
-            Line::raw("Enter Apply · Esc Cancel"),
-        ]);
-        if !s.error.is_empty() {
-            lines.push(Line::styled(s.error.clone(), self.theme.error));
-        }
-        frame.render_widget(
-            Paragraph::new(lines).wrap(Wrap { trim: false }).block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title("Summary settings"),
-            ),
-            frame.area(),
-        );
+            };
+            lines.extend(
+                textwrap::wrap(description, usize::from(width).max(1))
+                    .into_iter()
+                    .map(|line| Line::styled(line.into_owned(), theme.dim)),
+            );
+            lines.push(Line::raw(""));
+            let mut hints = hn_lib::ui::widgets::hint_line(
+                theme,
+                &[
+                    ("↑↓", "select"),
+                    ("←→", "change"),
+                    ("Enter", "apply"),
+                    ("Esc", "cancel"),
+                ],
+                None,
+                width + 4,
+            );
+            hints.spans.remove(0); // The modal supplies the two-column padding.
+            lines.push(hints);
+            if !s.error.is_empty() {
+                lines.push(Line::styled(s.error.clone(), theme.error));
+            }
+            (lines, Some(2 + s.cursor + usize::from(s.cursor >= 4)))
+        });
     }
+}
+
+#[cfg(test)]
+#[test]
+fn settings_modal_styles_focus_padding_and_scrim() {
+    use ratatui::{
+        backend::TestBackend,
+        style::{Color, Modifier},
+        Terminal,
+    };
+    let theme = hn_lib::theme::Theme::TRUE_DARK;
+    let settings = Settings {
+        keys: Default::default(),
+        provider: Provider::OpenRouter,
+        automatic: true,
+        profile: Profile::Fast,
+        cursor: 1,
+        error: String::new(),
+        retry: false,
+    };
+    let mut terminal = Terminal::new(TestBackend::new(100, 40)).unwrap();
+    let frame = terminal
+        .draw(|f| {
+            let area = f.area();
+            f.buffer_mut().set_style(area, theme.sel.patch(theme.link));
+            f.buffer_mut()[(0, 0)].set_symbol("▎");
+            settings.render(f, theme);
+        })
+        .unwrap();
+    let buffer = frame.buffer;
+    let corner = buffer
+        .content
+        .iter()
+        .position(|c| c.symbol() == "╭")
+        .unwrap();
+    let (left, top) = (corner as u16 % 100, corner as u16 / 100);
+    assert!(left >= 2 && top >= 1);
+    assert_eq!(buffer[(left, top)].fg, theme.line.fg.unwrap());
+    let right = (left..100)
+        .find(|x| buffer[(*x, top)].symbol() == "╮")
+        .unwrap();
+    let bottom = (top + 1..40)
+        .find(|y| buffer[(left, *y)].symbol() == "╰")
+        .unwrap();
+    for pos in [(right, top), (left, bottom), (right, bottom)] {
+        assert_eq!(buffer[pos].fg, theme.line.fg.unwrap());
+    }
+    assert_eq!(buffer[(right, bottom)].symbol(), "╯");
+    assert_eq!(buffer[(left + 2, top)].fg, theme.accent.fg.unwrap());
+    assert!(buffer[(left + 2, top)].modifier.contains(Modifier::BOLD));
+    let y = top + 5; // top padding, subtitle, blank, Provider, key
+    assert!((left + 1..right).all(|x| buffer[(x, y)].bg == theme.sel.bg.unwrap()));
+    assert_eq!(buffer[(left + 1, y)].symbol(), "▎");
+    assert_eq!(buffer[(left + 1, y)].fg, theme.accent.fg.unwrap());
+    let x = left + 3 + 22;
+    let placeholder: String = (x..x + 11).map(|x| buffer[(x, y)].symbol()).collect();
+    assert_eq!(placeholder, "paste a key");
+    assert_eq!(buffer[(x, y)].fg, theme.dim.fg.unwrap());
+    assert!(buffer[(x, y)].modifier.contains(Modifier::ITALIC));
+    assert_eq!(
+        buffer[(0, 0)].fg,
+        theme.scrim.fg.unwrap(),
+        "backdrop must use scrim foreground"
+    );
+    assert_eq!(
+        buffer[(0, 0)].bg,
+        Color::Reset,
+        "backdrop must clear selection tint"
+    );
+    assert!(
+        buffer
+            .content
+            .iter()
+            .any(|c| c.symbol() == "▎" && c.fg == theme.scrim.fg.unwrap()),
+        "selected comment glyphs must survive behind scrim"
+    );
 }
