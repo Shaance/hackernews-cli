@@ -337,3 +337,9 @@ Open question, not a defect: the summary panel's first non-empty frame was measu
 Not sampled live: the notice fade and clear, because the only producer is `o`, which opens a real browser. Unit tests cover the 2 s, 2.4 s and 4 s points, including the motion-off clear.
 
 Withheld: 16-colour selection is a heavy grey block whose shade the terminal decides; long summary section labels clip at narrow widths (metadata only).
+
+### Pre-merge review (PR #6)
+
+An independent Codex review of the whole PR found four P2 bugs, all verified against the code before fixing: (1) after `S` or Tab opened the summary, scrolling no longer re-froze its height, so a later result could push the comments down; (2) small modals could hide the focused settings row and cut help keys; (3) panels under three rows showed only chrome; (4) browser failures faded and cleared like successes. A re-review of the fix found two more: a frame-ordering gap that briefly hid `S show`, and a capacity overestimate that dropped help's overflow marker on five-row terminals. All six are fixed (`9e5c5f3`, `e83a97a`), and each has a regression test that fails when its fix is reverted (checked by mutating each fix back in).
+
+Behaviour change worth knowing: `S` and Tab now restart height tracking until the next movement, instead of lifting the cap for the rest of the visit. On terminals too short for the help table (about 12 rows), help keeps the ways out (Back, Quit, Close) visible and ends with `… more at a larger size`; keys such as `Save/unsave` are only listed at larger sizes.
