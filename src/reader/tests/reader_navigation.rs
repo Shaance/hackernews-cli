@@ -1033,8 +1033,10 @@ async fn movement_mid_animation_freezes_drawn_height_and_comment_cells() {
         let r = p.readings.get_mut(&1).unwrap();
         r.theme.motion = true;
         let target = r.growth_cap as u16;
-        r.panel_motion = Some((Instant::now() - Duration::from_millis(60), 0, target));
         move_reader(&mut p, &mut app, key).await;
+        // Start the opening just before the draw, so a slow key handler cannot finish it first.
+        let r = p.readings.get_mut(&1).unwrap();
+        r.panel_motion = Some((Instant::now() - Duration::from_millis(60), 0, target));
         let before = buffer(&mut p, &mut app);
         let r = p.readings.get_mut(&1).unwrap();
         let (_, from, to) = r.panel_motion.unwrap();
