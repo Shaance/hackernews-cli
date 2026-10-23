@@ -1,6 +1,6 @@
 //! Stories list view rendering
 
-use crate::app::App;
+use crate::app::{App, StoryType};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Modifier, Style},
@@ -24,24 +24,22 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
 
     render_title(f, chunks[0], app, tick);
 
-    if app.is_loading() && app.stories.is_empty() {
-        widgets::render_loading(f, chunks[1], "Loading stories...", tick);
-    } else if app.stories.is_empty() {
-        if let Some(error) = app.error() {
-            widgets::render_error(f, chunks[1], error);
-        } else {
-            let message = if app.story_type == crate::app::StoryType::Saved {
-                "No saved stories yet. Press s on a story to save it."
-            } else {
-                "No stories found"
-            };
-            f.render_widget(
-                Paragraph::new(message).wrap(ratatui::widgets::Wrap { trim: true }),
-                chunks[1],
-            );
-        }
-    } else {
+    if !app.stories.is_empty() {
         render_stories_list(f, chunks[1], app);
+    } else if app.is_loading() {
+        widgets::render_loading(f, chunks[1], "Loading stories...", tick);
+    } else if let Some(error) = app.error() {
+        widgets::render_error(f, chunks[1], error);
+    } else {
+        let message = if app.story_type == crate::app::StoryType::Saved {
+            "No saved stories yet. Press s on a story to save it."
+        } else {
+            "No stories found"
+        };
+        f.render_widget(
+            Paragraph::new(message).wrap(ratatui::widgets::Wrap { trim: true }),
+            chunks[1],
+        );
     }
 
     let status = widgets::render_stories_status(chunks[2], app, tick);
@@ -56,47 +54,84 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
 /// Render title bar with current story type and page
 fn render_title(f: &mut Frame, area: Rect, app: &App, tick: usize) {
     let (display_type, display_page) = app.displayed_story_context();
-    let stale = app.showing_stale_stories();
-
-    let mut spans = vec![
-        Span::raw(" HN: "),
-        Span::styled(
-            format!("{} stories", display_type.display_name()),
-            app.theme().accent.add_modifier(Modifier::BOLD),
-        ),
-        Span::raw(format!(" │ Page {display_page} ")),
+    let theme = app.theme();
+    let mut tabs = vec![
+        Span::raw(" "),
+        Span::styled(" Y ", theme.brand),
+        Span::raw("  "),
     ];
-
-    if stale {
-        spans.push(Span::raw("│ "));
-        spans.push(Span::styled(
+    for (idx, story_type) in [
+        StoryType::Top,
+        StoryType::New,
+        StoryType::Best,
+        StoryType::Saved,
+    ]
+    .iter()
+    .enumerate()
+    {
+        if idx > 0 {
+            tabs.push(Span::raw("   "));
+        }
+        let active = *story_type == display_type;
+        tabs.push(Span::styled(
+            format!("{} ", idx + 1),
+            if active { theme.accent } else { theme.dim },
+        ));
+        tabs.push(Span::styled(
+            story_type.display_name(),
+            if active {
+                theme
+                    .accent
+                    .add_modifier(Modifier::BOLD | Modifier::UNDERLINED)
+            } else {
+                theme.dim
+            },
+        ));
+    }
+    let stale = app.showing_stale_stories();
+    let mut status = Vec::new();
+    if app.should_show_loading() {
+        status.push(Span::styled(
             format!(
-                "{} {} p{}",
-                if app.error().is_some() && !app.is_loading() {
-                    "failed"
-                } else {
-                    "fetching"
-                },
+                "{} {}  ",
+                widgets::spinner_frame(tick),
+                if stale { "updating" } else { "loading" }
+            ),
+            theme.dim,
+        ));
+    }
+    if stale {
+        let failed = app.error().is_some() && !app.is_loading();
+        status.push(Span::styled(
+            format!(
+                "{} {} p{}  ",
+                if failed { "failed" } else { "fetching" },
                 app.story_type.display_name(),
                 app.current_page
             ),
-            app.theme().dim,
+            if failed { theme.error } else { theme.dim },
         ));
     }
-
-    if app.should_show_loading() {
-        spans.push(Span::raw(format!(
-            " {} {}",
-            widgets::spinner_frame(tick),
-            if stale { "Updating…" } else { "Loading…" }
-        )));
+    status.push(Span::styled(format!("Page {display_page}"), theme.dim));
+    let status = Line::from(status);
+    let right_width = (status.width() as u16).min(area.width.saturating_sub(2));
+    let right_x = area.right().saturating_sub(2 + right_width);
+    f.render_widget(
+        Block::default()
+            .borders(Borders::BOTTOM)
+            .border_style(theme.line),
+        area,
+    );
+    if area.height > 1 {
+        f.render_widget(
+            Line::from(tabs),
+            Rect::new(area.x, area.y, right_x.saturating_sub(area.x), 1),
+        );
+        f.render_widget(
+            status.right_aligned(),
+            Rect::new(right_x, area.y, right_width, 1),
+        );
     }
-
-    let title = Paragraph::new(Line::from(spans))
-        .style(Style::default())
-        .block(Block::default().borders(Borders::BOTTOM));
-
-    f.render_widget(title, area);
 }
 
 /// Render the list of stories
@@ -119,31 +154,43 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
             let is_selected = idx == app.selected_index;
             let global_idx = ((display_page - 1) as usize * app.page_size as usize) + idx + 1;
 
-            // Build the story display
-            let mut lines = vec![];
-
-            // First line: selection indicator + number + title
-            let indicator = if is_selected {
-                Span::styled("▸ ", app.theme().accent)
+            let theme = app.theme();
+            let indicator = Span::styled(if is_selected { "▎ " } else { "  " }, theme.accent);
+            let bookmark = if app.is_bookmarked(story.id) {
+                " ★"
             } else {
-                Span::raw("  ")
+                ""
             };
-            let title_style = if is_selected {
-                Style::default().add_modifier(Modifier::BOLD)
-            } else {
-                Style::default()
-            };
-
-            lines.push(Line::from(vec![
-                indicator,
-                Span::styled(format!("{global_idx}. "), title_style),
-                Span::styled(&story.title, title_style),
-                Span::raw(if app.is_bookmarked(story.id) {
-                    " ★"
-                } else {
-                    ""
-                }),
-            ]));
+            let rank = format!("{global_idx:>3}  ");
+            let title_width = usize::from(area.width)
+                .saturating_sub(2 + rank.len() + Span::raw(bookmark).width());
+            let mut title = story.title.clone();
+            if Span::raw(&title).width() > title_width {
+                title.clear();
+                if title_width > 0 {
+                    for ch in story.title.chars() {
+                        title.push(ch);
+                        if Span::raw(&title).width() + 1 > title_width {
+                            title.pop();
+                            break;
+                        }
+                    }
+                    title.push('…');
+                }
+            }
+            let mut lines = vec![Line::from(vec![
+                indicator.clone(),
+                Span::styled(rank, theme.dim),
+                Span::styled(
+                    title,
+                    if is_selected {
+                        theme.fg.add_modifier(Modifier::BOLD)
+                    } else {
+                        theme.fg
+                    },
+                ),
+                Span::styled(bookmark, theme.accent),
+            ])];
 
             // Second line: metadata
             let comment_str = match story.comments {
@@ -158,24 +205,17 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
                 .filter(|host| host != "news.ycombinator.com")
                 .unwrap_or_else(|| "HN discussion".into());
             lines.push(Line::from(vec![
+                indicator,
                 Span::raw("     "),
-                Span::styled(host, Style::default().add_modifier(Modifier::DIM)),
-                Span::raw(" │ "),
-                Span::styled("by ", Style::default().add_modifier(Modifier::DIM)),
-                Span::styled(&story.author, app.theme().fg),
-                Span::raw(" │ "),
-                Span::styled(format!("{} points", story.score), app.theme().dim),
-                Span::raw(" │ "),
-                Span::styled(comment_str, app.theme().fg),
-                Span::raw(" │ "),
                 Span::styled(
-                    &story.time_ago,
-                    Style::default().add_modifier(Modifier::DIM),
+                    format!("{host} · {} · {} points · ", story.author, story.score),
+                    theme.dim,
                 ),
+                Span::styled(comment_str, theme.fg),
+                Span::styled(format!(" · {}", story.time_ago), theme.dim),
             ]));
 
-            // Add spacing between stories
-            if idx < app.stories.len() - 1 {
+            if f.area().height >= 30 && idx < app.stories.len() - 1 {
                 lines.push(Line::from(""));
             }
 
@@ -183,14 +223,7 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
         })
         .collect();
 
-    let list = List::new(items)
-        .style(list_style)
-        .block(Block::default().borders(Borders::NONE))
-        .highlight_style(
-            app.theme()
-                .fg
-                .add_modifier(Modifier::BOLD | Modifier::REVERSED),
-        );
+    let list = List::new(items).style(list_style);
 
     let mut state = ListState::default()
         .with_selected(Some(app.selected_index))
@@ -198,4 +231,9 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
 
     f.render_stateful_widget(list, area, &mut state);
     app.story_scroll = state.offset();
+    // Apply after text rendering, which resets continuation cells of wide characters.
+    let stride = if f.area().height >= 30 { 3 } else { 2 };
+    let y = area.y + ((app.selected_index - state.offset()) * stride) as u16;
+    let selected = Rect::new(area.x, y, area.width, 2).intersection(area);
+    f.buffer_mut().set_style(selected, app.theme().sel);
 }

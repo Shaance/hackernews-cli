@@ -49,7 +49,7 @@ def run(binary, output, width, height):
         app.wait(lambda t: "Nordwand Mono" in t and "123 points" in t)
         capture("01-feed")
         app.key("s4")
-        app.wait(lambda t: "Saved stories" in t and "Nordwand Mono" in t)
+        app.wait(lambda t: "4 Saved" in t and "Nordwand Mono" in t)
         capture("02-saved")
         app.key("c")
         app.wait(lambda t: "Replay article control:" in t and count() == 40)
@@ -106,7 +106,7 @@ def run(binary, output, width, height):
         assert len(fixture.calls) == 5
         assert fixture.calls[-1]["section"] == "discussion", "Retry replaced successful article"
         app.key("\x1b")
-        app.wait(lambda t: "Saved stories" in t)
+        app.wait(lambda t: "4 Saved" in t)
         app.key("c")
         app.wait(lambda t: "Summary ready" in t)
         assert len(fixture.calls) == 5, "Revisit must reuse summary"
@@ -164,32 +164,32 @@ def run(binary, output, width, height):
         assert passage() == continued and len(fixture.calls) == 5
         capture("15-refresh-recovered")
         app.key("\x1b")
-        app.wait(lambda t: "Saved stories" in t)
+        app.wait(lambda t: "4 Saved" in t)
         app.key("1")
-        app.wait(lambda t: "Top stories" in t and "Synthetic feed control 01" in t)
+        app.wait(lambda t: "1 Top" in t and "Synthetic feed control 01" in t)
         for page in (2, 3):
             app.key("n")
-            app.wait(lambda t: f"Page {page}" in t and f"Synthetic feed control {(page - 1) * 20 + 1:02}" in t)
+            app.wait(lambda t: re.search(rf"Page {page}  $", t, re.M) and f"Synthetic feed control {(page - 1) * 20 + 1:02}" in t)
         app.key("j" * 19 + "s")
-        app.wait(lambda t: "▸ 60. Synthetic feed control 60 ★" in t)
+        app.wait(lambda t: "▎  60  Synthetic feed control 60 ★" in t)
         feed = app.text().splitlines()[2:-2]
         fixture.get_gates["/v0/newstories.json"] = Event()
         app.key("2")
-        app.wait(lambda t: "Top stories" in t and "Page 3" in t and "fetching New p1" in t)
+        app.wait(lambda t: "1 Top" in t and re.search(r"Page 3  $", t, re.M) and re.search(r"fetching New p1  Page 3  $", t, re.M))
         capture("16-feed-pending")
         fixture.get_gates["/v0/newstories.json"].set()
-        app.wait(lambda t: "failed New p1" in t)
+        app.wait(lambda t: re.search(r"failed New p1  Page 3  $", t, re.M))
         app.key("4")
-        app.wait(lambda t: "Saved stories" in t and "Synthetic feed control 60" in t)
-        assert re.search(r"▸ 2\. .*Nordwand Mono", app.text()), "Saved insertion lost its selected story"
+        app.wait(lambda t: "4 Saved" in t and "Synthetic feed control 60" in t)
+        assert re.search(r"▎   2  .*Nordwand Mono", app.text()), "Saved insertion lost its selected story"
         app.key("k1")
-        app.wait(lambda t: "Top stories" in t and "Page 3" in t and "▸ 60. Synthetic feed control 60 ★" in t)
+        app.wait(lambda t: "1 Top" in t and re.search(r"Page 3  $", t, re.M) and "▎  60  Synthetic feed control 60 ★" in t)
         assert app.text().splitlines()[2:-2] == feed, "Feed return lost its scroll position"
         assert fixture.gets.count("/v0/topstories.json") == 3, "Feed return fetched again"
         capture("17-feed-restored")
         app.key("s4")
-        app.wait(lambda t: "Saved stories" in t and "Synthetic feed control 60" not in t)
-        assert re.search(r"▸ 1\. .*Nordwand Mono", app.text()), "Saved removal did not select the remaining story"
+        app.wait(lambda t: "4 Saved" in t and "Synthetic feed control 60" not in t)
+        assert re.search(r"▎   1  .*Nordwand Mono", app.text()), "Saved removal did not select the remaining story"
         capture("18-saved-current")
         app.quit()
         assert not fixture.errors, fixture.errors

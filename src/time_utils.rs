@@ -12,10 +12,10 @@ pub fn unix_epoch_to_datetime(unix_epoch: u64) -> String {
 pub fn time_ago(epoch_time: u64) -> String {
     let diff = now().saturating_sub(epoch_time);
     match diff {
-        0..=59 => format!("{diff} seconds ago"),
-        60..=3599 => format!("{} minutes ago", diff / 60),
-        3600..=86399 => format!("{} hours ago", diff / 3600),
-        86400..=604799 => format!("{} days ago", diff / 86400),
+        0..=59 => format!("{diff}s"),
+        60..=3599 => format!("{}m", diff / 60),
+        3600..=86399 => format!("{}h", diff / 3600),
+        86400..=604799 => format!("{}d", diff / 86400),
         _ => format!("{} weeks ago", diff / 604800),
     }
 }
@@ -39,16 +39,24 @@ mod tests {
     #[test]
     fn test_time_ago() {
         let now = now();
-        assert_eq!(time_ago(now), "0 seconds ago");
-        assert_eq!(time_ago(now - 60), "1 minutes ago");
-        assert_eq!(time_ago(now - 3600), "1 hours ago");
-        assert_eq!(time_ago(now - 86400), "1 days ago");
-        assert_eq!(time_ago(now - 604800), "1 weeks ago");
+        for (seconds, expected) in [
+            (0, "0s"),
+            (30, "30s"),
+            (60, "1m"),
+            (120, "2m"),
+            (3600, "1h"),
+            (7200, "2h"),
+            (86400, "1d"),
+            (172800, "2d"),
+            (604800, "1 weeks ago"),
+        ] {
+            assert_eq!(time_ago(now - seconds), expected, "age {seconds}s");
+        }
     }
 
     #[test]
     fn future_time_is_not_negative() {
-        assert_eq!(time_ago(now() + 60), "0 seconds ago");
+        assert_eq!(time_ago(now() + 60), "0s");
     }
 
     #[test]
