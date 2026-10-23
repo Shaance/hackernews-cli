@@ -158,8 +158,8 @@ pub struct Reading {
     staged: Option<Completed<Discussion, DiscussionCapture>>,
     shown: bool,
     moved: bool,
-    // Last panel height until movement; None means S explicitly lifted the cap.
-    growth_cap: Option<usize>,
+    // Track the panel height until movement freezes it; explicit opens resume tracking.
+    growth_cap: usize,
     // Retain the settled target for the next opening; elapsed time determines activity.
     panel_motion: Option<(Instant, u16, u16)>,
     prefix_height: usize,
@@ -181,7 +181,7 @@ impl Reading {
             staged: None,
             shown: true,
             moved: false,
-            growth_cap: Some(0),
+            growth_cap: 0,
             panel_motion: None,
             prefix_height: 0,
             summary_scroll: 0,
@@ -230,6 +230,7 @@ pub struct Reader {
     browser_busy: bool,
     desired_browser: Option<(HNCLIItem, bool)>,
     browser_notice: String,
+    // Opening/success notices are timed; errors have no clock and use the error role.
     notice_started: Option<Instant>,
     tx: mpsc::UnboundedSender<Result<(Option<browser::Target>, String), String>>,
     rx: mpsc::UnboundedReceiver<Result<(Option<browser::Target>, String), String>>,

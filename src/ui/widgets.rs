@@ -73,6 +73,19 @@ pub fn render_modal(
     title: &str,
     body: impl FnOnce(u16, u16) -> (Vec<Line<'static>>, Option<usize>),
 ) {
+    render_modal_body(f, theme, opened, title, |width, height| {
+        let (lines, selected) = body(width, height);
+        (lines, selected, 1)
+    });
+}
+
+fn render_modal_body(
+    f: &mut Frame,
+    theme: Theme,
+    opened: Option<Instant>,
+    title: &str,
+    body: impl FnOnce(u16, u16) -> (Vec<Line<'static>>, Option<usize>, u16),
+) {
     let fading = theme.motion && opened.is_some();
     for cell in &mut f.buffer_mut().content {
         let fg = cell.fg;
@@ -88,8 +101,9 @@ pub fn render_modal(
             .process(start.elapsed().into(), f.buffer_mut(), area);
     }
     let area = f.area().inner(Margin::new(2, 1));
-    let (mut lines, selected) = body(area.width.saturating_sub(6), area.height.saturating_sub(4));
-    lines.truncate(usize::from(area.height.saturating_sub(4)));
+    let (mut lines, selected, padding) =
+        body(area.width.saturating_sub(6), area.height.saturating_sub(4));
+    lines.truncate(usize::from(area.height.saturating_sub(2 + 2 * padding)));
     let width = lines
         .iter()
         .map(Line::width)
@@ -97,9 +111,9 @@ pub fn render_modal(
         .unwrap_or(0)
         .min(usize::from(area.width.saturating_sub(6)));
     let selected = selected.filter(|index| *index < lines.len());
-    let height = lines.len() + 2;
+    let height = lines.len() + usize::from(2 * padding);
     let body = tui_popup::KnownSizeWrapper::new(
-        Paragraph::new(lines).block(Block::default().padding(Padding::new(2, 2, 1, 1))),
+        Paragraph::new(lines).block(Block::default().padding(Padding::new(2, 2, padding, padding))),
         width + 4,
         height,
     );
@@ -116,7 +130,7 @@ pub fn render_modal(
     if let (Some(index), Some(dialog)) = (selected, state.area()) {
         let row = Rect::new(
             dialog.x + 1,
-            dialog.y + 2 + index as u16,
+            dialog.y + 1 + padding + index as u16,
             dialog.width.saturating_sub(2),
             1,
         );
@@ -192,7 +206,7 @@ pub fn render_help(f: &mut Frame, theme: Theme, in_comments: bool, opened: Optio
             ("ANYWHERE", &[("q/Esc", "Quit"), ("?", "Close")]),
         ]
     };
-    render_modal(f, theme, opened, "Keys", |width, _| {
+    render_modal_body(f, theme, opened, "Keys", |width, height| {
         // The body includes the two padding columns on each side.
         let columns = if width + 4 >= 72 { 2 } else { 1 };
         let key_width = groups
@@ -207,12 +221,24 @@ pub fn render_help(f: &mut Frame, theme: Theme, in_comments: bool, opened: Optio
             .map(|(_, action)| key_width + 2 + Span::raw(*action).width())
             .max()
             .unwrap_or(0);
+        let rows = usize::from(height) + 2; // Recover vertical padding before dropping headings.
+        let grouped_rows = groups
+            .iter()
+            .map(|(_, entries)| entries.len().div_ceil(columns) + 1)
+            .sum::<usize>()
+            + groups.len().saturating_sub(1);
+        let padding = u16::from(grouped_rows <= usize::from(height));
+        let compact = grouped_rows > rows;
         let mut lines = Vec::new();
+        // Lines holding a way out of the screen stay visible even when the table is cut.
+        let mut exits = Vec::new();
         for (heading, entries) in groups {
-            if !lines.is_empty() {
-                lines.push(Line::raw(""));
+            if !compact {
+                if !lines.is_empty() {
+                    lines.push(Line::raw(""));
+                }
+                lines.push(Line::styled(*heading, theme.dim));
             }
-            lines.push(Line::styled(*heading, theme.dim));
             for pair in entries.chunks(columns) {
                 let mut line = Line::default();
                 for (index, (key, action)) in pair.iter().enumerate() {
@@ -224,10 +250,28 @@ pub fn render_help(f: &mut Frame, theme: Theme, in_comments: bool, opened: Optio
                     line.push_span(Span::raw("  "));
                     line.push_span(Span::styled(*action, theme.fg));
                 }
+                if pair
+                    .iter()
+                    .any(|(_, action)| matches!(*action, "Back" | "Quit" | "Close"))
+                {
+                    exits.push(lines.len());
+                }
                 lines.push(line);
             }
         }
-        (lines, None)
+        if lines.len() > rows {
+            let room = rows.saturating_sub(1);
+            let pinned = exits.len().min(room);
+            let mut kept: Vec<_> = (0..lines.len())
+                .filter(|index| !exits.contains(index))
+                .take(room - pinned)
+                .chain(exits.iter().copied().take(pinned))
+                .collect();
+            kept.sort_unstable();
+            lines = kept.into_iter().map(|index| lines[index].clone()).collect();
+            lines.push(Line::styled("… more at a larger size", theme.dim));
+        }
+        (lines, None, padding)
     });
 }
 

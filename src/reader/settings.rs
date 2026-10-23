@@ -215,7 +215,7 @@ impl Reader {
 impl Settings {
     fn render(&self, frame: &mut Frame, theme: hn_lib::theme::Theme) {
         let s = self;
-        render_modal(frame, theme, self.opened, "Summary settings", |width, _| {
+        render_modal(frame, theme, s.opened, "Summary settings", |width, rows| {
             let width = width.min(64);
             let key = &s.keys[s.provider as usize];
             let values = [
@@ -305,7 +305,13 @@ impl Settings {
             if !s.error.is_empty() {
                 lines.push(Line::styled(s.error.clone(), theme.error));
             }
-            (lines, Some(2 + s.cursor + usize::from(s.cursor >= 4)))
+            let selected = 2 + s.cursor + usize::from(s.cursor >= 4);
+            let rows = usize::from(rows);
+            let start = (selected + 1).saturating_sub(rows);
+            (
+                lines.into_iter().skip(start).take(rows).collect(),
+                (rows > 0).then(|| selected - start),
+            )
         });
     }
 }
@@ -385,4 +391,34 @@ fn settings_modal_styles_focus_padding_and_scrim() {
             .any(|c| c.symbol() == "▎" && c.fg == theme.scrim.fg.unwrap()),
         "selected comment glyphs must survive behind scrim"
     );
+}
+
+#[cfg(test)]
+#[test]
+fn small_settings_keeps_refresh_selected_and_visible() {
+    use ratatui::{backend::TestBackend, Terminal};
+    let theme = hn_lib::theme::Theme::TRUE_DARK;
+    let settings = Settings {
+        opened: None,
+        keys: Default::default(),
+        provider: Provider::OpenRouter,
+        automatic: true,
+        profile: Profile::Fast,
+        cursor: 4,
+        error: String::new(),
+        retry: false,
+    };
+    let mut terminal = Terminal::new(TestBackend::new(40, 12)).unwrap();
+    let frame = terminal.draw(|f| settings.render(f, theme)).unwrap();
+    let y = (0..12)
+        .find(|y| {
+            let text: String = (0..40).map(|x| frame.buffer[(x, *y)].symbol()).collect();
+            text.contains("Refresh sources & summary")
+        })
+        .expect("selected refresh row must be visible");
+    let x = (0..40)
+        .find(|x| frame.buffer[(*x, y)].symbol() == "▎")
+        .unwrap();
+    assert_eq!(frame.buffer[(x, y)].fg, theme.accent.fg.unwrap());
+    assert_eq!(frame.buffer[(x + 2, y)].bg, theme.sel.bg.unwrap());
 }
