@@ -9,7 +9,7 @@ On macOS with Ghostty, you can open the original article in a companion browser 
 Build from this checkout with Rust and Cargo:
 
 ```sh
-cargo install --path .
+cargo install --path . --locked
 hn
 ```
 
@@ -20,6 +20,8 @@ cargo run --release
 ```
 
 Browsing and saving stories work without an API key. Summaries and the Ghostty article pane each have optional setup below.
+
+Cargo installs `hn` into `$CARGO_HOME/bin`, normally `~/.cargo/bin`. Keep that directory on your shell's PATH. Run the same install command after updating the checkout to update the binary. Installation leaves saved stories, summary settings, and API keys in place; you can run `hn` from any directory.
 
 ## Colours
 
@@ -49,7 +51,11 @@ If the saved file cannot be read, hn preserves it and displays a notice. After c
 
 Open a story, press `M`, choose **OpenRouter** or **Anthropic** under Provider, enter that provider's API key, and press Enter. For Anthropic, use a personal key scoped to a workspace in the [Claude Console](https://platform.claude.com/settings/keys).
 
+Keys entered in this form and your preferences are saved in `~/.config/hn/summary.json` (or `$XDG_CONFIG_HOME/hn/summary.json`) with owner-only permissions. They remain available after restarting or reinstalling `hn`.
+
 You can also supply `OPENROUTER_API_KEY` or `ANTHROPIC_API_KEY`. On a fresh setup, an Anthropic key alone selects Anthropic; otherwise OpenRouter is the default. Saved provider choices take precedence. Each provider keeps its own key, and a key saved in settings takes precedence over that provider's environment variable. Environment keys are not copied into settings unless you edit them through the form.
+
+The installed binary does not read `.env.local`. That file is only used by the [development runner](#development). If you previously used it, enter your key once in `M` when running plain `hn`, or export the provider key in the shell that launches `hn`.
 
 Summaries send extracted article text and sampled comment excerpts directly to the selected provider using your API credits. No separate summary service is required. Changing provider preserves completed summaries and applies to new requests; there is no automatic fallback to the other provider.
 
@@ -84,13 +90,13 @@ Restarting hn begins a new reading session. Saved stories and summary settings p
 
 ## Optional Ghostty article pane
 
-The companion pane currently supports macOS with Ghostty and terminal-browser. The hn terminal must be at least 110 columns wide when opening a new pane. Follow the [Ghostty setup instructions](scripts/ghostty/README.md) for the supported terminal-browser v0.13.4 setup, including the pane-specific Cmd+W binding and startup/exit patch.
+The companion pane supports macOS with Ghostty and terminal-browser v0.13.4. The hn terminal must be at least 110 columns wide when opening a new pane. Follow the [Ghostty setup instructions](scripts/ghostty/README.md) to install the browser and its pane-specific Cmd+W binding. The installer copies the browser into your user data directory and adds a launcher under `~/.local/bin`; running `hn` then needs no development launcher or checkout-local browser.
 
 Press `o` to open the article beside the discussion. For the same story, `o` focuses the existing browser tab and preserves its scroll position and any page you followed within that tab. Opening a different story replaces hn's article tab in the existing companion. Unrelated browser tabs and terminal panes are left alone.
 
 With the documented setup, Cmd+W in the companion closes that pane without the terminal confirmation or a “Process exited” screen. Press `o` to reopen it. The setup requires a one-time Ghostty configuration edit; running hn does not change global configuration or other panes' close behavior.
 
-Other terminals, narrower initial windows, or a missing terminal-browser executable use the default browser. If the companion fails to launch, `O` opens the story externally.
+Other terminals, narrower initial windows, or a missing terminal-browser executable use the default browser. If you expected a split pane, run `command -v terminal-browser` and `terminal-browser --version` in the same Ghostty shell as `hn`. The version should be v0.13.4. If the companion fails to launch, `O` opens the story externally.
 
 ## Keyboard reference
 
@@ -147,6 +153,7 @@ While viewing a cited source, `j/k`, Page Up/Down, and `g/G` scroll its text. In
 | Saved story details | `~/.local/share/hn/saved.json` | Until unsaved or deleted |
 | Summary settings and any key entered in the form | `~/.config/hn/summary.json` | Across restarts |
 | Summary response diagnostics (both providers) | `~/.local/state/hn/openrouter/` | Until manually deleted |
+| Optional article browser | `~/.local/share/hn/terminal-browser-v0.13.4/` | Across hn reinstalls |
 | Captured inputs, summaries, replies, and reading positions | Memory only | Current run |
 
 `XDG_DATA_HOME`, `XDG_CONFIG_HOME`, and `XDG_STATE_HOME` override the corresponding directory roots. Settings and diagnostic files use owner-only permissions on Unix. A key entered through the form is stored in the settings file; it is not an OS keychain entry.
@@ -163,15 +170,29 @@ From a checkout, run:
 ./scripts/dev.sh
 ```
 
-The runner builds and starts hn. It optionally reads an ignored `.env.local` containing `OPENROUTER_API_KEY=value` and/or `ANTHROPIC_API_KEY=value`, with optional quotes, and adds `.tools/terminal-browser/bin` to PATH when present. An existing environment key takes precedence over the env file. The file is read as data, never executed. Pass another env-file path as the first argument if needed.
+The runner builds and starts hn. It optionally reads an ignored `.env.local` containing `OPENROUTER_API_KEY=value` and/or `ANTHROPIC_API_KEY=value`, with optional quotes. An existing environment key takes precedence over the env file. The file is read as data, never executed. Pass another env-file path as the first argument if needed. The browser uses the same installed `terminal-browser` command as plain `hn`.
 
-Run the deterministic checks:
+### Verify without Ghostty or API keys
+
+Run the recorded reader checks with Rust and [uv](https://docs.astral.sh/uv/) installed:
 
 ```sh
-cargo fmt --check
-cargo test
-cargo build
+scripts/verify-reader.sh
 ```
+
+This runs formatting and the Rust tests, then exercises the real terminal event loop with recorded discussions and summaries. It checks navigation, citations, refresh, failure and retry, and retained reading positions. Styled captures are saved at 240×80 and 200×60 terminal cells; use `--size 220x70` to match your window. See [recorded reader verification](tests/reader/README.md) for the scenarios and artifacts.
+
+After installing `hn`, check the installed binary separately:
+
+```sh
+uv run --with pyte python scripts/verify-installed.py
+```
+
+This finds `hn` on PATH, launches it outside the checkout, changes settings through the keyboard, and restarts it to check they persist. It uses a temporary home, a fake key, and blocked network requests. Your settings are untouched. Pass `--binary /path/to/hn` to check a specific installation. Both commands save terminal captures and need no computer-use access; uv may download pyte on its first run.
+
+The [browser installer check](scripts/ghostty/README.md#verify-without-opening-ghostty) verifies the copied distribution independently of its source. Rust socket tests check tab reuse and ownership. Native Ghostty focus, rendering, and Cmd+W closure still need the short check in that guide when the browser integration changes.
+
+### Live provider check
 
 With the selected provider's key available and `uv` installed, run the live terminal smoke test:
 
@@ -183,7 +204,7 @@ uv run --with pyte python scripts/smoke.py --provider anthropic
 
 This command calls live Hacker News and the selected provider and makes six paid model requests. It uses temporary settings, saved items, and diagnostic logs, and prints the paths to those files and its terminal captures. It checks Fast/Thorough, summary toggling without moving comments, retained results, citations, refresh, reply navigation, and clean exit.
 
-Native Ghostty focus and pane closure need the manual checks in the [companion setup guide](scripts/ghostty/README.md). Summary accuracy needs the source-grounded review in [tests/quality/README.md](tests/quality/README.md); a successful smoke test does not establish factual accuracy.
+Summary accuracy needs the source-grounded review in [tests/quality/README.md](tests/quality/README.md); a successful smoke test does not establish factual accuracy.
 
 ### Code layout
 
@@ -207,9 +228,3 @@ The app uses ratatui and crossterm for terminal rendering and input, Tokio for a
 ## About
 
 This project was created as a learning exercise to explore Rust and terminal UI development.
-
-## Verify the reader locally
-
-Run `scripts/verify-reader.sh` to exercise the real terminal UI with recorded discussions and summaries. It needs Rust and uv, but no API key. The command runs the tests, replays loading and failure states, and saves styled captures at 240×80 and 200×60 terminal cells. Use `--size 220x70` to match your window.
-
-See [recorded reader verification](tests/reader/README.md) for the scenarios, artifacts and separate live-provider checks.
