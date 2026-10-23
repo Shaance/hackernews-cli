@@ -34,21 +34,15 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
                 theme.dim,
             )]
         } else if let Some(error) = app.error() {
-            let message = format!("! {error}");
-            let mut rows: Vec<_> = textwrap::wrap(&message, usize::from(chunks[1].width).max(1))
-                .into_iter()
-                .enumerate()
-                .map(|(index, row)| {
-                    if index == 0 {
-                        Line::from(vec![
-                            Span::styled("! ", theme.error),
-                            Span::styled(row.strip_prefix("! ").unwrap_or("").to_owned(), theme.fg),
-                        ])
-                    } else {
-                        Line::styled(row.into_owned(), theme.fg)
-                    }
-                })
-                .collect();
+            let mut rows = vec![Line::styled(
+                format!("Couldn't load {} stories", app.story_type.display_name()),
+                theme.fg,
+            )];
+            rows.extend(
+                textwrap::wrap(error, usize::from(chunks[1].width).max(1))
+                    .into_iter()
+                    .map(|row| Line::styled(row.into_owned(), theme.dim)),
+            );
             rows.push(Line::from(vec![
                 Span::styled("r", theme.accent),
                 Span::styled(" retry", theme.dim),
@@ -176,7 +170,7 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
     // Keep selection in view
     app.update_story_scroll(area.height as usize);
 
-    let (_, display_page) = app.displayed_story_context();
+    let (display_type, display_page) = app.displayed_story_context();
     let list_style = if app.is_loading() {
         app.theme().dim.add_modifier(Modifier::DIM)
     } else {
@@ -194,7 +188,7 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
 
             let theme = app.theme();
             let indicator = Span::styled(if is_selected { "▎ " } else { "  " }, theme.accent);
-            let bookmark = if app.is_bookmarked(story.id) {
+            let bookmark = if display_type != StoryType::Saved && app.is_bookmarked(story.id) {
                 " ★"
             } else {
                 ""
