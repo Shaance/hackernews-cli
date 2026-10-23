@@ -22,7 +22,7 @@ COLORS = dict(black="#252932", red="#ee6b73", green="#9bc779", brown="#e6bd78",
 SPINNER = re.compile("[⠀-⣿]")
 
 class TUI:
-    def __init__(self, data, width=240, height=80, command=None, env=None, output=None):
+    def __init__(self, data, width=240, height=80, command=None, env=None, output=None, cwd=None):
         self.output = output or Path(tempfile.mkdtemp(prefix="hn-terminal-evidence-"))
         self.output.mkdir(parents=True, exist_ok=True)
         self.screen = pyte.Screen(width, height)
@@ -41,7 +41,7 @@ class TUI:
                              "http_proxy", "https_proxy", "all_proxy"):
                     os.environ.pop(name, None)
                 os.environ.update(env)
-            os.chdir(ROOT)
+            os.chdir(cwd or ROOT)
             argv = command or [str(ROOT / "target/debug/hn")]
             os.execv(argv[0], argv)
         fcntl.ioctl(self.fd, termios.TIOCSWINSZ, struct.pack("HHHH", height, width, 0, 0))
