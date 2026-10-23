@@ -7,8 +7,8 @@ mod view_scope;
 pub(super) fn test_comment(id: i32, state: CommentState) -> hn_lib::app::Comment {
     hn_lib::app::Comment {
         id,
-        author: format!("user{}", id),
-        text: format!("comment {}", id),
+        author: format!("user{id}"),
+        text: format!("comment {id}"),
         links: vec![],
         time_ago: "now".to_string(),
         state,

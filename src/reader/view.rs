@@ -2,7 +2,7 @@ use super::{text::append, Reader};
 use hn_lib::app::App;
 use ratatui::{
     layout::{Constraint, Layout},
-    style::{Color, Style},
+    style::Style,
     text::Line,
     widgets::{Block, Borders, Paragraph, Wrap},
     Frame,
@@ -10,6 +10,9 @@ use ratatui::{
 
 impl Reader {
     pub fn render(&mut self, frame: &mut Frame, app: &mut App, tick: usize) {
+        let theme = self.theme;
+        let area = frame.area();
+        frame.buffer_mut().set_style(area, theme.fg);
         if self.settings.is_some() {
             self.render_settings(frame);
             return;
@@ -112,22 +115,17 @@ impl Reader {
                     .skip(reading.summary_scroll)
                     .take(rows)
                     .collect::<Vec<_>>();
-                visible.push(Line::styled(footer, Style::default().fg(Color::Yellow)));
+                visible.push(Line::styled(footer, theme.line));
                 frame.render_widget(Paragraph::new(visible), body[0]);
             }
             let mut lines = vec![];
             if !reading.story.text.is_empty() {
-                append(
-                    &mut lines,
-                    "ORIGINAL POST",
-                    width,
-                    Style::default().fg(Color::Yellow),
-                );
+                append(&mut lines, "ORIGINAL POST", width, theme.dim);
                 append(&mut lines, &reading.story.text, width, Style::default());
             }
             lines.push(Line::styled(
                 format!("DISCUSSION · {} visible", app.visible_comment_count()),
-                Style::default().fg(Color::Cyan),
+                theme.dim,
             ));
             lines.push(Line::raw(""));
             let old = reading.prefix_height;
@@ -152,7 +150,7 @@ impl Reader {
         } else {
             format!("Article {article} · Discussion {discussion}")
         };
-        let (label, color) = if let Some(id) = reading.source {
+        let (label, style) = if let Some(id) = reading.source {
             let result = reading.discussion.result.as_ref().unwrap();
             let author = &result
                 .capture
@@ -169,7 +167,7 @@ impl Reader {
                     reading.citations().len(),
                     result.profile.label()
                 ),
-                Color::Cyan,
+                theme.accent,
             )
         } else if self.config.key().is_empty() {
             (
@@ -178,7 +176,7 @@ impl Reader {
                 } else {
                     "AI summary · S Set up summaries".to_owned()
                 },
-                Color::Yellow,
+                theme.dim,
             )
         } else if self.auth_failed {
             (
@@ -186,13 +184,13 @@ impl Reader {
                     "{} key rejected · {action} · M Edit key",
                     self.config.provider.label()
                 ),
-                Color::Yellow,
+                theme.error,
             )
         } else if ready == 0
             && !loading
             && (!reading.article.requested() || !reading.discussion.requested())
         {
-            ("AI summary · S Generate".to_owned(), Color::Yellow)
+            ("AI summary · S Generate".to_owned(), theme.dim)
         } else if loading {
             let state = if ready == 2 {
                 "Updating…"
@@ -206,7 +204,7 @@ impl Reader {
                     "{} {state} · {action}",
                     hn_lib::ui::widgets::spinner_frame(tick)
                 ),
-                Color::Yellow,
+                theme.dim,
             )
         } else if ready == 2
             && !reading.article.failed()
@@ -214,22 +212,16 @@ impl Reader {
             && reading.article.result.as_ref().unwrap().profile
                 == reading.discussion.result.as_ref().unwrap().profile
         {
-            (format!("✓ Summary ready · {action}"), Color::Green)
+            (format!("✓ Summary ready · {action}"), theme.accent)
         } else if ready == 2 && !reading.article.failed() && !reading.discussion.failed() {
-            (
-                format!("Summary partially updated · {action}"),
-                Color::Yellow,
-            )
+            (format!("Summary partially updated · {action}"), theme.dim)
         } else {
             let retry = if reading.article.failed() || reading.discussion.failed() {
                 " · M → Enter Retry"
             } else {
                 ""
             };
-            (
-                format!("Summary incomplete · {action}{retry}"),
-                Color::Yellow,
-            )
+            (format!("Summary incomplete · {action}{retry}"), theme.error)
         };
         let header = if reading.source.is_some() {
             label
@@ -239,10 +231,7 @@ impl Reader {
                 if self.config.automatic { "on" } else { "off" }
             )
         };
-        frame.render_widget(
-            Paragraph::new(header).style(Style::default().fg(color)),
-            areas[1],
-        );
+        frame.render_widget(Paragraph::new(header).style(style), areas[1]);
         let status = if reading.source.is_some() {
             if reading.staged.is_some() {
                 "Updated summary ready · Esc Back".to_owned()

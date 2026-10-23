@@ -1,50 +1,6 @@
 //! Event handling for keyboard input
 
-use anyhow::Result;
-use crossterm::event::{self, Event as CrosstermEvent, KeyCode, KeyEventKind};
-use std::time::Duration;
-
-/// Application events
-#[derive(Debug, Clone, Copy)]
-pub enum Event {
-    /// A key was pressed
-    Key(KeyCode),
-    /// Tick event for animations/updates
-    Tick,
-}
-
-/// Event handler
-pub struct EventHandler {
-    /// Tick rate for animations
-    tick_rate: Duration,
-}
-
-impl Default for EventHandler {
-    fn default() -> Self {
-        Self::new(Duration::from_millis(250))
-    }
-}
-
-impl EventHandler {
-    /// Create a new event handler
-    pub fn new(tick_rate: Duration) -> Self {
-        Self { tick_rate }
-    }
-
-    /// Poll for the next event
-    pub fn next(&self) -> Result<Event> {
-        // Poll for events with timeout
-        if event::poll(self.tick_rate)? {
-            if let CrosstermEvent::Key(key) = event::read()? {
-                // Only handle key press events (ignore release)
-                if key.kind == KeyEventKind::Press {
-                    return Ok(Event::Key(key.code));
-                }
-            }
-        }
-        Ok(Event::Tick)
-    }
-}
+use crossterm::event::KeyCode;
 
 /// Handle key events for stories view
 pub fn handle_stories_key(key: KeyCode) -> StoryAction {
