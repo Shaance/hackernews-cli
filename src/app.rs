@@ -361,6 +361,7 @@ impl App {
                 ratatui::style::Color::Rgb(0xff, 0xf6, 0xea),
                 (300, tachyonfx::Interpolation::QuadOut),
             )
+            .with_color_space(tachyonfx::ColorSpace::Rgb)
             .process(start.elapsed().into(), buf, area);
         }
     }

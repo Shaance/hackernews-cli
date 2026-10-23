@@ -18,7 +18,9 @@ fn pinned_summary_keeps_comment_anchor_and_source_back_at_all_sizes() {
             assert!(initial.contains("Tab sources"));
             assert!(initial.contains("Article open in split pane"));
         }
-        assert!(initial.find("ARTICLE").unwrap() < initial.find("COMMENTS  3").unwrap());
+        let comments = initial.find("COMMENTS  3").unwrap();
+        // Even the smallest size keeps the summary reachable above the comments.
+        assert!(initial.find("ARTICLE").unwrap() < comments);
         app.set_comment_position(1, p.readings[&1].prefix_height + 37);
         let anchor = (app.comment_cursor, app.comment_scroll);
         let text = screen(&mut p, &mut app, w, h);
@@ -311,6 +313,7 @@ fn reader_chip_table_and_chrome_use_theme_roles() {
     ] {
         let mut p = ready();
         let r = p.readings.get_mut(&1).unwrap();
+        r.story.time_ago = "2h".into();
         let attempt = Attempt {
             id: 42,
             profile: Profile::Fast,
@@ -358,7 +361,10 @@ fn reader_chip_table_and_chrome_use_theme_roles() {
         assert!((0..120).all(|x| b[(x, 2)].fg == Theme::TRUE_DARK.line.fg.unwrap()));
         assert!((0..120).all(|x| b[(x, 38)].fg == Theme::TRUE_DARK.line.fg.unwrap()));
         if expected.is_empty() {
-            assert_eq!(meta.trim(), "news.ycombinator.com · 1 points · 2 comments");
+            assert_eq!(
+                meta.trim(),
+                "news.ycombinator.com · author · 1 points · 2 comments · 2h"
+            );
             assert!(!row(&b, 39).contains("Set up"));
             assert!(row(&b, 39).contains("S summary"));
         } else {
@@ -460,7 +466,11 @@ async fn moved_panel_keeps_its_height_when_results_grow_or_shrink() {
         &after.content[start..4560],
         "discussion arrival changed the comments' screen position"
     );
-    assert!(row(&after, 2 + height as u16).contains("J/K scroll"));
+    assert!(row(&after, 1 + height as u16).contains("J/K scroll"));
+    assert!(
+        row(&after, 2 + height as u16).trim().is_empty(),
+        "a blank row must separate the panel from the comments"
+    );
     p.readings
         .get_mut(&1)
         .unwrap()
@@ -646,6 +656,90 @@ fn reader_help_keys_match_handlers_and_use_accent() {
                     );
                 }
             }
+        }
+    }
+}
+
+#[test]
+fn motion_effects_stay_on_rgb_line_at_mid_duration() {
+    use ratatui::style::Color;
+    let theme = Theme::TRUE_DARK;
+    let rgb = |color| match color {
+        Color::Rgb(r, g, b) => [r, g, b].map(f32::from),
+        _ => panic!("expected RGB, got {color:?}"),
+    };
+    for effect in ["backdrop", "save", "notice", "panel"] {
+        let mut app = hn_lib::app::App::with_theme(theme);
+        let mut terminal = Terminal::new(TestBackend::new(120, 40)).unwrap();
+        let (cell, orange, grey) = match effect {
+            // The save flash's fixed start is a pale orange; paint a grey endpoint.
+            "save" => ((0, 0), Color::Rgb(0xff, 0xf6, 0xea), theme.dim.fg.unwrap()),
+            "notice" => ((2, 39), theme.accent.fg.unwrap(), theme.dim.fg.unwrap()),
+            "panel" => ((4, 1), theme.accent.fg.unwrap(), theme.dim.fg.unwrap()),
+            _ => ((0, 0), theme.accent.fg.unwrap(), theme.scrim.fg.unwrap()),
+        };
+        let frame = terminal
+            .draw(|f| {
+                let area = f.area();
+                match effect {
+                    "save" => {
+                        app.bookmarks.push(story(1));
+                        app.save_flash = Some((1, Instant::now() - Duration::from_millis(150)));
+                        f.buffer_mut().set_style(area, theme.dim);
+                        app.render_save_flash(f.buffer_mut(), area, 1);
+                    }
+                    "notice" => {
+                        let mut p = ready();
+                        p.theme = theme;
+                        p.browser_notice = "Article opened".into();
+                        p.notice_started = Some(Instant::now() - Duration::from_millis(2200));
+                        p.render(f, &mut app, 0);
+                    }
+                    "panel" => {
+                        let mut p = ready();
+                        let r = p.readings.get_mut(&1).unwrap();
+                        r.theme = theme;
+                        let result = r.article.result.as_mut().unwrap();
+                        result.capture = Arc::new(Capture::new(ArticleCapture {
+                            partial: true,
+                            title: "Title".into(),
+                            text: "Source".into(),
+                        }));
+                        let height = (r.summary_lines(120).0.len() + 1).min(26) as u16;
+                        r.panel_motion =
+                            Some((Instant::now() - Duration::from_millis(125), 0, height));
+                        r.render_summary(f, area);
+                    }
+                    _ => {
+                        f.buffer_mut().set_style(area, theme.accent);
+                        hn_lib::ui::widgets::render_help(
+                            f,
+                            theme,
+                            false,
+                            Some(Instant::now() - Duration::from_millis(60)),
+                        );
+                    }
+                }
+            })
+            .unwrap();
+        let sampled = rgb(frame.buffer[cell].fg);
+        let (a, b) = (rgb(orange), rgb(grey));
+        let fraction = (sampled[0] - a[0]) / (b[0] - a[0]);
+        assert!(
+            (0.05..0.95).contains(&fraction),
+            "{effect}: not mid-fade {sampled:?}"
+        );
+        for channel in 0..3 {
+            assert!(
+                (a[channel].min(b[channel])..=a[channel].max(b[channel]))
+                    .contains(&sampled[channel]),
+                "{effect}: channel {channel} escaped endpoints: {sampled:?}"
+            );
+            assert!(
+                (sampled[channel] - (a[channel] + fraction * (b[channel] - a[channel]))).abs()
+                    <= 2.0,
+                "{effect}: off RGB line: {sampled:?}"
+            );
         }
     }
 }
@@ -865,11 +959,31 @@ fn motion_panel_height_text_retarget_and_reduced_motion() {
     assert_eq!(reading.panel_motion.unwrap().2, 24);
     assert_eq!(
         panel_height(&draw(&mut reading, 15)),
-        10,
-        "shrinking snaps immediately"
+        7,
+        "shrinking snaps immediately to half of a short body"
     );
     assert!(!reading.has_active_motion(Instant::now()));
     reading.shown = false;
     assert_eq!(panel_height(&draw(&mut reading, 30)), 0);
     assert!(!reading.has_active_motion(Instant::now()));
+
+    let mut p = ready();
+    p.readings
+        .get_mut(&1)
+        .unwrap()
+        .article
+        .result
+        .as_mut()
+        .unwrap()
+        .value
+        .text = "A long summary.\n".repeat(40);
+    let mut app = comments_app();
+    let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
+    let frame = terminal.draw(|f| p.render(f, &mut app, 0)).unwrap();
+    let heading = (0..22)
+        .find(|&y| row(frame.buffer, y).contains("COMMENTS"))
+        .unwrap();
+    assert!(22 - heading >= 10);
+    assert!(row(frame.buffer, heading - 1).trim().is_empty());
+    assert!(row(frame.buffer, heading - 2).contains("J/K scroll"));
 }

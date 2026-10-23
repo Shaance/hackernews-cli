@@ -330,6 +330,8 @@ From live captures of the full journey in dark, light and 16-colour at 120×40 a
 4. **P3, Saved tab repeats ★ and offers `n/p page`.** Saved is one page (`next_page` returns early) and every row is saved. Correction: hide both in Saved.
 5. **P3, reader meta row drops author and age.** The feed shows `host · author · points · comments · age`; the reader shows `host · points · comments` (finding 6 proposed the full form). Correction: use the feed's form.
 
+All five were fixed in the commit after `0c1feb5` and verified with the same suites, fresh frame samples (the backdrop's mid-fade orange is now `#bf966c`, not yellow-green) and recaptures. The comment-row floor gives way at half the body, so tiny terminals still show the summary.
+
 Open question, not a defect: the summary panel's first non-empty frame was measured 71–85 ms after `S`, with the first redraw at 28–38 ms. Harness read lag accounts for most of it, and intermediate frames were coalesced, so no defect is established.
 
 Not sampled live: the notice fade and clear, because the only producer is `o`, which opens a real browser. Unit tests cover the 2 s, 2.4 s and 4 s points, including the motion-off clear.
