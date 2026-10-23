@@ -3,7 +3,7 @@
 use crate::app::{App, CommentState, View};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
     Frame,
@@ -65,10 +65,8 @@ pub fn render_reader_content(
     if app.comments.is_empty() {
         let message = if app.is_loading() {
             "Loading comments..."
-        } else if let Some(error) = app.error() {
-            error
         } else {
-            "No comments yet"
+            app.error().unwrap_or("No comments yet")
         };
         for line in textwrap::wrap(message, usize::from(area.width).max(1)) {
             prefix.push(Line::raw(line.into_owned()));
@@ -97,7 +95,7 @@ fn render_title(f: &mut Frame, area: Rect, app: &App, tick: usize) {
                 ),
             ]),
             Line::from(vec![
-                Span::raw(format!(" {} loaded comments", comment_count)),
+                Span::raw(format!(" {comment_count} loaded comments")),
                 if app.should_show_loading() {
                     Span::raw(format!(" {} Loading...", widgets::spinner_frame(tick)))
                 } else {
@@ -144,14 +142,15 @@ fn render_comments_list(
     prefix: Option<Vec<Line<'static>>>,
 ) {
     let list_style = if app.is_loading() {
-        Style::default().fg(Color::Gray).add_modifier(Modifier::DIM)
+        app.theme().dim.add_modifier(Modifier::DIM)
     } else {
         Style::default()
     };
 
-    let highlight_style = Style::default()
-        .add_modifier(Modifier::BOLD | Modifier::REVERSED)
-        .fg(Color::Reset);
+    let highlight_style = app
+        .theme()
+        .fg
+        .add_modifier(Modifier::BOLD | Modifier::REVERSED);
 
     // Pre-render all comments to line buffers and track their line ranges
     let mut rendered = Vec::with_capacity(app.visible_comment_count());
@@ -241,7 +240,7 @@ fn render_comment(
 
     let stem_prefix = guides_to_prefix(&guides, true);
     let text_prefix = guides_to_prefix(&guides, false);
-    let guide_color = depth_color(path.len().saturating_sub(1));
+    let guide_style = app.theme().line;
 
     // Comment header with author and time
     let header_style = if is_selected {
@@ -251,14 +250,14 @@ fn render_comment(
     };
 
     let (indicator_symbol, indicator_style) = match comment.state {
-        CommentState::Collapsed => ("▸ ".to_string(), Style::default().fg(Color::Yellow)),
-        CommentState::Loading { .. } => ("▸ ".to_string(), Style::default().fg(Color::Blue)),
-        CommentState::Expanded { .. } => ("▾ ".to_string(), Style::default().fg(Color::Green)),
+        CommentState::Collapsed => ("▸ ".to_string(), app.theme().accent),
+        CommentState::Loading { .. } => ("▸ ".to_string(), app.theme().dim),
+        CommentState::Expanded { .. } => ("▾ ".to_string(), app.theme().dim),
     };
 
     if comment.deleted {
         lines.push(Line::from(vec![
-            Span::styled(stem_prefix.clone(), Style::default().fg(guide_color)),
+            Span::styled(stem_prefix.clone(), guide_style),
             Span::styled(indicator_symbol.clone(), indicator_style),
             Span::styled(
                 "[deleted]",
@@ -267,12 +266,15 @@ fn render_comment(
         ]));
     } else {
         lines.push(Line::from(vec![
-            Span::styled(stem_prefix.clone(), Style::default().fg(guide_color)),
+            Span::styled(stem_prefix.clone(), guide_style),
             Span::styled(indicator_symbol, indicator_style),
-            Span::styled(format!("{} ", comment.author), header_style.fg(Color::Cyan)),
+            Span::styled(
+                format!("{} ", comment.author),
+                header_style.patch(app.theme().fg),
+            ),
             Span::styled(
                 format!("• {}", comment.time_ago),
-                Style::default().fg(Color::Gray).add_modifier(Modifier::DIM),
+                app.theme().dim.add_modifier(Modifier::DIM),
             ),
         ]));
 
@@ -284,15 +286,12 @@ fn render_comment(
         // Split text into lines and add indent
         for line in comment.text.lines() {
             if line.trim().is_empty() {
-                lines.push(Line::from(Span::styled(
-                    text_prefix.clone(),
-                    Style::default().fg(guide_color),
-                )));
+                lines.push(Line::from(Span::styled(text_prefix.clone(), guide_style)));
             } else {
                 let wrapped_lines = wrap_with_indent(line, wrap_width);
                 for wrapped in wrapped_lines {
                     lines.push(Line::from(vec![
-                        Span::styled(text_prefix.clone(), Style::default().fg(guide_color)),
+                        Span::styled(text_prefix.clone(), guide_style),
                         Span::styled(wrapped, text_style),
                     ]));
                 }
@@ -317,14 +316,14 @@ fn render_comment(
             };
 
             let child_style = match comment.state {
-                CommentState::Collapsed => Style::default().fg(Color::Yellow),
-                CommentState::Loading { .. } => Style::default().fg(Color::Blue),
-                CommentState::Expanded { .. } => Style::default().fg(Color::Green),
+                CommentState::Collapsed => app.theme().accent,
+                CommentState::Loading { .. } => app.theme().dim,
+                CommentState::Expanded { .. } => app.theme().dim,
             }
             .add_modifier(Modifier::DIM);
 
             lines.push(Line::from(vec![
-                Span::styled(text_prefix, Style::default().fg(guide_color)),
+                Span::styled(text_prefix, guide_style),
                 Span::styled(child_info, child_style),
             ]));
         }
@@ -403,21 +402,6 @@ fn guides_to_prefix(guides: &[bool], include_elbow: bool) -> String {
 
     prefix.push_str("  ");
     prefix
-}
-
-/// Pick a guide color based on depth (cycles through a palette)
-fn depth_color(depth: usize) -> Color {
-    // Keep to high-contrast, readable colors that vary with depth
-    const PALETTE: [Color; 6] = [
-        Color::Gray,
-        Color::Cyan,
-        Color::Green,
-        Color::Yellow,
-        Color::Magenta,
-        Color::LightBlue,
-    ];
-
-    PALETTE[depth % PALETTE.len()]
 }
 
 /// Wrap a line of comment text to the available width

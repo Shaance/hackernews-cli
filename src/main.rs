@@ -3,11 +3,14 @@
 //! An interactive terminal user interface for browsing HackerNews stories and comments.
 
 use anyhow::Result;
-use crossterm::event::KeyCode;
+use crossterm::event::{Event, EventStream, KeyCode, KeyEventKind};
+use futures::StreamExt;
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 use tokio::sync::mpsc;
+use tokio::time::{sleep_until, Instant};
 
 mod reader;
 mod reader_actions;
@@ -15,9 +18,8 @@ mod terminal_session;
 
 use hn_lib::{
     app::{App, CommentState, StoryType, View},
-    event::{
-        handle_comments_key, handle_stories_key, CommentAction, Event, EventHandler, StoryAction,
-    },
+    event::{handle_comments_key, handle_stories_key, CommentAction, StoryAction},
+    theme::Theme,
     url_open::open_story_url,
     HackerNewsCliService, HackerNewsCliServiceImpl,
 };
@@ -48,10 +50,11 @@ enum AppMessage {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let theme = Theme::detect();
     let mut terminal = TerminalSession::new()?;
 
     // Create app state
-    let mut app = App::new();
+    let mut app = App::with_theme(theme);
     let mut bookmark_path = hn_lib::bookmarks::reload(&mut app);
     let service = HackerNewsCliServiceImpl::new();
 
@@ -61,7 +64,7 @@ async fn main() -> Result<()> {
     // Load initial stories
     request_stories(&mut app, tx.clone(), service.clone(), false);
 
-    let mut summaries = reader::Reader::default();
+    let mut summaries = reader::Reader::new(theme);
 
     // Run the app
     let result = run_app(
@@ -77,7 +80,7 @@ async fn main() -> Result<()> {
     terminal.restore();
 
     if let Err(err) = result {
-        eprintln!("Error: {}", err);
+        eprintln!("Error: {err}");
     }
 
     Ok(())
@@ -92,28 +95,42 @@ async fn run_app(
     bookmark_path: &mut Option<PathBuf>,
     summaries: &mut reader::Reader,
 ) -> Result<()> {
-    let event_handler = EventHandler::default();
-    let mut tick_count = 0usize;
+    let mut events = EventStream::new();
+    let started = Instant::now();
+    const FRAME_MS: u64 = 80;
 
     loop {
         // Render UI
         summaries.poll();
+        drain_app_messages(app, rx);
+        let frame = (started.elapsed().as_millis() / u128::from(FRAME_MS)) as u64;
         terminal.draw(|f| {
             if summaries.is_open() {
-                summaries.render(f, app, tick_count);
+                summaries.render(f, app, frame as usize);
             } else {
-                hn_lib::ui::render(f, app, tick_count);
+                hn_lib::ui::render(f, app, frame as usize);
             }
         })?;
 
-        // Handle events (non-blocking poll)
-        let event = event_handler.next()?;
+        // Input and app results wake immediately; only polled work needs a timer.
+        let next_frame = started + Duration::from_millis((frame + 1) * FRAME_MS);
+        let event = tokio::select! {
+            event = events.next() => {
+                let Some(event) = event else { break };
+                event?
+            }
+            Some(message) = rx.recv() => {
+                handle_app_message(app, message);
+                continue;
+            }
+            _ = sleep_until(next_frame), if app.has_pending_work() || summaries.has_pending_work() => {
+                continue;
+            }
+        };
 
         match event {
-            Event::Tick => {
-                tick_count = tick_count.wrapping_add(1);
-            }
-            Event::Key(key) => {
+            Event::Key(key) if key.kind == KeyEventKind::Press => {
+                let key = key.code;
                 if reader_actions::handle(
                     summaries,
                     app,
@@ -124,12 +141,10 @@ async fn run_app(
                 )
                 .await?
                 {
-                    drain_app_messages(app, rx);
                     continue;
                 }
                 if app.show_links {
                     handle_link_key(app, key);
-                    drain_app_messages(app, rx);
                     continue;
                 }
                 // Handle key based on current view
@@ -158,9 +173,8 @@ async fn run_app(
                     }
                 }
             }
+            _ => {}
         }
-
-        drain_app_messages(app, rx);
 
         // Check if we should quit
         if app.should_quit {
@@ -411,7 +425,7 @@ fn handle_app_message(app: &mut App, msg: AppMessage) {
                     app.apply_stories_page(story_type, page, stories);
                 }
                 Err(e) => {
-                    app.apply_stories_error(format!("Failed to load stories: {}", e));
+                    app.apply_stories_error(format!("Failed to load stories: {e}"));
                 }
             }
         }
@@ -426,7 +440,7 @@ fn handle_app_message(app: &mut App, msg: AppMessage) {
 
             match result {
                 Ok(comments) => app.set_comments(comments),
-                Err(e) => app.apply_comment_error(format!("Failed to load comments: {}", e)),
+                Err(e) => app.apply_comment_error(format!("Failed to load comments: {e}")),
             }
         }
         AppMessage::CommentChildren {
@@ -459,7 +473,7 @@ fn handle_app_message(app: &mut App, msg: AppMessage) {
                         CommentState::Collapsed,
                     );
                     if applied {
-                        app.set_comment_error(format!("Failed to load comment children: {}", e));
+                        app.set_comment_error(format!("Failed to load comment children: {e}"));
                         app.rebuild_visible_comments();
                         app.recompute_comment_loading(app.has_loading_comments());
                     }

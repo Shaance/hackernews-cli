@@ -8,7 +8,7 @@ fn test_comment(id: i32, author: &str, depth: usize, children: Vec<Comment>) -> 
     Comment {
         id,
         author: author.to_string(),
-        text: format!("Comment {}", id),
+        text: format!("Comment {id}"),
         links: vec![],
         time_ago: "now".to_string(),
         child_ids: children.iter().map(|child| child.id).collect(),

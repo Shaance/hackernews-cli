@@ -1,6 +1,7 @@
 use super::{Progress, Reading, Section};
+use hn_lib::theme::Theme;
 use ratatui::{
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
 };
 
@@ -21,10 +22,11 @@ impl Reading {
         }
         let width = width.saturating_sub(4).max(1);
         let normal = Style::default();
+        let theme = self.theme;
         let mut target = None;
         lines.push(Line::styled(
             format!("ARTICLE · {}", self.article.label()),
-            normal.fg(Color::Yellow),
+            theme.dim,
         ));
         if let Some(result) = &self.article.result {
             let article = &result.value;
@@ -33,7 +35,7 @@ impl Reading {
                     &mut lines,
                     "Partial source · opening portion only",
                     width,
-                    normal.fg(Color::Yellow),
+                    theme.accent,
                 );
             }
             append(&mut lines, &article.text, width, normal);
@@ -41,10 +43,10 @@ impl Reading {
                 &mut lines,
                 &format!("Captured {}", result.capture.captured),
                 width,
-                normal.fg(Color::DarkGray),
+                theme.dim,
             );
         }
-        self.article.append_status(&mut lines, width);
+        self.article.append_status(&mut lines, width, theme);
         let source_hint = if self.citations().is_empty() {
             ""
         } else {
@@ -54,7 +56,7 @@ impl Reading {
             &format!("DISCUSSION · {}{source_hint}", self.discussion.label()),
             width,
         ) {
-            lines.push(Line::styled(row.into_owned(), normal.fg(Color::Yellow)));
+            lines.push(Line::styled(row.into_owned(), theme.dim));
         }
         if let Some(result) = &self.discussion.result {
             let discussion = &result.value;
@@ -65,7 +67,7 @@ impl Reading {
                 ),
                 width,
             ) {
-                lines.push(Line::styled(row.into_owned(), normal.fg(Color::DarkGray)));
+                lines.push(Line::styled(row.into_owned(), theme.dim));
             }
             if discussion.points.is_empty() {
                 append(&mut lines, &discussion.overview, width, normal);
@@ -89,11 +91,7 @@ impl Reading {
                     start..start + token.len()
                 });
                 let text = format!("{body}{refs}");
-                let point_style = if active {
-                    normal.fg(Color::Cyan)
-                } else {
-                    normal
-                };
+                let point_style = if active { theme.link } else { normal };
                 let mut consumed = 0;
                 for row in textwrap::wrap(&text, width) {
                     let start = consumed + text[consumed..].find(row.as_ref()).unwrap();
@@ -119,7 +117,7 @@ impl Reading {
                 lines.push(Line::raw(""));
             }
         }
-        self.discussion.append_status(&mut lines, width);
+        self.discussion.append_status(&mut lines, width, theme);
         if lines
             .last()
             .is_some_and(|line| line.spans.is_empty() || line.width() == 0)
@@ -127,15 +125,14 @@ impl Reading {
             lines.pop();
         }
         for line in &mut lines {
-            line.spans.insert(
-                0,
-                ratatui::text::Span::styled("│ ", normal.fg(Color::Yellow)),
-            );
+            line.spans
+                .insert(0, ratatui::text::Span::styled("│ ", theme.line));
         }
         (lines, target)
     }
 
     pub(super) fn source_lines(&self, id: i32, width: usize) -> Vec<Line<'static>> {
+        let theme = self.theme;
         let mut lines = vec![];
         let mut current = Some(id);
         while let Some(source) = current.and_then(|id| {
@@ -153,14 +150,14 @@ impl Reading {
                 &mut lines,
                 &format!("{label} · {} · #{}", source.author, source.id),
                 width,
-                Style::default().fg(Color::Yellow),
+                theme.dim,
             );
             if source.excerpt.is_empty() {
                 append(
                     &mut lines,
                     "Parent comment unavailable in captured sources",
                     width,
-                    Style::default().fg(Color::DarkGray),
+                    theme.dim,
                 );
             } else {
                 append(&mut lines, &source.excerpt, width, Style::default());
@@ -169,7 +166,7 @@ impl Reading {
                         &mut lines,
                         "Additional context · not sent to the model",
                         width,
-                        Style::default().fg(Color::DarkGray),
+                        theme.dim,
                     );
                     append(
                         &mut lines,
@@ -221,14 +218,9 @@ impl<T, C> Section<T, C> {
             Progress::Idle => actual.unwrap_or("Not requested").to_owned(),
         }
     }
-    fn append_status(&self, lines: &mut Vec<Line<'static>>, width: usize) {
+    fn append_status(&self, lines: &mut Vec<Line<'static>>, width: usize, theme: Theme) {
         if let Progress::Failed(_, error) = &self.progress {
-            append(
-                lines,
-                &error.message,
-                width,
-                Style::default().fg(Color::Yellow),
-            );
+            append(lines, &error.message, width, theme.error);
         } else if self.result.is_none() {
             append(
                 lines,

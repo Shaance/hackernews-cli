@@ -19,17 +19,19 @@ async fn terminal() {
             ..Default::default()
         },
     ));
-    let mut reader = Reader::default();
-    reader.config = Config {
-        api_key: "replay-only".into(),
-        ..Default::default()
-    };
-    reader.network = network::Network {
-        client: reqwest::Client::new(),
-        endpoint: format!("{base}chat/completions"),
-        anthropic_endpoint: format!("{base}messages"),
-        response_log_dir: None,
-        service: service.clone(),
+    let mut reader = Reader {
+        config: Config {
+            api_key: "replay-only".into(),
+            ..Default::default()
+        },
+        network: network::Network {
+            client: reqwest::Client::new(),
+            endpoint: format!("{base}chat/completions"),
+            anthropic_endpoint: format!("{base}messages"),
+            response_log_dir: None,
+            service: service.clone(),
+        },
+        ..Reader::default()
     };
     let mut app = App::new();
     let mut bookmark_path = hn_lib::bookmarks::reload(&mut app);

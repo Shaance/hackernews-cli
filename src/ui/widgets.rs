@@ -2,7 +2,7 @@
 
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph, Wrap},
     Frame,
@@ -13,7 +13,7 @@ use crate::app::App;
 /// ASCII spinner frames
 const SPINNER_FRAMES: &[&str] = &["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
-/// Get spinner frame for current tick
+/// Get the spinner frame for elapsed 80 ms intervals supplied by the frame clock.
 pub fn spinner_frame(tick: usize) -> &'static str {
     SPINNER_FRAMES[tick % SPINNER_FRAMES.len()]
 }
@@ -21,7 +21,7 @@ pub fn spinner_frame(tick: usize) -> &'static str {
 /// Render a loading spinner with message
 pub fn render_loading(f: &mut Frame, area: Rect, message: &str, tick: usize) {
     let spinner = spinner_frame(tick);
-    let text = format!("{} {}", spinner, message);
+    let text = format!("{spinner} {message}");
 
     let paragraph = Paragraph::new(text)
         .alignment(Alignment::Center)
@@ -42,7 +42,7 @@ pub fn render_loading(f: &mut Frame, area: Rect, message: &str, tick: usize) {
 
 /// Render an error message
 pub fn render_error(f: &mut Frame, area: Rect, error: &str) {
-    let text = format!("Error: {}", error);
+    let text = format!("Error: {error}");
 
     let paragraph = Paragraph::new(text)
         .style(Style::default().add_modifier(Modifier::BOLD))
@@ -112,7 +112,7 @@ pub fn render_help(f: &mut Frame, area: Rect, in_comments: bool) {
 pub fn render_stories_status(area: Rect, app: &App, tick: usize) -> Paragraph<'static> {
     if let Some(notice) = &app.bookmark_notice {
         return Paragraph::new(format!(" Saved: 4 then r retry · {notice}"))
-            .style(Style::default().fg(Color::Red))
+            .style(app.theme().error)
             .block(Block::default().borders(Borders::TOP));
     }
     let (display_type, display_page) = app.displayed_story_context();
@@ -120,10 +120,7 @@ pub fn render_stories_status(area: Rect, app: &App, tick: usize) -> Paragraph<'s
 
     let mut segments = Vec::new();
     if let Some(error) = app.error() {
-        segments.push(Span::styled(
-            error.to_string(),
-            Style::default().fg(Color::Red),
-        ));
+        segments.push(Span::styled(error.to_string(), app.theme().error));
         segments.push(Span::raw(" │ "));
     }
 
@@ -140,7 +137,7 @@ pub fn render_stories_status(area: Rect, app: &App, tick: usize) -> Paragraph<'s
                 display_type.display_name(),
                 display_page
             ),
-            Style::default().fg(Color::Yellow),
+            app.theme().dim,
         ),
     ]);
 
@@ -157,7 +154,7 @@ pub fn render_stories_status(area: Rect, app: &App, tick: usize) -> Paragraph<'s
                 app.story_type.display_name(),
                 app.current_page
             ),
-            Style::default().fg(Color::Cyan),
+            app.theme().dim,
         ));
     }
 
@@ -169,7 +166,7 @@ pub fn render_stories_status(area: Rect, app: &App, tick: usize) -> Paragraph<'s
                 spinner_frame(tick),
                 if stale { "updating" } else { "loading" }
             ),
-            Style::default().fg(Color::Blue),
+            app.theme().dim,
         ));
     }
 
@@ -182,15 +179,12 @@ pub fn render_stories_status(area: Rect, app: &App, tick: usize) -> Paragraph<'s
 pub fn render_comments_status(area: Rect, app: &App, tick: usize) -> Paragraph<'static> {
     if let Some(notice) = &app.bookmark_notice {
         return Paragraph::new(format!(" Saved: Esc, 4 then r retry · {notice}"))
-            .style(Style::default().fg(Color::Red))
+            .style(app.theme().error)
             .block(Block::default().borders(Borders::TOP));
     }
     let mut segments = Vec::new();
     if let Some(error) = app.error() {
-        segments.push(Span::styled(
-            error.to_string(),
-            Style::default().fg(Color::Red),
-        ));
+        segments.push(Span::styled(error.to_string(), app.theme().error));
         segments.push(Span::raw(" │ "));
     }
 
@@ -204,7 +198,7 @@ pub fn render_comments_status(area: Rect, app: &App, tick: usize) -> Paragraph<'
         segments.push(Span::raw(" │ "));
         segments.push(Span::styled(
             format!("{} loading comments", spinner_frame(tick)),
-            Style::default().fg(Color::Blue),
+            app.theme().dim,
         ));
     }
 

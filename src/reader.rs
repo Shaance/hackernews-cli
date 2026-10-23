@@ -20,7 +20,7 @@ mod text;
 mod view;
 
 use config::{Config, Profile};
-use hn_lib::HNCLIItem;
+use hn_lib::{theme::Theme, HNCLIItem};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use tokio::{sync::mpsc, task::JoinSet};
@@ -146,6 +146,7 @@ impl<T, C> Section<T, C> {
     }
 }
 pub struct Reading {
+    theme: Theme,
     story: HNCLIItem,
     article: Section<Article, ArticleCapture>,
     discussion: Section<Discussion, DiscussionCapture>,
@@ -163,6 +164,7 @@ pub struct Reading {
 impl Reading {
     fn new(story: HNCLIItem) -> Self {
         Self {
+            theme: Theme::default(),
             story,
             article: Section::default(),
             discussion: Section::default(),
@@ -200,6 +202,7 @@ impl Reading {
     }
 }
 pub struct Reader {
+    theme: Theme,
     readings: HashMap<i32, Reading>,
     active: Option<i32>,
     config: Config,
@@ -219,6 +222,11 @@ pub struct Reader {
 }
 impl Default for Reader {
     fn default() -> Self {
+        Self::new(Theme::default())
+    }
+}
+impl Reader {
+    pub fn new(theme: Theme) -> Self {
         let (tx, rx) = mpsc::unbounded_channel();
         let path = Config::path();
         let loaded = path
@@ -230,6 +238,7 @@ impl Default for Reader {
             Err(e) => (Config::default(), e),
         };
         Self {
+            theme,
             readings: HashMap::new(),
             active: None,
             config,

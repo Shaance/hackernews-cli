@@ -5,7 +5,7 @@ use ratatui::{backend::TestBackend, buffer::Buffer, Terminal};
 fn test_comment(id: i32, text: &str) -> Comment {
     Comment {
         id,
-        author: format!("user{}", id),
+        author: format!("user{id}"),
         text: text.to_string(),
         links: vec![],
         time_ago: "now".to_string(),

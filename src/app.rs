@@ -1,6 +1,6 @@
 //! Application state management for HackerNews TUI
 
-use crate::HNCLIItem;
+use crate::{theme::Theme, HNCLIItem};
 use std::collections::HashMap;
 
 #[cfg(test)]
@@ -67,6 +67,7 @@ struct FeedPosition {
 
 /// Main application state
 pub struct App {
+    theme: Theme,
     /// Current view
     pub view: View,
     /// Current story type
@@ -129,7 +130,16 @@ impl Default for App {
 impl App {
     /// Create a new application instance
     pub fn new() -> Self {
+        Self::with_theme(Theme::default())
+    }
+
+    pub fn theme(&self) -> Theme {
+        self.theme
+    }
+
+    pub fn with_theme(theme: Theme) -> Self {
         let mut app = Self {
+            theme,
             view: View::Stories,
             story_type: StoryType::Best,
             stories: Vec::new(),
