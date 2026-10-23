@@ -1,6 +1,6 @@
-# README demo in the dark palette; the wrapper cuts stills from demo.gif at fixed times.
+# README stills in the dark palette; the wrapper cuts them from dark.gif at fixed times.
 # Run through scripts/readme-screenshots.sh, and keep its still times in step with the Sleeps here.
-Output docs/screenshots/demo.gif
+Output docs/screenshots/dark.gif
 
 Set Shell "bash"
 Set FontFamily "JetBrains Mono"
