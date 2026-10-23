@@ -496,6 +496,21 @@ fn motion_backdrop_preserves_initial_foreground_and_immediate_modal() {
 }
 
 #[test]
+fn tiny_help_keeps_the_overflow_marker() {
+    let theme = crate::theme::Theme::TRUE_DARK;
+    for in_comments in [true, false] {
+        let mut terminal = Terminal::new(TestBackend::new(40, 5)).unwrap();
+        let frame = terminal
+            .draw(|f| super::widgets::render_help(f, theme, in_comments, None))
+            .unwrap();
+        assert!(
+            buffer_text(frame.buffer).contains("… more at a larger size"),
+            "a five-row terminal must still mark that help was cut"
+        );
+    }
+}
+
+#[test]
 fn overflowing_help_compacts_then_ends_with_more_keys_in_dim() {
     let theme = crate::theme::Theme::TRUE_DARK;
     for (height, heading, overflow) in [

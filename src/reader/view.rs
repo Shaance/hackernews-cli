@@ -67,6 +67,7 @@ impl Reader {
             ));
             title.push(line);
         }
+        reading.freeze_on_move(Instant::now());
         let chip = reading.status_chip(&self.config, self.auth_failed, tick);
         let chip_width = chip.width();
         let meta_width = width.saturating_sub(4 + chip_width + usize::from(chip_width > 0));
@@ -283,7 +284,24 @@ impl Reader {
     }
 }
 
+/// Height of the panel opening animation at `now`.
+fn drawn_height((start, from, to): (Instant, u16, u16), now: Instant) -> u16 {
+    let progress = (now.saturating_duration_since(start).as_secs_f32() / 0.180).min(1.0);
+    from + (f32::from(to - from) * Interpolation::QuadOut.alpha(progress)) as u16
+}
+
 impl Reading {
+    /// Movement stops an opening panel where it is drawn, before the chip or layout read the cap.
+    fn freeze_on_move(&mut self, now: Instant) {
+        if self.moved && self.theme.motion {
+            if let Some(motion) = self.panel_motion.filter(|(_, from, to)| from < to) {
+                let drawn = drawn_height(motion, now);
+                self.panel_motion = Some((now, drawn, drawn));
+                self.growth_cap = usize::from(drawn);
+            }
+        }
+    }
+
     pub(super) fn has_active_motion(&self, now: Instant) -> bool {
         self.theme.motion
             && self.shown
@@ -308,17 +326,7 @@ impl Reading {
                 0
             };
         let now = Instant::now();
-        let drawn_height = |(start, from, to): (Instant, u16, u16)| {
-            let progress = (now.saturating_duration_since(start).as_secs_f32() / 0.180).min(1.0);
-            from + (f32::from(to - from) * Interpolation::QuadOut.alpha(progress)) as u16
-        };
-        if self.moved && theme.motion {
-            if let Some(motion) = self.panel_motion.filter(|(_, from, to)| from < to) {
-                let drawn = drawn_height(motion);
-                self.panel_motion = Some((now, drawn, drawn));
-                self.growth_cap = usize::from(drawn);
-            }
-        }
+        let drawn_height = |motion| drawn_height(motion, now);
         let height = if self.moved && desired > 0 {
             self.growth_cap.min(maximum)
         } else {
