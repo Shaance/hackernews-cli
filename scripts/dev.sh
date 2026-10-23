@@ -22,8 +22,5 @@ if [ -f "$env_file" ]; then
         esac
     done < "$env_file"
 fi
-if [ -d "$root/.tools/terminal-browser/bin" ]; then
-    export PATH="$root/.tools/terminal-browser/bin:$PATH"
-fi
 cd "$root"
 exec cargo run

@@ -1,44 +1,73 @@
-# Optional Ghostty companion setup
+# Ghostty article pane setup
 
-The maintained prototype recipe targets terminal-browser **v0.13.4** and the
-existing Ghostty key-table support. Install terminal-browser through its
-[official instructions](https://github.com/zenbu-labs/terminal-browser#installation).
-Keep macOS signature/quarantine checks intact. The patch modifies only the
-JavaScript CLI bundle, not the signed Electron app.
+This optional companion supports macOS, Ghostty, and terminal-browser **v0.13.4**.
+Install `hn` first with `cargo install --path . --locked`.
 
-Point the checkout at an extracted/installed v0.13.4 distribution. Replace
-`/path/to/terminal-browser` below with its root, containing `VERSION`, `bin/`,
-`cli/`, and `electron/`:
+## Install the browser once
 
-```sh
-mkdir -p .tools
-ln -s /path/to/terminal-browser .tools/terminal-browser
-cat .tools/terminal-browser/VERSION
-shasum -a 256 .tools/terminal-browser/cli/dist/main.js
-```
+Download and extract the matching macOS distribution from the
+[v0.13.4 release](https://github.com/zenbu-labs/terminal-browser/releases/tag/v0.13.4).
+An existing v0.13.4 distribution also works. Its root must contain `VERSION`,
+`bin/`, `cli/`, and `electron/`.
 
-Expected version: `v0.13.4`. Original bundle SHA-256:
-`71cb9486199e4af98c3192ce8a44496d63832006e314bbd2bee70f4542505ac8`.
-If it matches, apply the checked-in patch from the repository root:
+From the hn checkout, run:
 
 ```sh
-patch --dry-run -d .tools/terminal-browser -p1 < scripts/ghostty/terminal-browser-v0.13.4.patch
-patch -d .tools/terminal-browser -p1 < scripts/ghostty/terminal-browser-v0.13.4.patch
+sh scripts/ghostty/install.sh /path/to/terminal-browser
 ```
 
-Already patched SHA-256:
-`de03483f54653266fcd6553c03d16e71f982209c7266e1a631d91229fc8d8393`.
-If that matches, skip patching. For any other hash/version, stop and inspect the
-upstream change; do not force this patch onto a different release.
+The script copies the complete distribution into
+`${XDG_DATA_HOME:-$HOME/.local/share}/hn/terminal-browser-v0.13.4` and installs a
+launcher at `~/.local/bin/terminal-browser`. It checks the supported version and
+bundle hash, then applies the included startup/exit patch to its own copy.
+The source distribution, saved settings, and API keys stay unchanged. After
+installation, the browser works independently of the download and hn checkout.
 
-Add the single binding in `hn-article.conf` to your Ghostty config, then reload
-Ghostty configuration once with Cmd+Shift+comma. The binding defines a named
-key table; hn activates it only on the companion it creates. Other panes retain
-their ordinary Cmd+W action. Running hn never installs this configuration.
+If `~/.local/bin` is not on your PATH, add this line to `~/.zshrc` and open a new
+Ghostty shell:
 
-Run `./scripts/dev.sh` inside Ghostty. The checked-in patch clears startup text
-and closes the exact companion pane after a successful browser exit. It is
-experimental; validate native behavior on your Ghostty version:
+```sh
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Check in that shell:
+
+```sh
+command -v hn
+command -v terminal-browser
+terminal-browser --version
+```
+
+The last command should print `terminal-browser v0.13.4`. Keep macOS signature
+and quarantine checks intact. Only the JavaScript CLI bundle is patched; the
+signed Electron app is copied unchanged. Use the supported version until the
+pane patch has been checked against a newer release.
+
+Running the installer again reuses a matching installation. It can replace an
+old launcher symlink that points directly at the supplied distribution. If
+another command already occupies `~/.local/bin/terminal-browser`, the installer
+stops and asks you to move that command aside.
+
+## Configure the browser pane's close shortcut
+
+Add the line from [hn-article.conf](hn-article.conf) to your active Ghostty config:
+
+```ini
+keybind = hn-article/cmd+w=text:\x11
+```
+
+Reload Ghostty configuration once with Cmd+Shift+comma. This defines a named key
+table that hn activates only on its browser pane. Other panes retain their
+ordinary Cmd+W action. Neither the installer nor hn edits Ghostty configuration.
+
+## Read with the installed app
+
+Run `hn` from any directory inside Ghostty. Start with at least 110 terminal
+columns. Press `o` or Enter in the feed to open the article beside its discussion;
+`c` opens the discussion without creating a browser pane. `O` always opens the
+external browser.
+
+Check the native behavior on your Ghostty version:
 
 1. Keep another ordinary pane open. Open a story using `o`.
 2. Scroll the article and follow a same-tab link. Return focus to hn and press
@@ -47,10 +76,25 @@ experimental; validate native behavior on your Ghostty version:
    display it, without an additional pane.
 4. Press Cmd+W in the companion. It should close without confirmation or a
    “Process exited” screen. The hn pane and unrelated panes must remain intact.
-5. Press `o` again; the companion should reopen. Check the ordinary pane still
-   uses its usual close behavior, cancelling any confirmation shown there.
+5. Press `o` again; the companion should reopen.
 
-Socket tests prove owned-tab commands, not these native window interactions.
-To revert the optional setup, remove the named key-table line, reload config,
-and reverse the patch (`patch -R` with the same file). No global browser setting
-or close-confirmation preference needs changing.
+## Verify without opening Ghostty
+
+Run the installer check with Python 3 and a real distribution. You can use the
+installed copy, so the original download is no longer needed:
+
+```sh
+python3 scripts/ghostty/test-install.py "${XDG_DATA_HOME:-$HOME/.local/share}/hn/terminal-browser-v0.13.4"
+```
+
+It uses temporary directories to check fresh installation, rerunning setup,
+removal of the source directory, settings preservation, and launcher conflicts.
+It does not open Ghostty. Socket tests cover owned-tab commands; the steps above
+cover native window interactions. The main [verification commands](../../README.md#verify-without-ghostty-or-api-keys)
+exercise the reader and installed settings without computer use or provider keys.
+
+## Remove the companion
+
+To remove this companion, remove its `~/.local/bin/terminal-browser` launcher and
+the installed distribution, then remove the named key-table line and reload
+Ghostty. Summary settings and saved stories are separate and remain available.
