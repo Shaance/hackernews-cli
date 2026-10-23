@@ -7,6 +7,8 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
+use std::time::{Duration, Instant};
+use tachyonfx::{fx, Interpolation};
 
 impl Reader {
     pub fn render(&mut self, frame: &mut Frame, app: &mut App, tick: usize) {
@@ -101,6 +103,10 @@ impl Reader {
             ),
             areas[0],
         );
+        if !saved.is_empty() {
+            let star = Rect::new(area.x + 2, areas[0].y, 1, 1).intersection(areas[0]);
+            app.render_save_flash(frame.buffer_mut(), star, reading.story.id);
+        }
         let chip_x = area.width.saturating_sub(2 + chip_width as u16);
         frame.render_widget(
             Paragraph::new(chip),
@@ -127,84 +133,7 @@ impl Reader {
                 areas[1],
             );
         } else {
-            let (summary, target) = reading.summary_lines(width);
-            // Show the full result when it fits; leave at least a third for comments.
-            let desired = if reading.shown
-                && (reading.article.result.is_some() || reading.discussion.result.is_some())
-            {
-                (summary.len() + 1).min(usize::from(areas[1].height) * 2 / 3)
-            } else {
-                0
-            };
-            let height = if reading.moved && desired > 0 {
-                reading
-                    .growth_cap
-                    .unwrap_or(desired)
-                    .min(usize::from(areas[1].height) * 2 / 3)
-            } else {
-                desired
-            };
-            if !reading.moved && reading.growth_cap.is_some() {
-                reading.growth_cap = Some(height);
-            }
-            let height = height as u16;
-            let body =
-                Layout::vertical([Constraint::Length(height), Constraint::Min(0)]).split(areas[1]);
-            if height > 0 {
-                let rows = usize::from(height.saturating_sub(1));
-                if reading.reveal_citation {
-                    reading.summary_scroll = target.unwrap_or(0);
-                    reading.reveal_citation = false;
-                }
-                reading.summary_scroll = reading
-                    .summary_scroll
-                    .min(summary.len().saturating_sub(rows));
-                let end = (reading.summary_scroll + rows).min(summary.len());
-                let footer = if summary.len() > rows {
-                    Line::from(vec![
-                        Span::raw("  "),
-                        Span::styled("│ ", theme.line),
-                        Span::styled(
-                            format!(
-                                "J/K scroll · {}–{end} of {}",
-                                reading.summary_scroll + 1,
-                                summary.len()
-                            ),
-                            theme.dim,
-                        ),
-                    ])
-                } else {
-                    Line::raw("")
-                };
-                let mut visible = summary
-                    .into_iter()
-                    .skip(reading.summary_scroll)
-                    .take(rows)
-                    .collect::<Vec<_>>();
-                visible.push(footer);
-                let active_rows = visible
-                    .iter()
-                    .enumerate()
-                    .filter_map(|(i, line)| {
-                        line.spans
-                            .iter()
-                            .any(|span| span.content == "┃ ")
-                            .then_some(i as u16)
-                    })
-                    .collect::<Vec<_>>();
-                frame.render_widget(Paragraph::new(visible), body[0]);
-                for row in active_rows {
-                    frame.buffer_mut().set_style(
-                        Rect::new(
-                            body[0].x + 2,
-                            body[0].y + row,
-                            body[0].width.saturating_sub(2),
-                            1,
-                        ),
-                        theme.sel,
-                    );
-                }
-            }
+            let comments_area = reading.render_summary(frame, areas[1]);
             let mut lines = vec![];
             if !reading.story.text.is_empty() {
                 append(&mut lines, "POST", width.saturating_sub(2), theme.dim);
@@ -241,7 +170,7 @@ impl Reader {
             reading.prefix_height = lines.len();
             hn_lib::ui::comments::render_reader_content(
                 frame,
-                body[1],
+                comments_area,
                 app,
                 tick,
                 lines,
@@ -279,6 +208,10 @@ impl Reader {
             hints
         };
         // A rejected key is already reported by the status chip.
+        let browser_visible = app.error().is_none()
+            && app.bookmark_notice.is_none()
+            && reading.staged.is_none()
+            && !self.browser_notice.is_empty();
         let notice = app
             .error()
             .or(app.bookmark_notice.as_deref())
@@ -290,8 +223,14 @@ impl Reader {
                     .map(|_| ("Summary updated", theme.accent))
             })
             .or_else(|| {
-                (!self.browser_notice.is_empty())
-                    .then_some((self.browser_notice.as_str(), theme.accent))
+                (!self.browser_notice.is_empty()).then_some((
+                    self.browser_notice.as_str(),
+                    if !theme.motion && !self.browser_busy {
+                        theme.dim
+                    } else {
+                        theme.accent
+                    },
+                ))
             });
         frame.render_widget(
             Paragraph::new(hn_lib::ui::widgets::hint_line(
@@ -304,8 +243,30 @@ impl Reader {
             ),
             areas[2],
         );
+        if browser_visible && !self.browser_busy && theme.motion {
+            if let Some(elapsed) = self
+                .notice_started
+                .map(|start| start.elapsed())
+                .filter(|elapsed| *elapsed >= Duration::from_secs(2))
+            {
+                let cells = Rect::new(
+                    area.x + 2,
+                    areas[2].y + 1,
+                    Span::raw(&self.browser_notice)
+                        .width()
+                        .min(usize::from(area.width.saturating_sub(2))) as u16,
+                    1,
+                )
+                .intersection(areas[2]);
+                fx::fade_to_fg(theme.dim.fg.unwrap(), (400, Interpolation::Linear)).process(
+                    elapsed.saturating_sub(Duration::from_secs(2)).into(),
+                    frame.buffer_mut(),
+                    cells,
+                );
+            }
+        }
         if app.show_help {
-            hn_lib::ui::widgets::render_help(frame, theme, true);
+            hn_lib::ui::widgets::render_help(frame, theme, true, app.overlay_opened);
         }
         if app.show_links {
             hn_lib::ui::links::render(frame, app);
@@ -315,6 +276,127 @@ impl Reader {
 }
 
 impl Reading {
+    pub(super) fn has_active_motion(&self, now: Instant) -> bool {
+        self.theme.motion
+            && self.shown
+            && self.source.is_none()
+            && self.panel_motion.is_some_and(|(start, from, to)| {
+                from < to && now.saturating_duration_since(start) < Duration::from_millis(250)
+            })
+    }
+
+    pub(super) fn render_summary(&mut self, frame: &mut Frame, area: Rect) -> Rect {
+        let theme = self.theme;
+        let width = usize::from(area.width);
+        let (summary, target) = self.summary_lines(width);
+        // Show the full result when it fits; leave at least a third for comments.
+        let desired =
+            if self.shown && (self.article.result.is_some() || self.discussion.result.is_some()) {
+                (summary.len() + 1).min(usize::from(area.height) * 2 / 3)
+            } else {
+                0
+            };
+        let height = if self.moved && desired > 0 {
+            self.growth_cap
+                .unwrap_or(desired)
+                .min(usize::from(area.height) * 2 / 3)
+        } else {
+            desired
+        };
+        if !self.moved && self.growth_cap.is_some() {
+            self.growth_cap = Some(height);
+        }
+        let target_height = height as u16;
+        let now = Instant::now();
+        let drawn_height = |(start, from, to): (Instant, u16, u16)| {
+            let progress = (now.saturating_duration_since(start).as_secs_f32() / 0.180).min(1.0);
+            from + (f32::from(to - from) * Interpolation::QuadOut.alpha(progress)) as u16
+        };
+        let previous = self.panel_motion.map_or(0, |(_, _, to)| to);
+        if !theme.motion {
+            self.panel_motion = None;
+        } else if target_height != previous {
+            let from = if target_height > previous {
+                self.panel_motion.map_or(0, drawn_height)
+            } else {
+                target_height // Shrinking snaps, including during an unfinished opening.
+            };
+            self.panel_motion = Some((now, from, target_height));
+        }
+        let height = self.panel_motion.map_or(target_height, drawn_height);
+        // Scroll/focus resolve against the final layout immediately, never animation rows.
+        if target_height > 0 {
+            if self.reveal_citation {
+                self.summary_scroll = target.unwrap_or(0);
+                self.reveal_citation = false;
+            }
+            self.summary_scroll = self.summary_scroll.min(
+                summary
+                    .len()
+                    .saturating_sub(usize::from(target_height.saturating_sub(1))),
+            );
+        }
+        let body = Layout::vertical([Constraint::Length(height), Constraint::Min(0)]).split(area);
+        if height > 0 {
+            let rows = usize::from(height.saturating_sub(1));
+            let end = (self.summary_scroll + rows).min(summary.len());
+            let footer = if summary.len() > rows {
+                Line::from(vec![
+                    Span::raw("  "),
+                    Span::styled("│ ", theme.line),
+                    Span::styled(
+                        format!(
+                            "J/K scroll · {}–{end} of {}",
+                            self.summary_scroll + 1,
+                            summary.len()
+                        ),
+                        theme.dim,
+                    ),
+                ])
+            } else {
+                Line::raw("")
+            };
+            let mut visible = summary
+                .into_iter()
+                .skip(self.summary_scroll)
+                .take(rows)
+                .collect::<Vec<_>>();
+            visible.push(footer);
+            let active_rows = visible
+                .iter()
+                .enumerate()
+                .filter_map(|(i, line)| {
+                    line.spans
+                        .iter()
+                        .any(|span| span.content == "┃ ")
+                        .then_some(i as u16)
+                })
+                .collect::<Vec<_>>();
+            frame.render_widget(Paragraph::new(visible), body[0]);
+            for row in active_rows {
+                frame.buffer_mut().set_style(
+                    Rect::new(
+                        body[0].x + 2,
+                        body[0].y + row,
+                        body[0].width.saturating_sub(2),
+                        1,
+                    ),
+                    theme.sel,
+                );
+            }
+        }
+        if theme.motion {
+            if let Some((start, _, _)) = self.panel_motion.filter(|(_, from, to)| from < to) {
+                fx::fade_from_fg(theme.dim.fg.unwrap(), (250, Interpolation::QuadOut)).process(
+                    start.elapsed().into(),
+                    frame.buffer_mut(),
+                    body[0],
+                );
+            }
+        }
+        body[1]
+    }
+
     fn status_chip(&self, config: &Config, auth_failed: bool, tick: usize) -> Line<'static> {
         let theme = self.theme;
         let ready = self.article.result.is_some() as u8 + self.discussion.result.is_some() as u8;

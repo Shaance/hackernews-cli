@@ -9,6 +9,8 @@ use ratatui::{
 };
 
 use crate::{app::App, theme::Theme};
+use std::time::Instant;
+use tachyonfx::{fx, Interpolation};
 
 /// ASCII spinner frames
 const SPINNER_FRAMES: &[&str] = &["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
@@ -67,11 +69,25 @@ pub fn render_error(f: &mut Frame, area: Rect, error: &str) {
 pub fn render_modal(
     f: &mut Frame,
     theme: Theme,
+    opened: Option<Instant>,
     title: &str,
     body: impl FnOnce(u16, u16) -> (Vec<Line<'static>>, Option<usize>),
 ) {
+    let fading = theme.motion && opened.is_some();
     for cell in &mut f.buffer_mut().content {
+        let fg = cell.fg;
         cell.set_style(Style::reset().patch(theme.scrim).bg(Color::Reset));
+        if fading {
+            cell.set_fg(fg);
+        }
+    }
+    if let Some(start) = opened.filter(|_| theme.motion) {
+        let area = f.area();
+        fx::fade_to_fg(theme.scrim.fg.unwrap(), (120, Interpolation::QuadOut)).process(
+            start.elapsed().into(),
+            f.buffer_mut(),
+            area,
+        );
     }
     let area = f.area().inner(Margin::new(2, 1));
     let (mut lines, selected) = body(area.width.saturating_sub(6), area.height.saturating_sub(4));
@@ -118,7 +134,7 @@ pub fn render_modal(
 }
 
 /// Render the key groups shared by the comments and reader views.
-pub fn render_help(f: &mut Frame, theme: Theme, in_comments: bool) {
+pub fn render_help(f: &mut Frame, theme: Theme, in_comments: bool, opened: Option<Instant>) {
     let groups: &[(&str, &[(&str, &str)])] = if in_comments {
         &[
             (
@@ -178,7 +194,7 @@ pub fn render_help(f: &mut Frame, theme: Theme, in_comments: bool) {
             ("ANYWHERE", &[("q/Esc", "Quit"), ("?", "Close")]),
         ]
     };
-    render_modal(f, theme, "Keys", |width, _| {
+    render_modal(f, theme, opened, "Keys", |width, _| {
         // The body includes the two padding columns on each side.
         let columns = if width + 4 >= 72 { 2 } else { 1 };
         let key_width = groups

@@ -8,9 +8,9 @@ use futures::StreamExt;
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
-use tokio::time::{sleep_until, Instant};
+use tokio::time::sleep_until;
 
 mod reader;
 mod reader_actions;
@@ -86,6 +86,22 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+fn next_deadline(
+    now: Instant,
+    started: Instant,
+    animating: bool,
+    pending: bool,
+) -> Option<Instant> {
+    if animating {
+        Some(now + Duration::from_millis(16))
+    } else if pending {
+        let frame = now.saturating_duration_since(started).as_millis() / 80;
+        Some(started + Duration::from_millis((frame as u64 + 1) * 80))
+    } else {
+        None
+    }
+}
+
 async fn run_app(
     terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
     app: &mut App,
@@ -113,7 +129,13 @@ async fn run_app(
         })?;
 
         // Input and app results wake immediately; only polled work needs a timer.
-        let next_frame = started + Duration::from_millis((frame + 1) * FRAME_MS);
+        let now = Instant::now();
+        let deadline = next_deadline(
+            now,
+            started,
+            app.has_active_motion(now) || summaries.has_active_motion(now),
+            app.has_pending_work() || summaries.has_pending_work(),
+        );
         let event = tokio::select! {
             event = events.next() => {
                 let Some(event) = event else { break };
@@ -123,7 +145,7 @@ async fn run_app(
                 handle_app_message(app, message);
                 continue;
             }
-            _ = sleep_until(next_frame), if app.has_pending_work() || summaries.has_pending_work() => {
+            _ = sleep_until(deadline.unwrap_or(now).into()), if deadline.is_some() => {
                 continue;
             }
         };
@@ -319,6 +341,7 @@ async fn handle_comment_action(
         CommentAction::ToggleBookmark => toggle_bookmark(app, bookmark_path),
         CommentAction::ShowLinks => {
             app.show_links = true;
+            app.overlay_opened = app.theme().motion.then(std::time::Instant::now);
             app.link_cursor = 0;
         }
         CommentAction::Refresh => {
@@ -490,8 +513,18 @@ fn drain_app_messages(app: &mut App, rx: &mut mpsc::UnboundedReceiver<AppMessage
 }
 
 fn toggle_bookmark(app: &mut App, path: Option<&Path>) {
-    if let Err(error) = hn_lib::bookmarks::toggle(app, path) {
-        app.bookmark_notice = Some(error.to_string());
+    let story = app
+        .bookmark_story()
+        .map(|s| (s.id, app.is_bookmarked(s.id)));
+    match hn_lib::bookmarks::toggle(app, path) {
+        Err(error) => app.bookmark_notice = Some(error.to_string()),
+        Ok(()) => {
+            app.save_flash = story
+                .filter(|(id, was_saved)| {
+                    !was_saved && app.is_bookmarked(*id) && app.theme().motion
+                })
+                .map(|(id, _)| (id, std::time::Instant::now()));
+        }
     }
 }
 
