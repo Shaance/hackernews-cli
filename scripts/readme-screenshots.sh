@@ -1,5 +1,5 @@
 #!/bin/sh
-# Regenerate the README screenshots and demo GIF with vhs (brew install vhs).
+# Regenerate the README stills with vhs (brew install vhs). The demo GIF is recorded in Ghostty instead.
 # Uses live Hacker News and an OpenRouter key from the environment or .env.local
 # (two summaries, a few cents). Settings and saved stories live in a throwaway directory.
 set -eu
@@ -21,10 +21,10 @@ for tape in scripts/readme/dark.tape scripts/readme/light.tape; do
 done
 # Cut stills from the recordings; times follow the visible Sleeps in each tape.
 still() { ffmpeg -loglevel error -y -ss "$2" -i "$1" -frames:v 1 "docs/screenshots/$3"; }
-still docs/screenshots/demo.gif 0.9 feed.png
-still docs/screenshots/demo.gif 2.9 reader.png
-still docs/screenshots/demo.gif 4.3 citation.png
-still docs/screenshots/demo.gif 9.5 help.png
+still docs/screenshots/dark.gif 0.9 feed.png
+still docs/screenshots/dark.gif 2.9 reader.png
+still docs/screenshots/dark.gif 4.3 citation.png
+still docs/screenshots/dark.gif 9.5 help.png
 still docs/screenshots/light.gif 1.0 reader-light.png
-rm -f docs/screenshots/light.gif
+rm -f docs/screenshots/dark.gif docs/screenshots/light.gif
 ls -l docs/screenshots
