@@ -4,6 +4,7 @@ import fcntl
 import html
 import os
 import pty
+import re
 import select
 import signal
 import struct
@@ -12,11 +13,13 @@ import termios
 import time
 from pathlib import Path
 import pyte
+from wcwidth import wcwidth
 
 ROOT = Path(__file__).resolve().parents[1]
 COLORS = dict(black="#252932", red="#ee6b73", green="#9bc779", brown="#e6bd78",
               blue="#70a7e8", magenta="#c792ea", cyan="#7fcbd1", white="#dddfe4",
               brightblack="#7d8490", brightwhite="#ffffff")
+SPINNER = re.compile("[⠀-⣿]")
 
 class TUI:
     def __init__(self, data, width=240, height=80, command=None, env=None, output=None):
@@ -58,13 +61,26 @@ class TUI:
                     break
                 self.raw += data
                 self.stream.feed(self.decoder.decode(data))
+                self.clear_orphaned_halves()
         return self.text()
 
+    def clear_orphaned_halves(self):
+        # Real terminals blank a wide character's second column when its first is overwritten;
+        # pyte keeps the empty stub, and ratatui >= 0.30 relies on the terminal behaviour.
+        for y in self.screen.dirty:
+            line = self.screen.buffer[y]
+            for x in range(1, self.screen.columns):
+                if line[x].data == "" and wcwidth(line[x - 1].data[:1] or " ") != 2:
+                    line[x] = line[x]._replace(data=" ")
+        self.screen.dirty.clear()
+
     def wait(self, predicate, timeout=20):
+        # The spinner advances every 80 ms while work is pending; settle on everything else.
+        settled = lambda screen: SPINNER.sub("⠿", screen)
         end = time.monotonic() + timeout
         while time.monotonic() < end:
             text = self.pump()
-            if predicate(text) and self.pump() == text:
+            if predicate(text) and settled(self.pump()) == settled(text):
                 return text
         raise AssertionError("Timed out:\n" + self.text())
 
