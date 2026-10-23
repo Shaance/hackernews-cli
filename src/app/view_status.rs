@@ -109,6 +109,11 @@ impl App {
         self.active_status().loading
     }
 
+    /// Include loads in the other view when deciding whether to keep drawing.
+    pub fn has_pending_work(&self) -> bool {
+        self.story_status.loading || self.comment_status.loading
+    }
+
     pub fn error(&self) -> Option<&str> {
         self.active_status().error.as_deref()
     }

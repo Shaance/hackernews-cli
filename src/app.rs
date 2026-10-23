@@ -1,7 +1,10 @@
 //! Application state management for HackerNews TUI
 
-use crate::HNCLIItem;
-use std::collections::HashMap;
+use crate::{theme::Theme, HNCLIItem};
+use std::{
+    collections::HashMap,
+    time::{Duration, Instant},
+};
 
 #[cfg(test)]
 mod app_tests;
@@ -67,6 +70,7 @@ struct FeedPosition {
 
 /// Main application state
 pub struct App {
+    theme: Theme,
     /// Current view
     pub view: View,
     /// Current story type
@@ -89,6 +93,8 @@ pub struct App {
     pub comment_scroll: usize,
     pub discussion_story: Option<HNCLIItem>,
     pub show_links: bool,
+    pub overlay_opened: Option<Instant>,
+    pub save_flash: Option<(i32, Instant)>,
     pub link_cursor: usize,
     pub bookmarks: Vec<HNCLIItem>,
     pub bookmark_notice: Option<String>,
@@ -129,7 +135,16 @@ impl Default for App {
 impl App {
     /// Create a new application instance
     pub fn new() -> Self {
+        Self::with_theme(Theme::default())
+    }
+
+    pub fn theme(&self) -> Theme {
+        self.theme
+    }
+
+    pub fn with_theme(theme: Theme) -> Self {
         let mut app = Self {
+            theme,
             view: View::Stories,
             story_type: StoryType::Best,
             stories: Vec::new(),
@@ -142,6 +157,8 @@ impl App {
             comment_scroll: 0,
             discussion_story: None,
             show_links: false,
+            overlay_opened: None,
+            save_flash: None,
             link_cursor: 0,
             bookmarks: Vec::new(),
             bookmark_notice: None,
@@ -313,6 +330,40 @@ impl App {
     /// Toggle help overlay
     pub fn toggle_help(&mut self) {
         self.show_help = !self.show_help;
+        if self.show_help {
+            self.overlay_opened = self.theme.motion.then(Instant::now);
+        }
+    }
+
+    pub fn has_active_motion(&self, now: Instant) -> bool {
+        self.theme.motion
+            && (((self.show_help || self.show_links)
+                && self.overlay_opened.is_some_and(|start| {
+                    now.saturating_duration_since(start) < Duration::from_millis(120)
+                }))
+                || self.save_flash.is_some_and(|(_, start)| {
+                    now.saturating_duration_since(start) < Duration::from_millis(300)
+                }))
+    }
+
+    /// Apply only to the saved star cell identified by the renderer.
+    pub fn render_save_flash(
+        &self,
+        buf: &mut ratatui::buffer::Buffer,
+        area: ratatui::layout::Rect,
+        id: i32,
+    ) {
+        if let Some((_, start)) = self
+            .save_flash
+            .filter(|(saved, _)| self.theme.motion && *saved == id && self.is_bookmarked(*saved))
+        {
+            tachyonfx::fx::fade_from_fg(
+                ratatui::style::Color::Rgb(0xff, 0xf6, 0xea),
+                (300, tachyonfx::Interpolation::QuadOut),
+            )
+            .with_color_space(tachyonfx::ColorSpace::Rgb)
+            .process(start.elapsed().into(), buf, area);
+        }
     }
 
     // === State Updates ===

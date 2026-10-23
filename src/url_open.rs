@@ -5,13 +5,13 @@ const HN_ITEM_URL_PREFIX: &str = "https://news.ycombinator.com/item?id=";
 pub fn safe_story_url(candidate: &str, story_id: i32) -> String {
     match reqwest::Url::parse(candidate) {
         Ok(url) if matches!(url.scheme(), "http" | "https") => url.to_string(),
-        _ => format!("{}{}", HN_ITEM_URL_PREFIX, story_id),
+        _ => format!("{HN_ITEM_URL_PREFIX}{story_id}"),
     }
 }
 
 pub fn open_story_url(candidate: &str, story_id: i32) -> Result<()> {
     let url = safe_story_url(candidate, story_id);
-    open::that(&url).with_context(|| format!("Failed to open URL: {}", url))?;
+    open::that(&url).with_context(|| format!("Failed to open URL: {url}"))?;
     Ok(())
 }
 

@@ -40,7 +40,10 @@ class ReaderFixture:
                 self.end_headers()
                 self.wfile.write(payload)
 
-        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        class Server(ThreadingHTTPServer):
+            # hn fetches up to 32 items at once; Python before 3.15 queues only 5 connections.
+            request_queue_size = 128
+        self.server = Server(("127.0.0.1", 0), Handler)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         self.base = f"http://127.0.0.1:{self.server.server_port}/"

@@ -81,7 +81,7 @@ impl HackerNewsClient for HackerNewsClientImpl {
             .header(USER_AGENT, &self.config.user_agent)
             .send()
             .await
-            .with_context(|| format!("Could not retrieve data from `{}`", url))?
+            .with_context(|| format!("Could not retrieve data from `{url}`"))?
             .json::<Vec<i32>>()
             .await?;
         Ok(resp)
@@ -102,7 +102,7 @@ impl HackerNewsClient for HackerNewsClientImpl {
             .header(USER_AGENT, &self.config.user_agent)
             .send()
             .await
-            .with_context(|| format!("Could not retrieve data from `{}`", url))?
+            .with_context(|| format!("Could not retrieve data from `{url}`"))?
             .json::<HackerNewsItem>()
             .await?;
         Ok(resp)

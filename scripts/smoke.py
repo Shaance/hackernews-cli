@@ -36,37 +36,40 @@ app=TUI(work/'data',160,50,output=EVIDENCE)
 try:
     app.wait(lambda t:'points' in t,timeout=30);app.key('4');app.wait(lambda t:item['title'] in t)
     started=time.monotonic();app.key('c')
-    app.wait(lambda t:'Summary ready' in t or 'Summary incomplete' in t or 'key rejected' in t,timeout=120)
-    app.capture('fast-ready');assert 'Summary ready' in app.text(),app.text()
-    assert 'ARTICLE · Fast' in app.text() and 'DISCUSSION · Fast' in app.text()
+    app.wait(lambda t:'✓ summary · Fast' in t or '! summary incomplete · M retry' in t or 'key rejected' in t,timeout=120)
+    app.capture('fast-ready');assert '✓ summary · Fast' in app.text(),app.text()
+    assert 'ARTICLE  Fast' in app.text() and 'DISCUSSION  Fast' in app.text()
     print(f'PASS live Fast article + discussion in {time.monotonic()-started:.1f}s',flush=True)
     app.key('jjj')
-    before=re.split(r'^╰[^\n]*\n',app.text(),maxsplit=1,flags=re.M)[1]
-    app.key('S');assert 'S View' in app.text();app.key('S')
-    after=re.split(r'^╰[^\n]*\n',app.text(),maxsplit=1,flags=re.M)[1]
+    def comments():
+        # The rows just above the two-row footer always belong to the comment list.
+        return app.text().splitlines()[-12:-2]
+    before=comments()
+    app.key('S');assert 'S show' in app.text();app.key('S')
+    after=comments()
     assert after==before, 'Summary toggle moved the visible comments'
     print('PASS summary hide/show preserves visible comments',flush=True)
-    app.key('\t');app.key('\r');assert 'CITED COMMENT' in app.text();app.capture('captured-source');app.key('\x1b')
-    assert 'Summary ready' in app.text();app.capture('fast-source-back')
+    app.key('\t');app.key('\r');assert re.search(r'^  CITED COMMENT  .+ · #\d+', app.text(), re.M);app.capture('captured-source');app.key('\x1b')
+    assert '✓ summary · Fast' in app.text();app.capture('fast-source-back')
     app.key('M');assert key not in app.text();app.key('\t');assert 'Haiku 5.5' in app.text();app.capture('settings-fast');app.key(' ');assert 'Sonnet 5.5' in app.text();app.capture('settings-thorough');started=time.monotonic();app.key('\r')
-    assert 'ARTICLE · Fast' in app.text(), 'Upgrade removed current article'
+    assert 'ARTICLE  Fast' in app.text(), 'Upgrade removed current article'
     app.capture('thorough-upgrading')
-    app.wait(lambda t:('Summary ready' in t and 'ARTICLE · Thorough' in t and 'DISCUSSION · Thorough' in t) or 'Summary incomplete' in t,timeout=120)
-    app.capture('thorough-ready');assert 'Summary ready' in app.text(),app.text()
+    app.wait(lambda t:('✓ summary · Thorough' in t and 'ARTICLE  Thorough' in t and 'DISCUSSION  Thorough' in t) or '! summary incomplete · M retry' in t,timeout=120)
+    app.capture('thorough-ready');assert '✓ summary · Thorough' in app.text(),app.text()
     print(f'PASS live Thorough upgrade in {time.monotonic()-started:.1f}s; old result remained readable',flush=True)
     # A revisit must reuse the completed snapshot, with no loading state.
-    app.key('\x1b');app.key('c');assert 'Summary ready' in app.text();assert 'Updating' not in app.text()
-    app.key('M');app.key(' ');app.key('\r');assert 'Auto off' in app.text()
+    app.key('\x1b');app.key('c');assert '✓ summary · Thorough' in app.text();assert 'updating ·' not in app.text()
+    app.key('M');app.key(' ');app.key('\r');assert '✓ summary · Thorough' in app.text()
     config=json.loads((work/'data/config/hn/summary.json').read_text());assert not config['automatic'];assert config['profile']=='thorough';assert not config['api_key'];assert not config['anthropic_api_key'];assert config['provider']=={'openrouter':'open_router','anthropic':'anthropic'}[provider]
     print('PASS source/back, retained result on revisit, Auto off, environment key not persisted',flush=True)
     app.key('M');app.key('\t\t');started=time.monotonic();app.key('\r')
-    app.wait(lambda t:'Summary ready' in t or 'Summary incomplete' in t,timeout=120)
-    app.capture('refreshed');assert 'Summary ready' in app.text(),app.text()
+    app.wait(lambda t:'✓ summary · Thorough' in t or '! summary incomplete · M retry' in t,timeout=120)
+    app.capture('refreshed');assert '✓ summary · Thorough' in app.text(),app.text()
     print(f'PASS explicit refresh with Auto off in {time.monotonic()-started:.1f}s',flush=True)
     # Exercise the live comment tree with the summary hidden.
     app.key('S');app.key('g')
     def count():
-        m=re.search(r'DISCUSSION · (\d+) visible',app.text())
+        m=re.search(r'COMMENTS  (\d+)',app.text())
         return int(m.group(1)) if m else 0
     initial=count()
     for _ in range(12):

@@ -43,7 +43,7 @@ pub struct HNCLIItem {
 impl std::fmt::Display for HNCLIItem {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let comment_str = match self.comments {
-            Some(comments) => format!("{} comments", comments),
+            Some(comments) => format!("{comments} comments"),
             None => String::new(),
         };
         let first_line = format!("{} by {}", self.title, self.author);
@@ -52,7 +52,7 @@ impl std::fmt::Display for HNCLIItem {
             self.score, comment_str, self.time_ago
         );
         let last_line = format!("-> {}", self.url);
-        write!(f, "{}\n{}\n{}", first_line, second_line, last_line)
+        write!(f, "{first_line}\n{second_line}\n{last_line}")
     }
 }
 
@@ -133,7 +133,7 @@ impl<C: HackerNewsClient + Sync> HackerNewsCliService for HackerNewsCliServiceIm
             .hn_client
             .get_story_ids(story_type)
             .await
-            .context(format!("Failed to get story IDs for type: {}", story_type))?;
+            .context(format!("Failed to get story IDs for type: {story_type}"))?;
 
         // Check if we have any stories at all
         if ids.is_empty() {
