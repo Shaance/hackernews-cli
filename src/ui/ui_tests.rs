@@ -382,7 +382,7 @@ fn feed_states_are_centered_and_preserve_roles() {
             theme.fg,
         ),
         (1, "No stories found", "r refresh", theme.fg),
-        (2, "! offline", "r retry", theme.error),
+        (2, "Couldn't load Best stories", "r retry", theme.fg),
         (3, "⠋ Loading stories…", "", theme.dim),
     ] {
         app.set_story_type(if state == 0 {
@@ -397,10 +397,14 @@ fn feed_states_are_centered_and_preserve_roles() {
         let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
         let (x, y) = position(frame.buffer, title);
         assert_eq!(x, 40 - title.chars().count() as u16 / 2);
-        assert_eq!(y, 11);
+        assert_eq!(y, if state == 2 { 10 } else { 11 });
         assert_eq!(frame.buffer[(x, y)].fg, style.fg.unwrap());
         if state == 2 {
-            assert_eq!(frame.buffer[(x + 2, y)].fg, theme.fg.fg.unwrap());
+            assert_eq!(position(frame.buffer, "offline"), (37, 11));
+            assert_eq!(frame.buffer[(37, 11)].fg, theme.dim.fg.unwrap());
+            assert!(!buffer_text(frame.buffer).contains("! "));
+            assert_eq!(buffer_text(frame.buffer).matches("offline").count(), 1);
+            assert_eq!(position(frame.buffer, "j/k move").1, 23);
         }
         if !hint.is_empty() {
             let (x, y) = position(frame.buffer, hint);
@@ -417,11 +421,29 @@ fn feed_states_are_centered_and_preserve_roles() {
     app.set_story_error("offline ".repeat(15));
     let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
     assert_eq!(
-        position(frame.buffer, "! ").1,
+        position(frame.buffer, "Couldn't load Best stories").1,
         10,
-        "wrapped error and retry form a centered three-row block"
+        "title, wrapped error and retry form a centered four-row block"
     );
-    assert_eq!(position(frame.buffer, "r retry").1, 12);
+    assert_eq!(position(frame.buffer, "r retry").1, 13);
+    for y in [11, 12] {
+        let cells = &frame.buffer.content[y * 80..(y + 1) * 80];
+        assert!(cells
+            .iter()
+            .any(|c| c.symbol() == "o" && c.fg == theme.dim.fg.unwrap()));
+    }
+    assert!(frame.buffer.content[23 * 80..]
+        .iter()
+        .all(|c| c.fg != theme.error.fg.unwrap()));
+    app = feed();
+    app.set_story_type(StoryType::New);
+    app.set_story_error("offline".into());
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    assert_eq!(position(frame.buffer, "offline").1, 23);
+    app.stories.clear();
+    app.bookmark_notice = Some("Save failed".into());
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    assert_eq!(position(frame.buffer, "Save failed").1, 23);
 }
 
 #[test]

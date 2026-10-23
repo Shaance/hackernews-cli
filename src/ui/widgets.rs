@@ -10,7 +10,7 @@ use ratatui::{
 
 use crate::{app::App, theme::Theme};
 use std::time::Instant;
-use tachyonfx::{fx, Interpolation};
+use tachyonfx::{fx, ColorSpace, Interpolation};
 
 /// ASCII spinner frames
 const SPINNER_FRAMES: &[&str] = &["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
@@ -83,11 +83,9 @@ pub fn render_modal(
     }
     if let Some(start) = opened.filter(|_| theme.motion) {
         let area = f.area();
-        fx::fade_to_fg(theme.scrim.fg.unwrap(), (120, Interpolation::QuadOut)).process(
-            start.elapsed().into(),
-            f.buffer_mut(),
-            area,
-        );
+        fx::fade_to_fg(theme.scrim.fg.unwrap(), (120, Interpolation::QuadOut))
+            .with_color_space(ColorSpace::Rgb)
+            .process(start.elapsed().into(), f.buffer_mut(), area);
     }
     let area = f.area().inner(Margin::new(2, 1));
     let (mut lines, selected) = body(area.width.saturating_sub(6), area.height.saturating_sub(4));
@@ -267,19 +265,24 @@ pub fn render_stories_status(area: Rect, app: &App, _tick: usize) -> Paragraph<'
         .bookmark_notice
         .as_ref()
         .map(|notice| format!("Saved: 4 then r retry · {notice}"));
+    let mut hints = vec![
+        ("j/k", "move"),
+        ("Enter", "read"),
+        ("1–4", "feeds"),
+        ("s", "save"),
+        ("?", "keys"),
+    ];
+    if app.displayed_story_context().0 != crate::app::StoryType::Saved {
+        hints.push(("n/p", "page"));
+    }
+    hints.extend([("c", "discussion"), ("q", "quit")]);
     let line = hint_line(
         theme,
-        &[
-            ("j/k", "move"),
-            ("Enter", "read"),
-            ("1–4", "feeds"),
-            ("s", "save"),
-            ("?", "keys"),
-            ("n/p", "page"),
-            ("c", "discussion"),
-            ("q", "quit"),
-        ],
-        notice.as_deref().or(app.error()).map(|s| (s, theme.error)),
+        &hints,
+        notice
+            .as_deref()
+            .or(app.error().filter(|_| !app.stories.is_empty()))
+            .map(|s| (s, theme.error)),
         area.width,
     );
     Paragraph::new(line).block(

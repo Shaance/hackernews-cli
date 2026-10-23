@@ -8,7 +8,9 @@ use ratatui::{
     Frame,
 };
 use std::time::{Duration, Instant};
-use tachyonfx::{fx, Interpolation};
+use tachyonfx::{fx, ColorSpace, Interpolation};
+
+const MIN_COMMENT_ROWS: usize = 10;
 
 impl Reader {
     pub fn render(&mut self, frame: &mut Frame, app: &mut App, tick: usize) {
@@ -69,9 +71,11 @@ impl Reader {
         let chip_width = chip.width();
         let meta_width = width.saturating_sub(4 + chip_width + usize::from(chip_width > 0));
         let metadata = format!(
-            "{} points · {} comments",
+            "{} · {} points · {} comments · {}",
+            reading.story.author,
             reading.story.score,
-            reading.story.comments.unwrap_or(0)
+            reading.story.comments.unwrap_or(0),
+            reading.story.time_ago
         );
         let mut metadata = if area.width < 60 {
             metadata
@@ -258,11 +262,13 @@ impl Reader {
                     1,
                 )
                 .intersection(areas[2]);
-                fx::fade_to_fg(theme.dim.fg.unwrap(), (400, Interpolation::Linear)).process(
-                    elapsed.saturating_sub(Duration::from_secs(2)).into(),
-                    frame.buffer_mut(),
-                    cells,
-                );
+                fx::fade_to_fg(theme.dim.fg.unwrap(), (400, Interpolation::Linear))
+                    .with_color_space(ColorSpace::Rgb)
+                    .process(
+                        elapsed.saturating_sub(Duration::from_secs(2)).into(),
+                        frame.buffer_mut(),
+                        cells,
+                    );
             }
         }
         if app.show_help {
@@ -289,17 +295,18 @@ impl Reading {
         let theme = self.theme;
         let width = usize::from(area.width);
         let (summary, target) = self.summary_lines(width);
-        // Show the full result when it fits; leave at least a third for comments.
+        // Leave at least a third for comments, and ten rows on short terminals,
+        // but never take more than half the body away, so the summary stays reachable.
+        let body = usize::from(area.height);
+        let maximum = (body * 2 / 3).min(body.saturating_sub(MIN_COMMENT_ROWS).max(body / 2));
         let desired =
             if self.shown && (self.article.result.is_some() || self.discussion.result.is_some()) {
-                (summary.len() + 1).min(usize::from(area.height) * 2 / 3)
+                (summary.len() + 1).min(maximum)
             } else {
                 0
             };
         let height = if self.moved && desired > 0 {
-            self.growth_cap
-                .unwrap_or(desired)
-                .min(usize::from(area.height) * 2 / 3)
+            self.growth_cap.unwrap_or(desired).min(maximum)
         } else {
             desired
         };
@@ -330,38 +337,38 @@ impl Reading {
                 self.summary_scroll = target.unwrap_or(0);
                 self.reveal_citation = false;
             }
-            self.summary_scroll = self.summary_scroll.min(
-                summary
-                    .len()
-                    .saturating_sub(usize::from(target_height.saturating_sub(1))),
-            );
+            self.summary_scroll = self.summary_scroll.min(summary.len().saturating_sub(
+                usize::from(target_height).saturating_sub(
+                    1 + usize::from(summary.len() + 1 > usize::from(target_height)),
+                ),
+            ));
         }
         let body = Layout::vertical([Constraint::Length(height), Constraint::Min(0)]).split(area);
         if height > 0 {
-            let rows = usize::from(height.saturating_sub(1));
-            let end = (self.summary_scroll + rows).min(summary.len());
-            let footer = if summary.len() > rows {
-                Line::from(vec![
+            let scrollable = summary.len() + 1 > usize::from(height);
+            let rows = usize::from(height).saturating_sub(1 + usize::from(scrollable));
+            let total = summary.len();
+            let end = (self.summary_scroll + rows).min(total);
+            let mut visible = summary
+                .into_iter()
+                .skip(self.summary_scroll)
+                .take(rows)
+                .collect::<Vec<_>>();
+            if scrollable && height > 1 {
+                visible.push(Line::from(vec![
                     Span::raw("  "),
                     Span::styled("│ ", theme.line),
                     Span::styled(
                         format!(
                             "J/K scroll · {}–{end} of {}",
                             self.summary_scroll + 1,
-                            summary.len()
+                            total
                         ),
                         theme.dim,
                     ),
-                ])
-            } else {
-                Line::raw("")
-            };
-            let mut visible = summary
-                .into_iter()
-                .skip(self.summary_scroll)
-                .take(rows)
-                .collect::<Vec<_>>();
-            visible.push(footer);
+                ]));
+            }
+            visible.push(Line::raw(""));
             let active_rows = visible
                 .iter()
                 .enumerate()
@@ -387,11 +394,9 @@ impl Reading {
         }
         if theme.motion {
             if let Some((start, _, _)) = self.panel_motion.filter(|(_, from, to)| from < to) {
-                fx::fade_from_fg(theme.dim.fg.unwrap(), (250, Interpolation::QuadOut)).process(
-                    start.elapsed().into(),
-                    frame.buffer_mut(),
-                    body[0],
-                );
+                fx::fade_from_fg(theme.dim.fg.unwrap(), (250, Interpolation::QuadOut))
+                    .with_color_space(ColorSpace::Rgb)
+                    .process(start.elapsed().into(), frame.buffer_mut(), body[0]);
             }
         }
         body[1]
