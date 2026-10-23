@@ -35,15 +35,19 @@ def main():
         for run, profile, automatic in [(1, "Thorough", "Off"), (2, "Fast", "On")]:
             app = TUI(data, command=[binary], env=env, cwd=home, output=output)
             try:
-                app.wait(lambda t: "HN:" in t)
+                app.wait(lambda t: "1 Top" in t and "4 Saved" in t)
                 app.key("4")
                 app.wait(lambda t: "Installed reader check" in t)
                 app.key("cM")
                 screen = app.wait(lambda t: "Summary settings" in t)
-                assert "Provider: Anthropic" in screen
-                assert f"Model preference: {profile}" in screen
-                assert f"Automatic summaries: {automatic}" in screen
-                assert "Anthropic key: •" in screen and key not in screen
+                rows = screen.splitlines()
+                def field(label):
+                    # Settings rows pair a label with its value; the focused choice shows as ‹ value ›.
+                    return next(line for line in rows if label in line)
+                assert "Anthropic" in field("Provider")
+                assert f"{profile} ·" in field("Model")
+                assert automatic in field("Automatic summaries")
+                assert "•" in field("Anthropic key") and key not in screen
                 app.capture(f"settings-{run}")
                 if run == 1:
                     # Start on Automatic, enable it, choose Fast, then apply from Automatic.
