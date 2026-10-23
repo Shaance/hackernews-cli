@@ -84,7 +84,7 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
 
     // Render help overlay if shown
     if app.show_help {
-        widgets::render_help(f, app.theme(), false);
+        widgets::render_help(f, app.theme(), false, app.overlay_opened);
     }
 }
 
@@ -183,6 +183,7 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
         Style::default()
     };
 
+    let mut flash_cell = None;
     let items: Vec<ListItem> = app
         .stories
         .iter()
@@ -214,6 +215,10 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
                     }
                     title.push('…');
                 }
+            }
+            if !bookmark.is_empty() && app.save_flash.is_some_and(|(id, _)| id == story.id) {
+                let x = area.x + 2 + rank.len() as u16 + Span::raw(&title).width() as u16 + 1;
+                flash_cell = Some((idx, x, story.id));
             }
             let mut lines = vec![Line::from(vec![
                 indicator.clone(),
@@ -273,4 +278,9 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
     let y = area.y + ((app.selected_index - state.offset()) * stride) as u16;
     let selected = Rect::new(area.x, y, area.width, 2).intersection(area);
     f.buffer_mut().set_style(selected, app.theme().sel);
+    if let Some((index, x, id)) = flash_cell.filter(|(index, _, _)| *index >= state.offset()) {
+        let y = area.y + ((index - state.offset()) * stride) as u16;
+        let cell = Rect::new(x, y, 1, 1).intersection(area);
+        app.render_save_flash(f.buffer_mut(), cell, id);
+    }
 }

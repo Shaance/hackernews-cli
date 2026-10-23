@@ -27,6 +27,8 @@ hn detects colour support and queries the terminal theme once at startup (up to 
 Truecolour uses a detected light or dark palette; unknown backgrounds use ANSI colours. `NO_COLOR` disables colour.
 Set `HN_THEME=light`, `HN_THEME=dark`, or `HN_THEME=ansi` to override detection, including `NO_COLOR` (case-insensitive).
 
+Set `HN_REDUCED_MOTION=1` to disable visual animations; ANSI and monochrome palettes disable them automatically.
+
 ## Read a story
 
 Use `j/k` or the arrow keys to select a story. Press `1`, `2`, or `3` for Top, New, or Best; `4` opens Saved. Use `n/p` to change pages.

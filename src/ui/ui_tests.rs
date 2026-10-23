@@ -311,7 +311,7 @@ fn stories_help_keys_match_handlers_and_use_accent() {
     for width in [60, 77, 78, 80, 100] {
         let mut terminal = Terminal::new(TestBackend::new(width, 40)).unwrap();
         let frame = terminal
-            .draw(|f| super::widgets::render_help(f, theme, false))
+            .draw(|f| super::widgets::render_help(f, theme, false, None))
             .unwrap();
         for (label, keys) in entries {
             let (x, y) = position(frame.buffer, &format!(" {label}  "));
@@ -422,4 +422,50 @@ fn feed_states_are_centered_and_preserve_roles() {
         "wrapped error and retry form a centered three-row block"
     );
     assert_eq!(position(frame.buffer, "r retry").1, 12);
+}
+
+#[test]
+fn motion_backdrop_preserves_initial_foreground_and_immediate_modal() {
+    use crate::theme::Theme;
+    use std::time::{Duration, Instant};
+    for motion in [true, false] {
+        let theme = Theme {
+            motion,
+            ..Theme::TRUE_DARK
+        };
+        let mut app = App::with_theme(theme);
+        app.toggle_help();
+        assert_eq!(app.overlay_opened.is_some(), motion);
+        for ms in [0, 120] {
+            let start = if ms == 0 {
+                Instant::now() + Duration::from_secs(1)
+            } else {
+                Instant::now() - Duration::from_millis(ms)
+            };
+            app.overlay_opened = Some(start);
+            let mut terminal = Terminal::new(TestBackend::new(100, 40)).unwrap();
+            let frame = terminal
+                .draw(|f| {
+                    let area = f.area();
+                    f.buffer_mut().set_style(area, theme.link.patch(theme.sel));
+                    super::widgets::render_help(f, theme, false, app.overlay_opened);
+                })
+                .unwrap();
+            assert_eq!(
+                frame.buffer[(0, 0)].fg,
+                if motion && ms == 0 {
+                    theme.link.fg
+                } else {
+                    theme.scrim.fg
+                }
+                .unwrap()
+            );
+            assert_eq!(frame.buffer[(0, 0)].bg, ratatui::style::Color::Reset);
+            assert_eq!(
+                frame.buffer[position(frame.buffer, "Keys")].fg,
+                theme.accent.fg.unwrap()
+            );
+            assert_eq!(app.has_active_motion(Instant::now()), motion && ms == 0);
+        }
+    }
 }

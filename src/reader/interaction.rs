@@ -1,4 +1,4 @@
-use super::{browser, Reader, Reading, Request};
+use super::{browser, Duration, Instant, Reader, Reading, Request};
 use crossterm::event::KeyCode;
 use hn_lib::HNCLIItem;
 
@@ -149,6 +149,7 @@ impl Reader {
         });
         reading.story = story;
         reading.moved = false;
+        reading.panel_motion = None;
         reading.growth_cap = Some(0);
         reading.leave_source();
         reading.citation_focus = false;
@@ -168,10 +169,12 @@ impl Reader {
         if self.browser_busy {
             self.desired_browser = Some((story, focus));
             self.browser_notice = "Opening latest article…".into();
+            self.notice_started = Some(Instant::now());
             return;
         }
         self.browser_busy = true;
         self.browser_notice = "Opening article…".into();
+        self.notice_started = Some(Instant::now());
         let existing = self.browser.clone();
         let tx = self.tx.clone();
         tokio::spawn(async move {
@@ -184,6 +187,7 @@ impl Reader {
     pub fn poll(&mut self) {
         while let Ok(result) = self.rx.try_recv() {
             self.browser_busy = false;
+            self.notice_started = Some(Instant::now());
             match result {
                 Ok((target, notice)) => {
                     self.browser = target;
@@ -195,7 +199,32 @@ impl Reader {
                 self.read_original(story, focus);
             }
         }
+        if !self.browser_busy
+            && self
+                .notice_started
+                .is_some_and(|start| start.elapsed() >= Duration::from_secs(4))
+        {
+            self.browser_notice.clear();
+            self.notice_started = None;
+        }
         self.poll_jobs();
+    }
+
+    pub fn has_active_motion(&self, now: Instant) -> bool {
+        // Clearing the notice is timed even with reduced motion or outside the reader.
+        (!self.browser_busy && !self.browser_notice.is_empty() && self.notice_started.is_some())
+            || self
+                .active
+                .and_then(|id| self.readings.get(&id))
+                .is_some_and(|r| r.has_active_motion(now))
+            || (self.theme.motion
+                && self
+                    .settings
+                    .as_ref()
+                    .and_then(|s| s.opened)
+                    .is_some_and(|start| {
+                        now.saturating_duration_since(start) < Duration::from_millis(120)
+                    }))
     }
 
     pub fn has_pending_work(&self) -> bool {

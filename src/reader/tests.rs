@@ -25,7 +25,11 @@ pub(super) fn ready() -> Reader {
         },
         ..Reader::default()
     };
-    p.theme = Theme::TRUE_DARK;
+    // Existing navigation/style assertions inspect the settled layout.
+    p.theme = Theme {
+        motion: false,
+        ..Theme::TRUE_DARK
+    };
     let mut reading = Reading::new(story(1));
     reading.theme = p.theme;
     reading.shown = true;

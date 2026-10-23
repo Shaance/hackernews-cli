@@ -620,7 +620,7 @@ fn reader_help_keys_match_handlers_and_use_accent() {
     for width in [60, 100] {
         let mut terminal = Terminal::new(TestBackend::new(width, 40)).unwrap();
         let frame = terminal
-            .draw(|f| hn_lib::ui::widgets::render_help(f, theme, true))
+            .draw(|f| hn_lib::ui::widgets::render_help(f, theme, true, None))
             .unwrap();
         for (label, keys) in entries {
             let cells = frame
@@ -648,4 +648,228 @@ fn reader_help_keys_match_handlers_and_use_accent() {
             }
         }
     }
+}
+
+#[test]
+fn motion_browser_notice_timing_and_persistent_errors() {
+    for motion in [true, false] {
+        for (ms, busy) in [
+            (0, false),
+            (1990, false),
+            (2400, false),
+            (4000, false),
+            (5000, true),
+        ] {
+            let mut p = ready();
+            p.theme.motion = motion;
+            p.browser_notice = "Article opened".into();
+            p.notice_started = Some(Instant::now() - Duration::from_millis(ms));
+            p.browser_busy = busy;
+            let mut app = comments_app();
+            p.poll();
+            let b = buffer(&mut p, &mut app);
+            if ms >= 4000 && !busy {
+                assert!(p.browser_notice.is_empty());
+                assert!(!row(&b, 39).contains("Article opened"));
+                assert!(!p.has_active_motion(Instant::now()));
+            } else {
+                assert!(row(&b, 39).contains("Article opened"));
+                assert_eq!(
+                    b[(2, 39)].fg,
+                    if busy || (motion && ms < 2000) {
+                        p.theme.accent.fg
+                    } else {
+                        p.theme.dim.fg
+                    }
+                    .unwrap(),
+                    "motion={motion}, ms={ms}, busy={busy}"
+                );
+                assert_eq!(p.has_active_motion(Instant::now()), !busy);
+            }
+        }
+        let mut p = ready();
+        p.theme.motion = motion;
+        let mut app = comments_app();
+        p.browser_notice = "Article opened".into();
+        p.notice_started = Some(Instant::now() - Duration::from_secs(5));
+        app.bookmark_notice = Some("Save failed: retry".into());
+        p.poll();
+        let b = buffer(&mut p, &mut app);
+        assert!(row(&b, 39).contains("Save failed: retry"));
+        assert_eq!(b[(2, 39)].fg, p.theme.error.fg.unwrap());
+        app.bookmark_notice = None;
+        app.set_comment_error("Comments failed".into());
+        assert!(row(&buffer(&mut p, &mut app), 39).contains("Comments failed"));
+        app.set_comments(vec![]);
+        p.readings.get_mut(&1).unwrap().staged =
+            p.readings.get_mut(&1).unwrap().discussion.result.take();
+        assert!(row(&buffer(&mut p, &mut app), 39).contains("Summary updated"));
+    }
+}
+
+#[test]
+fn motion_save_star_in_feed_and_reader_only_on_successful_save() {
+    use ratatui::style::Color;
+    let path = std::env::temp_dir().join(format!(
+        "hn-motion-save-{}-{}.json",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    for motion in [true, false] {
+        let theme = Theme {
+            motion,
+            ..Theme::TRUE_DARK
+        };
+        let mut app = hn_lib::app::App::with_theme(theme);
+        app.set_stories(vec![story(1)]);
+        crate::toggle_bookmark(&mut app, Some(&path));
+        assert_eq!(app.save_flash.is_some(), motion);
+        assert!(app.is_bookmarked(1));
+        for ms in [0, 300] {
+            app.save_flash = Some((
+                1,
+                if ms == 0 {
+                    Instant::now() + Duration::from_secs(1)
+                } else {
+                    Instant::now() - Duration::from_millis(ms)
+                },
+            ));
+            let expected = if motion && ms == 0 {
+                Color::Rgb(0xff, 0xf6, 0xea)
+            } else {
+                theme.accent.fg.unwrap()
+            };
+            let mut terminal = Terminal::new(TestBackend::new(120, 40)).unwrap();
+            let frame = terminal
+                .draw(|f| hn_lib::ui::stories::render(f, &mut app, 0))
+                .unwrap();
+            assert_eq!(
+                frame
+                    .buffer
+                    .content
+                    .iter()
+                    .find(|c| c.symbol() == "★")
+                    .unwrap()
+                    .fg,
+                expected
+            );
+            let mut p = ready();
+            assert_eq!(buffer(&mut p, &mut app)[(2, 0)].fg, expected);
+            assert_eq!(app.has_active_motion(Instant::now()), motion && ms == 0);
+        }
+        crate::toggle_bookmark(&mut app, Some(&path));
+        assert!(!app.is_bookmarked(1));
+        assert!(app.save_flash.is_none(), "unsaving must not flash");
+        crate::toggle_bookmark(&mut app, None);
+        assert!(!app.is_bookmarked(1));
+        assert!(app.save_flash.is_none(), "failed saves must not flash");
+    }
+    std::fs::remove_file(path).unwrap();
+}
+
+#[test]
+fn motion_panel_height_text_retarget_and_reduced_motion() {
+    let mut reading = Reading::new(story(1));
+    reading.article.result = Some(done(
+        Article {
+            text: "Article claim.\n".repeat(30),
+        },
+        Profile::Fast,
+        ArticleCapture {
+            title: "Title".into(),
+            text: "Source".into(),
+            partial: false,
+        },
+    ));
+    let draw = |r: &mut Reading, height| {
+        let mut terminal = Terminal::new(TestBackend::new(80, height)).unwrap();
+        terminal
+            .draw(|f| {
+                let area = f.area();
+                f.buffer_mut().set_style(area, r.theme.fg);
+                let comments = r.render_summary(f, area);
+                f.render_widget(ratatui::widgets::Paragraph::new("◆"), comments);
+            })
+            .unwrap()
+            .buffer
+            .clone()
+    };
+    let panel_height = |b: &ratatui::buffer::Buffer| {
+        b.content.iter().position(|c| c.symbol() == "◆").unwrap() as u16 / b.area.width
+    };
+    for motion in [true, false] {
+        reading.theme = Theme {
+            motion,
+            ..Theme::TRUE_DARK
+        };
+        for ms in [0, 90, 180, 250] {
+            let start = if ms == 0 {
+                Instant::now() + Duration::from_secs(1)
+            } else {
+                Instant::now() - Duration::from_millis(ms)
+            };
+            reading.panel_motion = Some((start, 4, 20));
+            let b = draw(&mut reading, 30);
+            let height = panel_height(&b);
+            if !motion || ms >= 180 {
+                assert_eq!(height, 20, "panel must reach target height at {ms} ms");
+            } else if ms == 0 {
+                assert_eq!(
+                    height, 4,
+                    "panel at 0 ms must draw its start height, not the target"
+                );
+            } else {
+                assert!(
+                    height > 4 && height < 20,
+                    "panel at 90 ms must be between start and target, got {height}"
+                );
+            }
+            assert_eq!(b[(4, 1)].symbol(), "A");
+            if !motion || ms == 0 || ms >= 250 {
+                assert_eq!(
+                    b[(4, 1)].fg,
+                    if motion && ms == 0 {
+                        reading.theme.dim.fg
+                    } else {
+                        reading.theme.fg.fg
+                    }
+                    .unwrap()
+                );
+            }
+            assert_eq!(
+                reading.has_active_motion(Instant::now()),
+                motion && ms < 250
+            );
+            if !motion {
+                assert!(reading.panel_motion.is_none());
+            }
+        }
+    }
+    reading.theme = Theme::TRUE_DARK;
+    reading.panel_motion = None;
+    assert_eq!(
+        panel_height(&draw(&mut reading, 30)),
+        0,
+        "opening starts at zero"
+    );
+    reading.panel_motion = Some((Instant::now() + Duration::from_secs(1), 4, 20));
+    let before = panel_height(&draw(&mut reading, 30));
+    assert_eq!(
+        panel_height(&draw(&mut reading, 36)),
+        before,
+        "retarget must start at the current drawn height"
+    );
+    assert_eq!(reading.panel_motion.unwrap().2, 24);
+    assert_eq!(
+        panel_height(&draw(&mut reading, 15)),
+        10,
+        "shrinking snaps immediately"
+    );
+    assert!(!reading.has_active_motion(Instant::now()));
+    reading.shown = false;
+    assert_eq!(panel_height(&draw(&mut reading, 30)), 0);
+    assert!(!reading.has_active_motion(Instant::now()));
 }

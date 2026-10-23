@@ -6,7 +6,7 @@ use super::widgets::{hint_line, render_modal};
 pub fn render(f: &mut Frame, app: &App) {
     let theme = app.theme();
     let links = app.current_links();
-    render_modal(f, theme, "Links", |width, height| {
+    render_modal(f, theme, app.overlay_opened, "Links", |width, height| {
         let mut lines = vec![
             Line::styled("From the post and the selected comment", theme.dim),
             Line::raw(""),

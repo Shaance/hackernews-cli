@@ -3,6 +3,7 @@ use super::{
     Progress, Reader, Request,
 };
 use crossterm::event::KeyCode;
+use hn_lib::ui::widgets::render_modal;
 use ratatui::{
     style::Modifier,
     text::{Line, Span},
@@ -10,6 +11,7 @@ use ratatui::{
 };
 
 pub struct Settings {
+    pub(super) opened: Option<std::time::Instant>,
     keys: [String; 2],
     provider: Provider,
     automatic: bool,
@@ -25,6 +27,7 @@ impl Reader {
             .and_then(|id| self.readings.get(&id))
             .is_some_and(|r| r.article.failed() || r.discussion.failed());
         self.settings = Some(Settings {
+            opened: self.theme.motion.then(std::time::Instant::now),
             retry,
             keys: [
                 self.config.key_for(Provider::OpenRouter).to_owned(),
@@ -212,7 +215,7 @@ impl Reader {
 impl Settings {
     fn render(&self, frame: &mut Frame, theme: hn_lib::theme::Theme) {
         let s = self;
-        hn_lib::ui::widgets::render_modal(frame, theme, "Summary settings", |width, _| {
+        render_modal(frame, theme, self.opened, "Summary settings", |width, _| {
             let width = width.min(64);
             let key = &s.keys[s.provider as usize];
             let values = [
@@ -317,6 +320,7 @@ fn settings_modal_styles_focus_padding_and_scrim() {
     };
     let theme = hn_lib::theme::Theme::TRUE_DARK;
     let settings = Settings {
+        opened: None,
         keys: Default::default(),
         provider: Provider::OpenRouter,
         automatic: true,

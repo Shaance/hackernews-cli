@@ -22,7 +22,12 @@ mod view;
 use config::{Config, Profile};
 use hn_lib::{theme::Theme, HNCLIItem};
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, path::PathBuf, sync::Arc};
+use std::{
+    collections::HashMap,
+    path::PathBuf,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 use tokio::{sync::mpsc, task::JoinSet};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -155,6 +160,8 @@ pub struct Reading {
     moved: bool,
     // Last panel height until movement; None means S explicitly lifted the cap.
     growth_cap: Option<usize>,
+    // Retain the settled target for the next opening; elapsed time determines activity.
+    panel_motion: Option<(Instant, u16, u16)>,
     prefix_height: usize,
     summary_scroll: usize,
     page_rows: usize,
@@ -175,6 +182,7 @@ impl Reading {
             shown: true,
             moved: false,
             growth_cap: Some(0),
+            panel_motion: None,
             prefix_height: 0,
             summary_scroll: 0,
             page_rows: 1,
@@ -222,6 +230,7 @@ pub struct Reader {
     browser_busy: bool,
     desired_browser: Option<(HNCLIItem, bool)>,
     browser_notice: String,
+    notice_started: Option<Instant>,
     tx: mpsc::UnboundedSender<Result<(Option<browser::Target>, String), String>>,
     rx: mpsc::UnboundedReceiver<Result<(Option<browser::Target>, String), String>>,
 }
@@ -258,6 +267,7 @@ impl Reader {
             browser_busy: false,
             desired_browser: None,
             browser_notice: String::new(),
+            notice_started: None,
             tx,
             rx,
         }
