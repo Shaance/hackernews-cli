@@ -74,7 +74,7 @@ pub fn render_modal(
     body: impl FnOnce(u16, u16) -> (Vec<Line<'static>>, Option<usize>),
 ) {
     render_modal_body(f, theme, opened, title, |width, height| {
-        let (lines, selected) = body(width, height);
+        let (lines, selected) = body(width, height.saturating_sub(2));
         (lines, selected, 1)
     });
 }
@@ -102,7 +102,7 @@ fn render_modal_body(
     }
     let area = f.area().inner(Margin::new(2, 1));
     let (mut lines, selected, padding) =
-        body(area.width.saturating_sub(6), area.height.saturating_sub(4));
+        body(area.width.saturating_sub(6), area.height.saturating_sub(2));
     lines.truncate(usize::from(area.height.saturating_sub(2 + 2 * padding)));
     let width = lines
         .iter()
@@ -221,13 +221,13 @@ pub fn render_help(f: &mut Frame, theme: Theme, in_comments: bool, opened: Optio
             .map(|(_, action)| key_width + 2 + Span::raw(*action).width())
             .max()
             .unwrap_or(0);
-        let rows = usize::from(height) + 2; // Recover vertical padding before dropping headings.
+        let rows = usize::from(height); // Rows inside the border, before any padding.
         let grouped_rows = groups
             .iter()
             .map(|(_, entries)| entries.len().div_ceil(columns) + 1)
             .sum::<usize>()
             + groups.len().saturating_sub(1);
-        let padding = u16::from(grouped_rows <= usize::from(height));
+        let padding = u16::from(grouped_rows + 2 <= rows);
         let compact = grouped_rows > rows;
         let mut lines = Vec::new();
         // Lines holding a way out of the screen stay visible even when the table is cut.

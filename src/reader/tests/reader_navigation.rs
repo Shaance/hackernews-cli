@@ -1052,6 +1052,28 @@ async fn movement_mid_animation_freezes_drawn_height_and_comment_cells() {
     }
 }
 
+#[tokio::test]
+async fn freezing_an_unopened_panel_offers_s_show_in_the_same_frame() {
+    let mut p = ready();
+    let mut app = comments_app();
+    buffer(&mut p, &mut app);
+    let r = p.readings.get_mut(&1).unwrap();
+    r.theme.motion = true;
+    let target = r.growth_cap as u16;
+    // The opening has not drawn a row yet when the reader starts moving.
+    r.panel_motion = Some((Instant::now() + Duration::from_secs(1), 0, target));
+    move_reader(&mut p, &mut app, KeyCode::Char('j')).await;
+    let frame = buffer(&mut p, &mut app);
+    assert_eq!(
+        p.readings[&1].growth_cap, 0,
+        "movement froze the panel empty"
+    );
+    assert!(
+        row(&frame, 1).trim_end().ends_with("S show"),
+        "the chip must offer S show in the frame that froze the panel"
+    );
+}
+
 #[test]
 fn short_panel_shows_summary_content_without_zero_scroll_range() {
     let mut p = ready();
