@@ -394,8 +394,7 @@ async fn moved_then_arrival_keeps_panel_empty_and_comment_cells_identical() {
         complete_section(&mut p, false, "Discussion claim.");
         let after = buffer(&mut p, &mut app);
         assert_eq!(
-            p.readings[&1].growth_cap,
-            Some(0),
+            p.readings[&1].growth_cap, 0,
             "arrival must not grow the empty panel"
         );
         assert!(row(&after, 1).trim_end().ends_with("S show"));
@@ -406,9 +405,26 @@ async fn moved_then_arrival_keeps_panel_empty_and_comment_cells_identical() {
         );
         move_reader(&mut p, &mut app, KeyCode::Char('S')).await;
         assert!(screen(&mut p, &mut app, 120, 40).contains("ARTICLE  Fast"));
+        move_reader(&mut p, &mut app, key).await;
+        let before = buffer(&mut p, &mut app);
+        let start = (3..38)
+            .find(|&y| row(&before, y).contains("Comment "))
+            .expect("visible comment text") as usize
+            * 120;
+        p.readings
+            .get_mut(&1)
+            .unwrap()
+            .article
+            .result
+            .as_mut()
+            .unwrap()
+            .value
+            .text = "Replacement article. ".repeat(150);
+        let after = buffer(&mut p, &mut app);
         assert_eq!(
-            p.readings[&1].growth_cap, None,
-            "explicit show lifts the cap"
+            &before.content[start..4560],
+            &after.content[start..4560],
+            "replacement after explicit S and movement changed comment cells"
         );
         p.open(story(1));
         assert!(!p.readings[&1].moved, "reopen resets movement per visit");
@@ -425,10 +441,30 @@ async fn tab_after_movement_reveals_the_hidden_summary() {
     complete_section(&mut p, false, "Discussion claim.");
     buffer(&mut p, &mut app);
     move_reader(&mut p, &mut app, KeyCode::Tab).await;
-    assert_eq!(p.readings[&1].growth_cap, None, "Tab lifts the cap like S");
     assert!(
         screen(&mut p, &mut app, 120, 40).contains("DISCUSSION  Fast"),
         "the focused citation must be visible"
+    );
+    move_reader(&mut p, &mut app, KeyCode::PageDown).await;
+    let before = buffer(&mut p, &mut app);
+    let start = (3..38)
+        .find(|&y| row(&before, y).contains("Comment "))
+        .expect("visible comment text") as usize
+        * 120;
+    p.readings
+        .get_mut(&1)
+        .unwrap()
+        .article
+        .result
+        .as_mut()
+        .unwrap()
+        .value
+        .text = "Replacement article. ".repeat(150);
+    let after = buffer(&mut p, &mut app);
+    assert_eq!(
+        &before.content[start..4560],
+        &after.content[start..4560],
+        "replacement after Tab and movement changed comment cells"
     );
 }
 
@@ -437,13 +473,13 @@ fn unmoved_arrival_expands_the_panel() {
     let mut p = pending_reader();
     let mut app = comments_app();
     buffer(&mut p, &mut app);
-    assert_eq!(p.readings[&1].growth_cap, Some(0));
+    assert_eq!(p.readings[&1].growth_cap, 0);
     assert!(!p.key(KeyCode::Char('k')));
     app.prev_comment();
     complete_section(&mut p, true, "Article claim.");
     complete_section(&mut p, false, "Discussion claim.");
     let b = buffer(&mut p, &mut app);
-    assert!(p.readings[&1].growth_cap.unwrap() > 0);
+    assert!(p.readings[&1].growth_cap > 0);
     assert!(row(&b, 3).contains("ARTICLE  Fast · captured 12:00"));
     assert!(!row(&b, 1).contains("S show"));
 }
@@ -454,7 +490,7 @@ async fn moved_panel_keeps_its_height_when_results_grow_or_shrink() {
     let mut app = comments_app();
     complete_section(&mut p, true, "Article claim.");
     buffer(&mut p, &mut app);
-    let height = p.readings[&1].growth_cap.unwrap();
+    let height = p.readings[&1].growth_cap;
     assert!(height > 0);
     move_reader(&mut p, &mut app, KeyCode::PageDown).await;
     let before = buffer(&mut p, &mut app);
@@ -986,4 +1022,74 @@ fn motion_panel_height_text_retarget_and_reduced_motion() {
     assert!(22 - heading >= 10);
     assert!(row(frame.buffer, heading - 1).trim().is_empty());
     assert!(row(frame.buffer, heading - 2).contains("J/K scroll"));
+}
+
+#[tokio::test]
+async fn movement_mid_animation_freezes_drawn_height_and_comment_cells() {
+    for key in [KeyCode::Char('j'), KeyCode::Char('J')] {
+        let mut p = ready();
+        let mut app = comments_app();
+        buffer(&mut p, &mut app);
+        let r = p.readings.get_mut(&1).unwrap();
+        r.theme.motion = true;
+        let target = r.growth_cap as u16;
+        r.panel_motion = Some((Instant::now() - Duration::from_millis(60), 0, target));
+        move_reader(&mut p, &mut app, key).await;
+        let before = buffer(&mut p, &mut app);
+        let r = p.readings.get_mut(&1).unwrap();
+        let (_, from, to) = r.panel_motion.unwrap();
+        assert!(from > 0 && from < target, "must freeze mid-opening");
+        assert_eq!(
+            from, to,
+            "movement must snap the animation in the same frame"
+        );
+        assert_eq!(r.growth_cap, usize::from(from));
+        r.panel_motion.as_mut().unwrap().0 = Instant::now() - Duration::from_secs(1);
+        r.article.result.as_mut().unwrap().value.text = "Long replacement. ".repeat(150);
+        let after = buffer(&mut p, &mut app);
+        let start = (3 + usize::from(from)) * 120;
+        assert_eq!(&before.content[start..4560], &after.content[start..4560]);
+    }
+}
+
+#[test]
+fn short_panel_shows_summary_content_without_zero_scroll_range() {
+    let mut p = ready();
+    let mut app = comments_app();
+    let mut terminal = Terminal::new(TestBackend::new(40, 10)).unwrap();
+    let frame = terminal.draw(|f| p.render(f, &mut app, 0)).unwrap();
+    assert!(row(frame.buffer, 4).contains("Article claim."));
+    for y in 0..10 {
+        let text = row(frame.buffer, y);
+        assert!(!text.contains("–0 of"), "{text}");
+        assert!(!text.contains("J/K scroll"), "{text}");
+    }
+}
+
+#[test]
+fn browser_channel_error_persists_in_error_role_after_five_seconds() {
+    let mut readers = [ready(), ready()];
+    for (p, motion) in readers.iter_mut().zip([true, false]) {
+        p.theme.motion = motion;
+        p.browser_busy = true;
+        p.tx.send(Err("Browser failed".into())).unwrap();
+        p.poll();
+    }
+    // Use real elapsed time: production notices use std::time::Instant.
+    std::thread::sleep(Duration::from_secs(5));
+    for p in &mut readers {
+        let mut app = comments_app();
+        p.poll();
+        let b = buffer(p, &mut app);
+        assert!(row(&b, 39).contains("Browser failed"));
+        assert_eq!(b[(2, 39)].fg, p.theme.error.fg.unwrap());
+        assert!(!p.has_active_motion(Instant::now()));
+        p.tx.send(Ok((None, "Article opened".into()))).unwrap();
+        p.poll();
+        assert!(row(&buffer(p, &mut app), 39).contains("Article opened"));
+        p.notice_started = Some(Instant::now() - Duration::from_secs(4));
+        p.poll();
+        assert!(p.browser_notice.is_empty());
+        assert!(!row(&buffer(p, &mut app), 39).contains("Article opened"));
+    }
 }
