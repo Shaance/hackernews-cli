@@ -47,7 +47,7 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
 
     // Render help overlay if shown
     if app.show_help {
-        widgets::render_help(f, app.theme(), true);
+        widgets::render_help(f, app.theme(), true, app.overlay_opened);
     }
     if app.show_links {
         super::links::render(f, app);
