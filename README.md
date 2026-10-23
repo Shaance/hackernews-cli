@@ -4,6 +4,8 @@ Read [Hacker News](https://news.ycombinator.com/) stories and comment threads in
 
 On macOS with Ghostty, you can open the original article in a companion browser pane beside the discussion. Other setups open it in your default browser.
 
+![Opening a story with its summary, focusing a citation, reading the cited comment, and showing the key reference](docs/screenshots/demo.gif)
+
 ## Run it
 
 Build from this checkout with Rust and Cargo:
@@ -221,9 +223,17 @@ The app uses ratatui and crossterm for terminal rendering and input, Tokio for a
 | `src/ui/` | Feed and comment rendering |
 | `src/reader/tests/` | Reader navigation, summary lifecycle, and settings tests |
 
-## Screenshot
+## Screenshots
 
-<img width="835" height="1054" alt="HackerNews TUI" src="https://github.com/user-attachments/assets/66b94295-9673-4af6-ac1f-b5fb704e0462" />
+| Feed | Reader with summary |
+|---|---|
+| ![Best feed with the third story selected](docs/screenshots/feed.png) | ![Reader with the article and discussion summary above the comments](docs/screenshots/reader.png) |
+| **Citation focus** | **Key reference** |
+| ![A summary point focused, with its first citation highlighted](docs/screenshots/citation.png) | ![The help modal over the dimmed reader](docs/screenshots/help.png) |
+
+![The reader in the light palette](docs/screenshots/reader-light.png)
+
+These are captured from the real app with [vhs](https://github.com/charmbracelet/vhs). To regenerate them after a UI change, run `scripts/readme-screenshots.sh`; it uses live Hacker News and an OpenRouter key from the environment or `.env.local` (two summaries, a few cents).
 
 ## About
 
