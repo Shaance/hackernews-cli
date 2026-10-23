@@ -36,7 +36,7 @@ fn story_item(id: i32) -> HackerNewsItem {
         kids: None,
         url: Some("https://example.com".to_string()),
         score: 10,
-        title: format!("Test Story {}", id),
+        title: format!("Test Story {id}"),
         descendants: Some(5),
         r#type: "story".to_string(),
         text: None,

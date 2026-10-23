@@ -4,7 +4,6 @@ use super::{
 };
 use crossterm::event::KeyCode;
 use ratatui::{
-    style::{Color, Style},
     text::Line,
     widgets::{Block, Borders, Paragraph, Wrap},
     Frame,
@@ -237,11 +236,11 @@ impl Reader {
         for (i, value) in values.iter().enumerate() {
             lines.push(Line::styled(
                 format!("{} {value}", if i == s.cursor { ">" } else { " " }),
-                Style::default().fg(if i == s.cursor {
-                    Color::Yellow
+                if i == s.cursor {
+                    self.theme.accent
                 } else {
-                    Color::Reset
-                }),
+                    self.theme.fg
+                },
             ));
         }
         lines.extend([
@@ -265,10 +264,7 @@ impl Reader {
             Line::raw("Enter Apply · Esc Cancel"),
         ]);
         if !s.error.is_empty() {
-            lines.push(Line::styled(
-                s.error.clone(),
-                Style::default().fg(Color::Red),
-            ));
+            lines.push(Line::styled(s.error.clone(), self.theme.error));
         }
         frame.render_widget(
             Paragraph::new(lines).wrap(Wrap { trim: false }).block(

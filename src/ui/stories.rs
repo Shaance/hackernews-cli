@@ -3,7 +3,7 @@
 use crate::app::App;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
     Frame,
@@ -62,11 +62,9 @@ fn render_title(f: &mut Frame, area: Rect, app: &App, tick: usize) {
         Span::raw(" HN: "),
         Span::styled(
             format!("{} stories", display_type.display_name()),
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
+            app.theme().accent.add_modifier(Modifier::BOLD),
         ),
-        Span::raw(format!(" │ Page {} ", display_page)),
+        Span::raw(format!(" │ Page {display_page} ")),
     ];
 
     if stale {
@@ -82,7 +80,7 @@ fn render_title(f: &mut Frame, area: Rect, app: &App, tick: usize) {
                 app.story_type.display_name(),
                 app.current_page
             ),
-            Style::default().fg(Color::Cyan),
+            app.theme().dim,
         ));
     }
 
@@ -108,7 +106,7 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
 
     let (_, display_page) = app.displayed_story_context();
     let list_style = if app.is_loading() {
-        Style::default().fg(Color::Gray).add_modifier(Modifier::DIM)
+        app.theme().dim.add_modifier(Modifier::DIM)
     } else {
         Style::default()
     };
@@ -126,7 +124,7 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
 
             // First line: selection indicator + number + title
             let indicator = if is_selected {
-                Span::styled("▸ ", Style::default().fg(Color::Yellow))
+                Span::styled("▸ ", app.theme().accent)
             } else {
                 Span::raw("  ")
             };
@@ -138,7 +136,7 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
 
             lines.push(Line::from(vec![
                 indicator,
-                Span::styled(format!("{}. ", global_idx), title_style),
+                Span::styled(format!("{global_idx}. "), title_style),
                 Span::styled(&story.title, title_style),
                 Span::raw(if app.is_bookmarked(story.id) {
                     " ★"
@@ -150,7 +148,7 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
             // Second line: metadata
             let comment_str = match story.comments {
                 Some(1) => "1 comment".to_string(),
-                Some(n) => format!("{} comments", n),
+                Some(n) => format!("{n} comments"),
                 None => "discuss".to_string(),
             };
 
@@ -164,14 +162,11 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
                 Span::styled(host, Style::default().add_modifier(Modifier::DIM)),
                 Span::raw(" │ "),
                 Span::styled("by ", Style::default().add_modifier(Modifier::DIM)),
-                Span::styled(&story.author, Style::default().fg(Color::Cyan)),
+                Span::styled(&story.author, app.theme().fg),
                 Span::raw(" │ "),
-                Span::styled(
-                    format!("{} points", story.score),
-                    Style::default().fg(Color::Green),
-                ),
+                Span::styled(format!("{} points", story.score), app.theme().dim),
                 Span::raw(" │ "),
-                Span::styled(comment_str, Style::default().fg(Color::Yellow)),
+                Span::styled(comment_str, app.theme().fg),
                 Span::raw(" │ "),
                 Span::styled(
                     &story.time_ago,
@@ -192,9 +187,9 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
         .style(list_style)
         .block(Block::default().borders(Borders::NONE))
         .highlight_style(
-            Style::default()
-                .add_modifier(Modifier::BOLD | Modifier::REVERSED)
-                .fg(Color::Reset),
+            app.theme()
+                .fg
+                .add_modifier(Modifier::BOLD | Modifier::REVERSED),
         );
 
     let mut state = ListState::default()

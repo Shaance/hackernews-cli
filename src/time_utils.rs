@@ -12,7 +12,7 @@ pub fn unix_epoch_to_datetime(unix_epoch: u64) -> String {
 pub fn time_ago(epoch_time: u64) -> String {
     let diff = now().saturating_sub(epoch_time);
     match diff {
-        0..=59 => format!("{} seconds ago", diff),
+        0..=59 => format!("{diff} seconds ago"),
         60..=3599 => format!("{} minutes ago", diff / 60),
         3600..=86399 => format!("{} hours ago", diff / 3600),
         86400..=604799 => format!("{} days ago", diff / 86400),

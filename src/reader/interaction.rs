@@ -131,10 +131,10 @@ impl Reader {
             }
         }
         self.active = Some(story.id);
-        let reading = self
-            .readings
-            .entry(story.id)
-            .or_insert_with(|| Reading::new(story.clone()));
+        let reading = self.readings.entry(story.id).or_insert_with(|| Reading {
+            theme: self.theme,
+            ..Reading::new(story.clone())
+        });
         reading.story = story;
         reading.leave_source();
         reading.citation_focus = false;
@@ -182,5 +182,14 @@ impl Reader {
             }
         }
         self.poll_jobs();
+    }
+
+    pub fn has_pending_work(&self) -> bool {
+        self.browser_busy
+            || !self.jobs.is_empty()
+            || self
+                .readings
+                .values()
+                .any(|reading| reading.article.pending() || reading.discussion.pending())
     }
 }
