@@ -78,7 +78,8 @@ fn missing_key_and_save_failure_never_block_reading_or_expose_key() {
     p.open(story(5));
     assert!(!p.readings[&5].article.requested());
     let mut app = comments_app();
-    assert!(screen(&mut p, &mut app, 120, 40).contains("Set up summaries"));
+    let rendered = screen(&mut p, &mut app, 120, 40);
+    assert!(rendered.contains("S summary") && !rendered.contains("Set up"));
     p.config_path = None;
     p.key(KeyCode::Char('M'));
     for c in "secret-value".chars() {

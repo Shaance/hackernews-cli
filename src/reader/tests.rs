@@ -25,7 +25,9 @@ pub(super) fn ready() -> Reader {
         },
         ..Reader::default()
     };
+    p.theme = Theme::TRUE_DARK;
     let mut reading = Reading::new(story(1));
+    reading.theme = p.theme;
     reading.shown = true;
     reading.article.result = Some(done(
         Article {
@@ -113,7 +115,7 @@ pub(super) fn screen(
 }
 pub(super) fn comments_app() -> hn_lib::app::App {
     use hn_lib::app::{App, Comment, CommentState};
-    let mut app = App::new();
+    let mut app = App::with_theme(Theme::TRUE_DARK);
     app.view_comments(1, "An example story".into(), "https://example.com".into());
     app.set_comments(
         (0..3)

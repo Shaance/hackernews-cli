@@ -23,8 +23,8 @@ def executable():
 
 
 def comments(text):
-    # Summary bottom boundary; footer is deliberately excluded.
-    return re.split(r"^╰[^\n]*\n", text, maxsplit=1, flags=re.M)[-1].splitlines()[:-2]
+    # The rows just above the two-row footer always belong to the comment list.
+    return text.splitlines()[-12:-2]
 
 
 def run(binary, output, width, height):
@@ -37,11 +37,11 @@ def run(binary, output, width, height):
         app.capture(name)
         captured.append(name)
     def count():
-        match = re.search(r"DISCUSSION · (\d+) visible", app.text())
+        match = re.search(r"COMMENTS  (\d+)", app.text())
         return int(match[1]) if match else 0
     def focus():
         return "".join(cell.data for row in app.screen.buffer.values() for cell in row.values()
-                       if cell.fg in ("cyan", "00cdcd") and cell.reverse and cell.bold)
+                       if cell.fg in ("brown", "cdcd00") and cell.underscore and cell.bold and not cell.reverse)
     def passage():
         return [(row, int(m[1])) for row, line in enumerate(app.screen.display)
                 if (m := re.search(r"Synthetic passage (\d+)", line))]
@@ -58,28 +58,34 @@ def run(binary, output, width, height):
         app.key("\x1b[6~")
         capture("03-partial-fast")
         fixture.gates[("fast", "discussion")].set()
-        app.wait(lambda t: "Summary ready" in t)
+        app.wait(lambda t: "✓ summary · Fast" in t)
         capture("04-fast")
         assert any(cell.fg != "default" for row in app.screen.buffer.values() for cell in row.values()), "Terminal colors were not captured"
+        # PgDn before arrival froze the panel height: the discussion scrolls inside it.
+        assert "J/K scroll" in app.text(), "Arrival after reading must not grow the panel"
+        app.key("S")
+        app.wait(lambda t: "S show" in t)
+        app.key("S")
+        app.wait(lambda t: "ARTICLE  Fast" in t and "J/K scroll" not in t)
         anchor = comments(app.text())
         app.key("S")
-        app.wait(lambda t: "S View" in t)
+        app.wait(lambda t: "S show" in t)
         app.key("S")
-        app.wait(lambda t: "ARTICLE · Fast" in t)
+        app.wait(lambda t: "ARTICLE  Fast" in t)
         assert comments(app.text()) == anchor, "Showing summary moved comments"
         assert len(fixture.calls) == 2, "Visibility must not generate"
         for n in range(1, 4):
             app.key("\t")
             assert focus() == f"[{n}]", "The exact citation token must be highlighted"
         app.key("\r")
-        app.wait(lambda t: "Source 3 of 8 · delta_p_delta_x · Fast" in t and "#50162345" in t)
+        app.wait(lambda t: "source 3 of 8 · delta_p_delta_x · Fast" in t and "#50162345" in t)
         app.key("\t")
-        app.wait(lambda t: "Source 4 of 8 · kqr · Fast" in t and "#50162865" in t)
+        app.wait(lambda t: "source 4 of 8 · kqr · Fast" in t and "#50162865" in t)
         app.key("\x1b[Z")
-        app.wait(lambda t: "Source 3 of 8 · delta_p_delta_x · Fast" in t and "#50162345" in t)
+        app.wait(lambda t: "source 3 of 8 · delta_p_delta_x · Fast" in t and "#50162345" in t)
         capture("05-source")
         app.key("\x1b")
-        app.wait(lambda t: "Summary ready" in t)
+        app.wait(lambda t: "✓ summary · Fast" in t)
         assert comments(app.text()) == anchor, "Returning from source moved comments"
         assert focus() == "[3]" and len(fixture.calls) == 2
         app.key("M")
@@ -87,28 +93,28 @@ def run(binary, output, width, height):
         capture("06-settings")
         app.key("\t \r")
         app.wait(lambda t: len(fixture.calls) == 4)
-        assert "ARTICLE · Fast" in app.text(), "Upgrade removed retained output"
+        assert "ARTICLE  Fast" in app.text(), "Upgrade removed retained output"
         capture("07-upgrade-pending")
         fixture.gates[("thorough", "article")].set()
         fixture.gates[("thorough", "discussion")].set()
-        app.wait(lambda t: "Summary incomplete" in t and "HTTP 503" in t)
+        app.wait(lambda t: "! summary incomplete · M retry" in t and "HTTP 503" in t)
         capture("08-upgrade-failed")
-        assert "ARTICLE · Thorough" in app.text() and "DISCUSSION ·" in app.text()
-        assert "showing Fast" in app.text()
+        assert "ARTICLE  Thorough" in app.text() and "DISCUSSION  " in app.text()
+        assert "DISCUSSION  Thorough unavailable · showing Fast" in app.text()
         app.key("Sr")
-        app.wait(lambda t: "Summary incomplete" in t and "S View" in t)
+        app.wait(lambda t: "! summary incomplete · M retry" in t and "ARTICLE  " not in t and "DISCUSSION  " not in t)
         assert len(fixture.calls) == 4, "Refreshing comments must not retry a hidden summary"
         app.key("SM")
         app.wait(lambda t: "> Retry failed summary" in t and "Refresh sources & summary" in t)
         app.key("\r")
-        app.wait(lambda t: "Summary ready" in t and "DISCUSSION · Thorough" in t)
+        app.wait(lambda t: "✓ summary · Thorough" in t and "DISCUSSION  Thorough" in t)
         capture("09-thorough")
         assert len(fixture.calls) == 5
         assert fixture.calls[-1]["section"] == "discussion", "Retry replaced successful article"
         app.key("\x1b")
         app.wait(lambda t: "4 Saved" in t)
         app.key("c")
-        app.wait(lambda t: "Summary ready" in t)
+        app.wait(lambda t: "✓ summary · Thorough" in t)
         assert len(fixture.calls) == 5, "Revisit must reuse summary"
         app.key("Sg")
         initial = count()

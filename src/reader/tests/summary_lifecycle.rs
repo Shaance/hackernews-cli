@@ -127,8 +127,8 @@ fn source_snapshot_and_parent_publish_together_on_return() {
     let reading = p.readings.get_mut(&1).unwrap();
     reading.article.result.as_mut().unwrap().profile = Profile::Thorough;
     let source = screen(&mut p, &mut app, 120, 40);
-    assert!(source.contains("Source 1 of 1 · reply · Fast"));
-    assert!(source.contains("Updated summary ready"));
+    assert!(source.contains("source 1 of 1 · reply · Fast"));
+    assert!(source.contains("Summary updated"));
     p.key(KeyCode::PageDown);
     screen(&mut p, &mut app, 120, 40);
     let scroll = p.readings[&1].source_scroll;
@@ -243,7 +243,7 @@ fn revisiting_retained_results_names_actual_profiles_and_partial_updates() {
     let mut app = comments_app();
     for _ in 0..2 {
         let rendered = screen(&mut p, &mut app, 120, 40);
-        assert!(rendered.contains("Summary ready"));
+        assert!(rendered.contains("✓ summary · Fast"));
         assert!(rendered.contains("Fast"));
         assert!(!rendered.contains("Thorough"));
         p.key(KeyCode::Char('S'));
@@ -251,9 +251,9 @@ fn revisiting_retained_results_names_actual_profiles_and_partial_updates() {
     let reading = p.readings.get_mut(&1).unwrap();
     reading.article.result.as_mut().unwrap().profile = Profile::Thorough;
     let rendered = screen(&mut p, &mut app, 120, 40);
-    assert!(rendered.contains("Summary partially updated"));
+    assert!(rendered.contains("✓ summary · Article Thorough · Discussion Fast"));
     assert!(rendered.contains("Article Thorough · Discussion Fast"));
-    assert!(!rendered.contains("Summary ready"));
+    assert!(!rendered.contains("✓ summary · Fast"));
     assert_eq!(p.next_attempt, 0);
     assert!(p.jobs.is_empty());
 }

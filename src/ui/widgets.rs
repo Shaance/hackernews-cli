@@ -108,32 +108,23 @@ pub fn render_help(f: &mut Frame, area: Rect, in_comments: bool) {
     f.render_widget(paragraph, dialog);
 }
 
-/// Render status bar for stories view
-pub fn render_stories_status(area: Rect, app: &App, _tick: usize) -> Paragraph<'static> {
-    let theme = app.theme();
+/// Fit complete key hints in priority order, leaving two columns at either edge.
+pub fn hint_line(
+    theme: crate::theme::Theme,
+    hints: &[(&str, &str)],
+    notice: Option<(&str, Style)>,
+    width: u16,
+) -> Line<'static> {
     let mut line = Line::from("  ");
-    let notice = app
-        .bookmark_notice
-        .as_ref()
-        .map(|notice| format!("Saved: 4 then r retry · {notice}"));
-    if let Some(message) = notice.as_deref().or(app.error()) {
-        line.push_span(Span::styled(message.to_owned(), theme.error));
+    if let Some((message, style)) = notice {
+        line.push_span(Span::styled(message.to_owned(), style));
     }
-    for (key, label) in [
-        ("j/k", "move"),
-        ("Enter", "read"),
-        ("1–4", "feeds"),
-        ("s", "save"),
-        ("?", "keys"),
-        ("n/p", "page"),
-        ("c", "discussion"),
-        ("q", "quit"),
-    ] {
+    for (key, label) in hints {
         let separator = if line.width() > 2 { "   " } else { "" };
-        let key = Span::styled(key, theme.accent);
+        let key = Span::styled((*key).to_owned(), theme.accent);
         let label = Span::styled(format!(" {label}"), theme.dim);
         if line.width() + separator.len() + key.width() + label.width()
-            > usize::from(area.width).saturating_sub(2)
+            > usize::from(width).saturating_sub(2)
         {
             break;
         }
@@ -141,6 +132,31 @@ pub fn render_stories_status(area: Rect, app: &App, _tick: usize) -> Paragraph<'
         line.push_span(key);
         line.push_span(label);
     }
+    line
+}
+
+/// Render status bar for stories view
+pub fn render_stories_status(area: Rect, app: &App, _tick: usize) -> Paragraph<'static> {
+    let theme = app.theme();
+    let notice = app
+        .bookmark_notice
+        .as_ref()
+        .map(|notice| format!("Saved: 4 then r retry · {notice}"));
+    let line = hint_line(
+        theme,
+        &[
+            ("j/k", "move"),
+            ("Enter", "read"),
+            ("1–4", "feeds"),
+            ("s", "save"),
+            ("?", "keys"),
+            ("n/p", "page"),
+            ("c", "discussion"),
+            ("q", "quit"),
+        ],
+        notice.as_deref().or(app.error()).map(|s| (s, theme.error)),
+        area.width,
+    );
     Paragraph::new(line).block(
         Block::default()
             .borders(Borders::TOP)
@@ -150,32 +166,36 @@ pub fn render_stories_status(area: Rect, app: &App, _tick: usize) -> Paragraph<'
 
 /// Render status bar for comments view
 pub fn render_comments_status(area: Rect, app: &App, tick: usize) -> Paragraph<'static> {
-    if let Some(notice) = &app.bookmark_notice {
-        return Paragraph::new(format!(" Saved: Esc, 4 then r retry · {notice}"))
-            .style(app.theme().error)
-            .block(Block::default().borders(Borders::TOP));
-    }
-    let mut segments = Vec::new();
-    if let Some(error) = app.error() {
-        segments.push(Span::styled(error.to_string(), app.theme().error));
-        segments.push(Span::raw(" │ "));
-    }
-
-    segments.push(Span::raw(if area.width < 80 {
-        " ? help · PgUp/Dn · L links · s save"
-    } else {
-        " j/k nav · PgUp/PgDn read · Enter replies · L links · s save · Esc back · ? help"
-    }));
-
-    if app.should_show_loading() {
-        segments.push(Span::raw(" │ "));
-        segments.push(Span::styled(
-            format!("{} loading comments", spinner_frame(tick)),
-            app.theme().dim,
-        ));
-    }
-
-    Paragraph::new(Line::from(segments))
-        .style(Style::default().add_modifier(Modifier::DIM))
-        .block(Block::default().borders(Borders::TOP))
+    let theme = app.theme();
+    let notice = app
+        .bookmark_notice
+        .as_ref()
+        .map(|notice| format!("Saved: Esc, 4 then r retry · {notice}"));
+    let loading = app
+        .should_show_loading()
+        .then(|| format!("{} loading comments", spinner_frame(tick)));
+    let notice = notice
+        .as_deref()
+        .or(app.error())
+        .map(|s| (s, theme.error))
+        .or_else(|| loading.as_deref().map(|s| (s, theme.dim)));
+    Paragraph::new(hint_line(
+        theme,
+        &[
+            ("?", "help"),
+            ("j/k", "nav"),
+            ("PgUp/PgDn", "read"),
+            ("Enter", "replies"),
+            ("L", "links"),
+            ("s", "save"),
+            ("Esc", "back"),
+        ],
+        notice,
+        area.width,
+    ))
+    .block(
+        Block::default()
+            .borders(Borders::TOP)
+            .border_style(theme.line),
+    )
 }

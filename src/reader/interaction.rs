@@ -40,8 +40,11 @@ impl Reader {
                     r.leave_source();
                     false
                 } else {
-                    generate || !r.shown
+                    generate || !r.shown || (r.moved && r.growth_cap == Some(0))
                 };
+                if r.shown {
+                    r.growth_cap = None;
+                }
                 r.citation_focus = false;
                 r.reveal_citation = false;
             }
@@ -64,7 +67,9 @@ impl Reader {
                 let citations = reading.citations();
                 let count = citations.len();
                 if count > 0 {
+                    // Tab is an explicit request to read the summary, like S.
                     reading.shown = true;
+                    reading.growth_cap = None;
                     if reading.citation_focus {
                         reading.citation = (reading.citation
                             + if key == KeyCode::Tab { 1 } else { count - 1 })
@@ -88,11 +93,13 @@ impl Reader {
                 if reading.source.is_none() && reading.shown =>
             {
                 reading.citation_focus = false;
+                let old = reading.summary_scroll;
                 reading.summary_scroll = if key == KeyCode::Char('J') {
                     reading.summary_scroll.saturating_add(1)
                 } else {
                     reading.summary_scroll.saturating_sub(1)
                 };
+                reading.moved |= reading.summary_scroll != old;
             }
             _ => {
                 if reading.source.is_none() {
@@ -117,6 +124,11 @@ impl Reader {
 }
 
 impl Reader {
+    pub fn comments_moved(&mut self) {
+        if let Some(reading) = self.active.and_then(|id| self.readings.get_mut(&id)) {
+            reading.moved = true;
+        }
+    }
     pub fn is_open(&self) -> bool {
         self.active.is_some()
     }
@@ -136,6 +148,8 @@ impl Reader {
             ..Reading::new(story.clone())
         });
         reading.story = story;
+        reading.moved = false;
+        reading.growth_cap = Some(0);
         reading.leave_source();
         reading.citation_focus = false;
         if self.config.automatic {

@@ -152,6 +152,9 @@ pub struct Reading {
     discussion: Section<Discussion, DiscussionCapture>,
     staged: Option<Completed<Discussion, DiscussionCapture>>,
     shown: bool,
+    moved: bool,
+    // Last panel height until movement; None means S explicitly lifted the cap.
+    growth_cap: Option<usize>,
     prefix_height: usize,
     summary_scroll: usize,
     page_rows: usize,
@@ -170,6 +173,8 @@ impl Reading {
             discussion: Section::default(),
             staged: None,
             shown: true,
+            moved: false,
+            growth_cap: Some(0),
             prefix_height: 0,
             summary_scroll: 0,
             page_rows: 1,
