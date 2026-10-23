@@ -229,7 +229,9 @@ impl Reader {
             .or_else(|| {
                 (!self.browser_notice.is_empty()).then_some((
                     self.browser_notice.as_str(),
-                    if !theme.motion && !self.browser_busy {
+                    if self.notice_started.is_none() {
+                        theme.error
+                    } else if !theme.motion && !self.browser_busy {
                         theme.dim
                     } else {
                         theme.accent
@@ -305,20 +307,27 @@ impl Reading {
             } else {
                 0
             };
-        let height = if self.moved && desired > 0 {
-            self.growth_cap.unwrap_or(desired).min(maximum)
-        } else {
-            desired
-        };
-        if !self.moved && self.growth_cap.is_some() {
-            self.growth_cap = Some(height);
-        }
-        let target_height = height as u16;
         let now = Instant::now();
         let drawn_height = |(start, from, to): (Instant, u16, u16)| {
             let progress = (now.saturating_duration_since(start).as_secs_f32() / 0.180).min(1.0);
             from + (f32::from(to - from) * Interpolation::QuadOut.alpha(progress)) as u16
         };
+        if self.moved && theme.motion {
+            if let Some(motion) = self.panel_motion.filter(|(_, from, to)| from < to) {
+                let drawn = drawn_height(motion);
+                self.panel_motion = Some((now, drawn, drawn));
+                self.growth_cap = usize::from(drawn);
+            }
+        }
+        let height = if self.moved && desired > 0 {
+            self.growth_cap.min(maximum)
+        } else {
+            desired
+        };
+        if !self.moved {
+            self.growth_cap = height;
+        }
+        let target_height = height as u16;
         let previous = self.panel_motion.map_or(0, |(_, _, to)| to);
         if !theme.motion {
             self.panel_motion = None;
@@ -331,22 +340,29 @@ impl Reading {
             self.panel_motion = Some((now, from, target_height));
         }
         let height = self.panel_motion.map_or(target_height, drawn_height);
+        // Short panels spend every row on content; taller panels retain their chrome.
+        let content_rows = |height: u16| {
+            let height = usize::from(height);
+            height.saturating_sub(if height < 3 {
+                0
+            } else {
+                1 + usize::from(summary.len() + 1 > height)
+            })
+        };
+        let rows = content_rows(height);
         // Scroll/focus resolve against the final layout immediately, never animation rows.
         if target_height > 0 {
             if self.reveal_citation {
                 self.summary_scroll = target.unwrap_or(0);
                 self.reveal_citation = false;
             }
-            self.summary_scroll = self.summary_scroll.min(summary.len().saturating_sub(
-                usize::from(target_height).saturating_sub(
-                    1 + usize::from(summary.len() + 1 > usize::from(target_height)),
-                ),
-            ));
+            self.summary_scroll = self
+                .summary_scroll
+                .min(summary.len().saturating_sub(content_rows(target_height)));
         }
         let body = Layout::vertical([Constraint::Length(height), Constraint::Min(0)]).split(area);
         if height > 0 {
-            let scrollable = summary.len() + 1 > usize::from(height);
-            let rows = usize::from(height).saturating_sub(1 + usize::from(scrollable));
+            let scrollable = height >= 3 && summary.len() + 1 > usize::from(height);
             let total = summary.len();
             let end = (self.summary_scroll + rows).min(total);
             let mut visible = summary
@@ -354,7 +370,7 @@ impl Reading {
                 .skip(self.summary_scroll)
                 .take(rows)
                 .collect::<Vec<_>>();
-            if scrollable && height > 1 {
+            if scrollable {
                 visible.push(Line::from(vec![
                     Span::raw("  "),
                     Span::styled("│ ", theme.line),
@@ -368,7 +384,9 @@ impl Reading {
                     ),
                 ]));
             }
-            visible.push(Line::raw(""));
+            if height >= 3 {
+                visible.push(Line::raw(""));
+            }
             let active_rows = visible
                 .iter()
                 .enumerate()
@@ -481,7 +499,7 @@ impl Reading {
             Span::styled("✓", theme.accent),
             Span::styled(format!(" summary · {profiles}"), theme.dim),
         ]);
-        if !self.shown || (self.moved && self.growth_cap == Some(0)) {
+        if !self.shown || (self.moved && self.growth_cap == 0) {
             chip.extend([
                 Span::styled(" · ", theme.dim),
                 Span::styled("S", theme.accent),

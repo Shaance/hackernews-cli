@@ -40,10 +40,10 @@ impl Reader {
                     r.leave_source();
                     false
                 } else {
-                    generate || !r.shown || (r.moved && r.growth_cap == Some(0))
+                    generate || !r.shown || (r.moved && r.growth_cap == 0)
                 };
                 if r.shown {
-                    r.growth_cap = None;
+                    r.moved = false;
                 }
                 r.citation_focus = false;
                 r.reveal_citation = false;
@@ -69,7 +69,7 @@ impl Reader {
                 if count > 0 {
                     // Tab is an explicit request to read the summary, like S.
                     reading.shown = true;
-                    reading.growth_cap = None;
+                    reading.moved = false;
                     if reading.citation_focus {
                         reading.citation = (reading.citation
                             + if key == KeyCode::Tab { 1 } else { count - 1 })
@@ -150,7 +150,7 @@ impl Reader {
         reading.story = story;
         reading.moved = false;
         reading.panel_motion = None;
-        reading.growth_cap = Some(0);
+        reading.growth_cap = 0;
         reading.leave_source();
         reading.citation_focus = false;
         if self.config.automatic {
@@ -187,13 +187,16 @@ impl Reader {
     pub fn poll(&mut self) {
         while let Ok(result) = self.rx.try_recv() {
             self.browser_busy = false;
-            self.notice_started = Some(Instant::now());
             match result {
                 Ok((target, notice)) => {
+                    self.notice_started = Some(Instant::now());
                     self.browser = target;
                     self.browser_notice = notice;
                 }
-                Err(e) => self.browser_notice = e,
+                Err(e) => {
+                    self.notice_started = None;
+                    self.browser_notice = e;
+                }
             }
             if let Some((story, focus)) = self.desired_browser.take() {
                 self.read_original(story, focus);

@@ -60,11 +60,14 @@ fn short_narrow_terminal_shows_help_and_comment_count() {
     app.show_help = true;
     let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
     assert!(buffer_text(frame.buffer).contains("PgUp/PgDn"));
-    // A clamped modal shows only the rows that fit. Check all groups at full height.
-    let mut terminal = Terminal::new(TestBackend::new(50, 40)).unwrap();
-    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
     let text = buffer_text(frame.buffer);
-    for shortcut in ["PgUp/PgDn", "Save/unsave", "Esc/q/h/←  Back", "?  Close"] {
+    // 20 key rows cannot fit in 8; the cut is marked and the ways out stay visible.
+    for shortcut in [
+        "PgUp/PgDn",
+        "Esc/q/h/←  Back",
+        "?  Close",
+        "… more at a larger size",
+    ] {
         assert!(text.contains(shortcut), "missing {shortcut}");
     }
 }
@@ -488,6 +491,42 @@ fn motion_backdrop_preserves_initial_foreground_and_immediate_modal() {
                 theme.accent.fg.unwrap()
             );
             assert_eq!(app.has_active_motion(Instant::now()), motion && ms == 0);
+        }
+    }
+}
+
+#[test]
+fn overflowing_help_compacts_then_ends_with_more_keys_in_dim() {
+    let theme = crate::theme::Theme::TRUE_DARK;
+    for (height, heading, overflow) in [
+        (29, true, false),
+        (26, false, false),
+        (24, false, false),
+        (12, false, true),
+    ] {
+        let mut terminal = Terminal::new(TestBackend::new(40, height)).unwrap();
+        let frame = terminal
+            .draw(|f| super::widgets::render_help(f, theme, true, None))
+            .unwrap();
+        let text = buffer_text(frame.buffer);
+        assert_eq!(text.contains("READING"), heading);
+        let (_, first) = position(frame.buffer, "j/k/↑/↓");
+        let (_, top) = position(frame.buffer, "╭");
+        assert_eq!(
+            first - top,
+            if heading { 2 } else { 1 },
+            "padding must stay removed"
+        );
+        if overflow {
+            let (x, y) = position(frame.buffer, "… more at a larger size");
+            assert_eq!(frame.buffer[(x, y)].fg, theme.dim.fg.unwrap());
+            let bottom = (y + 1..height)
+                .find(|y| (0..40).any(|x| frame.buffer[(x, *y)].symbol() == "╰"))
+                .unwrap();
+            assert_eq!(y + 1, bottom, "overflow hint must be the last body row");
+        } else {
+            assert!(text.contains("?  Close"));
+            assert!(!text.contains("… more keys"));
         }
     }
 }
