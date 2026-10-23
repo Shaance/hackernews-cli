@@ -147,11 +147,6 @@ fn render_comments_list(
         Style::default()
     };
 
-    let highlight_style = app
-        .theme()
-        .fg
-        .add_modifier(Modifier::BOLD | Modifier::REVERSED);
-
     // Pre-render all comments to line buffers and track their line ranges
     let mut rendered = Vec::with_capacity(app.visible_comment_count());
     let mut line_ranges = Vec::with_capacity(app.visible_comment_count());
@@ -179,15 +174,7 @@ fn render_comments_list(
             continue;
         };
         let is_selected = idx == app.comment_cursor;
-        let prepared = render_comment(
-            app,
-            path,
-            comment,
-            is_selected,
-            tick,
-            area.width as usize,
-            highlight_style,
-        );
+        let prepared = render_comment(app, path, comment, is_selected, tick, area.width as usize);
         let start = line_cursor;
         line_cursor += prepared.height;
         let end = line_cursor;
@@ -217,6 +204,17 @@ fn render_comments_list(
         .scroll((scroll as u16, 0));
 
     f.render_widget(paragraph, area);
+    if let Some((_, start, end)) = line_ranges.get(app.comment_cursor) {
+        let top = start.saturating_sub(scroll).min(usize::from(area.height));
+        let bottom = end.saturating_sub(scroll).min(usize::from(area.height));
+        let selected = Rect::new(
+            area.x,
+            area.y + top as u16,
+            area.width,
+            (bottom - top) as u16,
+        );
+        f.buffer_mut().set_style(selected, app.theme().sel);
+    }
 }
 
 /// A rendered comment ready for display
@@ -233,175 +231,101 @@ fn render_comment(
     is_selected: bool,
     tick: usize,
     max_width: usize,
-    highlight_style: Style,
 ) -> RenderedComment {
-    let guides = branch_guides(app, path);
-    let mut lines = vec![];
-
-    let stem_prefix = guides_to_prefix(&guides, true);
-    let text_prefix = guides_to_prefix(&guides, false);
-    let guide_style = app.theme().line;
-
-    // Comment header with author and time
-    let header_style = if is_selected {
-        Style::default().add_modifier(Modifier::BOLD)
-    } else {
-        Style::default()
-    };
-
-    let (indicator_symbol, indicator_style) = match comment.state {
-        CommentState::Collapsed => ("▸ ".to_string(), app.theme().accent),
-        CommentState::Loading { .. } => ("▸ ".to_string(), app.theme().dim),
-        CommentState::Expanded { .. } => ("▾ ".to_string(), app.theme().dim),
-    };
-
+    let theme = app.theme();
+    let depth = path.len().saturating_sub(1);
+    let text_column = 2 + 2 * depth;
+    let prefix = vec![
+        Span::styled(if is_selected { "▎ " } else { "  " }, theme.accent),
+        Span::styled("│ ".repeat(depth), theme.line),
+    ];
+    let mut header = prefix.clone();
     if comment.deleted {
-        lines.push(Line::from(vec![
-            Span::styled(stem_prefix.clone(), guide_style),
-            Span::styled(indicator_symbol.clone(), indicator_style),
-            Span::styled(
-                "[deleted]",
-                Style::default().add_modifier(Modifier::DIM | Modifier::ITALIC),
-            ),
-        ]));
+        header.push(Span::styled(
+            "[deleted]",
+            theme.dim.add_modifier(Modifier::ITALIC),
+        ));
     } else {
-        lines.push(Line::from(vec![
-            Span::styled(stem_prefix.clone(), guide_style),
-            Span::styled(indicator_symbol, indicator_style),
-            Span::styled(
-                format!("{} ", comment.author),
-                header_style.patch(app.theme().fg),
-            ),
-            Span::styled(
-                format!("• {}", comment.time_ago),
-                app.theme().dim.add_modifier(Modifier::DIM),
-            ),
-        ]));
-
-        // Comment text
-        let text_style = Style::default();
-        let prefix_width = visible_width(&text_prefix);
-        let wrap_width = max_width.saturating_sub(prefix_width).max(1);
-
-        // Split text into lines and add indent
-        for line in comment.text.lines() {
-            if line.trim().is_empty() {
-                lines.push(Line::from(Span::styled(text_prefix.clone(), guide_style)));
+        header.push(Span::styled(
+            comment.author.clone(),
+            if is_selected {
+                theme.fg.add_modifier(Modifier::BOLD)
             } else {
-                let wrapped_lines = wrap_with_indent(line, wrap_width);
-                for wrapped in wrapped_lines {
-                    lines.push(Line::from(vec![
-                        Span::styled(text_prefix.clone(), guide_style),
-                        Span::styled(wrapped, text_style),
-                    ]));
+                theme.fg
+            },
+        ));
+        header.push(Span::styled(format!("  {}", comment.time_ago), theme.dim));
+    }
+    let mut lines = vec![Line::from(header)];
+    if !comment.deleted {
+        for body in comment.text.lines() {
+            let quote = body.trim_start().strip_prefix('>');
+            let text = quote
+                .map(|text| text.strip_prefix(' ').unwrap_or(text))
+                .unwrap_or(body);
+            let width = max_width.saturating_sub(text_column + if quote.is_some() { 2 } else { 0 });
+            // Track source offsets so a URL keeps its colour when wrapped across rows.
+            let mut consumed = 0;
+            for wrapped in wrap_with_indent(text, width) {
+                consumed += text[consumed..]
+                    .find(&wrapped)
+                    .expect("wrapped text is a source slice");
+                let mut spans = prefix.clone();
+                if quote.is_some() {
+                    spans.push(Span::styled("▏ ", theme.line));
                 }
+                for token in wrapped.split_inclusive(char::is_whitespace) {
+                    let preceding = text[..consumed]
+                        .rsplit(char::is_whitespace)
+                        .next()
+                        .unwrap_or("");
+                    let start = consumed - preceding.len();
+                    let is_link = text[start..].starts_with("https://")
+                        || text[start..].starts_with("http://");
+                    spans.push(Span::styled(
+                        token.to_owned(),
+                        if is_link {
+                            theme.link
+                        } else if quote.is_some() {
+                            theme.dim
+                        } else {
+                            theme.fg
+                        },
+                    ));
+                    consumed += token.len();
+                }
+                lines.push(Line::from(spans));
             }
-        }
-
-        // Show collapse/expand indicator
-        if comment.has_children() {
-            let child_info = match &comment.state {
-                CommentState::Collapsed => {
-                    let child_count = comment.child_count();
-                    format!(
-                        "▸ {} {}",
-                        child_count,
-                        if child_count == 1 { "reply" } else { "replies" }
-                    )
-                }
-                CommentState::Loading { .. } => {
-                    format!("{} Loading replies...", widgets::spinner_frame(tick))
-                }
-                CommentState::Expanded { .. } => "▾ Collapse".to_string(),
-            };
-
-            let child_style = match comment.state {
-                CommentState::Collapsed => app.theme().accent,
-                CommentState::Loading { .. } => app.theme().dim,
-                CommentState::Expanded { .. } => app.theme().dim,
-            }
-            .add_modifier(Modifier::DIM);
-
-            lines.push(Line::from(vec![
-                Span::styled(text_prefix, guide_style),
-                Span::styled(child_info, child_style),
-            ]));
         }
     }
-
-    // Add spacing between comments
-    lines.push(Line::from(""));
-
+    if comment.has_children() {
+        let child_info = match comment.state {
+            CommentState::Collapsed => Some(format!(
+                "+ {} {}",
+                comment.child_count(),
+                if comment.child_count() == 1 {
+                    "reply"
+                } else {
+                    "replies"
+                }
+            )),
+            CommentState::Loading { .. } => {
+                Some(format!("{} loading replies", widgets::spinner_frame(tick)))
+            }
+            CommentState::Expanded { .. } => None,
+        };
+        if let Some(info) = child_info {
+            let mut spans = prefix;
+            spans.push(Span::styled(info, theme.dim));
+            lines.push(Line::from(spans));
+        }
+    }
+    lines.push(Line::from(Span::styled(
+        if is_selected { "▎" } else { "" },
+        theme.accent,
+    )));
     let height = lines.len();
-    let lines = if is_selected {
-        apply_highlight(lines, highlight_style)
-    } else {
-        lines
-    };
-
     RenderedComment { lines, height }
-}
-
-/// Apply highlight style across all spans in the provided lines
-fn apply_highlight(mut lines: Vec<Line<'static>>, highlight_style: Style) -> Vec<Line<'static>> {
-    for line in &mut lines {
-        line.spans.iter_mut().for_each(|span| {
-            span.style = span.style.patch(highlight_style);
-        });
-    }
-    lines
-}
-
-/// Build branch guides to know which ancestors have following siblings
-fn branch_guides(app: &App, path: &[usize]) -> Vec<bool> {
-    let mut guides = Vec::new();
-    let mut current_level: &[crate::app::Comment] = &app.comments;
-
-    for (depth, &idx) in path.iter().enumerate() {
-        let is_last = idx + 1 >= current_level.len();
-        guides.push(is_last);
-
-        if depth + 1 == path.len() {
-            break;
-        }
-
-        if let Some(node) = current_level.get(idx) {
-            if let CommentState::Expanded { children } = &node.state {
-                current_level = children;
-            } else {
-                break;
-            }
-        } else {
-            break;
-        }
-    }
-
-    guides
-}
-
-/// Convert branch guides into a prefix string (with or without final elbow)
-fn guides_to_prefix(guides: &[bool], include_elbow: bool) -> String {
-    let mut prefix = String::new();
-
-    if guides.is_empty() {
-        return prefix;
-    }
-
-    for (i, &is_last) in guides.iter().enumerate() {
-        let is_final = i == guides.len() - 1;
-        if is_final {
-            if include_elbow {
-                prefix.push_str(if is_last { "└─" } else { "├─" });
-            } else {
-                prefix.push_str(if is_last { "  " } else { "│ " });
-            }
-        } else {
-            prefix.push_str(if is_last { "  " } else { "│ " });
-        }
-    }
-
-    prefix.push_str("  ");
-    prefix
 }
 
 /// Wrap a line of comment text to the available width
@@ -412,9 +336,4 @@ fn wrap_with_indent(line: &str, width: usize) -> Vec<String> {
         .into_iter()
         .map(|segment| segment.into_owned())
         .collect()
-}
-
-/// Approximate the visible width of a string (prefix uses only simple ASCII/line chars)
-fn visible_width(text: &str) -> usize {
-    text.chars().count()
 }

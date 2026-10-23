@@ -198,9 +198,18 @@ fn bookmarks_toggle_in_both_views_and_survive_reload() {
     restarted.bookmarks = bookmarks::load(&path).unwrap();
     restarted.set_story_type(StoryType::Saved);
     restarted.show_saved_stories();
-    let saved_screen = render(&mut restarted, 80, 24);
-    assert!(saved_screen.contains("Saved stories"));
-    assert!(saved_screen.contains("s save") && saved_screen.contains("? help"));
+    let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
+    terminal.draw(|f| ui::render(f, &mut restarted, 0)).unwrap();
+    let buffer = terminal.backend().buffer();
+    let saved_screen: String = buffer.content().iter().map(|cell| cell.symbol()).collect();
+    assert!(saved_screen.contains("4 Saved"));
+    for x in 33..38 {
+        assert_eq!(buffer[(x, 0)].fg, restarted.theme().accent.fg.unwrap());
+        assert!(buffer[(x, 0)]
+            .modifier
+            .contains(ratatui::style::Modifier::BOLD | ratatui::style::Modifier::UNDERLINED));
+    }
+    assert!(saved_screen.contains("s save") && saved_screen.contains("? keys"));
     assert!(render(&mut restarted, 80, 24).contains("Ask HN: Reading"));
     restarted.view_comments(1, "Ask HN: Reading".into(), "https://example.com".into());
     restarted.set_comments(vec![]);
