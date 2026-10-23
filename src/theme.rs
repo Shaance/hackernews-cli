@@ -80,6 +80,11 @@ impl Theme {
         error: Style::new().add_modifier(Modifier::BOLD),
     };
 
+    /// Whether this palette emits colours; only the monochrome theme does not.
+    pub fn uses_colour(&self) -> bool {
+        self.accent.fg.is_some()
+    }
+
     /// Call once, before entering raw mode or the alternate screen.
     pub fn detect() -> Self {
         let override_name = std::env::var_os("HN_THEME");
@@ -135,6 +140,14 @@ impl Theme {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn only_the_monochrome_palette_suppresses_colour() {
+        for theme in [Theme::TRUE_DARK, Theme::TRUE_LIGHT, Theme::ANSI] {
+            assert!(theme.uses_colour(), "{theme:?} must force colour output");
+        }
+        assert!(!Theme::MONO.uses_colour());
+    }
 
     #[test]
     fn theme_resolution_table() {

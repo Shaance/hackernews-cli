@@ -51,6 +51,9 @@ enum AppMessage {
 #[tokio::main]
 async fn main() -> Result<()> {
     let theme = Theme::detect();
+    // crossterm drops colour codes whenever NO_COLOR is set; follow the resolved theme instead,
+    // so an explicit HN_THEME wins and the monochrome theme stays colourless.
+    crossterm::style::force_color_output(theme.uses_colour());
     let mut terminal = TerminalSession::new()?;
 
     // Create app state
