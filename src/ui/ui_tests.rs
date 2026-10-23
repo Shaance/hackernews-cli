@@ -58,9 +58,13 @@ fn short_narrow_terminal_shows_help_and_comment_count() {
     let text = buffer_text(terminal.backend().buffer());
     assert!(text.contains("1 loaded comments") && text.contains("? help"));
     app.show_help = true;
-    terminal.draw(|f| render(f, &mut app, 0)).unwrap();
-    let text = buffer_text(terminal.backend().buffer());
-    for shortcut in ["PgUp/PgDn", "Save/unsave", "Esc/q/h/← Back", "? Close help"] {
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    assert!(buffer_text(frame.buffer).contains("PgUp/PgDn"));
+    // A clamped modal shows only the rows that fit. Check all groups at full height.
+    let mut terminal = Terminal::new(TestBackend::new(50, 40)).unwrap();
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    let text = buffer_text(frame.buffer);
+    for shortcut in ["PgUp/PgDn", "Save/unsave", "Esc/q/h/←  Back", "?  Close"] {
         assert!(text.contains(shortcut), "missing {shortcut}");
     }
 }
@@ -232,7 +236,7 @@ fn thread_selection_quotes_guides_and_replies_preserve_roles() {
     app.next_comment();
     let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
     terminal
-        .draw(|f| super::comments::render_reader_content(f, f.area(), &mut app, 0, vec![]))
+        .draw(|f| super::comments::render_reader_content(f, f.area(), &mut app, 0, vec![], true))
         .unwrap();
     let buffer = terminal.backend().buffer();
     let end = (6..24).find(|y| buffer[(2, *y)].symbol() == "u").unwrap();
@@ -270,4 +274,152 @@ fn thread_selection_quotes_guides_and_replies_preserve_roles() {
         .content()
         .iter()
         .all(|cell| !cell.modifier.contains(ratatui::style::Modifier::REVERSED)));
+}
+
+fn position(buffer: &Buffer, text: &str) -> (u16, u16) {
+    for y in 0..buffer.area.height {
+        let row: String = (0..buffer.area.width)
+            .map(|x| buffer[(x, y)].symbol())
+            .collect();
+        if let Some(index) = row.find(text) {
+            return (row[..index].chars().count() as u16, y);
+        }
+    }
+    panic!("missing {text:?} in completed frame");
+}
+
+#[test]
+fn stories_help_keys_match_handlers_and_use_accent() {
+    use crate::event::{handle_stories_key, StoryAction};
+    use crossterm::event::KeyCode::{self, *};
+    let theme = crate::theme::Theme::TRUE_DARK;
+    let entries: &[(&str, &[KeyCode])] = &[
+        ("j/k/↑/↓", &[Char('j'), Char('k'), Up, Down]),
+        ("n/p/→/←", &[Char('n'), Char('p'), Right, Left]),
+        ("1", &[Char('1')]),
+        ("2", &[Char('2')]),
+        ("3", &[Char('3')]),
+        ("4", &[Char('4')]),
+        ("Enter/o", &[Enter, Char('o')]),
+        ("O", &[Char('O')]),
+        ("c", &[Char('c')]),
+        ("s", &[Char('s')]),
+        ("r", &[Char('r')]),
+        ("q/Esc", &[Char('q'), Esc]),
+        ("?", &[Char('?')]),
+    ];
+    for width in [60, 77, 78, 80, 100] {
+        let mut terminal = Terminal::new(TestBackend::new(width, 40)).unwrap();
+        let frame = terminal
+            .draw(|f| super::widgets::render_help(f, theme, false))
+            .unwrap();
+        for (label, keys) in entries {
+            let (x, y) = position(frame.buffer, &format!(" {label}  "));
+            assert_eq!(
+                frame.buffer[(x + 1, y)].fg,
+                theme.accent.fg.unwrap(),
+                "{label}"
+            );
+            for key in *keys {
+                assert!(
+                    !matches!(handle_stories_key(*key), StoryAction::None),
+                    "{label}: {key:?}"
+                );
+            }
+        }
+        for heading in ["STORIES", "ANYWHERE"] {
+            assert_eq!(
+                frame.buffer[position(frame.buffer, heading)].fg,
+                theme.dim.fg.unwrap()
+            );
+        }
+        let (_, first) = position(frame.buffer, "j/k/↑/↓");
+        let (_, second) = position(frame.buffer, "n/p/→/←");
+        assert_eq!(second - first, u16::from(width < 78));
+    }
+}
+
+#[test]
+fn links_modal_scrolls_selection_and_renders_empty_state() {
+    let theme = crate::theme::Theme::TRUE_DARK;
+    let mut app = App::with_theme(theme);
+    app.view_comments(1, "Story".into(), String::new());
+    let mut comment = test_comment(1, "body");
+    comment.links = (0..20)
+        .map(|n| format!("https://example.com/{n:02}"))
+        .collect();
+    app.set_comments(vec![comment]);
+    let mut terminal = Terminal::new(TestBackend::new(80, 16)).unwrap();
+    for cursor in [0, 19, 10] {
+        app.link_cursor = cursor;
+        let frame = terminal.draw(|f| super::links::render(f, &app)).unwrap();
+        let (x, y) = position(frame.buffer, &format!("https://example.com/{cursor:02}"));
+        let left = position(frame.buffer, "╭").0 + 1;
+        let right = position(frame.buffer, "╮").0;
+        assert!((left..right).all(|x| frame.buffer[(x, y)].bg == theme.sel.bg.unwrap()));
+        assert_eq!(frame.buffer[(x, y)].fg, theme.link.fg.unwrap());
+        assert_eq!(frame.buffer[(left, y)].symbol(), "▎");
+        assert_eq!(frame.buffer[(left, y)].fg, theme.accent.fg.unwrap());
+        assert!(buffer_text(frame.buffer).contains("Esc close"));
+    }
+    app.set_comments(vec![]);
+    let frame = terminal.draw(|f| super::links::render(f, &app)).unwrap();
+    let pos = position(frame.buffer, "No links in the post or the selected comment");
+    assert_eq!(frame.buffer[pos].fg, theme.dim.fg.unwrap());
+}
+
+#[test]
+fn feed_states_are_centered_and_preserve_roles() {
+    use crate::{app::StoryType, theme::Theme};
+    let theme = Theme::TRUE_DARK;
+    let mut app = App::with_theme(theme);
+    let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
+    for (state, title, hint, style) in [
+        (
+            0,
+            "No saved stories yet",
+            "Press s on any story to save it",
+            theme.fg,
+        ),
+        (1, "No stories found", "r refresh", theme.fg),
+        (2, "! offline", "r retry", theme.error),
+        (3, "⠋ Loading stories…", "", theme.dim),
+    ] {
+        app.set_story_type(if state == 0 {
+            StoryType::Saved
+        } else {
+            StoryType::Best
+        });
+        app.set_story_loading(state == 3);
+        if state == 2 {
+            app.set_story_error("offline".into());
+        }
+        let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+        let (x, y) = position(frame.buffer, title);
+        assert_eq!(x, 40 - title.chars().count() as u16 / 2);
+        assert_eq!(y, 11);
+        assert_eq!(frame.buffer[(x, y)].fg, style.fg.unwrap());
+        if state == 2 {
+            assert_eq!(frame.buffer[(x + 2, y)].fg, theme.fg.fg.unwrap());
+        }
+        if !hint.is_empty() {
+            let (x, y) = position(frame.buffer, hint);
+            assert_eq!((x, y), (40 - hint.len() as u16 / 2, 12));
+            assert_eq!(
+                frame.buffer[(x, y)].fg,
+                if state == 0 { theme.dim } else { theme.accent }
+                    .fg
+                    .unwrap()
+            );
+            assert_eq!(frame.buffer[(x + 2, y)].fg, theme.dim.fg.unwrap());
+        }
+    }
+    app.set_story_error("offline ".repeat(15));
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    assert_eq!(
+        position(frame.buffer, "! ").1,
+        10,
+        "wrapped error and retry form a centered three-row block"
+    );
+    assert_eq!(position(frame.buffer, "r retry").1, 12);
 }

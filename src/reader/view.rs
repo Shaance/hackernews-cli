@@ -13,11 +13,8 @@ impl Reader {
         let theme = self.theme;
         let area = frame.area();
         frame.buffer_mut().set_style(area, theme.fg);
-        if self.settings.is_some() {
-            self.render_settings(frame);
-            return;
-        }
         let Some(reading) = self.active.and_then(|id| self.readings.get_mut(&id)) else {
+            self.render_settings(frame);
             return;
         };
         let saved = if app.is_bookmarked(reading.story.id) {
@@ -242,7 +239,14 @@ impl Reader {
                     .saturating_add(lines.len());
             }
             reading.prefix_height = lines.len();
-            hn_lib::ui::comments::render_reader_content(frame, body[1], app, tick, lines);
+            hn_lib::ui::comments::render_reader_content(
+                frame,
+                body[1],
+                app,
+                tick,
+                lines,
+                !reading.citation_focus,
+            );
         }
         let hints = if reading.source.is_some() {
             vec![
@@ -301,11 +305,12 @@ impl Reader {
             areas[2],
         );
         if app.show_help {
-            hn_lib::ui::widgets::render_help(frame, frame.area(), true);
+            hn_lib::ui::widgets::render_help(frame, theme, true);
         }
         if app.show_links {
             hn_lib::ui::links::render(frame, app);
         }
+        self.render_settings(frame);
     }
 }
 

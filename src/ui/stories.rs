@@ -2,7 +2,7 @@
 
 use crate::app::{App, StoryType};
 use ratatui::{
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
@@ -26,20 +26,57 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
 
     if !app.stories.is_empty() {
         render_stories_list(f, chunks[1], app);
-    } else if app.is_loading() {
-        widgets::render_loading(f, chunks[1], "Loading stories...", tick);
-    } else if let Some(error) = app.error() {
-        widgets::render_error(f, chunks[1], error);
     } else {
-        let message = if app.story_type == crate::app::StoryType::Saved {
-            "No saved stories yet. Press s on a story to save it."
+        let theme = app.theme();
+        let mut lines = if app.is_loading() {
+            vec![Line::styled(
+                format!("{} Loading stories…", widgets::spinner_frame(tick)),
+                theme.dim,
+            )]
+        } else if let Some(error) = app.error() {
+            let message = format!("! {error}");
+            let mut rows: Vec<_> = textwrap::wrap(&message, usize::from(chunks[1].width).max(1))
+                .into_iter()
+                .enumerate()
+                .map(|(index, row)| {
+                    if index == 0 {
+                        Line::from(vec![
+                            Span::styled("! ", theme.error),
+                            Span::styled(row.strip_prefix("! ").unwrap_or("").to_owned(), theme.fg),
+                        ])
+                    } else {
+                        Line::styled(row.into_owned(), theme.fg)
+                    }
+                })
+                .collect();
+            rows.push(Line::from(vec![
+                Span::styled("r", theme.accent),
+                Span::styled(" retry", theme.dim),
+            ]));
+            rows
+        } else if app.story_type == StoryType::Saved {
+            vec![
+                Line::styled("No saved stories yet", theme.fg),
+                Line::styled("Press s on any story to save it", theme.dim),
+            ]
         } else {
-            "No stories found"
+            vec![
+                Line::styled("No stories found", theme.fg),
+                Line::from(vec![
+                    Span::styled("r", theme.accent),
+                    Span::styled(" refresh", theme.dim),
+                ]),
+            ]
         };
-        f.render_widget(
-            Paragraph::new(message).wrap(ratatui::widgets::Wrap { trim: true }),
-            chunks[1],
+        let height = (lines.len() as u16).min(chunks[1].height);
+        lines.truncate(usize::from(height));
+        let area = Rect::new(
+            chunks[1].x,
+            chunks[1].y + (chunks[1].height - height) / 2,
+            chunks[1].width,
+            height,
         );
+        f.render_widget(Paragraph::new(lines).alignment(Alignment::Center), area);
     }
 
     let status = widgets::render_stories_status(chunks[2], app, tick);
@@ -47,7 +84,7 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
 
     // Render help overlay if shown
     if app.show_help {
-        widgets::render_help(f, f.area(), false);
+        widgets::render_help(f, app.theme(), false);
     }
 }
 

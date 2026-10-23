@@ -542,3 +542,110 @@ fn citation_focus_tints_full_point_rows_and_underlines_only_the_focused_token() 
         .iter()
         .all(|c| !c.modifier.contains(Modifier::REVERSED)));
 }
+
+#[test]
+fn citation_focus_suppresses_comment_selection_until_comment_navigation() {
+    let mut p = ready();
+    let mut app = comments_app();
+    let mut terminal = Terminal::new(TestBackend::new(100, 40)).unwrap();
+    for (key, selected, source) in [
+        (KeyCode::Tab, false, false),
+        (KeyCode::Enter, false, true),
+        (KeyCode::Esc, false, false),
+        (KeyCode::Char('j'), true, false),
+    ] {
+        p.key(key);
+        let frame = terminal.draw(|f| p.render(f, &mut app, 0)).unwrap();
+        let buffer = frame.buffer;
+        let text: String = buffer.content.iter().map(|c| c.symbol()).collect();
+        assert_eq!(text.contains("reader0"), !source);
+        let start = buffer
+            .content
+            .chunks(100)
+            .position(|row| {
+                row.iter()
+                    .map(|c| c.symbol())
+                    .collect::<String>()
+                    .contains("COMMENTS")
+            })
+            .map_or(0, |y| (y + 1) * 100);
+        assert_eq!(
+            buffer.content[start..]
+                .iter()
+                .any(|c| c.bg == p.theme.sel.bg.unwrap()),
+            selected,
+            "selection after {key:?}"
+        );
+        assert_eq!(
+            buffer.content.iter().any(|c| c.symbol() == "▎"),
+            selected,
+            "comment bar after {key:?}"
+        );
+    }
+    p.key(KeyCode::Tab);
+    p.key(KeyCode::Esc);
+    assert!(
+        !p.is_open(),
+        "Esc from citation focus retains existing exit behavior"
+    );
+}
+
+#[test]
+fn reader_help_keys_match_handlers_and_use_accent() {
+    use crossterm::event::KeyCode::{self, *};
+    use hn_lib::event::{handle_comments_key, CommentAction};
+    let theme = Theme::TRUE_DARK;
+    let entries: &[(&str, &[KeyCode])] = &[
+        ("j/k/↑/↓", &[Char('j'), Char('k'), Up, Down]),
+        ("PgUp/PgDn", &[PageUp, PageDown]),
+        ("Enter/l/→", &[Enter, Char('l'), Right]),
+        ("c", &[Char('c')]),
+        ("[/]", &[Char('['), Char(']')]),
+        ("u", &[Char('u')]),
+        ("g/G", &[Char('g'), Char('G')]),
+        ("S", &[Char('S')]),
+        ("J/K", &[Char('J'), Char('K')]),
+        ("M", &[Char('M')]),
+        ("Tab/Shift-Tab", &[Tab, BackTab]),
+        ("Enter", &[Enter]),
+        ("Esc", &[Esc]),
+        ("o", &[Char('o')]),
+        ("O", &[Char('O')]),
+        ("L", &[Char('L')]),
+        ("s", &[Char('s')]),
+        ("r", &[Char('r')]),
+        ("Esc/q/h/←", &[Esc, Char('q'), Char('h'), Left]),
+        ("?", &[Char('?')]),
+    ];
+    for width in [60, 100] {
+        let mut terminal = Terminal::new(TestBackend::new(width, 40)).unwrap();
+        let frame = terminal
+            .draw(|f| hn_lib::ui::widgets::render_help(f, theme, true))
+            .unwrap();
+        for (label, keys) in entries {
+            let cells = frame
+                .buffer
+                .content
+                .chunks(usize::from(width))
+                .find_map(|row| {
+                    let text: String = row.iter().map(|c| c.symbol()).collect();
+                    text.find(&format!(" {label}  "))
+                        .map(|index| &row[text[..index].chars().count() + 1])
+                })
+                .unwrap_or_else(|| panic!("missing {label}"));
+            assert_eq!(cells.fg, theme.accent.fg.unwrap(), "{label}");
+            for key in *keys {
+                if *key == Char('O') {
+                    assert!(include_str!("../../reader_actions.rs")
+                        .contains("if key == KeyCode::Char('O')"));
+                } else {
+                    assert!(
+                        !matches!(handle_comments_key(*key), CommentAction::None)
+                            || ready().key(*key),
+                        "unhandled {key:?}"
+                    );
+                }
+            }
+        }
+    }
+}

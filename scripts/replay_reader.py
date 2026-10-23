@@ -105,7 +105,7 @@ def run(binary, output, width, height):
         app.wait(lambda t: "! summary incomplete · M retry" in t and "ARTICLE  " not in t and "DISCUSSION  " not in t)
         assert len(fixture.calls) == 4, "Refreshing comments must not retry a hidden summary"
         app.key("SM")
-        app.wait(lambda t: "> Retry failed summary" in t and "Refresh sources & summary" in t)
+        app.wait(lambda t: "▎ Retry failed summary" in t and "Refresh sources & summary" in t)
         app.key("\r")
         app.wait(lambda t: "✓ summary · Thorough" in t and "DISCUSSION  Thorough" in t)
         capture("09-thorough")

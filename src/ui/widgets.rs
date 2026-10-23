@@ -1,14 +1,14 @@
 //! Reusable UI widgets
 
 use ratatui::{
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Modifier, Style},
+    layout::{Alignment, Constraint, Direction, Layout, Margin, Rect},
+    style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Clear, Paragraph, Wrap},
+    widgets::{Block, Borders, Padding, Paragraph, Wrap},
     Frame,
 };
 
-use crate::app::App;
+use crate::{app::App, theme::Theme};
 
 /// ASCII spinner frames
 const SPINNER_FRAMES: &[&str] = &["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
@@ -62,50 +62,159 @@ pub fn render_error(f: &mut Frame, area: Rect, error: &str) {
     f.render_widget(paragraph, vertical_layout[1]);
 }
 
-/// Render help overlay
-pub fn render_help(f: &mut Frame, area: Rect, in_comments: bool) {
-    let help_text = if in_comments {
-        vec![
-            Line::from("Comments"),
-            Line::from("j/k/↑/↓  Select comment"),
-            Line::from("PgUp/PgDn  Read text"),
-            Line::from("Enter/l/→  Replies · c Collapse"),
-            Line::from("[/] Siblings · u Parent"),
-            Line::from("o Article · O Browser · L Links"),
-            Line::from("S Summary · J/K Scroll · M Settings"),
-            Line::from("Tab Sources · Enter Open · Esc Back"),
-            Line::from("s Save/unsave · r Refresh comments"),
-            Line::from("Esc/q/h/← Back · ? Close help"),
-        ]
-    } else {
-        vec![
-            Line::from("Stories"),
-            Line::from("j/k/↑/↓  Select story"),
-            Line::from("n/p/→/←  Page"),
-            Line::from("1 Top · 2 New · 3 Best · 4 Saved"),
-            Line::from("Enter/o Read · O Browser"),
-            Line::from("c Comments · s Save/unsave"),
-            Line::from("r Refresh/retry"),
-            Line::from("q/Esc Quit · ? Close help"),
-        ]
-    };
-
-    let block = Block::default().title(" Help ").borders(Borders::ALL);
-
-    let height = (help_text.len() as u16 + 2).min(area.height);
-    let width = 74.min(area.width);
-    let paragraph = Paragraph::new(help_text)
-        .block(block)
-        .wrap(Wrap { trim: true });
-
-    let dialog = Rect::new(
-        area.x + (area.width - width) / 2,
-        area.y + (area.height - height) / 2,
-        width,
+/// Dim the frame and render a padded, content-sized modal with an optional selected row.
+/// The body receives the available content width and height, excluding padding and borders.
+pub fn render_modal(
+    f: &mut Frame,
+    theme: Theme,
+    title: &str,
+    body: impl FnOnce(u16, u16) -> (Vec<Line<'static>>, Option<usize>),
+) {
+    for cell in &mut f.buffer_mut().content {
+        cell.set_style(Style::reset().patch(theme.scrim).bg(Color::Reset));
+    }
+    let area = f.area().inner(Margin::new(2, 1));
+    let (mut lines, selected) = body(area.width.saturating_sub(6), area.height.saturating_sub(4));
+    lines.truncate(usize::from(area.height.saturating_sub(4)));
+    let width = lines
+        .iter()
+        .map(Line::width)
+        .max()
+        .unwrap_or(0)
+        .min(usize::from(area.width.saturating_sub(6)));
+    let selected = selected.filter(|index| *index < lines.len());
+    let height = lines.len() + 2;
+    let body = tui_popup::KnownSizeWrapper::new(
+        Paragraph::new(lines).block(Block::default().padding(Padding::new(2, 2, 1, 1))),
+        width + 4,
         height,
     );
-    f.render_widget(Clear, dialog);
-    f.render_widget(paragraph, dialog);
+    let popup = tui_popup::Popup::new(body)
+        .style(theme.fg)
+        .border_set(ratatui::symbols::border::ROUNDED)
+        .border_style(theme.line)
+        .title(Line::styled(
+            format!(" {title} "),
+            theme.accent.add_modifier(Modifier::BOLD),
+        ));
+    let mut state = tui_popup::PopupState::default();
+    f.render_stateful_widget(popup, area, &mut state);
+    if let (Some(index), Some(dialog)) = (selected, state.area()) {
+        let row = Rect::new(
+            dialog.x + 1,
+            dialog.y + 2 + index as u16,
+            dialog.width.saturating_sub(2),
+            1,
+        );
+        let body = dialog.inner(Margin::new(1, 1));
+        let row = row.intersection(body);
+        f.buffer_mut().set_style(row, theme.sel);
+        if !row.is_empty() {
+            f.buffer_mut()[(row.x, row.y)]
+                .set_symbol("▎")
+                .set_style(theme.accent);
+        }
+    }
+}
+
+/// Render the key groups shared by the comments and reader views.
+pub fn render_help(f: &mut Frame, theme: Theme, in_comments: bool) {
+    let groups: &[(&str, &[(&str, &str)])] = if in_comments {
+        &[
+            (
+                "READING",
+                &[
+                    ("j/k/↑/↓", "Select comment"),
+                    ("PgUp/PgDn", "Read text"),
+                    ("Enter/l/→", "Replies"),
+                    ("c", "Collapse"),
+                    ("[/]", "Siblings"),
+                    ("u", "Parent"),
+                    ("g/G", "First/last comment"),
+                ],
+            ),
+            (
+                "SUMMARY",
+                &[
+                    ("S", "Summary"),
+                    ("J/K", "Scroll"),
+                    ("M", "Settings"),
+                    ("Tab/Shift-Tab", "Sources"),
+                    ("Enter", "Open"),
+                    ("Esc", "Back"),
+                ],
+            ),
+            (
+                "STORY",
+                &[
+                    ("o", "Article"),
+                    ("O", "Browser"),
+                    ("L", "Links"),
+                    ("s", "Save/unsave"),
+                    ("r", "Refresh comments"),
+                    ("Esc/q/h/←", "Back"),
+                    ("?", "Close"),
+                ],
+            ),
+        ]
+    } else {
+        &[
+            (
+                "STORIES",
+                &[
+                    ("j/k/↑/↓", "Select story"),
+                    ("n/p/→/←", "Page"),
+                    ("1", "Top"),
+                    ("2", "New"),
+                    ("3", "Best"),
+                    ("4", "Saved"),
+                    ("Enter/o", "Read"),
+                    ("O", "Browser"),
+                    ("c", "Comments"),
+                    ("s", "Save/unsave"),
+                    ("r", "Refresh/retry"),
+                ],
+            ),
+            ("ANYWHERE", &[("q/Esc", "Quit"), ("?", "Close")]),
+        ]
+    };
+    render_modal(f, theme, "Keys", |width, _| {
+        // The body includes the two padding columns on each side.
+        let columns = if width + 4 >= 72 { 2 } else { 1 };
+        let key_width = groups
+            .iter()
+            .flat_map(|(_, entries)| entries.iter())
+            .map(|(key, _)| Span::raw(*key).width())
+            .max()
+            .unwrap_or(0);
+        let entry_width = groups
+            .iter()
+            .flat_map(|(_, entries)| entries.iter())
+            .map(|(_, action)| key_width + 2 + Span::raw(*action).width())
+            .max()
+            .unwrap_or(0);
+        let mut lines = Vec::new();
+        for (heading, entries) in groups {
+            if !lines.is_empty() {
+                lines.push(Line::raw(""));
+            }
+            lines.push(Line::styled(*heading, theme.dim));
+            for pair in entries.chunks(columns) {
+                let mut line = Line::default();
+                for (index, (key, action)) in pair.iter().enumerate() {
+                    if index > 0 {
+                        line.push_span(Span::raw(" ".repeat(entry_width + 2 - line.width())));
+                    }
+                    line.push_span(Span::raw(" ".repeat(key_width - Span::raw(*key).width())));
+                    line.push_span(Span::styled(*key, theme.accent));
+                    line.push_span(Span::raw("  "));
+                    line.push_span(Span::styled(*action, theme.fg));
+                }
+                lines.push(line);
+            }
+        }
+        (lines, None)
+    });
 }
 
 /// Fit complete key hints in priority order, leaving two columns at either edge.

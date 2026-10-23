@@ -39,7 +39,7 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
             render_no_comments(f, chunks[1]);
         }
     } else {
-        render_comments_list(f, chunks[1], app, tick, None);
+        render_comments_list(f, chunks[1], app, tick, None, true);
     }
 
     let status = widgets::render_comments_status(chunks[2], app, tick);
@@ -47,7 +47,7 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
 
     // Render help overlay if shown
     if app.show_help {
-        widgets::render_help(f, f.area(), true);
+        widgets::render_help(f, app.theme(), true);
     }
     if app.show_links {
         super::links::render(f, app);
@@ -61,6 +61,7 @@ pub fn render_reader_content(
     app: &mut App,
     tick: usize,
     mut prefix: Vec<Line<'static>>,
+    show_selection: bool,
 ) {
     if app.comments.is_empty() {
         let message = if app.is_loading() {
@@ -72,7 +73,7 @@ pub fn render_reader_content(
             prefix.push(Line::raw(line.into_owned()));
         }
     }
-    render_comments_list(f, area, app, tick, Some(prefix));
+    render_comments_list(f, area, app, tick, Some(prefix), show_selection);
 }
 
 /// Render title bar with story title
@@ -140,6 +141,7 @@ fn render_comments_list(
     app: &mut App,
     tick: usize,
     prefix: Option<Vec<Line<'static>>>,
+    show_selection: bool,
 ) {
     let list_style = if app.is_loading() {
         app.theme().dim.add_modifier(Modifier::DIM)
@@ -173,7 +175,7 @@ fn render_comments_list(
         let Some((path, comment)) = app.visible_comment_at(idx) else {
             continue;
         };
-        let is_selected = idx == app.comment_cursor;
+        let is_selected = show_selection && idx == app.comment_cursor;
         let prepared = render_comment(app, path, comment, is_selected, tick, area.width as usize);
         let start = line_cursor;
         line_cursor += prepared.height;
@@ -204,7 +206,10 @@ fn render_comments_list(
         .scroll((scroll as u16, 0));
 
     f.render_widget(paragraph, area);
-    if let Some((_, start, end)) = line_ranges.get(app.comment_cursor) {
+    if let Some((_, start, end)) = line_ranges
+        .get(app.comment_cursor)
+        .filter(|_| show_selection)
+    {
         let top = start.saturating_sub(scroll).min(usize::from(area.height));
         let bottom = end.saturating_sub(scroll).min(usize::from(area.height));
         let selected = Rect::new(
