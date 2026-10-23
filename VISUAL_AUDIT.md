@@ -302,3 +302,36 @@ The PTY harness (`scripts/terminal_capture.py`) runs hn inside pyte, whose `writ
 ### Research gap
 
 Codex could not run commands on this machine during this pass. The Homebrew upgrade left both `codex` and its helper binary `codex-code-mode-host` hanging under a stuck macOS Gatekeeper daemon (`syspolicyd`). The `fix-codex-install` workaround unblocked `codex`, but Codex finds the helper by a fixed path, so that workaround can't reach it, and disabling `code_mode_host` disables Codex's shell entirely. Running `sudo pkill syspolicyd` (or rebooting) clears it. All findings above come from crates.io, crate sources, ratatui's repository, and the trial build.
+
+## Implementation status and final review
+
+2026-10-23. All four phases are on branch `codex/visual-phase1`:
+
+| Commit | Phase |
+|---|---|
+| `32e744d` | 1: ratatui 0.30, theme detection and roles, event-driven frame clock |
+| `fbb298e` | 2: feed and thread restyle, tinted selection, 80×24 layout |
+| `23e230e` | Replay harness made reliable again (fixture connection queue, spinner-tolerant waits, wide-glyph stubs) |
+| `01f5979` | 3: reader chrome, status chip, summary panel, collapse rule |
+| `1ae90ed` | 4a: settings, help and links as modals over a scrim; feed states |
+| `7052194` | 4b: motion with `HN_REDUCED_MOTION` |
+
+Verified on `7052194`: fmt, clippy with warnings denied, 47 library and 65 binary tests, `scripts/verify-reader.sh` at 240×80 and 200×60, the paid `scripts/smoke.py` with both providers (OpenRouter on every phase, Anthropic once), 0.01 s CPU and no output over 10 idle seconds, and 8 redraws in 144 ms when an overlay opens (1 with reduced motion).
+
+Two premises in this audit were already stale when phase 4b was implemented: the frame-clock finding (fixed in phase 1) and the claim that browser notices never report an outcome (`Reader::poll` already reports success and failure).
+
+### Final review findings
+
+From live captures of the full journey in dark, light and 16-colour at 120×40 and dark at 80×24, plus unsettled frame samples of each animation.
+
+1. **P2, backdrop fade passes through yellow-green.** Sampled at 60 ms after opening settings: `#d0df5b` on 28 cells. tachyonfx interpolates in HSL by default, so orange (≈30°) travels through yellow and green toward the blue-grey scrim (≈195°). Correction: `.with_color_space(ColorSpace::Rgb)` on every effect. Verify: frame samples contain no hue outside the orange-to-grey band.
+2. **P2, the summary starves comments at 80×24.** The panel takes two thirds of the body (11 rows), leaving 5 comment rows and cutting the summary mid-sentence; the `J/K scroll` row also touches the `COMMENTS` heading. Correction: keep at least 8–10 comment rows on short terminals (two thirds stays the cap on tall ones), and always leave a blank row before the heading. Verify at 80×24.
+3. **P2, offline feed error is technical and shown twice.** "Failed to load stories: Failed to get story IDs for type: best" appears centred and in the footer. Correction: centred `Couldn't load Best stories` (fg), the reason in dim, `r retry`; the footer omits the error while the empty state shows it, and keeps it when stale stories are on screen.
+4. **P3, Saved tab repeats ★ and offers `n/p page`.** Saved is one page (`next_page` returns early) and every row is saved. Correction: hide both in Saved.
+5. **P3, reader meta row drops author and age.** The feed shows `host · author · points · comments · age`; the reader shows `host · points · comments` (finding 6 proposed the full form). Correction: use the feed's form.
+
+Open question, not a defect: the summary panel's first non-empty frame was measured 71–85 ms after `S`, with the first redraw at 28–38 ms. Harness read lag accounts for most of it, and intermediate frames were coalesced, so no defect is established.
+
+Not sampled live: the notice fade and clear, because the only producer is `o`, which opens a real browser. Unit tests cover the 2 s, 2.4 s and 4 s points, including the motion-off clear.
+
+Withheld: 16-colour selection is a heavy grey block whose shade the terminal decides; long summary section labels clip at narrow widths (metadata only).
