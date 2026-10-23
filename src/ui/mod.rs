@@ -12,6 +12,8 @@ use ratatui::Frame;
 
 /// Render the application UI
 pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
+    let area = f.area();
+    f.buffer_mut().set_style(area, app.theme().fg);
     match &app.view {
         View::Stories => stories::render(f, app, tick),
         View::Comments { .. } => comments::render(f, app, tick),

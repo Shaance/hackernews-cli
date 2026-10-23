@@ -37,6 +37,7 @@ pub async fn handle(
             }
             return Ok(true);
         }
+        let position = (app.comment_cursor, app.comment_scroll);
         if key == KeyCode::Char('r') {
             handle_comment_action(
                 app,
@@ -46,6 +47,9 @@ pub async fn handle(
                 bookmark_path.as_deref(),
             )
             .await?;
+            if position != (app.comment_cursor, app.comment_scroll) {
+                reader.comments_moved();
+            }
             return Ok(true);
         }
         let key = if key == KeyCode::Char('O') {
@@ -58,6 +62,10 @@ pub async fn handle(
             KeyCode::Char('s') | KeyCode::Char('o') | KeyCode::Char('?')
         ) || !reader.key(key)
         {
+            // Paging is applied by App during the next render, after completions are polled.
+            if matches!(key, KeyCode::PageDown | KeyCode::PageUp) {
+                reader.comments_moved();
+            }
             handle_comment_action(
                 app,
                 handle_comments_key(key),
@@ -68,6 +76,9 @@ pub async fn handle(
             .await?;
         } else if !reader.is_open() {
             app.view_stories();
+        }
+        if position != (app.comment_cursor, app.comment_scroll) {
+            reader.comments_moved();
         }
         return Ok(true);
     }

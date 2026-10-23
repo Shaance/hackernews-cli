@@ -4,7 +4,7 @@ use anyhow::anyhow;
 fn test_story(id: i32) -> hn_lib::HNCLIItem {
     hn_lib::HNCLIItem {
         id,
-        title: format!("Story {}", id),
+        title: format!("Story {id}"),
         url: "http://example.com".to_string(),
         author: "user".to_string(),
         time: "2023-01-01".to_string(),

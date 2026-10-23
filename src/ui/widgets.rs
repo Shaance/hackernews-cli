@@ -1,19 +1,21 @@
 //! Reusable UI widgets
 
 use ratatui::{
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    layout::{Alignment, Constraint, Direction, Layout, Margin, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Clear, Paragraph, Wrap},
+    widgets::{Block, Borders, Padding, Paragraph, Wrap},
     Frame,
 };
 
-use crate::app::App;
+use crate::{app::App, theme::Theme};
+use std::time::Instant;
+use tachyonfx::{fx, ColorSpace, Interpolation};
 
 /// ASCII spinner frames
 const SPINNER_FRAMES: &[&str] = &["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
-/// Get spinner frame for current tick
+/// Get the spinner frame for elapsed 80 ms intervals supplied by the frame clock.
 pub fn spinner_frame(tick: usize) -> &'static str {
     SPINNER_FRAMES[tick % SPINNER_FRAMES.len()]
 }
@@ -21,7 +23,7 @@ pub fn spinner_frame(tick: usize) -> &'static str {
 /// Render a loading spinner with message
 pub fn render_loading(f: &mut Frame, area: Rect, message: &str, tick: usize) {
     let spinner = spinner_frame(tick);
-    let text = format!("{} {}", spinner, message);
+    let text = format!("{spinner} {message}");
 
     let paragraph = Paragraph::new(text)
         .alignment(Alignment::Center)
@@ -42,7 +44,7 @@ pub fn render_loading(f: &mut Frame, area: Rect, message: &str, tick: usize) {
 
 /// Render an error message
 pub fn render_error(f: &mut Frame, area: Rect, error: &str) {
-    let text = format!("Error: {}", error);
+    let text = format!("Error: {error}");
 
     let paragraph = Paragraph::new(text)
         .style(Style::default().add_modifier(Modifier::BOLD))
@@ -62,153 +64,310 @@ pub fn render_error(f: &mut Frame, area: Rect, error: &str) {
     f.render_widget(paragraph, vertical_layout[1]);
 }
 
-/// Render help overlay
-pub fn render_help(f: &mut Frame, area: Rect, in_comments: bool) {
-    let help_text = if in_comments {
-        vec![
-            Line::from("Comments"),
-            Line::from("j/k/↑/↓  Select comment"),
-            Line::from("PgUp/PgDn  Read text"),
-            Line::from("Enter/l/→  Replies · c Collapse"),
-            Line::from("[/] Siblings · u Parent"),
-            Line::from("o Article · O Browser · L Links"),
-            Line::from("S Summary · J/K Scroll · M Settings"),
-            Line::from("Tab Sources · Enter Open · Esc Back"),
-            Line::from("s Save/unsave · r Refresh comments"),
-            Line::from("Esc/q/h/← Back · ? Close help"),
-        ]
-    } else {
-        vec![
-            Line::from("Stories"),
-            Line::from("j/k/↑/↓  Select story"),
-            Line::from("n/p/→/←  Page"),
-            Line::from("1 Top · 2 New · 3 Best · 4 Saved"),
-            Line::from("Enter/o Read · O Browser"),
-            Line::from("c Comments · s Save/unsave"),
-            Line::from("r Refresh/retry"),
-            Line::from("q/Esc Quit · ? Close help"),
-        ]
-    };
+/// Dim the frame and render a padded, content-sized modal with an optional selected row.
+/// The body receives the available content width and height, excluding padding and borders.
+pub fn render_modal(
+    f: &mut Frame,
+    theme: Theme,
+    opened: Option<Instant>,
+    title: &str,
+    body: impl FnOnce(u16, u16) -> (Vec<Line<'static>>, Option<usize>),
+) {
+    render_modal_body(f, theme, opened, title, |width, height| {
+        let (lines, selected) = body(width, height.saturating_sub(2));
+        (lines, selected, 1)
+    });
+}
 
-    let block = Block::default().title(" Help ").borders(Borders::ALL);
-
-    let height = (help_text.len() as u16 + 2).min(area.height);
-    let width = 74.min(area.width);
-    let paragraph = Paragraph::new(help_text)
-        .block(block)
-        .wrap(Wrap { trim: true });
-
-    let dialog = Rect::new(
-        area.x + (area.width - width) / 2,
-        area.y + (area.height - height) / 2,
-        width,
+fn render_modal_body(
+    f: &mut Frame,
+    theme: Theme,
+    opened: Option<Instant>,
+    title: &str,
+    body: impl FnOnce(u16, u16) -> (Vec<Line<'static>>, Option<usize>, u16),
+) {
+    let fading = theme.motion && opened.is_some();
+    for cell in &mut f.buffer_mut().content {
+        let fg = cell.fg;
+        cell.set_style(Style::reset().patch(theme.scrim).bg(Color::Reset));
+        if fading {
+            cell.set_fg(fg);
+        }
+    }
+    if let Some(start) = opened.filter(|_| theme.motion) {
+        let area = f.area();
+        fx::fade_to_fg(theme.scrim.fg.unwrap(), (120, Interpolation::QuadOut))
+            .with_color_space(ColorSpace::Rgb)
+            .process(start.elapsed().into(), f.buffer_mut(), area);
+    }
+    let area = f.area().inner(Margin::new(2, 1));
+    let (mut lines, selected, padding) =
+        body(area.width.saturating_sub(6), area.height.saturating_sub(2));
+    lines.truncate(usize::from(area.height.saturating_sub(2 + 2 * padding)));
+    let width = lines
+        .iter()
+        .map(Line::width)
+        .max()
+        .unwrap_or(0)
+        .min(usize::from(area.width.saturating_sub(6)));
+    let selected = selected.filter(|index| *index < lines.len());
+    let height = lines.len() + usize::from(2 * padding);
+    let body = tui_popup::KnownSizeWrapper::new(
+        Paragraph::new(lines).block(Block::default().padding(Padding::new(2, 2, padding, padding))),
+        width + 4,
         height,
     );
-    f.render_widget(Clear, dialog);
-    f.render_widget(paragraph, dialog);
+    let popup = tui_popup::Popup::new(body)
+        .style(theme.fg)
+        .border_set(ratatui::symbols::border::ROUNDED)
+        .border_style(theme.line)
+        .title(Line::styled(
+            format!(" {title} "),
+            theme.accent.add_modifier(Modifier::BOLD),
+        ));
+    let mut state = tui_popup::PopupState::default();
+    f.render_stateful_widget(popup, area, &mut state);
+    if let (Some(index), Some(dialog)) = (selected, state.area()) {
+        let row = Rect::new(
+            dialog.x + 1,
+            dialog.y + 1 + padding + index as u16,
+            dialog.width.saturating_sub(2),
+            1,
+        );
+        let body = dialog.inner(Margin::new(1, 1));
+        let row = row.intersection(body);
+        f.buffer_mut().set_style(row, theme.sel);
+        if !row.is_empty() {
+            f.buffer_mut()[(row.x, row.y)]
+                .set_symbol("▎")
+                .set_style(theme.accent);
+        }
+    }
+}
+
+/// Render the key groups shared by the comments and reader views.
+pub fn render_help(f: &mut Frame, theme: Theme, in_comments: bool, opened: Option<Instant>) {
+    let groups: &[(&str, &[(&str, &str)])] = if in_comments {
+        &[
+            (
+                "READING",
+                &[
+                    ("j/k/↑/↓", "Select comment"),
+                    ("PgUp/PgDn", "Read text"),
+                    ("Enter/l/→", "Replies"),
+                    ("c", "Collapse"),
+                    ("[/]", "Siblings"),
+                    ("u", "Parent"),
+                    ("g/G", "First/last comment"),
+                ],
+            ),
+            (
+                "SUMMARY",
+                &[
+                    ("S", "Summary"),
+                    ("J/K", "Scroll"),
+                    ("M", "Settings"),
+                    ("Tab/Shift-Tab", "Sources"),
+                    ("Enter", "Open"),
+                    ("Esc", "Back"),
+                ],
+            ),
+            (
+                "STORY",
+                &[
+                    ("o", "Article"),
+                    ("O", "Browser"),
+                    ("L", "Links"),
+                    ("s", "Save/unsave"),
+                    ("r", "Refresh comments"),
+                    ("Esc/q/h/←", "Back"),
+                    ("?", "Close"),
+                ],
+            ),
+        ]
+    } else {
+        &[
+            (
+                "STORIES",
+                &[
+                    ("j/k/↑/↓", "Select story"),
+                    ("n/p/→/←", "Page"),
+                    ("1", "Top"),
+                    ("2", "New"),
+                    ("3", "Best"),
+                    ("4", "Saved"),
+                    ("Enter/o", "Read"),
+                    ("O", "Browser"),
+                    ("c", "Comments"),
+                    ("s", "Save/unsave"),
+                    ("r", "Refresh/retry"),
+                ],
+            ),
+            ("ANYWHERE", &[("q/Esc", "Quit"), ("?", "Close")]),
+        ]
+    };
+    render_modal_body(f, theme, opened, "Keys", |width, height| {
+        // The body includes the two padding columns on each side.
+        let columns = if width + 4 >= 72 { 2 } else { 1 };
+        let key_width = groups
+            .iter()
+            .flat_map(|(_, entries)| entries.iter())
+            .map(|(key, _)| Span::raw(*key).width())
+            .max()
+            .unwrap_or(0);
+        let entry_width = groups
+            .iter()
+            .flat_map(|(_, entries)| entries.iter())
+            .map(|(_, action)| key_width + 2 + Span::raw(*action).width())
+            .max()
+            .unwrap_or(0);
+        let rows = usize::from(height); // Rows inside the border, before any padding.
+        let grouped_rows = groups
+            .iter()
+            .map(|(_, entries)| entries.len().div_ceil(columns) + 1)
+            .sum::<usize>()
+            + groups.len().saturating_sub(1);
+        let padding = u16::from(grouped_rows + 2 <= rows);
+        let compact = grouped_rows > rows;
+        let mut lines = Vec::new();
+        // Lines holding a way out of the screen stay visible even when the table is cut.
+        let mut exits = Vec::new();
+        for (heading, entries) in groups {
+            if !compact {
+                if !lines.is_empty() {
+                    lines.push(Line::raw(""));
+                }
+                lines.push(Line::styled(*heading, theme.dim));
+            }
+            for pair in entries.chunks(columns) {
+                let mut line = Line::default();
+                for (index, (key, action)) in pair.iter().enumerate() {
+                    if index > 0 {
+                        line.push_span(Span::raw(" ".repeat(entry_width + 2 - line.width())));
+                    }
+                    line.push_span(Span::raw(" ".repeat(key_width - Span::raw(*key).width())));
+                    line.push_span(Span::styled(*key, theme.accent));
+                    line.push_span(Span::raw("  "));
+                    line.push_span(Span::styled(*action, theme.fg));
+                }
+                if pair
+                    .iter()
+                    .any(|(_, action)| matches!(*action, "Back" | "Quit" | "Close"))
+                {
+                    exits.push(lines.len());
+                }
+                lines.push(line);
+            }
+        }
+        if lines.len() > rows {
+            let room = rows.saturating_sub(1);
+            let pinned = exits.len().min(room);
+            let mut kept: Vec<_> = (0..lines.len())
+                .filter(|index| !exits.contains(index))
+                .take(room - pinned)
+                .chain(exits.iter().copied().take(pinned))
+                .collect();
+            kept.sort_unstable();
+            lines = kept.into_iter().map(|index| lines[index].clone()).collect();
+            lines.push(Line::styled("… more at a larger size", theme.dim));
+        }
+        (lines, None, padding)
+    });
+}
+
+/// Fit complete key hints in priority order, leaving two columns at either edge.
+pub fn hint_line(
+    theme: crate::theme::Theme,
+    hints: &[(&str, &str)],
+    notice: Option<(&str, Style)>,
+    width: u16,
+) -> Line<'static> {
+    let mut line = Line::from("  ");
+    if let Some((message, style)) = notice {
+        line.push_span(Span::styled(message.to_owned(), style));
+    }
+    for (key, label) in hints {
+        let separator = if line.width() > 2 { "   " } else { "" };
+        let key = Span::styled((*key).to_owned(), theme.accent);
+        let label = Span::styled(format!(" {label}"), theme.dim);
+        if line.width() + separator.len() + key.width() + label.width()
+            > usize::from(width).saturating_sub(2)
+        {
+            break;
+        }
+        line.push_span(Span::raw(separator));
+        line.push_span(key);
+        line.push_span(label);
+    }
+    line
 }
 
 /// Render status bar for stories view
-pub fn render_stories_status(area: Rect, app: &App, tick: usize) -> Paragraph<'static> {
-    if let Some(notice) = &app.bookmark_notice {
-        return Paragraph::new(format!(" Saved: 4 then r retry · {notice}"))
-            .style(Style::default().fg(Color::Red))
-            .block(Block::default().borders(Borders::TOP));
+pub fn render_stories_status(area: Rect, app: &App, _tick: usize) -> Paragraph<'static> {
+    let theme = app.theme();
+    let notice = app
+        .bookmark_notice
+        .as_ref()
+        .map(|notice| format!("Saved: 4 then r retry · {notice}"));
+    let mut hints = vec![
+        ("j/k", "move"),
+        ("Enter", "read"),
+        ("1–4", "feeds"),
+        ("s", "save"),
+        ("?", "keys"),
+    ];
+    if app.displayed_story_context().0 != crate::app::StoryType::Saved {
+        hints.push(("n/p", "page"));
     }
-    let (display_type, display_page) = app.displayed_story_context();
-    let stale = app.showing_stale_stories();
-
-    let mut segments = Vec::new();
-    if let Some(error) = app.error() {
-        segments.push(Span::styled(
-            error.to_string(),
-            Style::default().fg(Color::Red),
-        ));
-        segments.push(Span::raw(" │ "));
-    }
-
-    segments.extend([
-        Span::raw(if area.width < 80 {
-            " ? help · j/k nav · s save · 4 Saved"
-        } else {
-            " j/k nav · n/p page · 1–4 feeds · s save · Enter/o read · c discuss · ? help · q quit"
-        }),
-        Span::raw(" │ "),
-        Span::styled(
-            format!(
-                "showing {} · p{}",
-                display_type.display_name(),
-                display_page
-            ),
-            Style::default().fg(Color::Yellow),
-        ),
-    ]);
-
-    if stale {
-        segments.push(Span::raw(" → "));
-        segments.push(Span::styled(
-            format!(
-                "{} {} · p{}",
-                if app.error().is_some() && !app.is_loading() {
-                    "failed"
-                } else {
-                    "fetching"
-                },
-                app.story_type.display_name(),
-                app.current_page
-            ),
-            Style::default().fg(Color::Cyan),
-        ));
-    }
-
-    if app.should_show_loading() {
-        segments.push(Span::raw(" │ "));
-        segments.push(Span::styled(
-            format!(
-                "{} {}",
-                spinner_frame(tick),
-                if stale { "updating" } else { "loading" }
-            ),
-            Style::default().fg(Color::Blue),
-        ));
-    }
-
-    Paragraph::new(Line::from(segments))
-        .style(Style::default().add_modifier(Modifier::DIM))
-        .block(Block::default().borders(Borders::TOP))
+    hints.extend([("c", "discussion"), ("q", "quit")]);
+    let line = hint_line(
+        theme,
+        &hints,
+        notice
+            .as_deref()
+            .or(app.error().filter(|_| !app.stories.is_empty()))
+            .map(|s| (s, theme.error)),
+        area.width,
+    );
+    Paragraph::new(line).block(
+        Block::default()
+            .borders(Borders::TOP)
+            .border_style(theme.line),
+    )
 }
 
 /// Render status bar for comments view
 pub fn render_comments_status(area: Rect, app: &App, tick: usize) -> Paragraph<'static> {
-    if let Some(notice) = &app.bookmark_notice {
-        return Paragraph::new(format!(" Saved: Esc, 4 then r retry · {notice}"))
-            .style(Style::default().fg(Color::Red))
-            .block(Block::default().borders(Borders::TOP));
-    }
-    let mut segments = Vec::new();
-    if let Some(error) = app.error() {
-        segments.push(Span::styled(
-            error.to_string(),
-            Style::default().fg(Color::Red),
-        ));
-        segments.push(Span::raw(" │ "));
-    }
-
-    segments.push(Span::raw(if area.width < 80 {
-        " ? help · PgUp/Dn · L links · s save"
-    } else {
-        " j/k nav · PgUp/PgDn read · Enter replies · L links · s save · Esc back · ? help"
-    }));
-
-    if app.should_show_loading() {
-        segments.push(Span::raw(" │ "));
-        segments.push(Span::styled(
-            format!("{} loading comments", spinner_frame(tick)),
-            Style::default().fg(Color::Blue),
-        ));
-    }
-
-    Paragraph::new(Line::from(segments))
-        .style(Style::default().add_modifier(Modifier::DIM))
-        .block(Block::default().borders(Borders::TOP))
+    let theme = app.theme();
+    let notice = app
+        .bookmark_notice
+        .as_ref()
+        .map(|notice| format!("Saved: Esc, 4 then r retry · {notice}"));
+    let loading = app
+        .should_show_loading()
+        .then(|| format!("{} loading comments", spinner_frame(tick)));
+    let notice = notice
+        .as_deref()
+        .or(app.error())
+        .map(|s| (s, theme.error))
+        .or_else(|| loading.as_deref().map(|s| (s, theme.dim)));
+    Paragraph::new(hint_line(
+        theme,
+        &[
+            ("?", "help"),
+            ("j/k", "nav"),
+            ("PgUp/PgDn", "read"),
+            ("Enter", "replies"),
+            ("L", "links"),
+            ("s", "save"),
+            ("Esc", "back"),
+        ],
+        notice,
+        area.width,
+    ))
+    .block(
+        Block::default()
+            .borders(Borders::TOP)
+            .border_style(theme.line),
+    )
 }
