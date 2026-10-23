@@ -109,70 +109,43 @@ pub fn render_help(f: &mut Frame, area: Rect, in_comments: bool) {
 }
 
 /// Render status bar for stories view
-pub fn render_stories_status(area: Rect, app: &App, tick: usize) -> Paragraph<'static> {
-    if let Some(notice) = &app.bookmark_notice {
-        return Paragraph::new(format!(" Saved: 4 then r retry · {notice}"))
-            .style(app.theme().error)
-            .block(Block::default().borders(Borders::TOP));
+pub fn render_stories_status(area: Rect, app: &App, _tick: usize) -> Paragraph<'static> {
+    let theme = app.theme();
+    let mut line = Line::from("  ");
+    let notice = app
+        .bookmark_notice
+        .as_ref()
+        .map(|notice| format!("Saved: 4 then r retry · {notice}"));
+    if let Some(message) = notice.as_deref().or(app.error()) {
+        line.push_span(Span::styled(message.to_owned(), theme.error));
     }
-    let (display_type, display_page) = app.displayed_story_context();
-    let stale = app.showing_stale_stories();
-
-    let mut segments = Vec::new();
-    if let Some(error) = app.error() {
-        segments.push(Span::styled(error.to_string(), app.theme().error));
-        segments.push(Span::raw(" │ "));
+    for (key, label) in [
+        ("j/k", "move"),
+        ("Enter", "read"),
+        ("1–4", "feeds"),
+        ("s", "save"),
+        ("?", "keys"),
+        ("n/p", "page"),
+        ("c", "discussion"),
+        ("q", "quit"),
+    ] {
+        let separator = if line.width() > 2 { "   " } else { "" };
+        let key = Span::styled(key, theme.accent);
+        let label = Span::styled(format!(" {label}"), theme.dim);
+        if line.width() + separator.len() + key.width() + label.width()
+            > usize::from(area.width).saturating_sub(2)
+        {
+            break;
+        }
+        line.push_span(Span::raw(separator));
+        line.push_span(key);
+        line.push_span(label);
     }
-
-    segments.extend([
-        Span::raw(if area.width < 80 {
-            " ? help · j/k nav · s save · 4 Saved"
-        } else {
-            " j/k nav · n/p page · 1–4 feeds · s save · Enter/o read · c discuss · ? help · q quit"
-        }),
-        Span::raw(" │ "),
-        Span::styled(
-            format!(
-                "showing {} · p{}",
-                display_type.display_name(),
-                display_page
-            ),
-            app.theme().dim,
-        ),
-    ]);
-
-    if stale {
-        segments.push(Span::raw(" → "));
-        segments.push(Span::styled(
-            format!(
-                "{} {} · p{}",
-                if app.error().is_some() && !app.is_loading() {
-                    "failed"
-                } else {
-                    "fetching"
-                },
-                app.story_type.display_name(),
-                app.current_page
-            ),
-            app.theme().dim,
-        ));
-    }
-
-    if app.should_show_loading() {
-        segments.push(Span::raw(" │ "));
-        segments.push(Span::styled(
-            format!(
-                "{} {}",
-                spinner_frame(tick),
-                if stale { "updating" } else { "loading" }
-            ),
-            app.theme().dim,
-        ));
-    }
-
-    Paragraph::new(Line::from(segments))
-        .style(Style::default().add_modifier(Modifier::DIM))
-        .block(Block::default().borders(Borders::TOP))
+    Paragraph::new(line).block(
+        Block::default()
+            .borders(Borders::TOP)
+            .border_style(theme.line),
+    )
 }
 
 /// Render status bar for comments view

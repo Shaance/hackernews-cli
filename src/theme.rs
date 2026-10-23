@@ -6,6 +6,7 @@ use terminal_colorsaurus::{QueryOptions, ThemeMode};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Theme {
+    pub brand: Style,
     pub fg: Style,
     pub dim: Style,
     pub line: Style,
@@ -23,6 +24,10 @@ impl Default for Theme {
 
 impl Theme {
     pub const TRUE_DARK: Self = Self {
+        brand: Style::new()
+            .fg(Color::Rgb(0xff, 0xff, 0xff))
+            .bg(Color::Rgb(0xff, 0x66, 0x00))
+            .add_modifier(Modifier::BOLD),
         fg: Style::new().fg(Color::Rgb(0xe1, 0xe5, 0xe5)),
         dim: Style::new().fg(Color::Rgb(0xa1, 0xac, 0xb0)),
         line: Style::new().fg(Color::Rgb(0x35, 0x3d, 0x40)),
@@ -32,6 +37,7 @@ impl Theme {
         error: Style::new().fg(Color::Rgb(0xee, 0x8a, 0x8a)),
     };
     pub const TRUE_LIGHT: Self = Self {
+        brand: Self::TRUE_DARK.brand,
         fg: Style::new().fg(Color::Rgb(0x24, 0x29, 0x2c)),
         dim: Style::new().fg(Color::Rgb(0x61, 0x6b, 0x70)),
         line: Style::new().fg(Color::Rgb(0xd4, 0xd9, 0xd8)),
@@ -41,6 +47,10 @@ impl Theme {
         error: Style::new().fg(Color::Rgb(0xa3, 0x3a, 0x3a)),
     };
     pub const ANSI: Self = Self {
+        brand: Style::new()
+            .fg(Color::Black)
+            .bg(Color::Yellow)
+            .add_modifier(Modifier::BOLD),
         fg: Style::new().fg(Color::Reset),
         dim: Style::new().add_modifier(Modifier::DIM),
         line: Style::new().fg(Color::DarkGray),
@@ -50,6 +60,7 @@ impl Theme {
         error: Style::new().fg(Color::Red),
     };
     pub const MONO: Self = Self {
+        brand: Style::new().add_modifier(Modifier::REVERSED.union(Modifier::BOLD)),
         fg: Style::new(),
         dim: Style::new().add_modifier(Modifier::DIM),
         line: Style::new().add_modifier(Modifier::DIM),
