@@ -316,7 +316,7 @@ pub fn render_stories_status(area: Rect, app: &App, _tick: usize) -> Paragraph<'
         ("s", "save"),
         ("?", "keys"),
     ];
-    if app.displayed_story_context().0 != crate::app::StoryType::Saved {
+    if app.snapshot.is_none() && app.displayed_story_context().0 != crate::app::StoryType::Saved {
         hints.push(("n/p", "page"));
     }
     hints.extend([("c", "discussion"), ("q", "quit")]);

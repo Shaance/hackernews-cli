@@ -23,6 +23,66 @@ fn test_story_type_conversion() {
 }
 
 #[test]
+fn snapshot_starts_on_summary_without_promoting_social_links_or_changing_ranks() {
+    use crate::snapshot::{CapturedArticle, Snapshot};
+    use std::{collections::BTreeMap, sync::Arc};
+    for (host, expected) in [
+        ("x.com", 2),
+        ("twitter.com", 2),
+        ("mobile.twitter.com", 2),
+        ("WWW.X.COM", 2),
+        ("x.com.", 2),
+        ("notx.com", 0),
+        ("x.com.example.org", 0),
+    ] {
+        let mut stories = vec![test_story(1), test_story(2), test_story(3)];
+        stories[0].url = format!("https://{host}/story");
+        stories[2].url = "https://danluu.com/ambitious/".into();
+        let mut snapshot = Snapshot {
+            version: 1,
+            generated_at: "2026-10-26T00:00:00Z".into(),
+            feeds: BTreeMap::new(),
+            items: BTreeMap::new(),
+            articles: [1, 3]
+                .into_iter()
+                .map(|id| {
+                    (
+                        id,
+                        CapturedArticle {
+                            text: "Captured article".into(),
+                            error: None,
+                            partial: false,
+                            summary: Some("Captured summary".into()),
+                        },
+                    )
+                })
+                .collect(),
+        };
+        let mut app = App::new();
+        app.snapshot = Some(Arc::new(snapshot.clone()));
+        app.set_stories_for(StoryType::Best, 1, stories.clone());
+        assert_eq!(app.selected_index, expected, "{host}");
+        assert_eq!(
+            app.stories.iter().map(|s| s.id).collect::<Vec<_>>(),
+            vec![1, 2, 3]
+        );
+        // A visitor can still choose the social story and keep that choice on return.
+        app.selected_index = 0;
+        app.set_stories_for(StoryType::New, 1, vec![test_story(4)]);
+        app.set_stories_for(StoryType::Best, 1, stories.clone());
+        assert_eq!(app.selected_index, 0);
+        snapshot.articles.clear();
+        let mut no_summary = App::new();
+        no_summary.snapshot = Some(Arc::new(snapshot));
+        no_summary.set_stories_for(StoryType::Best, 1, stories.clone());
+        assert_eq!(no_summary.selected_index, if expected == 2 { 1 } else { 0 });
+        let mut native = App::new();
+        native.set_stories_for(StoryType::Best, 1, stories);
+        assert_eq!(native.selected_index, 0);
+    }
+}
+
+#[test]
 fn test_app_navigation() {
     let mut app = App::new();
     app.stories = vec![test_story(1), test_story(2)];

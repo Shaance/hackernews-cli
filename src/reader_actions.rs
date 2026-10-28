@@ -30,6 +30,24 @@ pub async fn handle(
         }
         return Ok(true);
     }
+    if app.snapshot.is_some() && matches!(key, KeyCode::Char('r') | KeyCode::Char('L')) {
+        app.preview_notice = Some(if key == KeyCode::Char('r') {
+            "This is a fixed snapshot. Get the full CLI on GitHub for live stories and complete discussions."
+        } else {
+            "Follow links in the article pane, or get the full CLI on GitHub to open links from comments."
+        });
+        return Ok(true);
+    }
+    if app.snapshot.is_some() && key == KeyCode::Char('O') {
+        if let Some(story) = reader
+            .current_story()
+            .filter(|_| reader.is_open())
+            .or_else(|| app.selected_story().cloned())
+        {
+            reader.read_original(story, true);
+        }
+        return Ok(true);
+    }
     if reader.is_open() {
         if key == KeyCode::Char('o') {
             if let Some(story) = reader.current_story() {

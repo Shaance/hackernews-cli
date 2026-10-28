@@ -3,6 +3,7 @@ pub mod bookmarks;
 pub mod event;
 mod hn_cli_service;
 pub mod hn_client;
+pub mod snapshot;
 pub mod theme;
 mod time_utils;
 pub mod ui;

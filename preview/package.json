@@ -1,0 +1,27 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "build": "node build-ui.mjs",
+    "test": "node publisher-check.mjs",
+    "test:sandbox": "node verify.mjs",
+    "test:lifecycle": "node lifecycle.mjs",
+    "test:proxy": "node public-check.mjs",
+    "format": "prettier --write '*.mjs' app.js index.html style.css package.json 'fixtures/*.json'",
+    "format:check": "prettier --check '*.mjs' app.js index.html style.css package.json 'fixtures/*.json'",
+    "test:sensitivity": "node sensitivity-check.mjs"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "0.10.0",
+    "@xterm/xterm": "5.5.0",
+    "aws4fetch": "1.0.20",
+    "ws": "8.22.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "prettier": "3.9.10"
+  }
+}

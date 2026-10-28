@@ -240,3 +240,7 @@ The stills of a single terminal are captured from the real app with [vhs](https:
 ## About
 
 This project was created as a learning exercise to explore Rust and terminal UI development.
+
+## Browser preview
+
+[Try hn in your browser](https://hn.hashcode.dev). The native CLI runs against a daily snapshot in an offline container. [Preview development and tests](preview/README.md) · [Deployment operations](preview/deploy/README.md).

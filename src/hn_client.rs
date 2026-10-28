@@ -22,9 +22,9 @@ pub struct HackerNewsItem {
     pub title: String,
     pub url: Option<String>,
     pub descendants: Option<i32>,
-    pub(crate) id: i32,
-    pub(crate) kids: Option<Vec<i32>>,
-    pub(crate) r#type: String,
+    pub id: i32,
+    pub kids: Option<Vec<i32>>,
+    pub r#type: String,
     pub text: Option<String>,
     #[serde(default)]
     pub deleted: bool,
@@ -69,11 +69,19 @@ impl Default for HackerNewsClientConfig {
 pub struct HackerNewsClientImpl {
     client: Client,
     config: HackerNewsClientConfig,
+    snapshot: Option<std::sync::Arc<crate::snapshot::Snapshot>>,
 }
 
 #[async_trait]
 impl HackerNewsClient for HackerNewsClientImpl {
     async fn get_story_ids(&self, story_type: &str) -> Result<Vec<i32>> {
+        if let Some(snapshot) = &self.snapshot {
+            return snapshot
+                .feeds
+                .get(story_type)
+                .cloned()
+                .context("Category not captured");
+        }
         let url = format!("{}v0/{}stories.json", self.config.api_url, story_type);
         let resp = self
             .client
@@ -95,6 +103,13 @@ impl HackerNewsClient for HackerNewsClientImpl {
     }
 
     async fn get_item(&self, id: i32) -> Result<HackerNewsItem> {
+        if let Some(snapshot) = &self.snapshot {
+            return snapshot
+                .items
+                .get(&id)
+                .cloned()
+                .context("Item not captured");
+        }
         let url = format!("{}v0/item/{}.json", self.config.api_url, id);
         let resp = self
             .client
@@ -120,6 +135,12 @@ impl Default for HackerNewsClientImpl {
 }
 
 impl HackerNewsClientImpl {
+    pub fn with_snapshot(snapshot: std::sync::Arc<crate::snapshot::Snapshot>) -> Self {
+        Self {
+            snapshot: Some(snapshot),
+            ..Self::new()
+        }
+    }
     /// Create a new HackerNews client with default configuration
     pub fn new() -> Self {
         Self::with_config(HackerNewsClientConfig::default())
@@ -132,7 +153,11 @@ impl HackerNewsClientImpl {
             .build()
             .expect("Failed to create HTTP client");
 
-        Self { client, config }
+        Self {
+            client,
+            config,
+            snapshot: None,
+        }
     }
 }
 
