@@ -40,7 +40,7 @@ impl Default for Network {
     }
 }
 impl Network {
-    pub async fn article(
+    pub(super) async fn article(
         &self,
         provider: Provider,
         key: &str,
@@ -71,7 +71,7 @@ impl Network {
             text: sources::clean(summary),
         })
     }
-    pub async fn discussion(
+    pub(super) async fn discussion(
         &self,
         provider: Provider,
         key: &str,

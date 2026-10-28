@@ -1,0 +1,7 @@
+[Unit]
+Description=Check for a published preview snapshot hourly
+[Timer]
+OnCalendar=hourly
+Persistent=true
+[Install]
+WantedBy=timers.target

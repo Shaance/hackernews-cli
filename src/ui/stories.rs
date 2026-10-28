@@ -143,7 +143,9 @@ fn render_title(f: &mut Frame, area: Rect, app: &App, tick: usize) {
             if failed { theme.error } else { theme.dim },
         ));
     }
-    status.push(Span::styled(format!("Page {display_page}"), theme.dim));
+    if app.snapshot.is_none() {
+        status.push(Span::styled(format!("Page {display_page}"), theme.dim));
+    }
     let status = Line::from(status);
     let right_width = (status.width() as u16).min(area.width.saturating_sub(2));
     let right_x = area.right().saturating_sub(2 + right_width);
