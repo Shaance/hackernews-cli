@@ -9,3 +9,12 @@
 
 # Python verification helpers
 __pycache__/
+
+/preview/node_modules
+/preview/.runtime
+/preview/snapshot.json
+/preview/evidence
+/preview/dist
+/preview/.vercel
+/preview/.env*
+/.wrangler/

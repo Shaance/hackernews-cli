@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "generated_at": "2026-10-26T00:00:00Z",
+  "feeds": {
+    "top": [50225695, 2],
+    "new": [2, 50225695],
+    "best": [1, 50225695, 2]
+  },
+  "items": {
+    "1": {
+      "by": "fixture",
+      "score": 42,
+      "time": 1792972800,
+      "title": "Social story remains selectable",
+      "url": "https://x.com/example/status/1",
+      "descendants": 0,
+      "id": 1,
+      "kids": [],
+      "type": "story",
+      "text": null
+    },
+    "50225695": {
+      "by": "fixture",
+      "score": 42,
+      "time": 1792972800,
+      "title": "A small reproducible preview",
+      "url": "https://example.com/",
+      "descendants": 1,
+      "id": 50225695,
+      "kids": [3],
+      "type": "story",
+      "text": null
+    },
+    "2": {
+      "by": "fixture",
+      "score": 42,
+      "time": 1792972800,
+      "title": "Another captured story",
+      "url": "https://example.org/",
+      "descendants": 0,
+      "id": 2,
+      "kids": [],
+      "type": "story",
+      "text": null
+    },
+    "3": {
+      "by": "reader",
+      "score": 0,
+      "time": 1792972800,
+      "title": "",
+      "url": null,
+      "descendants": null,
+      "id": 3,
+      "kids": [],
+      "type": "comment",
+      "text": "This synthetic comment verifies offline discussion navigation."
+    }
+  },
+  "articles": {
+    "50225695": {
+      "text": "This synthetic article describes a small offline preview. Stories and comments are captured ahead of time so visitors can explore the native interface without making live requests. The publisher validates a complete bundle before replacing the previous version. Separate visitor sessions use temporary storage. The example is written for automated tests and does not reproduce a real article or claim to be an AI generated summary. The complete source text is retained alongside this illustrative summary for deterministic validation.",
+      "error": null,
+      "partial": false,
+      "summary": "This synthetic article describes a small offline preview. Stories and comments are captured ahead of time so visitors can explore the native interface without making live requests. The publisher validates a complete bundle before replacing the previous version. Separate visitor sessions use temporary storage. The example is written for automated tests and does not reproduce a real article or claim to be an AI generated summary."
+    },
+    "2": {
+      "text": "This synthetic article describes a small offline preview. Stories and comments are captured ahead of time so visitors can explore the native interface without making live requests. The publisher validates a complete bundle before replacing the previous version. Separate visitor sessions use temporary storage. The example is written for automated tests and does not reproduce a real article or claim to be an AI generated summary. The complete source text is retained alongside this illustrative summary for deterministic validation.",
+      "error": null,
+      "partial": false,
+      "summary": "This synthetic article describes a small offline preview. Stories and comments are captured ahead of time so visitors can explore the native interface without making live requests. The publisher validates a complete bundle before replacing the previous version. Separate visitor sessions use temporary storage. The example is written for automated tests and does not reproduce a real article or claim to be an AI generated summary."
+    }
+  }
+}
