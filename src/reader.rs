@@ -12,7 +12,8 @@ mod replay;
 #[cfg(test)]
 mod sampling_tests;
 mod settings;
-mod sources;
+pub(crate) mod snapshot;
+pub(crate) mod sources;
 mod summary_prompts;
 #[cfg(test)]
 mod tests;
@@ -80,7 +81,7 @@ impl<T> Capture<T> {
 }
 #[derive(Debug, Clone)]
 pub struct Failure {
-    message: String,
+    pub(crate) message: String,
     auth: bool,
 }
 impl Failure {
@@ -215,6 +216,7 @@ impl Reading {
     }
 }
 pub struct Reader {
+    snapshot: Option<Arc<hn_lib::snapshot::Snapshot>>,
     theme: Theme,
     readings: HashMap<i32, Reading>,
     active: Option<i32>,
@@ -253,6 +255,7 @@ impl Reader {
             Err(e) => (Config::default(), e),
         };
         Self {
+            snapshot: None,
             theme,
             readings: HashMap::new(),
             active: None,

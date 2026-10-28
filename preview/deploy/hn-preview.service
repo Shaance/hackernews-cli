@@ -1,0 +1,20 @@
+[Unit]
+Description=Hacker News offline preview gateway
+Requires=docker.service
+After=docker.service
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+WorkingDirectory=%h/demo
+EnvironmentFile=%h/.config/hn-preview/gateway.env
+Environment=DOCKER_SOCKET=%t/docker.sock
+ExecStart=/opt/hn-preview/node/bin/node %h/demo/server.mjs
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=30
+NoNewPrivileges=yes
+UMask=0022
+
+[Install]
+WantedBy=default.target

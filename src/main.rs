@@ -14,6 +14,7 @@ use tokio::time::sleep_until;
 
 mod reader;
 mod reader_actions;
+mod snapshot_capture;
 mod terminal_session;
 
 use hn_lib::{
@@ -50,6 +51,28 @@ enum AppMessage {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let args: Vec<_> = std::env::args().skip(1).collect();
+    if args.first().map(String::as_str) == Some("--capture-snapshot") {
+        anyhow::ensure!(args.len() == 2, "Usage: hn --capture-snapshot PATH");
+        return snapshot_capture::capture(Path::new(&args[1])).await;
+    }
+    if let [flag, path] = args.as_slice() {
+        if flag == "--validate-snapshot" {
+            hn_lib::snapshot::Snapshot::load(Path::new(path))?;
+            println!("Snapshot valid");
+            return Ok(());
+        }
+        if flag == "--prepare-snapshot" {
+            return snapshot_capture::prepare(Path::new(path)).await;
+        }
+    }
+    let snapshot = match args.as_slice() {
+        [] => None,
+        [flag, path] if flag == "--snapshot" => Some(std::sync::Arc::new(
+            hn_lib::snapshot::Snapshot::load(Path::new(path))?,
+        )),
+        _ => anyhow::bail!("Usage: hn [--snapshot PATH | --capture-snapshot PATH | --prepare-snapshot PATH | --validate-snapshot PATH]"),
+    };
     let theme = Theme::detect();
     // crossterm drops colour codes whenever NO_COLOR is set; follow the resolved theme instead,
     // so an explicit HN_THEME wins and the monochrome theme stays colourless.
@@ -58,8 +81,16 @@ async fn main() -> Result<()> {
 
     // Create app state
     let mut app = App::with_theme(theme);
+    app.snapshot = snapshot.clone();
     let mut bookmark_path = hn_lib::bookmarks::reload(&mut app);
-    let service = HackerNewsCliServiceImpl::new();
+    let service = snapshot
+        .as_ref()
+        .map(|data| {
+            HackerNewsCliServiceImpl::new_with_client(
+                hn_lib::hn_client::HackerNewsClientImpl::with_snapshot(data.clone()),
+            )
+        })
+        .unwrap_or_default();
 
     // Create channel for async task communication
     let (tx, mut rx) = mpsc::unbounded_channel();
@@ -68,6 +99,9 @@ async fn main() -> Result<()> {
     request_stories(&mut app, tx.clone(), service.clone(), false);
 
     let mut summaries = reader::Reader::new(theme);
+    if let Some(snapshot) = snapshot {
+        summaries.load_snapshot(snapshot);
+    }
 
     // Run the app
     let result = run_app(
@@ -129,6 +163,26 @@ async fn run_app(
             } else {
                 hn_lib::ui::render(f, app, frame as usize);
             }
+            if let Some(notice) = app.preview_notice {
+                hn_lib::ui::widgets::render_modal(
+                    f,
+                    app.theme(),
+                    None,
+                    "Preview limit",
+                    |width, _| {
+                        let mut lines: Vec<_> = textwrap::wrap(notice, usize::from(width).max(1))
+                            .into_iter()
+                            .map(|line| ratatui::text::Line::raw(line.into_owned()))
+                            .collect();
+                        lines.push(ratatui::text::Line::raw(""));
+                        lines.push(ratatui::text::Line::styled(
+                            "Press any key to return",
+                            app.theme().dim,
+                        ));
+                        (lines, None)
+                    },
+                );
+            }
         })?;
 
         // Input and app results wake immediately; only polled work needs a timer.
@@ -156,6 +210,9 @@ async fn run_app(
         match event {
             Event::Key(key) if key.kind == KeyEventKind::Press => {
                 let key = key.code;
+                if app.preview_notice.take().is_some() {
+                    continue;
+                }
                 if reader_actions::handle(
                     summaries,
                     app,
@@ -223,7 +280,9 @@ async fn handle_story_action(
         StoryAction::PrevStory => app.prev_story(),
         StoryAction::NextPage => {
             app.next_page();
-            request_stories(app, tx, service, false);
+            if app.preview_notice.is_none() {
+                request_stories(app, tx, service, false);
+            }
         }
         StoryAction::PrevPage => {
             app.prev_page();

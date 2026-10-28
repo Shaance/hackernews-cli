@@ -9,6 +9,20 @@ impl Reader {
             self.settings_key(key);
             return true;
         }
+        if self.snapshot.is_some()
+            && (key == KeyCode::Char('M')
+                || (key == KeyCode::Char('S')
+                    && self
+                        .active
+                        .and_then(|id| self.readings.get(&id))
+                        .is_none_or(|r| {
+                            r.article.result.is_none() && r.discussion.result.is_none()
+                        })))
+        {
+            self.browser_notice = "Snapshot preview · install hn for live AI summaries".into();
+            self.notice_started = Some(Instant::now());
+            return true;
+        }
         if key == KeyCode::Char('M') {
             self.edit_settings();
             return true;
@@ -153,6 +167,7 @@ impl Reader {
         reading.growth_cap = 0;
         reading.leave_source();
         reading.citation_focus = false;
+        self.load_captured_summary();
         if self.config.automatic {
             self.request(Request::Automatic);
         }
@@ -166,6 +181,14 @@ impl Reader {
         self.browser.is_some() || self.browser_busy
     }
     pub fn read_original(&mut self, story: HNCLIItem, focus: bool) {
+        if self.snapshot.is_some() {
+            use std::io::Write;
+            let _ = write!(std::io::stdout(), "\x1b]777;hn-article={}\x07", story.id);
+            let _ = std::io::stdout().flush();
+            self.browser_notice = "Original website in article pane".into();
+            self.notice_started = Some(Instant::now());
+            return;
+        }
         if self.browser_busy {
             self.desired_browser = Some((story, focus));
             self.browser_notice = "Opening latest article…".into();

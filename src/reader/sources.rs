@@ -60,7 +60,7 @@ pub fn extract(html: &[u8], url: &reqwest::Url) -> Result<String, Failure> {
     }
     Ok(product.text)
 }
-pub async fn article_capture(
+pub(super) async fn article_capture(
     network: &Network,
     mut story: HNCLIItem,
     refresh: bool,
@@ -81,7 +81,7 @@ pub async fn article_capture(
     }))
 }
 
-pub async fn discussion(
+pub(super) async fn discussion(
     service: &HackerNewsCliServiceImpl,
     mut story: HNCLIItem,
     refresh: bool,
