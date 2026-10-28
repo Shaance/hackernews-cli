@@ -1,0 +1,14 @@
+[Unit]
+Description=Adopt validated Hacker News snapshot
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/demo
+EnvironmentFile=%h/.config/hn-preview/gateway.env
+EnvironmentFile=%h/.config/hn-preview/storage.env
+Environment=HN_BIN=/opt/hn-preview/hn
+ExecStart=/opt/hn-preview/node/bin/node %h/demo/adopt.mjs
+TimeoutStartSec=180
+NoNewPrivileges=yes
+UMask=0077

@@ -17,6 +17,17 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --locked --verbose
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test --locked --verbose
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+    - name: Install preview dependencies
+      run: npm ci --prefix preview
+    - name: Check preview formatting
+      run: npm run format:check --prefix preview
+    - name: Test snapshot publication and adoption
+      run: npm test --prefix preview
+    - name: Build public preview assets
+      run: npm run build --prefix preview

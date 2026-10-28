@@ -71,6 +71,9 @@ struct FeedPosition {
 /// Main application state
 pub struct App {
     theme: Theme,
+    /// Immutable preview input; absent during ordinary live browsing.
+    pub snapshot: Option<std::sync::Arc<crate::snapshot::Snapshot>>,
+    pub preview_notice: Option<&'static str>,
     /// Current view
     pub view: View,
     /// Current story type
@@ -145,6 +148,8 @@ impl App {
     pub fn with_theme(theme: Theme) -> Self {
         let mut app = Self {
             theme,
+            snapshot: None,
+            preview_notice: None,
             view: View::Stories,
             story_type: StoryType::Best,
             stories: Vec::new(),
@@ -216,6 +221,10 @@ impl App {
 
     /// Go to next page
     pub fn next_page(&mut self) {
+        if self.snapshot.is_some() {
+            self.preview_notice = Some("This preview has one page per feed. Get the full CLI on GitHub to browse more stories.");
+            return;
+        }
         if self.story_type == StoryType::Saved {
             return;
         }
@@ -381,12 +390,43 @@ impl App {
 
     /// Set stories and record their source type/page
     pub fn set_stories_for(&mut self, story_type: StoryType, page: u32, stories: Vec<HNCLIItem>) {
+        // Give the snapshot's first visit a useful example without changing HN ranks.
+        let initial_selection = self
+            .snapshot
+            .as_ref()
+            .filter(|_| self.stories_for.is_none())
+            .and_then(|snapshot| {
+                stories
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, story)| {
+                        let Ok(url) = reqwest::Url::parse(&story.url) else {
+                            return false;
+                        };
+                        let host = url.host_str().unwrap_or_default().trim_end_matches('.');
+                        matches!(url.scheme(), "http" | "https")
+                            && !["x.com", "twitter.com"].iter().any(|domain| {
+                                host == *domain || host.ends_with(&format!(".{domain}"))
+                            })
+                    })
+                    .min_by_key(|(index, story)| {
+                        let has_summary = snapshot.articles.get(&story.id).is_some_and(|article| {
+                            !article.text.trim().is_empty()
+                                && article
+                                    .summary
+                                    .as_ref()
+                                    .is_some_and(|s| !s.trim().is_empty())
+                        });
+                        (!has_summary, *index)
+                    })
+                    .map(|(index, _)| index)
+            });
         self.remember_feed_position();
         let position = self
             .feed_positions
             .get(&story_type)
             .filter(|p| p.page == page);
-        self.selected_index = position.map_or(0, |p| {
+        self.selected_index = position.map_or(initial_selection.unwrap_or(0), |p| {
             p.selected_id
                 .and_then(|id| stories.iter().position(|story| story.id == id))
                 .unwrap_or(p.index)
