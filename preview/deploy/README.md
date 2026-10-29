@@ -42,3 +42,7 @@ The UI was deployed from `preview/dist` with the Vercel CLI. GitHub integration 
 ## Snapshot adoption Host check (2026-10-28)
 
 The local readiness request must send `PREVIEW_HOST` while connecting to `PREVIEW_BIND`. Node fetch ignored the custom Host header, causing production to reject the probe with403 and roll back successful updates. Adoption uses `node:http.get` for this probe; strict gateway Host validation, digest verification and rollback remain intact. `node preview/publisher-check.mjs` exercises this with a real HTTP server requiring a hostname different from its loopback address.
+
+## Feed item validation (2026-10-29)
+
+Hacker News top/new feeds include job postings. The previous story-only snapshot validator rejected job50280824 and stopped the October29 capture before publication. Feed entries now accept stories and jobs, preserving their original order; comments and missing entries remain invalid. The regression uses that actual job and exercises the offline CLI feed reader. Deploy the updated native validator and visitor image to both gateways before running the updated publisher, because older readers reject bundles containing jobs. A failed capture retains the previous published snapshot; a healthy adoption job reporting `Snapshot unchanged` does not prove generation succeeded.
