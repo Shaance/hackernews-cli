@@ -57,11 +57,19 @@ pub(crate) async fn prepare(snapshot: &mut hn_lib::snapshot::Snapshot) -> anyhow
         response_log_dir: None,
         ..network::Network::default()
     };
+    prepare_with_network(snapshot, &config, &network).await
+}
+
+async fn prepare_with_network(
+    snapshot: &mut hn_lib::snapshot::Snapshot,
+    config: &Config,
+    network: &network::Network,
+) -> anyhow::Result<()> {
     for feed in ["top", "new", "best"] {
-        let selected = snapshot.feeds[feed]
+        let candidates: Vec<_> = snapshot.feeds[feed]
             .iter()
             .copied()
-            .find(|id| {
+            .filter(|id| {
                 let item = &snapshot.items[id];
                 let Ok(url) = reqwest::Url::parse(item.url.as_deref().unwrap_or_default()) else {
                     return false;
@@ -75,33 +83,51 @@ pub(crate) async fn prepare(snapshot: &mut hn_lib::snapshot::Snapshot) -> anyhow
                         article.error.is_none() && article.text.chars().count() >= 400
                     })
             })
-            .ok_or_else(|| {
-                anyhow::anyhow!(
-                    "No useful featured article in {feed}; keeping previous published snapshot"
-                )
-            })?;
-        let article = snapshot
-            .articles
-            .get_mut(&selected)
-            .expect("selected captured article");
-        if article
-            .summary
-            .as_ref()
-            .is_some_and(|s| !s.trim().is_empty())
-        {
-            continue;
+            // One first choice and one alternate; at most six provider calls per run.
+            .take(2)
+            .collect();
+        let mut prepared = false;
+        for selected in candidates {
+            let article = snapshot
+                .articles
+                .get_mut(&selected)
+                .expect("selected captured article");
+            // Match the publication guard before selecting this as the featured article.
+            if article
+                .summary
+                .as_ref()
+                .is_some_and(|s| s.split_whitespace().count() >= 40)
+            {
+                prepared = true;
+                break;
+            }
+            article.summary = None;
+            let captured = ArticleCapture {
+                title: snapshot.items[&selected].title.clone(),
+                text: article.text.clone(),
+                partial: article.partial,
+            };
+            match network
+                .article(config.provider, config.key(), Profile::Fast, &captured)
+                .await
+            {
+                Ok(summary) if summary.text.split_whitespace().count() >= 40 => {
+                    article.summary = Some(summary.text);
+                    eprintln!("Prepared featured summary {selected} for {feed}");
+                    prepared = true;
+                    break;
+                }
+                Ok(_) => eprintln!("Skipping summary {selected} for {feed}: fewer than 40 words"),
+                Err(error) => {
+                    eprintln!("Skipping summary {selected} for {feed}: {}", error.message)
+                }
+            }
         }
-        let captured = ArticleCapture {
-            title: snapshot.items[&selected].title.clone(),
-            text: article.text.clone(),
-            partial: article.partial,
-        };
-        let summary = network
-            .article(config.provider, config.key(), Profile::Fast, &captured)
-            .await
-            .map_err(|error| anyhow::anyhow!("Summary for {selected} failed: {}", error.message))?;
-        article.summary = Some(summary.text);
-        eprintln!("Prepared featured summary {selected} for {feed}");
+        anyhow::ensure!(prepared, "No valid featured summary for {feed} after up to two eligible articles; keeping previous published snapshot");
     }
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "snapshot_tests.rs"]
+mod tests;

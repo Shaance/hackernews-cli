@@ -9,7 +9,7 @@ Try the native CLI at [hn.hashcode.dev](https://hn.hashcode.dev). The static UI 
 - Enter opens the summary/comments in the real CLI and the original website in a browser iframe. Sites can block embedding; Open original remains available.
 - Visitor containers have no network, a read-only filesystem, temporary session storage, and CPU/memory/process limits. They receive no Docker socket or provider/storage credentials.
 - Three sessions can run concurrently, for ten minutes each. Quit, disconnect and expiry remove the container. Saved stories last only for that session.
-- The online publisher reuses the native article extractor and Anthropic summary provider. It makes at most three summary calls per run. Publishing validates content before advancing the latest pointer; adoption checks the digest/schema and restores the previous snapshot if readiness fails.
+- The online publisher reuses the native article extractor and Anthropic summary provider. It makes at most six summary calls per run (two eligible candidates per feed). Publishing validates content before advancing the latest pointer; adoption checks the digest/schema and restores the previous snapshot if readiness fails.
 
 ## Reproduce from a clean checkout
 

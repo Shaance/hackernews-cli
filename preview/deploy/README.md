@@ -27,11 +27,11 @@ Publisher configuration belongs to `/etc/hn-preview/publisher.env` (root-owned 0
 
 ## Recovery and limits
 
-Publishing first rejects any supplied summary under 40 words, then uploads and reads back the immutable bundle before changing `latest.json`. Rejection fails the scheduled run and keeps the published version; the local candidate remains a draft. The check catches obvious fragments, not factual errors, and makes no extra AI calls. Adoption validates hash/schema, preserves `<snapshot>.previous`, restarts the gateway and checks its digest. Failed restart restores the prior file and retries service startup; investigate if recovery also fails. Daily updates end active sessions; Restart fetches the new version.
+Preparation tries the first two eligible articles in each feed, preserving feed order. An empty, failed or under-40-word summary is discarded before trying the alternate. If neither produces a valid summary, the previous snapshot remains live. Publishing independently rejects any supplied summary under 40 words, then uploads and reads back the immutable bundle before changing `latest.json`. Rejection fails the scheduled run and keeps the published version; the local candidate remains a draft. The check catches obvious fragments, not factual errors, and makes no extra AI calls. Adoption validates hash/schema, preserves `<snapshot>.previous`, restarts the gateway and checks its digest. Failed restart restores the prior file and retries service startup; investigate if recovery also fails. Daily updates end active sessions; Restart fetches the new version.
 
 Keep the prior pinned image and snapshot. For rollback, stop publishing/adoption timers, restore the prior gateway image/file and restart its user service. Remove only the preview route to take the demo down; do not disable the shared proxy or rootful applications.
 
-No blanket bucket TTL is configured. Current/last-good data must survive publishing outages; old-object cleanup remains pending. Free-tier operation is not a billing guarantee; a run can make up to three summary calls. The patched gVisor binary remains a maintenance obligation until an official compatible release is validated.
+No blanket bucket TTL is configured. Current/last-good data must survive publishing outages; old-object cleanup remains pending. Free-tier operation is not a billing guarantee; a run can make up to six summary calls. The patched gVisor binary remains a maintenance obligation until an official compatible release is validated.
 
 ## Live launch (2026-10-26)
 
