@@ -13,6 +13,52 @@ pub struct Snapshot {
     pub articles: BTreeMap<i32, CapturedArticle>,
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{hn_client::HackerNewsClientImpl, HackerNewsCliService, HackerNewsCliServiceImpl};
+    use std::sync::Arc;
+
+    #[tokio::test]
+    async fn snapshot_feed_accepts_real_job_and_preserves_ranking() {
+        let mut snapshot: Snapshot =
+            serde_json::from_str(include_str!("../preview/fixtures/snapshot.json")).unwrap();
+        // Actual HN item that stopped the scheduled capture on 2026-10-29.
+        let job: HackerNewsItem = serde_json::from_str(
+            r#"{"by":"bastienbeurier","id":50280824,"score":1,"time":1793221206,
+                "title":"Nango (YC W23) Is Hiring Across Eng, FDE, Marketing, DevRel",
+                "type":"job","url":"https://nango.dev/careers"}"#,
+        )
+        .unwrap();
+        snapshot.feeds.get_mut("top").unwrap().insert(1, job.id);
+        snapshot.items.insert(job.id, job.clone());
+        snapshot.validate().unwrap();
+        let expected_ids = snapshot.feeds["top"].clone();
+        let client = HackerNewsClientImpl::with_snapshot(Arc::new(snapshot.clone()));
+        let page = HackerNewsCliServiceImpl::new_with_client(client)
+            .fetch_stories_page("top", 20, 1)
+            .await
+            .unwrap();
+        assert_eq!(
+            page.iter().map(|item| item.id).collect::<Vec<_>>(),
+            expected_ids
+        );
+        assert_eq!(page[1].title, job.title);
+        assert_eq!(page[1].url, job.url.unwrap());
+
+        snapshot.items.get_mut(&job.id).unwrap().r#type = "comment".into();
+        assert!(
+            snapshot.validate().is_err(),
+            "comments cannot be feed entries"
+        );
+        snapshot.items.remove(&job.id);
+        assert!(
+            snapshot.validate().is_err(),
+            "missing entries still fail validation"
+        );
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CapturedArticle {
     pub text: String,
@@ -48,8 +94,10 @@ impl Snapshot {
             ensure!(!ids.is_empty() && ids.len() <= 20, "Invalid feed length");
             for id in ids {
                 ensure!(
-                    self.items.get(id).is_some_and(|i| i.r#type == "story"),
-                    "Missing story {id}"
+                    self.items
+                        .get(id)
+                        .is_some_and(|i| matches!(i.r#type.as_str(), "story" | "job")),
+                    "Missing or invalid feed item {id}"
                 );
             }
         }
