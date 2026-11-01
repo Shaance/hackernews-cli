@@ -52,6 +52,10 @@ enum AppMessage {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args: Vec<_> = std::env::args().skip(1).collect();
+    if matches!(args.first().map(String::as_str), Some("--version" | "-V")) {
+        println!("hn {}", env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
     if args.first().map(String::as_str) == Some("--capture-snapshot") {
         anyhow::ensure!(args.len() == 2, "Usage: hn --capture-snapshot PATH");
         return snapshot_capture::capture(Path::new(&args[1])).await;
@@ -71,7 +75,7 @@ async fn main() -> Result<()> {
         [flag, path] if flag == "--snapshot" => Some(std::sync::Arc::new(
             hn_lib::snapshot::Snapshot::load(Path::new(path))?,
         )),
-        _ => anyhow::bail!("Usage: hn [--snapshot PATH | --capture-snapshot PATH | --prepare-snapshot PATH | --validate-snapshot PATH]"),
+        _ => anyhow::bail!("Usage: hn [--version | --snapshot PATH | --capture-snapshot PATH | --prepare-snapshot PATH | --validate-snapshot PATH]"),
     };
     let theme = Theme::detect();
     // crossterm drops colour codes whenever NO_COLOR is set; follow the resolved theme instead,
