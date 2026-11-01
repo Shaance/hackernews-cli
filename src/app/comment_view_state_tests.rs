@@ -90,3 +90,37 @@ fn test_parent_comment_navigates_up_tree() {
     app.parent_comment();
     assert_eq!(visible_comment_id(&app, app.comment_cursor), 1);
 }
+
+#[test]
+fn collapse_from_descendant_selects_collapsing_ancestor() {
+    for nested in [false, true] {
+        let parent = test_comment(
+            10,
+            "parent",
+            usize::from(nested),
+            vec![test_comment(11, "child", 2, vec![])],
+        );
+        let mut app = App::new();
+        app.set_comments(vec![
+            if nested {
+                test_comment(5, "outer", 0, vec![parent])
+            } else {
+                parent
+            },
+            test_comment(20, "next", 0, vec![]),
+            test_comment(30, "last", 0, vec![]),
+        ]);
+        app.next_comment();
+        if nested {
+            app.next_comment();
+        }
+        assert_eq!(app.selected_comment_mut().unwrap().id, 11);
+        app.collapse_current_thread();
+        assert_eq!(app.selected_comment_mut().unwrap().id, 10);
+        assert_eq!(app.visible_comment_count(), if nested { 4 } else { 3 });
+        assert!(matches!(
+            app.selected_comment_mut().unwrap().state,
+            CommentState::Collapsed
+        ));
+    }
+}
