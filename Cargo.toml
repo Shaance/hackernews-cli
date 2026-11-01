@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.88"
 license = "MIT"
+description = "Read Hacker News stories and comment threads in your terminal"
+repository = "https://github.com/Shaance/hackernews-cli"
+readme = "README.md"
 
 [[bin]]
 name = "hn"
