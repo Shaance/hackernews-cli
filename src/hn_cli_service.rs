@@ -156,15 +156,23 @@ impl<C: HackerNewsClient + Sync> HackerNewsCliService for HackerNewsCliServiceIm
         let items = self.hn_client.get_items(page_ids).await;
 
         let mut result = Vec::new();
-        for item_result in items {
+        let mut first_error = None;
+        for (id, item_result) in page_ids.iter().zip(items) {
             match item_result {
                 Ok(item) => result.push(self.api_item_to_hn_cli_item(item)),
-                Err(_e) => {
-                    // Silently skip failed items - they may be deleted or unavailable
+                Err(error) => {
+                    first_error.get_or_insert_with(|| error.context(format!("Story item {id}")));
                 }
             }
         }
 
+        if result.is_empty() {
+            if let Some(error) = first_error {
+                return Err(error).context(format!(
+                    "Failed to fetch any stories for type: {story_type}"
+                ));
+            }
+        }
         Ok(result)
     }
 
@@ -183,17 +191,24 @@ impl<C: HackerNewsClient + Sync> HackerNewsCliService for HackerNewsCliServiceIm
         let items = self.hn_client.get_items(comment_ids).await;
 
         let mut comments = Vec::new();
-        for item_result in items {
+        let mut first_error = None;
+        for (id, item_result) in comment_ids.iter().zip(items) {
             match item_result {
                 Ok(item) => {
                     comments.push(self.api_item_to_comment(item, depth));
                 }
-                Err(_e) => {
-                    // Silently skip failed comments - they may be deleted or unavailable
+                Err(error) => {
+                    first_error.get_or_insert_with(|| error.context(format!("Comment item {id}")));
                 }
             }
         }
 
+        if comments.is_empty() {
+            if let Some(error) = first_error {
+                return Err(error)
+                    .context(format!("Failed to fetch any comments at depth: {depth}"));
+            }
+        }
         Ok(comments)
     }
 
