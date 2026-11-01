@@ -21,6 +21,7 @@ try {
   for (const [file, before, after] of [
     ['publish.mjs', '.length < 40', '.length < 1'],
     ['adopt.mjs', 'published version: ${failure}', 'published version'],
+    ['adopt.mjs', '} else await rm(target, { force: true });', '}'],
   ]) {
     const source = await readFile(new URL(file, root), 'utf8');
     assert(source.includes(before), `Mutation no longer matches ${file}`);

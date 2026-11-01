@@ -107,7 +107,7 @@ try {
       await writeFile(pending, old, { mode: 0o644 });
       await rename(pending, target);
       execFileSync('systemctl', ['--user', 'restart', 'hn-preview.service'], { stdio: 'inherit' });
-    }
+    } else await rm(target, { force: true });
     throw error;
   }
   console.log(JSON.stringify({ adopted: manifest.sha256, generated_at: manifest.generated_at }));

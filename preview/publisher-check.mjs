@@ -166,6 +166,17 @@ try {
     checks.push(fault + ': local snapshot preserved/recovered');
   }
   await reset();
+  await rm(target);
+  result = await run('adopt.mjs', 'service-start');
+  assert.notEqual(result.status, 0, result.stdout);
+  assert.equal(await readFile(calls, 'utf8'), '1');
+  result = await run('adopt.mjs');
+  assert.equal(result.status, 0, result.stderr);
+  assert.doesNotMatch(result.stdout, /Snapshot unchanged/);
+  assert.equal(await readFile(calls, 'utf8'), '2');
+  assert.deepEqual(await readFile(target), bytes);
+  checks.push('First-run adoption failure retries restart successfully');
+  await reset();
   result = await run('adopt.mjs');
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(await readFile(target), bytes);
