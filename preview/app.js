@@ -99,6 +99,7 @@
           state('Ready');
           if (matchMedia('(pointer:fine)').matches) term.focus();
         } catch (error) {
+          if (connection !== socket || connection.readyState !== WebSocket.OPEN) return;
           ended = true;
           state(error.message);
           connection.close();

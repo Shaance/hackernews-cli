@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
+import { runInNewContext } from 'node:vm';
 const dir = await mkdtemp(join(tmpdir(), 'hn-publisher-check-'));
 const root = new URL('.', import.meta.url),
   hash = (b) => createHash('sha256').update(b).digest('hex');
@@ -166,6 +167,17 @@ try {
     checks.push(fault + ': local snapshot preserved/recovered');
   }
   await reset();
+  await rm(target);
+  result = await run('adopt.mjs', 'service-start');
+  assert.notEqual(result.status, 0, result.stdout);
+  assert.equal(await readFile(calls, 'utf8'), '1');
+  result = await run('adopt.mjs');
+  assert.equal(result.status, 0, result.stderr);
+  assert.doesNotMatch(result.stdout, /Snapshot unchanged/);
+  assert.equal(await readFile(calls, 'utf8'), '2');
+  assert.deepEqual(await readFile(target), bytes);
+  checks.push('First-run adoption failure retries restart successfully');
+  await reset();
   result = await run('adopt.mjs');
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(await readFile(target), bytes);
@@ -177,6 +189,66 @@ try {
   checks.push(
     'Adoption passes real HTTP Host validation, keeps rollback, restarts once; unchanged version does not restart',
   );
+  const elements = new Map();
+  const sockets = [];
+  let rejectOldFetch;
+  class Socket {
+    static OPEN = 1;
+    readyState = 1;
+    constructor() {
+      sockets.push(this);
+    }
+    close() {
+      this.readyState = 3;
+      this.onclose();
+    }
+  }
+  await runInNewContext(await readFile(new URL('app.js', root), 'utf8'), {
+    URL,
+    document: {
+      querySelector: () => ({ content: 'https://preview.example.test' }),
+      getElementById: (id) => {
+        if (!elements.has(id))
+          elements.set(id, { removeAttribute() {}, classList: { remove() {} } });
+        return elements.get(id);
+      },
+    },
+    Terminal: class {
+      parser = { registerOscHandler() {} };
+      loadAddon() {}
+      open() {}
+      onData() {}
+      onResize() {}
+      reset() {}
+    },
+    FitAddon: {
+      FitAddon: class {
+        fit() {}
+      },
+    },
+    ResizeObserver: class {
+      observe() {}
+    },
+    WebSocket: Socket,
+    window: { addEventListener() {} },
+    matchMedia: () => ({ matches: false }),
+    fetch: () =>
+      sockets.length === 1
+        ? new Promise((_, reject) => (rejectOldFetch = reject))
+        : Promise.resolve({ ok: true, json: async () => changed }),
+  });
+  const readyEvent = { data: JSON.stringify({ type: 'ready', hash: digest }) };
+  const retiredFetch = sockets[0].onmessage(readyEvent);
+  sockets[0].close();
+  elements.get('restart').onclick();
+  await sockets[1].onmessage(readyEvent);
+  assert.equal(elements.get('status').textContent, 'Ready');
+  rejectOldFetch(Error('Old session snapshot failed'));
+  await retiredFetch;
+  assert.equal(elements.get('status').textContent, 'Ready');
+  assert.equal(sockets[1].readyState, Socket.OPEN);
+  assert.equal(elements.get('restart').hidden, true);
+  checks.push('Retired snapshot fetch failure preserves ready replacement status');
   console.log(
     JSON.stringify(
       {
