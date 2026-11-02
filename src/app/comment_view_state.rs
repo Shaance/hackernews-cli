@@ -281,8 +281,10 @@ impl App {
                         comment.state = CommentState::Collapsed;
                         self.rebuild_visible_comments();
                         self.comment_cursor = self
-                            .comment_cursor
-                            .min(self.visible_comment_paths.len().saturating_sub(1));
+                            .visible_comment_paths
+                            .iter()
+                            .position(|visible| visible == &path[..=depth])
+                            .expect("Collapsing ancestor remains visible");
                         self.recompute_comment_loading(self.has_loading_comments());
                         return;
                     }

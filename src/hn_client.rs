@@ -162,40 +162,79 @@ impl HackerNewsClientImpl {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::MAX_ITEM_FETCH_CONCURRENCY;
-    use futures::{stream, StreamExt};
-    use std::sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc,
-    };
-    use tokio::time::{sleep, Duration};
+pub(crate) mod tests {
+    use super::*;
+    pub(crate) mod http_fixture {
+        include!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/support/http_fixture.rs"
+        ));
+    }
 
     #[tokio::test]
-    async fn bounded_fetches_preserve_order() {
+    async fn client_fetches_are_bounded_and_preserve_order() {
+        use std::sync::{
+            atomic::{AtomicUsize, Ordering},
+            Arc,
+        };
         let current = Arc::new(AtomicUsize::new(0));
         let max_seen = Arc::new(AtomicUsize::new(0));
-
-        let results: Vec<usize> = stream::iter((0usize..80).map(|idx| {
-            let current = Arc::clone(&current);
-            let max_seen = Arc::clone(&max_seen);
-
-            async move {
-                let active = current.fetch_add(1, Ordering::SeqCst) + 1;
-                max_seen.fetch_max(active, Ordering::SeqCst);
-
-                let delay_ms = ((80 - idx) % 5) as u64;
-                sleep(Duration::from_millis(delay_ms)).await;
-
-                current.fetch_sub(1, Ordering::SeqCst);
-                idx
+        let barrier = Arc::new(tokio::sync::Barrier::new(MAX_ITEM_FETCH_CONCURRENCY));
+        let release_first = Arc::new(tokio::sync::Notify::new());
+        let (base, mut completed, server) = http_fixture::serve({
+            let current = current.clone();
+            let max_seen = max_seen.clone();
+            let release_first = release_first.clone();
+            move |path, _, _| {
+                let (current, max_seen, barrier) =
+                    (current.clone(), max_seen.clone(), barrier.clone());
+                let release_first = release_first.clone();
+                async move {
+                    let id: usize = path
+                        .trim_start_matches("/v0/item/")
+                        .trim_end_matches(".json")
+                        .parse()
+                        .unwrap();
+                    let active = current.fetch_add(1, Ordering::SeqCst) + 1;
+                    max_seen.fetch_max(active, Ordering::SeqCst);
+                    // Hold the first window open. Later IDs finish before ID zero.
+                    if id < MAX_ITEM_FETCH_CONCURRENCY {
+                        barrier.wait().await;
+                    }
+                    if id == 0 {
+                        release_first.notified().await;
+                    }
+                    tokio::time::sleep(std::time::Duration::from_millis(25)).await;
+                    current.fetch_sub(1, Ordering::SeqCst);
+                    (200, format!(r#"{{"id":{id},"time":0,"type":"comment"}}"#))
+                }
             }
-        }))
-        .buffered(MAX_ITEM_FETCH_CONCURRENCY)
-        .collect()
+        })
         .await;
-
-        assert_eq!(results, (0usize..80).collect::<Vec<_>>());
-        assert!(max_seen.load(Ordering::SeqCst) <= MAX_ITEM_FETCH_CONCURRENCY);
+        let client = HackerNewsClientImpl::with_config(HackerNewsClientConfig {
+            api_url: base,
+            ..Default::default()
+        });
+        let ids: Vec<i32> = (0..80).collect();
+        let (results, first_completed) =
+            tokio::time::timeout(std::time::Duration::from_secs(5), async {
+                tokio::join!(client.get_items(&ids), async {
+                    let first = completed.recv().await.unwrap().0;
+                    release_first.notify_one();
+                    first
+                })
+            })
+            .await
+            .unwrap();
+        server.abort();
+        assert_ne!(first_completed, "/v0/item/0.json");
+        assert_eq!(max_seen.load(Ordering::SeqCst), MAX_ITEM_FETCH_CONCURRENCY);
+        assert_eq!(
+            results
+                .into_iter()
+                .map(|item| item.unwrap().id)
+                .collect::<Vec<_>>(),
+            ids
+        );
     }
 }
