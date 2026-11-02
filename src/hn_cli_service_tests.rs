@@ -331,3 +331,72 @@ async fn stories_and_comments_preserve_post_text_code_and_web_destinations() {
     assert_eq!(comments[0].text, story.text);
     assert_eq!(comments[0].links, story.links);
 }
+
+#[tokio::test]
+async fn real_service_distinguishes_total_failure_mixed_success_and_empty_batches() {
+    use crate::hn_client::{tests::http_fixture, HackerNewsClientConfig, HackerNewsClientImpl};
+    for ids in [vec![1, 2], vec![1, 3], vec![]] {
+        let expected = ids.iter().filter(|&&id| id == 3).count();
+        let total_failure = !ids.is_empty() && expected == 0;
+        let (base, _, server) = http_fixture::serve(move |path, _, _| {
+            let body = if path == "/v0/topstories.json" {
+                serde_json::to_string(&ids).unwrap()
+            } else if path == "/v0/item/99.json" {
+                serde_json::json!({"id":99,"time":0,"type":"story","kids":ids}).to_string()
+            } else if path == "/v0/item/3.json" {
+                r#"{"id":3,"time":0,"type":"comment"}"#.to_string()
+            } else {
+                "upstream unavailable".to_string()
+            };
+            std::future::ready((
+                if body == "upstream unavailable" {
+                    503
+                } else {
+                    200
+                },
+                body,
+            ))
+        })
+        .await;
+        let service = HackerNewsCliServiceImpl::new_with_client(HackerNewsClientImpl::with_config(
+            HackerNewsClientConfig {
+                api_url: base,
+                ..Default::default()
+            },
+        ));
+        assert!(service
+            .fetch_stories_page("top", 0, 1)
+            .await
+            .unwrap()
+            .is_empty());
+        let roots = service.top_level_comment_ids(99).await.unwrap();
+        for result in [
+            service
+                .fetch_stories_page("top", 10, 1)
+                .await
+                .map(|items| items.len()),
+            service
+                .fetch_top_level_comments(99)
+                .await
+                .map(|items| items.len()),
+            service
+                .fetch_comment_children(&roots, 2)
+                .await
+                .map(|items| items.len()),
+        ] {
+            if total_failure {
+                let error = result.unwrap_err();
+                let context = format!("{error:#}");
+                assert!(context.contains("Failed to fetch any"), "{context}");
+                assert!(context.contains("item 1"), "{context}");
+                assert!(
+                    error.chain().count() > 1,
+                    "Retain the underlying HTTP/decode error"
+                );
+            } else {
+                assert_eq!(result.unwrap(), expected);
+            }
+        }
+        server.abort();
+    }
+}

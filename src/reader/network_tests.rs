@@ -1,8 +1,6 @@
 use super::*;
-use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
-    net::TcpListener,
-};
+#[path = "../../tests/support/http_fixture.rs"]
+mod http_fixture;
 
 // Only the external HTTP boundary is replaced; serialization and parsing are real.
 async fn server(status: u16, body: String) -> (Network, tokio::task::JoinHandle<Value>) {
@@ -15,55 +13,17 @@ async fn server(status: u16, body: String) -> (Network, tokio::task::JoinHandle<
     (network, task)
 }
 pub(crate) async fn serve(
-    handler: impl Fn(&str, &Value, &str) -> (u16, String) + Send + 'static,
+    handler: impl Fn(&str, &Value, &str) -> (u16, String) + Send + Sync + 'static,
 ) -> (
     Network,
     tokio::sync::mpsc::UnboundedReceiver<(String, Value)>,
     tokio::task::JoinHandle<()>,
 ) {
     use hn_lib::hn_client::{HackerNewsClientConfig, HackerNewsClientImpl};
-    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let base = format!("http://{}/", listener.local_addr().unwrap());
-    let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-    let task = tokio::spawn(async move {
-        loop {
-            let (mut stream, _) = listener.accept().await.unwrap();
-            let mut request = Vec::new();
-            let (offset, length) = loop {
-                let mut bytes = [0; 4096];
-                let read = stream.read(&mut bytes).await.unwrap();
-                assert!(read > 0);
-                request.extend_from_slice(&bytes[..read]);
-                if let Some(offset) = request.windows(4).position(|s| s == b"\r\n\r\n") {
-                    let headers = String::from_utf8_lossy(&request[..offset]).to_lowercase();
-                    let length: usize = headers
-                        .lines()
-                        .find_map(|l| l.strip_prefix("content-length: "))
-                        .unwrap_or("0")
-                        .parse()
-                        .unwrap();
-                    if request.len() >= offset + 4 + length {
-                        break (offset + 4, length);
-                    }
-                }
-            };
-            let path = String::from_utf8_lossy(&request[..offset])
-                .split_whitespace()
-                .nth(1)
-                .unwrap()
-                .to_owned();
-            let value = if length == 0 {
-                Value::Null
-            } else {
-                serde_json::from_slice(&request[offset..offset + length]).unwrap()
-            };
-            let (status, body) =
-                handler(&path, &value, &String::from_utf8_lossy(&request[..offset]));
-            let response = format!("HTTP/1.1 {status} Result\r\nContent-Type: application/json\r\nX-Request-Id: request-test-1\r\nRequest-Id: native-request-test-1\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len());
-            stream.write_all(response.as_bytes()).await.unwrap();
-            tx.send((path, value)).unwrap();
-        }
-    });
+    let (base, rx, task) = http_fixture::serve(move |path, value, headers| {
+        std::future::ready(handler(&path, &value, &headers))
+    })
+    .await;
     let network = Network {
         client: Client::new(),
         endpoint: format!("{base}chat/completions"),
