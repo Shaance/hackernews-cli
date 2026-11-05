@@ -1,6 +1,6 @@
 //! Stories list view rendering
 
-use crate::app::{App, StoryType};
+use crate::app::{App, StoryType, SELECTION_GLIDE};
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Modifier, Style},
@@ -10,6 +10,7 @@ use ratatui::{
 };
 
 use super::widgets;
+use std::time::Instant;
 
 /// Render the stories view
 pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
@@ -179,6 +180,11 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
         Style::default()
     };
 
+    let now = Instant::now();
+    let gliding = app.theme().motion
+        && app.selection_glide.is_some_and(|(start, _, to)| {
+            to == app.selected_index && now.saturating_duration_since(start) < SELECTION_GLIDE
+        });
     let mut flash_cell = None;
     let items: Vec<ListItem> = app
         .stories
@@ -189,7 +195,11 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
             let global_idx = ((display_page - 1) as usize * app.page_size as usize) + idx + 1;
 
             let theme = app.theme();
-            let indicator = Span::styled(if is_selected { "▎ " } else { "  " }, theme.accent);
+            // While gliding, the bar is drawn at the eased row after the list render.
+            let indicator = Span::styled(
+                if is_selected && !gliding { "▎ " } else { "  " },
+                theme.accent,
+            );
             let bookmark = if display_type != StoryType::Saved && app.is_bookmarked(story.id) {
                 " ★"
             } else {
@@ -271,9 +281,21 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
     app.story_scroll = state.offset();
     // Apply after text rendering, which resets continuation cells of wide characters.
     let stride = if f.area().height >= 30 { 3 } else { 2 };
-    let y = area.y + ((app.selected_index - state.offset()) * stride) as u16;
+    let position = if gliding {
+        app.selection_glide_position(now)
+    } else {
+        app.selection_glide = None;
+        app.selected_index as f32
+    };
+    let row = ((position - state.offset() as f32) * stride as f32)
+        .round()
+        .max(0.0) as u16;
+    let y = area.y + row;
     let selected = Rect::new(area.x, y, area.width, 2).intersection(area);
     f.buffer_mut().set_style(selected, app.theme().sel);
+    if gliding {
+        f.buffer_mut().set_string(area.x, y, "▎", app.theme().accent);
+    }
     if let Some((index, x, id)) = flash_cell.filter(|(index, _, _)| *index >= state.offset()) {
         let y = area.y + ((index - state.offset()) * stride) as u16;
         let cell = Rect::new(x, y, 1, 1).intersection(area);
