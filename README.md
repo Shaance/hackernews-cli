@@ -110,8 +110,9 @@ Keys are case-sensitive: `s` saves a story, `S` controls its summary; `o` opens 
 |---|---|
 | `j` / `↓` | Next story; at the last story, continues on the next page's first story |
 | `k` / `↑` | Previous story; at the first story, goes back to the previous page |
-| `n` / `→` | Next page |
-| `p` / `←` | Previous page |
+| `g` / `G` | First / last story on the page |
+| `n` / `→` / `Space` / `PgDn` | Next page |
+| `p` / `←` / `PgUp` | Previous page |
 | `1` / `2` / `3` | Top / New / Best stories |
 | `4` | Saved stories |
 | `s` | Save or unsave selected story |

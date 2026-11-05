@@ -267,6 +267,12 @@ impl App {
         }
     }
 
+    /// Jump straight to an index without the glide (g/G page-edge jumps snap).
+    pub fn jump_selection(&mut self, index: usize) {
+        self.selection_glide = None;
+        self.selected_index = index.min(self.stories.len().saturating_sub(1));
+    }
+
     fn move_selection(&mut self, new_index: usize) {
         let now = Instant::now();
         let from = self.selection_glide_position(now);

@@ -8,10 +8,14 @@ pub fn handle_stories_key(key: KeyCode) -> StoryAction {
         // Navigation
         KeyCode::Char('j') | KeyCode::Down => StoryAction::NextStory,
         KeyCode::Char('k') | KeyCode::Up => StoryAction::PrevStory,
+        KeyCode::Char('g') => StoryAction::FirstStory,
+        KeyCode::Char('G') => StoryAction::LastStory,
 
         // Pagination
-        KeyCode::Char('n') | KeyCode::Right => StoryAction::NextPage,
-        KeyCode::Char('p') | KeyCode::Left => StoryAction::PrevPage,
+        KeyCode::Char('n') | KeyCode::Right | KeyCode::Char(' ') | KeyCode::PageDown => {
+            StoryAction::NextPage
+        }
+        KeyCode::Char('p') | KeyCode::Left | KeyCode::PageUp => StoryAction::PrevPage,
 
         // Story type
         KeyCode::Char('1') => StoryAction::SetType(crate::app::StoryType::Top),
@@ -27,7 +31,9 @@ pub fn handle_stories_key(key: KeyCode) -> StoryAction {
 
         // UI
         KeyCode::Char('?') => StoryAction::ToggleHelp,
-        KeyCode::Char('q') | KeyCode::Esc => StoryAction::Quit,
+        // Esc means "back" in the reader; at the feed it stays inert so it can't
+        // quit the app by reflex. q is the quit key.
+        KeyCode::Char('q') => StoryAction::Quit,
 
         _ => StoryAction::None,
     }
@@ -44,7 +50,7 @@ pub fn handle_comments_key(key: KeyCode) -> CommentAction {
         KeyCode::Char('u') => CommentAction::Parent,
         KeyCode::Char('g') => CommentAction::FirstComment,
         KeyCode::Char('G') => CommentAction::LastComment,
-        KeyCode::PageDown => CommentAction::PageDown,
+        KeyCode::PageDown | KeyCode::Char(' ') => CommentAction::PageDown,
         KeyCode::PageUp => CommentAction::PageUp,
 
         // Expand/collapse
@@ -72,6 +78,8 @@ pub fn handle_comments_key(key: KeyCode) -> CommentAction {
 pub enum StoryAction {
     NextStory,
     PrevStory,
+    FirstStory,
+    LastStory,
     NextPage,
     PrevPage,
     SetType(crate::app::StoryType),
@@ -125,6 +133,32 @@ mod tests {
             handle_stories_key(KeyCode::Char('q')),
             StoryAction::Quit
         ));
+        // Esc no longer quits at the feed; it stays inert so it can't kill the
+        // app by reflex (it means "back" in the reader).
+        assert!(matches!(
+            handle_stories_key(KeyCode::Esc),
+            StoryAction::None
+        ));
+        assert!(matches!(
+            handle_stories_key(KeyCode::Char('g')),
+            StoryAction::FirstStory
+        ));
+        assert!(matches!(
+            handle_stories_key(KeyCode::Char('G')),
+            StoryAction::LastStory
+        ));
+        assert!(matches!(
+            handle_stories_key(KeyCode::Char(' ')),
+            StoryAction::NextPage
+        ));
+        assert!(matches!(
+            handle_stories_key(KeyCode::PageDown),
+            StoryAction::NextPage
+        ));
+        assert!(matches!(
+            handle_stories_key(KeyCode::PageUp),
+            StoryAction::PrevPage
+        ));
     }
 
     #[test]
@@ -152,6 +186,10 @@ mod tests {
         assert!(matches!(
             handle_comments_key(KeyCode::Esc),
             CommentAction::Back
+        ));
+        assert!(matches!(
+            handle_comments_key(KeyCode::Char(' ')),
+            CommentAction::PageDown
         ));
     }
 }

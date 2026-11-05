@@ -290,6 +290,8 @@ async fn handle_story_action(
                 request_stories(app, tx, service, false);
             }
         }
+        StoryAction::FirstStory => app.jump_selection(0),
+        StoryAction::LastStory => app.jump_selection(app.stories.len().saturating_sub(1)),
         StoryAction::NextPage => {
             app.next_page();
             if app.preview_notice.is_none() {

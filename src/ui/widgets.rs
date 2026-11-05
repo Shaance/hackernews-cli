@@ -191,7 +191,9 @@ pub fn render_help(f: &mut Frame, theme: Theme, in_comments: bool, opened: Optio
                 "STORIES",
                 &[
                     ("j/k/↑/↓", "Select story"),
+                    ("g/G", "First/last story"),
                     ("n/p/→/←", "Page"),
+                    ("Space/PgDn", "Next page"),
                     ("1", "Top"),
                     ("2", "New"),
                     ("3", "Best"),
@@ -203,7 +205,7 @@ pub fn render_help(f: &mut Frame, theme: Theme, in_comments: bool, opened: Optio
                     ("r", "Refresh/retry"),
                 ],
             ),
-            ("ANYWHERE", &[("q/Esc", "Quit"), ("?", "Close")]),
+            ("ANYWHERE", &[("q", "Quit"), ("?", "Close")]),
         ]
     };
     render_modal_body(f, theme, opened, "Keys", |width, height| {
@@ -318,6 +320,12 @@ pub fn render_stories_status(area: Rect, app: &App, _tick: usize) -> Paragraph<'
     ];
     if app.snapshot.is_none() && app.displayed_story_context().0 != crate::app::StoryType::Saved {
         hints.push(("n/p", "page"));
+        if app.selected_index == 0 && app.current_page > 1 {
+            hints.push(("k", "prev page"));
+        }
+        if !app.stories.is_empty() && app.selected_index == app.stories.len() - 1 {
+            hints.push(("j", "next page"));
+        }
     }
     hints.extend([("c", "discussion"), ("q", "quit")]);
     let line = hint_line(

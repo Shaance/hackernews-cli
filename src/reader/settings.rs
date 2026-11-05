@@ -21,7 +21,7 @@ pub struct Settings {
     retry: bool,
 }
 impl Reader {
-    pub(super) fn edit_settings(&mut self) {
+    pub fn edit_settings(&mut self) {
         let retry = self
             .active
             .and_then(|id| self.readings.get(&id))

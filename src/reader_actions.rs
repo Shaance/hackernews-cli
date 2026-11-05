@@ -100,6 +100,10 @@ pub async fn handle(
         }
         return Ok(true);
     }
+    if matches!(app.view, View::Stories) && key == KeyCode::Char('M') {
+        reader.edit_settings();
+        return Ok(true);
+    }
     if matches!(app.view, View::Stories)
         && matches!(
             key,

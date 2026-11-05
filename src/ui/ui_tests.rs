@@ -298,7 +298,9 @@ fn stories_help_keys_match_handlers_and_use_accent() {
     let theme = crate::theme::Theme::TRUE_DARK;
     let entries: &[(&str, &[KeyCode])] = &[
         ("j/k/↑/↓", &[Char('j'), Char('k'), Up, Down]),
+        ("g/G", &[Char('g'), Char('G')]),
         ("n/p/→/←", &[Char('n'), Char('p'), Right, Left]),
+        ("Space/PgDn", &[Char(' '), PageDown]),
         ("1", &[Char('1')]),
         ("2", &[Char('2')]),
         ("3", &[Char('3')]),
@@ -308,7 +310,7 @@ fn stories_help_keys_match_handlers_and_use_accent() {
         ("c", &[Char('c')]),
         ("s", &[Char('s')]),
         ("r", &[Char('r')]),
-        ("q/Esc", &[Char('q'), Esc]),
+        ("q", &[Char('q')]),
         ("?", &[Char('?')]),
     ];
     for width in [60, 77, 78, 80, 100] {
@@ -337,7 +339,7 @@ fn stories_help_keys_match_handlers_and_use_accent() {
             );
         }
         let (_, first) = position(frame.buffer, "j/k/↑/↓");
-        let (_, second) = position(frame.buffer, "n/p/→/←");
+        let (_, second) = position(frame.buffer, "g/G");
         assert_eq!(second - first, u16::from(width < 78));
     }
 }
@@ -872,4 +874,30 @@ fn page_advance_blocked_during_same_page_refresh_but_selection_still_moves() {
     app.set_story_loading(true);
     assert!(!app.next_story(), "mid-list j still works during a refresh");
     assert_eq!(app.selected_index, 1);
+}
+
+#[test]
+fn g_G_jump_to_page_edges_without_glide() {
+    let mut app = feed();
+    app.next_story();
+    assert!(app.selection_glide.is_some(), "j starts a glide");
+    app.jump_selection(app.stories.len() - 1);
+    assert_eq!(app.selected_index, app.stories.len() - 1);
+    assert!(app.selection_glide.is_none(), "g/G snap instead of gliding");
+    app.jump_selection(0);
+    assert_eq!(app.selected_index, 0);
+}
+
+#[test]
+fn status_bar_hints_page_flow_at_page_edges() {
+    let mut app = feed();
+    let mut terminal = Terminal::new(TestBackend::new(120, 24)).unwrap();
+    app.jump_selection(app.stories.len() - 1);
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    let status = buffer_text(frame.buffer);
+    assert!(status.contains("next page"), "last story must hint j → next page: {status}");
+    // Not at an edge: no page-flow hint.
+    let mut app = feed();
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    assert!(!buffer_text(frame.buffer).contains("next page"));
 }
