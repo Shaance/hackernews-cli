@@ -12,8 +12,8 @@ use tokio::{
 pub struct Target {
     pub socket: String,
     pub tab: i64,
-    story: i32,
-    close_shortcut: bool,
+    pub story: i32,
+    pub close_shortcut: bool,
 }
 
 #[cfg(unix)]
@@ -141,6 +141,17 @@ pub async fn open(
 fn external(url: &str) -> Result<(Option<Target>, String)> {
     open::that(url)?;
     Ok((None, "Opened in your browser".into()))
+}
+
+/// Close only the article tab this CLI created. Closing the last tab shuts the
+/// companion down, which also closes its Ghostty pane; tabs the user opened
+/// themselves survive. A tab that is already gone (Cmd+W) counts as closed.
+pub async fn close(target: &Target) -> Result<()> {
+    match control(&target.socket, json!({"cmd":"close-tab", "tab":target.tab})).await {
+        Ok(_) => Ok(()),
+        Err(e) if e.to_string().contains("no tab") => Ok(()),
+        Err(e) => Err(e),
+    }
 }
 
 async fn focus_browser(target: &Target) {
