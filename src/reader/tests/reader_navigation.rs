@@ -781,6 +781,32 @@ fn motion_effects_stay_on_rgb_line_at_mid_duration() {
 }
 
 #[test]
+fn motion_notice_fade_is_320ms_quad_out() {
+    use ratatui::style::Color;
+    let theme = Theme::TRUE_DARK;
+    let rgb = |color| match color {
+        Color::Rgb(r, g, b) => [f32::from(r), f32::from(g), f32::from(b)],
+        _ => panic!("expected RGB, got {color:?}"),
+    };
+    let mut app = hn_lib::app::App::with_theme(theme);
+    let mut p = ready();
+    p.theme = theme;
+    p.browser_notice = "Article opened".into();
+    // Halfway through the fade: 2s hold + 160ms of the 320ms window.
+    p.notice_started = Some(Instant::now() - Duration::from_millis(2160));
+    let mut terminal = Terminal::new(TestBackend::new(120, 40)).unwrap();
+    let frame = terminal.draw(|f| p.render(f, &mut app, 0)).unwrap();
+    let sampled = rgb(frame.buffer[(2, 39)].fg);
+    let (a, b) = (rgb(theme.accent.fg.unwrap()), rgb(theme.dim.fg.unwrap()));
+    let fraction = (sampled[0] - a[0]) / (b[0] - a[0]);
+    // QuadOut at 50% progress is 75%; the old 400ms linear fade read 50%.
+    assert!(
+        (0.6..0.9).contains(&fraction),
+        "expected a settled quad-out fade, got fraction {fraction}"
+    );
+}
+
+#[test]
 fn motion_browser_notice_timing_and_persistent_errors() {
     for motion in [true, false] {
         for (ms, busy) in [
