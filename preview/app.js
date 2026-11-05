@@ -110,6 +110,7 @@
     snapshot = undefined;
     $('capture').textContent = 'Loading snapshot…';
     term.reset();
+    $('terminal').classList.add('boot');
     ready = false;
     state('Starting preview…');
     $('restart').hidden = true;
@@ -156,6 +157,7 @@
           for (const data of pending) term.write(new Uint8Array(data));
           pending.length = 0;
           ready = true;
+          $('terminal').classList.remove('boot');
           state('Ready');
           if (matchMedia('(pointer:fine)').matches) term.focus();
         } catch (error) {
