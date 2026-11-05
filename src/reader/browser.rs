@@ -187,7 +187,9 @@ async fn close_pane(target: &Target) -> Result<()> {
             "-e",
             "set browserTerminal to first terminal whose id is item 1 of argv",
             "-e",
-            "return perform action \"text:\\x11\" on browserTerminal",
+            // AppleScript rejects a literal \x11 in a string (syntax error
+            // -2741), so build the Ctrl+W byte at runtime instead.
+            "return perform action (\"text:\" & (ASCII character 17)) on browserTerminal",
             "-e",
             "end tell",
             "-e",
