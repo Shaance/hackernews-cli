@@ -90,6 +90,8 @@ pub struct App {
     pub story_scroll: usize,
     /// In-flight selection glide: (started, from row position, to index)
     pub selection_glide: Option<(Instant, f32, usize)>,
+    /// Last list switch: (started, previous story type) for the dip + tab ease
+    pub feed_switched: Option<(Instant, StoryType)>,
     /// Current page number
     pub current_page: u32,
     /// Comments for current story
@@ -162,6 +164,7 @@ impl App {
             selected_index: 0,
             story_scroll: 0,
             selection_glide: None,
+            feed_switched: None,
             current_page: 1,
             comments: Vec::new(),
             visible_comment_paths: Vec::new(),
@@ -386,6 +389,9 @@ impl App {
                 })
                 || self.selection_glide.is_some_and(|(start, _, to)| {
                     to == self.selected_index && now.saturating_duration_since(start) < SELECTION_GLIDE
+                })
+                || self.feed_switched.is_some_and(|(start, _)| {
+                    now.saturating_duration_since(start) < Duration::from_millis(270)
                 }))
     }
 
@@ -468,6 +474,11 @@ impl App {
                 .min(stories.len().saturating_sub(1))
         });
         self.story_scroll = position.map_or(0, |p| p.scroll.min(stories.len().saturating_sub(1)));
+        if let Some((prev_type, prev_page)) = self.stories_for {
+            if prev_type != story_type || prev_page != page {
+                self.feed_switched = Some((Instant::now(), prev_type));
+            }
+        }
         self.stories_for = Some((story_type, page));
         self.set_stories(stories);
     }
