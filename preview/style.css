@@ -220,6 +220,11 @@ button,
 .install,
 .panel-head a {
   touch-action: manipulation;
+  transition:
+    background-color 140ms cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 140ms cubic-bezier(0.23, 1, 0.32, 1),
+    color 140ms cubic-bezier(0.23, 1, 0.32, 1),
+    transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 button {
   user-select: none;
@@ -234,6 +239,7 @@ button:active,
 .panel-head a:active {
   color: var(--canvas);
   background: var(--accent);
+  transform: scale(0.97);
 }
 ::selection {
   color: var(--canvas);
@@ -329,5 +335,15 @@ button:active,
   .article-panel.opening,
   .article-panel.closing {
     animation: none;
+  }
+  button,
+  .install,
+  .panel-head a {
+    transition-property: background-color, border-color, color;
+  }
+  button:active,
+  .install:active,
+  .panel-head a:active {
+    transform: none;
   }
 }
