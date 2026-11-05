@@ -652,12 +652,62 @@ fn feed_switch_dips_the_list_and_eases_the_tab_color() {
         theme.scrim.fg.unwrap(),
     );
     let mut terminal = Terminal::new(TestBackend::new(100, 24)).unwrap();
-    // Mid out-phase: 55ms into the 110ms dip, the rank cell is pulled toward scrim.
+    // Mid out-phase: 55ms into the 110ms dip, the OLD list is still rendered
+    // (fading toward scrim) — the new list must not pop in at full brightness.
     app.feed_switched = Some((Instant::now() - Duration::from_millis(55), prev));
+    app.outgoing_feed = Some((
+        (1..=12)
+            .map(|id| crate::HNCLIItem {
+                id,
+                title: format!("Old {id}"),
+                url: "https://example.com".into(),
+                author: "reader".into(),
+                time: String::new(),
+                time_ago: "2h".into(),
+                score: 10,
+                text: String::new(),
+                links: vec![],
+                comments: Some(2),
+            })
+            .collect(),
+        0,
+        0,
+    ));
     let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    let text = buffer_text(frame.buffer);
+    assert!(text.contains("Old 1"), "out-phase must render the outgoing list");
+    assert!(!text.contains("Story 20"), "new list must not pop in during the out-phase");
     let cell = frame.buffer[(2, 2)].fg;
     assert_ne!(cell, dim, "list must be mid-dip");
     assert!(between(cell, dim, scrim), "dip must stay on the dim→scrim line");
+    // In-phase: 150ms in, the new list is fading back in.
+    app.feed_switched = Some((Instant::now() - Duration::from_millis(150), prev));
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    assert!(buffer_text(frame.buffer).contains("Story 20"), "in-phase renders the new list");
+    // Bold/underline hand over at the ease midpoint, not instantly: at 40ms
+    // (alpha < 0.5) the old tab is still emphasized, at 120ms (alpha >= 0.5)
+    // the new one is.
+    use ratatui::style::Modifier;
+    app.feed_switched = Some((Instant::now() - Duration::from_millis(40), prev));
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    assert!(
+        frame.buffer[(24, 0)].modifier.contains(Modifier::UNDERLINED),
+        "old tab keeps the underline before the midpoint"
+    );
+    assert!(
+        !frame.buffer[(16, 0)].modifier.contains(Modifier::UNDERLINED),
+        "new tab must not be underlined before the midpoint"
+    );
+    app.feed_switched = Some((Instant::now() - Duration::from_millis(120), prev));
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    assert!(
+        frame.buffer[(16, 0)].modifier.contains(Modifier::UNDERLINED),
+        "new tab takes the underline after the midpoint"
+    );
+    assert!(
+        !frame.buffer[(24, 0)].modifier.contains(Modifier::UNDERLINED),
+        "old tab drops the underline after the midpoint"
+    );
     // Tab ease at 80ms: the newly active tab sits between dim and accent on row 0.
     app.feed_switched = Some((Instant::now() - Duration::from_millis(80), prev));
     let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
@@ -683,3 +733,4 @@ fn first_feed_load_does_not_dip() {
     let app = feed();
     assert!(app.feed_switched.is_none(), "initial load snaps, no dip");
 }
+
