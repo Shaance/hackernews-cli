@@ -20,8 +20,27 @@
   fit.fit();
   let socket,
     ready = false;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const state = (text) => {
-    $('status').textContent = text;
+    const el = $('status');
+    let current = el.querySelector('.st');
+    if (!current) {
+      current = document.createElement('span');
+      current.className = 'st';
+      current.textContent = el.textContent;
+      el.replaceChildren(current);
+    }
+    if (reduceMotion.matches || current.textContent === text) {
+      current.textContent = text;
+      return;
+    }
+    const prev = current;
+    prev.classList.add('out');
+    setTimeout(() => prev.remove(), 140);
+    const next = document.createElement('span');
+    next.className = 'st in';
+    next.textContent = text;
+    el.appendChild(next);
   };
   const send = (event) => {
     if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(event));
@@ -31,7 +50,6 @@
   });
   term.onResize(({ cols, rows }) => send({ type: 'resize', cols, rows }));
   new ResizeObserver(() => fit.fit()).observe($('terminal'));
-  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let closing = false;
   let closeTimer = 0;
   let openTimer = 0;

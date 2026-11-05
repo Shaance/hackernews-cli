@@ -123,8 +123,31 @@ main.reading {
   min-width: 0;
 }
 #status {
+  display: inline-grid;
+  justify-items: end;
   text-align: right;
   font-family: ui-sans-serif, system-ui, sans-serif;
+}
+#status .st {
+  grid-area: 1 / 1;
+}
+#status .st.out {
+  animation: status-out 140ms cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards;
+}
+#status .st.in {
+  animation: status-in 180ms cubic-bezier(0.23, 1, 0.32, 1) 40ms backwards;
+}
+@keyframes status-out {
+  to {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+}
+@keyframes status-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
 }
 #article-host {
   overflow: hidden;
@@ -345,5 +368,9 @@ button:active,
   .install:active,
   .panel-head a:active {
     transform: none;
+  }
+  #status .st.out,
+  #status .st.in {
+    animation: none;
   }
 }
