@@ -1117,3 +1117,50 @@ fn browser_channel_error_persists_in_error_role_after_five_seconds() {
         assert!(!row(&buffer(p, &mut app), 39).contains("Article opened"));
     }
 }
+
+#[tokio::test]
+async fn esc_back_to_feed_closes_the_owned_article_pane() {
+    let mut p = ready();
+    p.browser = Some(browser::Target {
+        socket: "/nonexistent/hn-test.sock".into(),
+        tab: 7,
+        story: 1,
+        close_shortcut: false,
+    });
+    assert!(p.key(KeyCode::Esc));
+    assert!(p.active.is_none());
+    assert!(p.browser.is_none(), "Esc must drop the owned browser target");
+    assert_eq!(p.browser_notice, "Closing article pane…");
+}
+
+#[test]
+fn esc_in_source_view_keeps_the_pane_open() {
+    let mut p = ready();
+    p.browser = Some(browser::Target {
+        socket: "/nonexistent/hn-test.sock".into(),
+        tab: 7,
+        story: 1,
+        close_shortcut: false,
+    });
+    {
+        let reading = p.readings.get_mut(&1).unwrap();
+        reading.source = Some(11);
+    }
+    assert!(p.key(KeyCode::Esc));
+    assert!(p.active.is_some(), "Esc from the source view stays in the reader");
+    assert!(p.browser.is_some(), "the pane is only closed when leaving for the feed");
+}
+
+#[test]
+fn esc_back_to_feed_in_snapshot_mode_reports_the_pane_closed() {
+    let mut p = ready();
+    p.snapshot = Some(Arc::new(
+        serde_json::from_str::<hn_lib::snapshot::Snapshot>(include_str!(
+            "../../../preview/fixtures/snapshot.json"
+        ))
+        .unwrap(),
+    ));
+    assert!(p.key(KeyCode::Esc));
+    assert!(p.active.is_none());
+    assert_eq!(p.browser_notice, "Article pane closed");
+}

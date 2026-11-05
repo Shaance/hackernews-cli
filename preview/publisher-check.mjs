@@ -232,6 +232,8 @@ try {
     WebSocket: Socket,
     window: { addEventListener() {} },
     matchMedia: () => ({ matches: false }),
+    setTimeout: () => 0,
+    clearTimeout: () => {},
     fetch: () =>
       sockets.length === 1
         ? new Promise((_, reject) => (rejectOldFetch = reject))

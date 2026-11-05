@@ -31,7 +31,46 @@
   });
   term.onResize(({ cols, rows }) => send({ type: 'resize', cols, rows }));
   new ResizeObserver(() => fit.fit()).observe($('terminal'));
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  let closing = false;
+  let closeTimer = 0;
+  let openTimer = 0;
+  const openArticle = () => {
+    clearTimeout(closeTimer);
+    closing = false;
+    const panel = $('article-panel');
+    panel.hidden = false;
+    panel.classList.remove('closing');
+    $('workspace').classList.add('reading');
+    if (!reduceMotion.matches) {
+      panel.classList.add('opening');
+      clearTimeout(openTimer);
+      openTimer = setTimeout(() => panel.classList.remove('opening'), 340);
+    }
+  };
+  const closeArticle = () => {
+    const panel = $('article-panel');
+    if (panel.hidden || closing) return;
+    const done = () => {
+      panel.hidden = true;
+      panel.classList.remove('closing');
+      $('workspace').classList.remove('reading');
+      $('article').removeAttribute('src');
+      closing = false;
+    };
+    if (reduceMotion.matches) {
+      done();
+      return;
+    }
+    closing = true;
+    panel.classList.add('closing');
+    closeTimer = setTimeout(done, 240);
+  };
   term.parser.registerOscHandler(777, (data) => {
+    if (data === 'hn-article-close') {
+      closeArticle();
+      return true;
+    }
     const match = /^hn-article=(\d+)$/.exec(data);
     const item = match && snapshot?.items[match[1]];
     if (!item) return true;
@@ -45,8 +84,7 @@
     $('original').href = url.href;
     $('article').title = item.title;
     $('article').src = url.href;
-    $('article-panel').hidden = false;
-    $('workspace').classList.add('reading');
+    openArticle();
     return true;
   });
   function start() {
@@ -57,7 +95,11 @@
     ready = false;
     state('Starting preview…');
     $('restart').hidden = true;
+    closing = false;
+    clearTimeout(closeTimer);
+    clearTimeout(openTimer);
     $('article-panel').hidden = true;
+    $('article-panel').classList.remove('closing', 'opening');
     $('article').removeAttribute('src');
     $('workspace').classList.remove('reading');
     socket = new WebSocket(

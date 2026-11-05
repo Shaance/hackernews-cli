@@ -160,6 +160,9 @@ try {
   ws.send(JSON.stringify({ type: 'input', data: '\r' }));
   await until(() => output.includes('hn-article=50225695'));
   checks.push('Real native CLI runs over WSS; Enter opens the selected snapshot story');
+  ws.send(JSON.stringify({ type: 'input', data: '\x1b' }));
+  await until(() => output.includes('hn-article-close'));
+  checks.push('Esc back to the feed emits the article pane close');
   const changed = {
     ...snapshot,
     generated_at: new Date(Date.parse(snapshot.generated_at) + 60000).toISOString(),

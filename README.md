@@ -41,7 +41,7 @@ Press `o` or Enter to open the discussion and its article. Press `c` to read the
 
 In a discussion, `j/k` moves between comments. Enter expands or collapses replies, `[/]` skips between sibling threads, and `u` returns to the parent. Page Up/Down scrolls through long comments without changing the selection. Original post text appears above the replies, with paragraphs and indented code preserved. Press `L` to choose a link from the post or selected comment.
 
-Return to the feed with Esc. Reopening the discussion during the same run restores loaded replies, selection, and scroll position. Press `?` for help.
+Return to the feed with Esc; if a companion article pane is open, hn closes it (only the tab hn created — your own tabs in that pane stay open). Reopening the discussion during the same run restores loaded replies, selection, and scroll position. Press `?` for help.
 
 ### Save for later
 
