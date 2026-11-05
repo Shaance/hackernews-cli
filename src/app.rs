@@ -10,6 +10,15 @@ use std::{
 /// because this is the highest-frequency motion in the app).
 pub const SELECTION_GLIDE: Duration = Duration::from_millis(110);
 
+/// Where the selection lands when a j/k-triggered page switch finishes loading.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PageLanding {
+    /// j past the last story: first story of the next page.
+    Start,
+    /// k at the first story: last story of the previous page.
+    End,
+}
+
 #[cfg(test)]
 mod app_tests;
 mod comment_refresh;
@@ -95,6 +104,8 @@ pub struct App {
     /// Outgoing list (stories, selection, scroll) retained during the dip's
     /// out-phase so the old list fades away instead of the new one popping in
     pub outgoing_feed: Option<(Vec<HNCLIItem>, usize, usize)>,
+    /// Landing target for a j/k-triggered page switch, consumed by set_stories_for
+    pub page_landing: Option<PageLanding>,
     /// Current page number
     pub current_page: u32,
     /// Comments for current story
@@ -169,6 +180,7 @@ impl App {
             selection_glide: None,
             feed_switched: None,
             outgoing_feed: None,
+            page_landing: None,
             current_page: 1,
             comments: Vec::new(),
             visible_comment_paths: Vec::new(),
@@ -224,7 +236,11 @@ impl App {
         } else {
             let page = self.current_page;
             self.next_page();
-            self.current_page != page
+            let advanced = self.current_page != page;
+            if advanced {
+                self.page_landing = Some(PageLanding::Start);
+            }
+            advanced
         }
     }
 
@@ -243,7 +259,11 @@ impl App {
         } else {
             let page = self.current_page;
             self.prev_page();
-            self.current_page != page
+            let changed = self.current_page != page;
+            if changed {
+                self.page_landing = Some(PageLanding::End);
+            }
+            changed
         }
     }
 
@@ -512,6 +532,19 @@ impl App {
                     self.selected_index,
                     self.story_scroll,
                 ));
+                // A j/k-triggered page switch lands on the page edge instead
+                // of restoring a remembered position.
+                match self.page_landing.take() {
+                    Some(PageLanding::Start) => {
+                        self.selected_index = 0;
+                        self.story_scroll = 0;
+                    }
+                    Some(PageLanding::End) => {
+                        self.selected_index = stories.len().saturating_sub(1);
+                        self.story_scroll = self.selected_index;
+                    }
+                    None => {}
+                }
             }
         }
         self.stories_for = Some((story_type, page));
