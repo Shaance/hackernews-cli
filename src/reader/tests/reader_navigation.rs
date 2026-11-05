@@ -961,7 +961,7 @@ fn motion_panel_height_text_retarget_and_reduced_motion() {
             motion,
             ..Theme::TRUE_DARK
         };
-        for ms in [0, 90, 180, 250] {
+        for ms in [0, 90, 210, 300] {
             let start = if ms == 0 {
                 Instant::now() + Duration::from_secs(1)
             } else {
@@ -970,7 +970,7 @@ fn motion_panel_height_text_retarget_and_reduced_motion() {
             reading.panel_motion = Some((start, 4, 20));
             let b = draw(&mut reading, 30);
             let height = panel_height(&b);
-            if !motion || ms >= 180 {
+            if !motion || ms >= 210 {
                 assert_eq!(height, 20, "panel must reach target height at {ms} ms");
             } else if ms == 0 {
                 assert_eq!(
@@ -984,7 +984,8 @@ fn motion_panel_height_text_retarget_and_reduced_motion() {
                 );
             }
             assert_eq!(b[(4, 1)].symbol(), "A");
-            if !motion || ms == 0 || ms >= 250 {
+            // Content fade runs 240ms after a 40ms delay, so it settles at 280ms.
+            if !motion || ms == 0 || ms >= 280 {
                 assert_eq!(
                     b[(4, 1)].fg,
                     if motion && ms == 0 {
@@ -997,7 +998,7 @@ fn motion_panel_height_text_retarget_and_reduced_motion() {
             }
             assert_eq!(
                 reading.has_active_motion(Instant::now()),
-                motion && ms < 250
+                motion && ms < 210
             );
             if !motion {
                 assert!(reading.panel_motion.is_none());
