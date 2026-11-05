@@ -545,3 +545,67 @@ fn overflowing_help_compacts_then_ends_with_more_keys_in_dim() {
         }
     }
 }
+
+#[test]
+fn selection_highlight_glides_110ms_then_snaps() {
+    use std::time::{Duration, Instant};
+    let mut app = feed();
+    let sel_bg = app.theme().sel.bg.unwrap();
+    // Mid-glide: 50ms into a 0 -> 3 move. QuadOut(50/110) ≈ 0.70, so the
+    // eased position is ≈ 2.1 → row 2 → y = 2 (title) + 2 * 2 (stride) = 6.
+    app.selected_index = 3;
+    app.selection_glide = Some((Instant::now() - Duration::from_millis(50), 0.0, 3));
+    assert!(app.has_active_motion(Instant::now()));
+    let mut terminal = Terminal::new(TestBackend::new(100, 24)).unwrap();
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    let b = frame.buffer;
+    assert_eq!(b[(0, 6)].bg, sel_bg, "highlight should be mid-glide at row 6");
+    assert_eq!(b[(0, 6)].symbol(), "▎", "indicator bar rides the highlight");
+    assert_ne!(b[(0, 8)].bg, sel_bg, "target row must not be highlighted yet");
+    // Past 110ms the glide ends and the highlight snaps to the target row.
+    app.selection_glide = Some((Instant::now() - Duration::from_millis(200), 0.0, 3));
+    assert!(!app.has_active_motion(Instant::now()));
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    let b = frame.buffer;
+    assert_eq!(b[(0, 8)].bg, sel_bg, "highlight lands on the selected row");
+    assert_eq!(b[(0, 8)].symbol(), "▎");
+    assert!(app.selection_glide.is_none(), "a finished glide must clear");
+}
+
+#[test]
+fn selection_glide_retargets_from_the_in_flight_position() {
+    let mut app = feed();
+    app.next_story();
+    app.next_story();
+    let (start, from, to) = app.selection_glide.expect("j/k starts a glide");
+    assert_eq!(to, 2);
+    assert!(
+        from < 1.0,
+        "rapid repeat must retarget from the eased position, not restart at the old row (from={from})"
+    );
+    assert!(start.elapsed() < std::time::Duration::from_millis(110));
+}
+
+#[test]
+fn selection_glide_disabled_without_motion() {
+    let mut app = App::with_theme(crate::theme::Theme::ANSI);
+    app.set_stories(
+        (1..=2)
+            .map(|id| crate::HNCLIItem {
+                id,
+                title: format!("Story {id}"),
+                url: "https://example.com".into(),
+                author: "reader".into(),
+                time: String::new(),
+                time_ago: "2h".into(),
+                score: 10,
+                text: String::new(),
+                links: vec![],
+                comments: Some(2),
+            })
+            .collect(),
+    );
+    app.next_story();
+    assert_eq!(app.selected_index, 1);
+    assert!(app.selection_glide.is_none());
+}
