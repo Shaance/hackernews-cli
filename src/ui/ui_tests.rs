@@ -612,3 +612,74 @@ fn selection_glide_disabled_without_motion() {
     assert_eq!(app.selected_index, 1);
     assert!(app.selection_glide.is_none());
 }
+
+#[test]
+fn feed_switch_dips_the_list_and_eases_the_tab_color() {
+    use crate::app::StoryType;
+    use ratatui::style::Color;
+    use std::time::{Duration, Instant};
+    let between = |c: Color, a: Color, b: Color| match (c, a, b) {
+        (Color::Rgb(r, g, bl), Color::Rgb(r1, g1, b1), Color::Rgb(r2, g2, b2)) => {
+            [r, g, bl]
+                .iter()
+                .zip([r1, g1, b1].iter().zip([r2, g2, b2].iter()))
+                .all(|(&c, (&a, &b))| (a.min(b)..=a.max(b)).contains(&c))
+        }
+        _ => false,
+    };
+    let item = |id: i32| crate::HNCLIItem {
+        id,
+        title: format!("Story {id}"),
+        url: "https://example.com".into(),
+        author: "reader".into(),
+        time: String::new(),
+        time_ago: "2h".into(),
+        score: 10,
+        text: String::new(),
+        links: vec![],
+        comments: Some(2),
+    };
+    let mut app = feed();
+    app.set_story_type(StoryType::New);
+    app.set_stories_for(StoryType::New, 1, (20..=31).map(item).collect());
+    let (_, prev) = app.feed_switched.expect("switching lists starts the dip");
+    assert_eq!(prev, StoryType::Best);
+    assert!(app.has_active_motion(Instant::now()));
+    let theme = app.theme();
+    let (dim, accent, scrim) = (
+        theme.dim.fg.unwrap(),
+        theme.accent.fg.unwrap(),
+        theme.scrim.fg.unwrap(),
+    );
+    let mut terminal = Terminal::new(TestBackend::new(100, 24)).unwrap();
+    // Mid out-phase: 55ms into the 110ms dip, the rank cell is pulled toward scrim.
+    app.feed_switched = Some((Instant::now() - Duration::from_millis(55), prev));
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    let cell = frame.buffer[(2, 2)].fg;
+    assert_ne!(cell, dim, "list must be mid-dip");
+    assert!(between(cell, dim, scrim), "dip must stay on the dim→scrim line");
+    // Tab ease at 80ms: the newly active tab sits between dim and accent on row 0.
+    app.feed_switched = Some((Instant::now() - Duration::from_millis(80), prev));
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    let eased = (0..100).any(|x| {
+        let fg = frame.buffer[(x, 0)].fg;
+        fg != dim && fg != accent && between(fg, dim, accent)
+    });
+    assert!(eased, "the active tab must be mid color-ease");
+    // Past 270ms the list is back and the switch state clears.
+    app.feed_switched = Some((Instant::now() - Duration::from_millis(300), prev));
+    assert!(!app.has_active_motion(Instant::now()));
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    assert!(app.feed_switched.is_none(), "a finished dip must clear");
+    assert_eq!(frame.buffer[(2, 2)].fg, dim, "list must be fully back");
+    assert!(
+        (0..100).any(|x| frame.buffer[(x, 0)].fg == accent),
+        "active tab must land on accent"
+    );
+}
+
+#[test]
+fn first_feed_load_does_not_dip() {
+    let app = feed();
+    assert!(app.feed_switched.is_none(), "initial load snaps, no dip");
+}

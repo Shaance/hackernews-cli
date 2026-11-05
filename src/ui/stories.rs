@@ -3,14 +3,20 @@
 use crate::app::{App, StoryType, SELECTION_GLIDE};
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Modifier, Style},
+    style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
     Frame,
 };
+use tachyonfx::{fx, ColorSpace, Interpolation};
 
 use super::widgets;
-use std::time::Instant;
+use std::time::{Duration, Instant};
+
+/// Feed switch motion: 110ms dip out + 160ms dip in on the list, 160ms tab color ease.
+const FEED_DIP_OUT: Duration = Duration::from_millis(110);
+const FEED_DIP_IN: Duration = Duration::from_millis(160);
+const FEED_TAB_EASE: Duration = Duration::from_millis(160);
 
 /// Render the stories view
 pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
@@ -74,6 +80,28 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
         f.render_widget(Paragraph::new(lines).alignment(Alignment::Center), area);
     }
 
+    // Feed switch: dip the outgoing list through the chrome color, then back in.
+    let now = Instant::now();
+    if let Some((start, _)) = app.feed_switched {
+        let theme = app.theme();
+        let elapsed = now.saturating_duration_since(start);
+        if theme.motion {
+            let scrim = theme.scrim.fg.unwrap();
+            if elapsed < FEED_DIP_OUT {
+                fx::fade_to_fg(scrim, (110, Interpolation::QuadIn))
+                    .with_color_space(ColorSpace::Rgb)
+                    .process(elapsed.into(), f.buffer_mut(), chunks[1]);
+            } else if elapsed < FEED_DIP_OUT + FEED_DIP_IN {
+                fx::fade_from_fg(scrim, (160, Interpolation::QuadOut))
+                    .with_color_space(ColorSpace::Rgb)
+                    .process((elapsed - FEED_DIP_OUT).into(), f.buffer_mut(), chunks[1]);
+            }
+        }
+        if elapsed >= FEED_DIP_OUT + FEED_DIP_IN {
+            app.feed_switched = None;
+        }
+    }
+
     let status = widgets::render_stories_status(chunks[2], app, tick);
     f.render_widget(status, chunks[2]);
 
@@ -92,6 +120,20 @@ fn render_title(f: &mut Frame, area: Rect, app: &App, tick: usize) {
         Span::styled(" Y ", theme.brand),
         Span::raw("  "),
     ];
+    // Feed switch: the newly active tab eases dim → accent while the previous
+    // one eases accent → dim, so tab and list tell one story.
+    let tab_ease = app
+        .feed_switched
+        .filter(|_| app.theme().motion)
+        .map(|(start, prev)| {
+            let elapsed = Instant::now().saturating_duration_since(start);
+            (
+                elapsed,
+                prev,
+                Interpolation::QuadOut.alpha((elapsed.as_secs_f32() / FEED_TAB_EASE.as_secs_f32()).min(1.0)),
+            )
+        })
+        .filter(|(elapsed, _, _)| *elapsed < FEED_TAB_EASE);
     for (idx, story_type) in [
         StoryType::Top,
         StoryType::New,
@@ -105,20 +147,27 @@ fn render_title(f: &mut Frame, area: Rect, app: &App, tick: usize) {
             tabs.push(Span::raw("   "));
         }
         let active = *story_type == display_type;
-        tabs.push(Span::styled(
-            format!("{} ", idx + 1),
-            if active { theme.accent } else { theme.dim },
-        ));
-        tabs.push(Span::styled(
-            story_type.display_name(),
+        let mut number_style = if active { theme.accent } else { theme.dim };
+        let mut name_style = if active {
+            theme
+                .accent
+                .add_modifier(Modifier::BOLD | Modifier::UNDERLINED)
+        } else {
+            theme.dim
+        };
+        if let Some((_, prev, alpha)) = tab_ease {
             if active {
-                theme
-                    .accent
-                    .add_modifier(Modifier::BOLD | Modifier::UNDERLINED)
-            } else {
-                theme.dim
-            },
-        ));
+                number_style = Style::default()
+                    .fg(lerp_color(theme.dim.fg.unwrap(), theme.accent.fg.unwrap(), alpha));
+                name_style = number_style.add_modifier(Modifier::BOLD | Modifier::UNDERLINED);
+            } else if *story_type == prev {
+                number_style = Style::default()
+                    .fg(lerp_color(theme.accent.fg.unwrap(), theme.dim.fg.unwrap(), alpha));
+                name_style = number_style;
+            }
+        }
+        tabs.push(Span::styled(format!("{} ", idx + 1), number_style));
+        tabs.push(Span::styled(story_type.display_name(), name_style));
     }
     let stale = app.showing_stale_stories();
     let mut status = Vec::new();
@@ -300,5 +349,16 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
         let y = area.y + ((index - state.offset()) * stride) as u16;
         let cell = Rect::new(x, y, 1, 1).intersection(area);
         app.render_save_flash(f.buffer_mut(), cell, id);
+    }
+}
+
+/// Interpolate two colors; non-RGB colors fall back to the target.
+fn lerp_color(from: Color, to: Color, t: f32) -> Color {
+    match (from, to) {
+        (Color::Rgb(r1, g1, b1), Color::Rgb(r2, g2, b2)) => {
+            let lerp = |a: u8, b: u8| (f32::from(a) + (f32::from(b) - f32::from(a)) * t) as u8;
+            Color::Rgb(lerp(r1, r2), lerp(g1, g2), lerp(b1, b2))
+        }
+        _ => to,
     }
 }
