@@ -819,3 +819,32 @@ fn j_mid_list_returns_false_and_keeps_selection_on_page() {
     assert_eq!(app.selected_index, 1);
     assert_eq!(app.current_page, 1);
 }
+
+#[test]
+fn jk_do_not_stack_while_a_page_switch_is_in_flight() {
+    let mut app = feed();
+    app.selected_index = app.stories.len() - 1;
+    assert!(app.next_story(), "first j advances to page 2");
+    assert_eq!(app.current_page, 2);
+    // Page 2 has not loaded: the displayed list is still page 1 (stale), so
+    // further j/k must be ignored instead of stacking another page advance.
+    assert!(app.showing_stale_stories());
+    assert!(!app.next_story(), "j while fetching must not advance to page 3");
+    assert_eq!(app.current_page, 2);
+    assert!(!app.prev_story(), "k while a switch is in flight must not move");
+    assert_eq!(app.current_page, 2);
+    assert_eq!(app.selected_index, app.stories.len() - 1);
+}
+
+#[test]
+fn page_advance_blocked_during_same_page_refresh_but_selection_still_moves() {
+    let mut app = feed();
+    app.selected_index = app.stories.len() - 1;
+    app.set_story_loading(true);
+    assert!(!app.next_story(), "j at the end during a refresh must not advance");
+    assert_eq!(app.current_page, 1);
+    let mut app = feed();
+    app.set_story_loading(true);
+    assert!(!app.next_story(), "mid-list j still works during a refresh");
+    assert_eq!(app.selected_index, 1);
+}
