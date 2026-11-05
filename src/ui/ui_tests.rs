@@ -785,9 +785,34 @@ fn k_at_page_top_returns_to_previous_page() {
         (1..=12).map(story_item).collect(),
     );
     assert_eq!(
-        app.selected_index, 0,
-        "previous page loads like a manual p, starting at its first story"
+        app.selected_index,
+        app.stories.len() - 1,
+        "going back with k lands at the bottom of the previous page"
     );
+    // And j at that bottom flows forward again, landing on the next page's first story.
+    assert!(app.next_story());
+    app.set_stories_for(
+        StoryType::Best,
+        2,
+        (20..=31).map(story_item).collect(),
+    );
+    assert_eq!(app.selected_index, 0, "j lands on the first story of the next page");
+}
+
+#[test]
+fn manual_page_keys_keep_position_restore_behavior() {
+    use crate::app::StoryType;
+    let mut app = feed();
+    app.selected_index = app.stories.len() - 1;
+    app.next_page();
+    app.set_stories_for(
+        StoryType::Best,
+        2,
+        (20..=31).map(story_item).collect(),
+    );
+    assert_eq!(app.selected_index, 0, "manual n starts at the first story");
+    // No page_landing was set by n/p, so nothing overrides the restore rules.
+    assert!(app.page_landing.is_none());
 }
 
 #[test]
