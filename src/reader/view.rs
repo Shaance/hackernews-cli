@@ -265,7 +265,7 @@ impl Reader {
                     1,
                 )
                 .intersection(areas[2]);
-                fx::fade_to_fg(theme.dim.fg.unwrap(), (400, Interpolation::Linear))
+                fx::fade_to_fg(theme.dim.fg.unwrap(), (320, Interpolation::QuadOut))
                     .with_color_space(ColorSpace::Rgb)
                     .process(
                         elapsed.saturating_sub(Duration::from_secs(2)).into(),
