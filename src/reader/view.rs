@@ -286,8 +286,8 @@ impl Reader {
 
 /// Height of the panel opening animation at `now`.
 fn drawn_height((start, from, to): (Instant, u16, u16), now: Instant) -> u16 {
-    let progress = (now.saturating_duration_since(start).as_secs_f32() / 0.180).min(1.0);
-    from + (f32::from(to - from) * Interpolation::QuadOut.alpha(progress)) as u16
+    let progress = (now.saturating_duration_since(start).as_secs_f32() / 0.210).min(1.0);
+    from + (f32::from(to - from) * Interpolation::ExpoOut.alpha(progress)) as u16
 }
 
 impl Reading {
@@ -307,7 +307,7 @@ impl Reading {
             && self.shown
             && self.source.is_none()
             && self.panel_motion.is_some_and(|(start, from, to)| {
-                from < to && now.saturating_duration_since(start) < Duration::from_millis(250)
+                from < to && now.saturating_duration_since(start) < Duration::from_millis(210)
             })
     }
 
@@ -420,9 +420,11 @@ impl Reading {
         }
         if theme.motion {
             if let Some((start, _, _)) = self.panel_motion.filter(|(_, from, to)| from < to) {
-                fx::fade_from_fg(theme.dim.fg.unwrap(), (250, Interpolation::QuadOut))
+                // The panel establishes its frame first; the text lands 40ms later.
+                let elapsed = start.elapsed().saturating_sub(Duration::from_millis(40));
+                fx::fade_from_fg(theme.dim.fg.unwrap(), (240, Interpolation::QuadOut))
                     .with_color_space(ColorSpace::Rgb)
-                    .process(start.elapsed().into(), frame.buffer_mut(), body[0]);
+                    .process(elapsed.into(), frame.buffer_mut(), body[0]);
             }
         }
         body[1]
