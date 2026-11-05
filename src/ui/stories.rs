@@ -29,6 +29,25 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
         ])
         .split(f.area());
 
+    // Feed switch: during the out-phase the outgoing list is swapped in so it
+    // fades through the chrome color; the in-phase then fades the new list in,
+    // so the new content never pops in at full brightness.
+    let now = Instant::now();
+    let dip = app
+        .feed_switched
+        .filter(|_| app.theme().motion)
+        .map(|(start, _)| now.saturating_duration_since(start))
+        .filter(|elapsed| *elapsed < FEED_DIP_OUT + FEED_DIP_IN);
+    let mut swapped_outgoing = false;
+    if let (Some(elapsed), Some(outgoing)) = (dip, &mut app.outgoing_feed) {
+        if elapsed < FEED_DIP_OUT {
+            std::mem::swap(&mut app.stories, &mut outgoing.0);
+            std::mem::swap(&mut app.selected_index, &mut outgoing.1);
+            std::mem::swap(&mut app.story_scroll, &mut outgoing.2);
+            swapped_outgoing = true;
+        }
+    }
+
     render_title(f, chunks[0], app, tick);
 
     if !app.stories.is_empty() {
@@ -80,26 +99,31 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
         f.render_widget(Paragraph::new(lines).alignment(Alignment::Center), area);
     }
 
-    // Feed switch: dip the outgoing list through the chrome color, then back in.
-    let now = Instant::now();
-    if let Some((start, _)) = app.feed_switched {
-        let theme = app.theme();
-        let elapsed = now.saturating_duration_since(start);
-        if theme.motion {
-            let scrim = theme.scrim.fg.unwrap();
-            if elapsed < FEED_DIP_OUT {
-                fx::fade_to_fg(scrim, (110, Interpolation::QuadIn))
-                    .with_color_space(ColorSpace::Rgb)
-                    .process(elapsed.into(), f.buffer_mut(), chunks[1]);
-            } else if elapsed < FEED_DIP_OUT + FEED_DIP_IN {
-                fx::fade_from_fg(scrim, (160, Interpolation::QuadOut))
-                    .with_color_space(ColorSpace::Rgb)
-                    .process((elapsed - FEED_DIP_OUT).into(), f.buffer_mut(), chunks[1]);
-            }
+    if swapped_outgoing {
+        if let Some(outgoing) = &mut app.outgoing_feed {
+            std::mem::swap(&mut app.stories, &mut outgoing.0);
+            std::mem::swap(&mut app.selected_index, &mut outgoing.1);
+            std::mem::swap(&mut app.story_scroll, &mut outgoing.2);
         }
-        if elapsed >= FEED_DIP_OUT + FEED_DIP_IN {
-            app.feed_switched = None;
+    }
+    if let Some(elapsed) = dip {
+        let scrim = app.theme().scrim.fg.unwrap();
+        if elapsed < FEED_DIP_OUT {
+            fx::fade_to_fg(scrim, (110, Interpolation::QuadIn))
+                .with_color_space(ColorSpace::Rgb)
+                .process(elapsed.into(), f.buffer_mut(), chunks[1]);
+        } else {
+            fx::fade_from_fg(scrim, (160, Interpolation::QuadOut))
+                .with_color_space(ColorSpace::Rgb)
+                .process((elapsed - FEED_DIP_OUT).into(), f.buffer_mut(), chunks[1]);
         }
+    }
+    if app
+        .feed_switched
+        .is_some_and(|(start, _)| now.saturating_duration_since(start) >= FEED_DIP_OUT + FEED_DIP_IN)
+    {
+        app.feed_switched = None;
+        app.outgoing_feed = None;
     }
 
     let status = widgets::render_stories_status(chunks[2], app, tick);
@@ -156,13 +180,24 @@ fn render_title(f: &mut Frame, area: Rect, app: &App, tick: usize) {
             theme.dim
         };
         if let Some((_, prev, alpha)) = tab_ease {
+            // Colors ease over the whole window, but bold/underline are binary:
+            // hand them over at the midpoint so the emphasis doesn't teleport
+            // while the colors are still crossing.
+            let emphasized = if active {
+                alpha >= 0.5
+            } else {
+                *story_type == prev && alpha < 0.5
+            };
             if active {
                 number_style = Style::default()
                     .fg(lerp_color(theme.dim.fg.unwrap(), theme.accent.fg.unwrap(), alpha));
-                name_style = number_style.add_modifier(Modifier::BOLD | Modifier::UNDERLINED);
             } else if *story_type == prev {
                 number_style = Style::default()
                     .fg(lerp_color(theme.accent.fg.unwrap(), theme.dim.fg.unwrap(), alpha));
+            }
+            if emphasized {
+                name_style = number_style.add_modifier(Modifier::BOLD | Modifier::UNDERLINED);
+            } else if active || *story_type == prev {
                 name_style = number_style;
             }
         }

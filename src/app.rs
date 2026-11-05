@@ -92,6 +92,9 @@ pub struct App {
     pub selection_glide: Option<(Instant, f32, usize)>,
     /// Last list switch: (started, previous story type) for the dip + tab ease
     pub feed_switched: Option<(Instant, StoryType)>,
+    /// Outgoing list (stories, selection, scroll) retained during the dip's
+    /// out-phase so the old list fades away instead of the new one popping in
+    pub outgoing_feed: Option<(Vec<HNCLIItem>, usize, usize)>,
     /// Current page number
     pub current_page: u32,
     /// Comments for current story
@@ -165,6 +168,7 @@ impl App {
             story_scroll: 0,
             selection_glide: None,
             feed_switched: None,
+            outgoing_feed: None,
             current_page: 1,
             comments: Vec::new(),
             visible_comment_paths: Vec::new(),
@@ -477,6 +481,11 @@ impl App {
         if let Some((prev_type, prev_page)) = self.stories_for {
             if prev_type != story_type || prev_page != page {
                 self.feed_switched = Some((Instant::now(), prev_type));
+                self.outgoing_feed = Some((
+                    self.stories.clone(),
+                    self.selected_index,
+                    self.story_scroll,
+                ));
             }
         }
         self.stories_for = Some((story_type, page));
