@@ -207,17 +207,34 @@ impl App {
 
     // === Story Navigation ===
 
-    /// Move to next story
-    pub fn next_story(&mut self) {
-        if !self.stories.is_empty() && self.selected_index < self.stories.len() - 1 {
+    /// Move to next story. At the last story of the page, continue on the next
+    /// page instead (the first story once it loads). Returns true when the
+    /// page advanced and the caller should request the new page.
+    pub fn next_story(&mut self) -> bool {
+        if self.stories.is_empty() {
+            return false;
+        }
+        if self.selected_index < self.stories.len() - 1 {
             self.move_selection(self.selected_index + 1);
+            false
+        } else {
+            let page = self.current_page;
+            self.next_page();
+            self.current_page != page
         }
     }
 
-    /// Move to previous story
-    pub fn prev_story(&mut self) {
+    /// Move to previous story. At the first story of the page, go back to the
+    /// previous page (restoring the position left there). Returns true when
+    /// the page changed and the caller should request it.
+    pub fn prev_story(&mut self) -> bool {
         if self.selected_index > 0 {
             self.move_selection(self.selected_index - 1);
+            false
+        } else {
+            let page = self.current_page;
+            self.prev_page();
+            self.current_page != page
         }
     }
 

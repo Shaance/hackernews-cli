@@ -280,8 +280,16 @@ async fn handle_story_action(
     bookmark_path: &mut Option<PathBuf>,
 ) -> Result<()> {
     match action {
-        StoryAction::NextStory => app.next_story(),
-        StoryAction::PrevStory => app.prev_story(),
+        StoryAction::NextStory => {
+            if app.next_story() && app.preview_notice.is_none() {
+                request_stories(app, tx, service, false);
+            }
+        }
+        StoryAction::PrevStory => {
+            if app.prev_story() {
+                request_stories(app, tx, service, false);
+            }
+        }
         StoryAction::NextPage => {
             app.next_page();
             if app.preview_notice.is_none() {

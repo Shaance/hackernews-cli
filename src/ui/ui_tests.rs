@@ -734,3 +734,88 @@ fn first_feed_load_does_not_dip() {
     assert!(app.feed_switched.is_none(), "initial load snaps, no dip");
 }
 
+fn story_item(id: i32) -> crate::HNCLIItem {
+    crate::HNCLIItem {
+        id,
+        title: format!("Story {id}"),
+        url: "https://example.com".into(),
+        author: "reader".into(),
+        time: String::new(),
+        time_ago: "2h".into(),
+        score: 10,
+        text: String::new(),
+        links: vec![],
+        comments: Some(2),
+    }
+}
+
+#[test]
+fn j_at_page_end_flows_to_next_page_first_story() {
+    use crate::app::StoryType;
+    let mut app = feed();
+    app.selected_index = app.stories.len() - 1;
+    assert!(app.next_story(), "j at the last story must advance the page");
+    assert_eq!(app.current_page, 2);
+    // When page 2 loads, selection lands on its first story.
+    app.set_stories_for(
+        StoryType::Best,
+        2,
+        (20..=31).map(story_item).collect(),
+    );
+    assert_eq!(app.selected_index, 0);
+}
+
+#[test]
+fn k_at_page_top_returns_to_previous_page() {
+    use crate::app::StoryType;
+    let mut app = feed();
+    app.selected_index = app.stories.len() - 1;
+    assert!(app.next_story(), "j at the end flows to the next page");
+    app.set_stories_for(
+        StoryType::Best,
+        2,
+        (20..=31).map(story_item).collect(),
+    );
+    assert_eq!(app.selected_index, 0, "fresh page starts at the first story");
+    assert!(app.prev_story(), "k at the first story must go back a page");
+    assert_eq!(app.current_page, 1);
+    app.set_stories_for(
+        StoryType::Best,
+        1,
+        (1..=12).map(story_item).collect(),
+    );
+    assert_eq!(
+        app.selected_index, 0,
+        "previous page loads like a manual p, starting at its first story"
+    );
+}
+
+#[test]
+fn jk_page_flow_stays_put_in_snapshot_and_saved() {
+    use crate::app::StoryType;
+    // Snapshot preview has one page per feed: j at the end shows the notice.
+    let mut app = feed();
+    app.snapshot = Some(std::sync::Arc::new(
+        serde_json::from_str(include_str!("../../preview/fixtures/snapshot.json")).unwrap(),
+    ));
+    app.selected_index = app.stories.len() - 1;
+    assert!(!app.next_story());
+    assert_eq!(app.current_page, 1);
+    assert!(app.preview_notice.is_some());
+    // Saved has no pages: k at the top and j at the end do nothing.
+    let mut app = feed();
+    app.story_type = StoryType::Saved;
+    app.selected_index = 0;
+    assert!(!app.prev_story());
+    app.selected_index = app.stories.len() - 1;
+    assert!(!app.next_story());
+    assert_eq!(app.current_page, 1);
+}
+
+#[test]
+fn j_mid_list_returns_false_and_keeps_selection_on_page() {
+    let mut app = feed();
+    assert!(!app.next_story());
+    assert_eq!(app.selected_index, 1);
+    assert_eq!(app.current_page, 1);
+}
