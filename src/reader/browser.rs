@@ -143,14 +143,64 @@ fn external(url: &str) -> Result<(Option<Target>, String)> {
     Ok((None, "Opened in your browser".into()))
 }
 
-/// Close only the article tab this CLI created. Closing the last tab shuts the
-/// companion down, which also closes its Ghostty pane; tabs the user opened
-/// themselves survive. A tab that is already gone (Cmd+W) counts as closed.
+/// Close only the article tab this CLI created. Tabs the user opened themselves
+/// survive. When the article tab is the last one, `close-tab` alone would leave
+/// an empty "New tab" page in the pane, so hn instead drives the browser's own
+/// close path — the same Ctrl+W byte the Ghostty keybind sends — which shuts the
+/// companion down and closes its pane cleanly. A tab that is already gone
+/// (Cmd+W) counts as closed.
 pub async fn close(target: &Target) -> Result<()> {
+    let tabs = control(&target.socket, json!({"cmd":"targets"})).await?;
+    let tabs = tabs["tabs"].as_array().context("Missing browser tabs")?;
+    if !tabs.iter().any(|tab| tab["id"].as_i64() == Some(target.tab)) {
+        return Ok(());
+    }
+    if tabs.len() > 1 {
+        return close_tab(target).await;
+    }
+    if close_pane(target).await.is_ok() {
+        return Ok(());
+    }
+    close_tab(target).await
+}
+
+async fn close_tab(target: &Target) -> Result<()> {
     match control(&target.socket, json!({"cmd":"close-tab", "tab":target.tab})).await {
         Ok(_) => Ok(()),
         Err(e) if e.to_string().contains("no tab") => Ok(()),
         Err(e) => Err(e),
+    }
+}
+
+/// Send the pane the Ctrl+W byte (as the hn-article Cmd+W keybind does) so the
+/// browser runs its own tab-close → shutdown path and the Ghostty pane exits
+/// without a "Process exited" screen.
+async fn close_pane(target: &Target) -> Result<()> {
+    let where_ = control(&target.socket, json!({"cmd":"where"})).await?;
+    let pane = where_["pane"].as_str().context("Browser pane unknown")?;
+    let output = Command::new("osascript")
+        .args([
+            "-e",
+            "on run argv",
+            "-e",
+            "tell application \"Ghostty\"",
+            "-e",
+            "set browserTerminal to first terminal whose id is item 1 of argv",
+            "-e",
+            "return perform action \"text:\\x11\" on browserTerminal",
+            "-e",
+            "end tell",
+            "-e",
+            "end run",
+            pane,
+        ])
+        .output()
+        .await
+        .context("osascript failed")?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        bail!("Ghostty refused the close action")
     }
 }
 
