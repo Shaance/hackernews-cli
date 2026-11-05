@@ -50,7 +50,6 @@
   });
   term.onResize(({ cols, rows }) => send({ type: 'resize', cols, rows }));
   new ResizeObserver(() => fit.fit()).observe($('terminal'));
-  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let closing = false;
   let closeTimer = 0;
   let openTimer = 0;
