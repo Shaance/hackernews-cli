@@ -75,6 +75,7 @@ impl Reader {
                     reading.article.cancel_preparation();
                     reading.discussion.cancel_preparation();
                     self.active = None;
+                    self.close_browser();
                 }
             }
             KeyCode::Tab | KeyCode::BackTab => {
@@ -180,6 +181,27 @@ impl Reader {
     pub fn has_browser(&self) -> bool {
         self.browser.is_some() || self.browser_busy
     }
+    /// Back to the feed: close the companion article tab/pane this CLI created.
+    /// In snapshot previews the article pane lives in the web page, so the close
+    /// is signalled with an OSC instead of a browser command.
+    pub fn close_browser(&mut self) {
+        if self.snapshot.is_some() {
+            use std::io::Write;
+            let _ = write!(std::io::stdout(), "\x1b]777;hn-article-close\x07");
+            let _ = std::io::stdout().flush();
+            self.browser_notice = "Article pane closed".into();
+            self.notice_started = Some(Instant::now());
+            return;
+        }
+        self.desired_browser = None;
+        if let Some(target) = self.browser.take() {
+            tokio::spawn(async move {
+                let _ = browser::close(&target).await;
+            });
+            self.browser_notice = "Closing article pane…".into();
+            self.notice_started = Some(Instant::now());
+        }
+    }
     pub fn read_original(&mut self, story: HNCLIItem, focus: bool) {
         if self.snapshot.is_some() {
             use std::io::Write;
@@ -215,6 +237,10 @@ impl Reader {
                     self.notice_started = Some(Instant::now());
                     self.browser = target;
                     self.browser_notice = notice;
+                    if self.active.is_none() {
+                        // The reader was left while the pane was still opening.
+                        self.close_browser();
+                    }
                 }
                 Err(e) => {
                     self.notice_started = None;

@@ -65,18 +65,20 @@ ordinary Cmd+W action. Neither the installer nor hn edits Ghostty configuration.
 Run `hn` from any directory inside Ghostty. Start with at least 110 terminal
 columns. Press `o` or Enter in the feed to open the article beside its discussion;
 `c` opens the discussion without creating a browser pane. `O` always opens the
-external browser.
+external browser. Esc back to the feed closes the companion pane again — it
+closes only the article tab hn created, so tabs you opened yourself stay open.
 
 Check the native behavior on your Ghostty version:
 
 1. Keep another ordinary pane open. Open a story using `o`.
 2. Scroll the article and follow a same-tab link. Return focus to hn and press
    `o` again. The same page and scroll position should remain.
-3. Return to the feed and open a different story. The existing companion should
-   display it, without an additional pane.
-4. Press Cmd+W in the companion. It should close without confirmation or a
-   “Process exited” screen. The hn pane and unrelated panes must remain intact.
-5. Press `o` again; the companion should reopen.
+3. Press Esc to return to the feed. The companion pane should close on its own,
+   without a “Process exited” screen. The hn pane and unrelated panes must remain
+   intact.
+4. Open a different story. A fresh companion pane should open, without stacking
+   an additional pane.
+5. Press Cmd+W in the companion. It should close without confirmation.
 
 ## Verify without opening Ghostty
 

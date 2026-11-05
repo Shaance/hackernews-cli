@@ -118,3 +118,53 @@ async fn same_story_focus_retains_tab_and_changed_story_replaces_only_owned_tab(
     task.abort();
     std::fs::remove_file(path).unwrap();
 }
+
+#[tokio::test]
+async fn close_sends_close_tab_for_the_owned_tab_and_treats_a_gone_tab_as_closed() {
+    let path = std::env::temp_dir().join(format!("hn-browser-close-{}.sock", std::process::id()));
+    let listener = UnixListener::bind(&path).unwrap();
+    let requests = Arc::new(Mutex::new(Vec::<Value>::new()));
+    let log = requests.clone();
+    let task = tokio::spawn(async move {
+        loop {
+            let Ok((stream, _)) = listener.accept().await else { break };
+            let mut reader = BufReader::new(stream);
+            let mut line = String::new();
+            reader.read_line(&mut line).await.unwrap();
+            let request: Value = serde_json::from_str(&line).unwrap();
+            log.lock().unwrap().push(request.clone());
+            let response = if request["cmd"] == "close-tab" && request["tab"].as_i64() == Some(10)
+            {
+                json!({"id":request["id"],"ok":true,"data":{}})
+            } else {
+                json!({"id":request["id"],"ok":false,"error":format!("no tab {}", request["tab"])})
+            };
+            reader
+                .get_mut()
+                .write_all(format!("{response}\n").as_bytes())
+                .await
+                .unwrap();
+        }
+    });
+    let target = Target {
+        socket: path.to_str().unwrap().into(),
+        tab: 10,
+        story: 1,
+        close_shortcut: true,
+    };
+    close(&target).await.unwrap();
+    // The user may already have closed the tab with Cmd+W; that is the goal state.
+    let gone = Target { tab: 99, ..target };
+    close(&gone).await.unwrap();
+    assert_eq!(
+        requests
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|r| (r["cmd"].as_str().unwrap().to_owned(), r["tab"].as_i64().unwrap()))
+            .collect::<Vec<_>>(),
+        vec![("close-tab".to_owned(), 10), ("close-tab".to_owned(), 99)]
+    );
+    task.abort();
+    std::fs::remove_file(path).unwrap();
+}

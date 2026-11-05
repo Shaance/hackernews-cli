@@ -101,6 +101,9 @@ try {
   input(a, '\r');
   await until(() => a.output.includes('hn-article=' + snap.feeds.top[0]));
   pass('CLI emits captured article selection');
+  input(a, '\x1b');
+  await until(() => a.output.includes('hn-article-close'));
+  pass('Esc back to the feed emits the article pane close');
   const config = await docker('GET', `/containers/${a.id}/json`);
   assert.equal(config.HostConfig.NetworkMode, 'none');
   assert.equal(config.HostConfig.ReadonlyRootfs, true);
