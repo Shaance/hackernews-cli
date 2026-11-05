@@ -6,6 +6,10 @@ use std::{
     time::{Duration, Instant},
 };
 
+/// How long the selection highlight glides after a j/k move (ease-out, capped
+/// because this is the highest-frequency motion in the app).
+pub const SELECTION_GLIDE: Duration = Duration::from_millis(110);
+
 #[cfg(test)]
 mod app_tests;
 mod comment_refresh;
@@ -84,6 +88,8 @@ pub struct App {
     pub selected_index: usize,
     /// Scroll offset for stories view
     pub story_scroll: usize,
+    /// In-flight selection glide: (started, from row position, to index)
+    pub selection_glide: Option<(Instant, f32, usize)>,
     /// Current page number
     pub current_page: u32,
     /// Comments for current story
@@ -155,6 +161,7 @@ impl App {
             stories: Vec::new(),
             selected_index: 0,
             story_scroll: 0,
+            selection_glide: None,
             current_page: 1,
             comments: Vec::new(),
             visible_comment_paths: Vec::new(),
@@ -196,15 +203,39 @@ impl App {
     /// Move to next story
     pub fn next_story(&mut self) {
         if !self.stories.is_empty() && self.selected_index < self.stories.len() - 1 {
-            self.selected_index += 1;
+            self.move_selection(self.selected_index + 1);
         }
     }
 
     /// Move to previous story
     pub fn prev_story(&mut self) {
         if self.selected_index > 0 {
-            self.selected_index -= 1;
+            self.move_selection(self.selected_index - 1);
         }
+    }
+
+    fn move_selection(&mut self, new_index: usize) {
+        let now = Instant::now();
+        let from = self.selection_glide_position(now);
+        self.selected_index = new_index;
+        self.selection_glide = if self.theme.motion {
+            Some((now, from, new_index))
+        } else {
+            None
+        };
+    }
+
+    /// Current eased row position of the selection highlight. Retargets from
+    /// the in-flight position so rapid key repeats stay continuous.
+    pub fn selection_glide_position(&self, now: Instant) -> f32 {
+        if let Some((start, from, to)) = self.selection_glide {
+            let elapsed = now.saturating_duration_since(start);
+            if self.theme.motion && to == self.selected_index && elapsed < SELECTION_GLIDE {
+                let progress = (elapsed.as_secs_f32() / SELECTION_GLIDE.as_secs_f32()).min(1.0);
+                return from + (to as f32 - from) * tachyonfx::Interpolation::QuadOut.alpha(progress);
+            }
+        }
+        self.selected_index as f32
     }
 
     /// Update scroll offset based on selected index and viewport height
@@ -352,6 +383,9 @@ impl App {
                 }))
                 || self.save_flash.is_some_and(|(_, start)| {
                     now.saturating_duration_since(start) < Duration::from_millis(300)
+                })
+                || self.selection_glide.is_some_and(|(start, _, to)| {
+                    to == self.selected_index && now.saturating_duration_since(start) < SELECTION_GLIDE
                 }))
     }
 
@@ -380,6 +414,7 @@ impl App {
     /// Set stories
     pub fn set_stories(&mut self, stories: Vec<HNCLIItem>) {
         self.stories = stories;
+        self.selection_glide = None;
         self.clear_story_status();
 
         // Ensure selected index is valid
