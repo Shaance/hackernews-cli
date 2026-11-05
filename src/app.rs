@@ -209,13 +209,17 @@ impl App {
 
     /// Move to next story. At the last story of the page, continue on the next
     /// page instead (the first story once it loads). Returns true when the
-    /// page advanced and the caller should request the new page.
+    /// page advanced and the caller should request the new page. While a page
+    /// or feed switch is still in flight, j/k are ignored so repeated presses
+    /// cannot stack multiple page advances.
     pub fn next_story(&mut self) -> bool {
-        if self.stories.is_empty() {
+        if self.stories.is_empty() || self.showing_stale_stories() {
             return false;
         }
         if self.selected_index < self.stories.len() - 1 {
             self.move_selection(self.selected_index + 1);
+            false
+        } else if self.is_loading() {
             false
         } else {
             let page = self.current_page;
@@ -225,11 +229,16 @@ impl App {
     }
 
     /// Move to previous story. At the first story of the page, go back to the
-    /// previous page (restoring the position left there). Returns true when
-    /// the page changed and the caller should request it.
+    /// previous page. Returns true when the page changed and the caller should
+    /// request it. Blocked while a page/feed switch is in flight, like next_story.
     pub fn prev_story(&mut self) -> bool {
+        if self.showing_stale_stories() {
+            return false;
+        }
         if self.selected_index > 0 {
             self.move_selection(self.selected_index - 1);
+            false
+        } else if self.is_loading() {
             false
         } else {
             let page = self.current_page;

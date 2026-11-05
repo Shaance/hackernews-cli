@@ -35,7 +35,7 @@ Set `HN_REDUCED_MOTION=1` to disable visual animations; ANSI and monochrome pale
 
 ## Read a story
 
-Use `j/k` or the arrow keys to select a story. Press `1`, `2`, or `3` for Top, New, or Best; `4` opens Saved. Use `n/p` to change pages — or keep holding `j` past the last story to continue on the next page's first story, and `k` at the top to go back a page.
+Use `j/k` or the arrow keys to select a story. Press `1`, `2`, or `3` for Top, New, or Best; `4` opens Saved. Use `n/p` to change pages — or press `j` past the last story to continue on the next page's first story, and `k` at the top to go back a page (further `j/k` wait while the page loads).
 
 Press `o` or Enter to open the discussion and its article. Press `c` to read the discussion without opening a new article pane. If a companion pane is already open, it follows the selected story. `O` always opens the story in your default browser.
 
