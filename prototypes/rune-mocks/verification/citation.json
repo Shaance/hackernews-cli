@@ -1,0 +1,1831 @@
+{
+  "accessibility": {
+    "bounds": [
+      0.0,
+      0.0,
+      1180.0,
+      760.0
+    ],
+    "children": [
+      {
+        "bounds": [
+          24.0,
+          14.8,
+          5.5,
+          16.5
+        ],
+        "name": "‹",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          43.5,
+          14.8,
+          88.5,
+          16.5
+        ],
+        "name": "Libghostty 1.0",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          146.0,
+          20.0,
+          6.0,
+          6.0
+        ],
+        "key": "story-saved",
+        "name": "saved",
+        "role": "status",
+        "states": [
+          "live-polite"
+        ]
+      },
+      {
+        "bounds": [
+          166.0,
+          15.5,
+          228.0,
+          15.0
+        ],
+        "name": "mfiguiere  ·  771 points  ·  122 comments",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          1045.5,
+          14.0,
+          110.5,
+          18.0
+        ],
+        "children": [
+          {
+            "bounds": [
+              1063.5,
+              15.5,
+              85.5,
+              15.0
+            ],
+            "name": "summary · fast",
+            "role": "label"
+          }
+        ],
+        "name": "summary · fast",
+        "role": "status",
+        "states": [
+          "live-polite"
+        ]
+      },
+      {
+        "bounds": [
+          28.0,
+          69.0,
+          580.0,
+          14.5
+        ],
+        "name": "ARTICLE",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          28.0,
+          97.5,
+          580.0,
+          27.5
+        ],
+        "name": "Libghostty 1.0",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          28.0,
+          139.0,
+          580.0,
+          15.0
+        ],
+        "name": "mfiguiere  ·  ghostty.org  ·  extracted, 4.2k words",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          28.0,
+          168.0,
+          580.0,
+          49.0
+        ],
+        "name": "Today we are splitting Ghostty's core into a library. The app you run keeps its window, its fonts and its configuration; the terminal underneath becomes something another program can embed.",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          28.0,
+          231.0,
+          580.0,
+          49.0
+        ],
+        "name": "The surface is deliberately small. A host hands libghostty a native surface and a size, and gets back a grid of cells it can draw however it likes. Input arrives as an event queue, not as callbacks into the host's event loop.",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          40.0,
+          304.0,
+          556.0,
+          15.0
+        ],
+        "name": "$ zig build -Doptimize=ReleaseFast",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          40.0,
+          323.0,
+          556.0,
+          15.0
+        ],
+        "name": "$ ./zig-out/bin/libghostty-demo",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          28.0,
+          362.0,
+          580.0,
+          32.5
+        ],
+        "name": "What does not change: the parser, the renderer's cell model, and the escape-sequence coverage. What does: everything that used to assume it owned a window.",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          667.0,
+          65.8,
+          84.0,
+          16.5
+        ],
+        "name": "Source 2 of 3",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          761.0,
+          65.0,
+          78.5,
+          18.0
+        ],
+        "children": [
+          {
+            "bounds": [
+              779.0,
+              66.5,
+              53.5,
+              15.0
+            ],
+            "name": "citation 2",
+            "role": "label"
+          }
+        ],
+        "name": "citation 2",
+        "role": "status",
+        "states": [
+          "live-polite"
+        ]
+      },
+      {
+        "bounds": [
+          1015.0,
+          66.5,
+          143.0,
+          15.0
+        ],
+        "name": "Esc returns to your place",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          667.0,
+          97.0,
+          491.0,
+          14.5
+        ],
+        "name": "EXCERPT SENT TO THE MODEL",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          681.0,
+          137.5,
+          463.0,
+          15.0
+        ],
+        "name": "kstrauser, 1 hour ago",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          681.0,
+          160.5,
+          463.0,
+          32.5
+        ],
+        "name": "I have wanted this for years. Every terminal library I have tried eventually grows its own opinion about how a window should look.",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          667.0,
+          219.0,
+          491.0,
+          14.5
+        ],
+        "name": "ADDITIONAL CAPTURED TEXT",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          681.0,
+          259.5,
+          463.0,
+          15.0
+        ],
+        "name": "jmillikin, 1 hour ago",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          681.0,
+          282.5,
+          463.0,
+          32.5
+        ],
+        "name": "A narrow ABI is great until you need one more callback. Then you version the struct and every embedder has to care.",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          667.0,
+          341.0,
+          491.0,
+          30.0
+        ],
+        "name": "A citation links to captured evidence; it does not guarantee the model read it correctly.",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          24.0,
+          733.5,
+          32.5,
+          14.0
+        ],
+        "name": "j k",
+        "role": "group"
+      },
+      {
+        "bounds": [
+          62.5,
+          733.0,
+          54.0,
+          15.0
+        ],
+        "name": "comment",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          134.5,
+          733.5,
+          30.0,
+          14.0
+        ],
+        "name": "[ ]",
+        "role": "group"
+      },
+      {
+        "bounds": [
+          170.5,
+          733.0,
+          38.0,
+          15.0
+        ],
+        "name": "sibling",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          226.5,
+          733.5,
+          27.5,
+          14.0
+        ],
+        "name": "Tab",
+        "role": "group"
+      },
+      {
+        "bounds": [
+          260.0,
+          733.0,
+          42.5,
+          15.0
+        ],
+        "name": "citation",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          320.5,
+          733.5,
+          15.5,
+          14.0
+        ],
+        "name": "S",
+        "role": "group"
+      },
+      {
+        "bounds": [
+          342.0,
+          733.0,
+          54.0,
+          15.0
+        ],
+        "name": "summary",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          1039.0,
+          733.0,
+          117.0,
+          15.0
+        ],
+        "name": "Esc back to the feed",
+        "role": "label"
+      }
+    ],
+    "name": "hn",
+    "role": "window"
+  },
+  "anim_t": 0.0,
+  "animating": false,
+  "dark_system": true,
+  "elements": [
+    {
+      "blur": 0.0,
+      "fill": "#121314ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0",
+      "rect": [
+        0.0,
+        0.0,
+        1180.0,
+        760.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0",
+      "rect": [
+        0.0,
+        0.0,
+        1180.0,
+        760.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#0",
+      "rect": [
+        0.0,
+        0.0,
+        1180.0,
+        46.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#0/#0",
+      "rect": [
+        24.0,
+        14.75,
+        5.5,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "‹"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#0/#1",
+      "rect": [
+        43.5,
+        14.75,
+        88.5,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Libghostty 1.0"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f48d2fff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-saved",
+      "label": "saved",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#0/story-saved",
+      "rect": [
+        146.0,
+        20.0,
+        6.0,
+        6.0
+      ],
+      "role": "status",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#0/#3",
+      "rect": [
+        166.0,
+        15.5,
+        228.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "mfiguiere  ·  771 points  ·  122 comments"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#0/#4",
+      "rect": [
+        408.0,
+        23.0,
+        623.5,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "summary · fast",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#0/#5",
+      "rect": [
+        1045.5,
+        14.0,
+        110.5,
+        18.0
+      ],
+      "role": "status",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f48d2fff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#0/#5/#0",
+      "rect": [
+        1052.5,
+        20.5,
+        5.0,
+        5.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#f48d2fff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#0/#5/#1",
+      "rect": [
+        1063.5,
+        15.5,
+        85.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "summary · fast"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#1",
+      "rect": [
+        0.0,
+        46.0,
+        1180.0,
+        1.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2",
+      "rect": [
+        0.0,
+        47.0,
+        1180.0,
+        673.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0",
+      "rect": [
+        0.0,
+        47.0,
+        636.0,
+        673.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0/#0",
+      "rect": [
+        28.0,
+        69.0,
+        580.0,
+        14.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "ARTICLE"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0/#1",
+      "rect": [
+        28.0,
+        97.5,
+        580.0,
+        27.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Libghostty 1.0"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0/#2",
+      "rect": [
+        28.0,
+        139.0,
+        580.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "mfiguiere  ·  ghostty.org  ·  extracted, 4.2k words"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0/#3",
+      "rect": [
+        28.0,
+        168.0,
+        580.0,
+        49.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Today we are splitting Ghostty's core into a library. The app you run keeps its window, its fonts and its configuration; the terminal underneath becomes something another program can embed."
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0/#4",
+      "rect": [
+        28.0,
+        231.0,
+        580.0,
+        49.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "The surface is deliberately small. A host hands libghostty a native surface and a size, and gets back a grid of cells it can draw however it likes. Input arrives as an event queue, not as callbacks into the host's event loop."
+    },
+    {
+      "blur": 0.0,
+      "fill": "#1c1d20ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0/#5",
+      "rect": [
+        28.0,
+        294.0,
+        580.0,
+        54.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0/#5/#0",
+      "rect": [
+        40.0,
+        304.0,
+        556.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "$ zig build -Doptimize=ReleaseFast"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0/#5/#1",
+      "rect": [
+        40.0,
+        323.0,
+        556.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "$ ./zig-out/bin/libghostty-demo"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0/#6",
+      "rect": [
+        28.0,
+        362.0,
+        580.0,
+        32.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "What does not change: the parser, the renderer's cell model, and the escape-sequence coverage. What does: everything that used to assume it owned a window."
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#1",
+      "rect": [
+        636.0,
+        47.0,
+        9.0,
+        673.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#1/#0",
+      "rect": [
+        640.0,
+        47.0,
+        1.0,
+        280.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#4e5053ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#1/#1",
+      "rect": [
+        639.0,
+        327.0,
+        3.0,
+        28.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#1/#2",
+      "rect": [
+        640.0,
+        355.0,
+        1.0,
+        280.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2",
+      "rect": [
+        645.0,
+        47.0,
+        535.0,
+        673.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/#0",
+      "rect": [
+        667.0,
+        65.0,
+        491.0,
+        18.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/#0/#0",
+      "rect": [
+        667.0,
+        65.75,
+        84.0,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Source 2 of 3"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "citation 2",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/#0/#1",
+      "rect": [
+        761.0,
+        65.0,
+        78.5,
+        18.0
+      ],
+      "role": "status",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f48d2fff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/#0/#1/#0",
+      "rect": [
+        768.0,
+        71.5,
+        5.0,
+        5.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#f48d2fff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/#0/#1/#1",
+      "rect": [
+        779.0,
+        66.5,
+        53.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "citation 2"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/#0/#2",
+      "rect": [
+        849.5,
+        74.0,
+        155.5,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/#0/#3",
+      "rect": [
+        1015.0,
+        66.5,
+        143.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Esc returns to your place"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/#1",
+      "rect": [
+        667.0,
+        97.0,
+        491.0,
+        14.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "EXCERPT SENT TO THE MODEL"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#1c1d20ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/#2",
+      "rect": [
+        667.0,
+        125.5,
+        491.0,
+        79.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#f48d2fff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/#2/#0",
+      "rect": [
+        681.0,
+        137.5,
+        463.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "kstrauser, 1 hour ago"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/#2/#1",
+      "rect": [
+        681.0,
+        160.5,
+        463.0,
+        32.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "I have wanted this for years. Every terminal library I have tried eventually grows its own opinion about how a window should look."
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/#3",
+      "rect": [
+        667.0,
+        219.0,
+        491.0,
+        14.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "ADDITIONAL CAPTURED TEXT"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0d",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/#4",
+      "rect": [
+        667.0,
+        247.5,
+        491.0,
+        79.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/#4/#0",
+      "rect": [
+        681.0,
+        259.5,
+        463.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "jmillikin, 1 hour ago"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/#4/#1",
+      "rect": [
+        681.0,
+        282.5,
+        463.0,
+        32.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "A narrow ABI is great until you need one more callback. Then you version the struct and every embedder has to care."
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/#5",
+      "rect": [
+        667.0,
+        341.0,
+        491.0,
+        30.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "A citation links to captured evidence; it does not guarantee the model read it correctly."
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#3",
+      "rect": [
+        0.0,
+        720.0,
+        1180.0,
+        1.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4",
+      "rect": [
+        0.0,
+        721.0,
+        1180.0,
+        39.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#0",
+      "rect": [
+        24.0,
+        733.0,
+        92.5,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "j k",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#0/#0",
+      "rect": [
+        24.0,
+        733.5,
+        32.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#0/#0/key0",
+      "rect": [
+        24.0,
+        733.5,
+        14.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#0/#0/key0/#0",
+      "rect": [
+        28.0,
+        735.0,
+        6.5,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "J"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key1",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#0/#0/key1",
+      "rect": [
+        40.5,
+        733.5,
+        16.0,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#0/#0/key1/#0",
+      "rect": [
+        44.5,
+        735.0,
+        8.0,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "K"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#0/#1",
+      "rect": [
+        62.5,
+        733.0,
+        54.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "comment"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#1",
+      "rect": [
+        134.5,
+        733.0,
+        74.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "[ ]",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#1/#0",
+      "rect": [
+        134.5,
+        733.5,
+        30.0,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#1/#0/key0",
+      "rect": [
+        134.5,
+        733.5,
+        14.0,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#1/#0/key0/#0",
+      "rect": [
+        139.25,
+        735.0,
+        4.5,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "["
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key1",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#1/#0/key1",
+      "rect": [
+        150.5,
+        733.5,
+        14.0,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#1/#0/key1/#0",
+      "rect": [
+        155.25,
+        735.0,
+        4.5,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "]"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#1/#1",
+      "rect": [
+        170.5,
+        733.0,
+        38.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "sibling"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#2",
+      "rect": [
+        226.5,
+        733.0,
+        76.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "Tab",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#2/#0",
+      "rect": [
+        226.5,
+        733.5,
+        27.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#2/#0/key0",
+      "rect": [
+        226.5,
+        733.5,
+        27.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#2/#0/key0/#0",
+      "rect": [
+        230.5,
+        735.0,
+        19.5,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Tab"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#2/#1",
+      "rect": [
+        260.0,
+        733.0,
+        42.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "citation"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#3",
+      "rect": [
+        320.5,
+        733.0,
+        75.5,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "S",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#3/#0",
+      "rect": [
+        320.5,
+        733.5,
+        15.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#3/#0/key0",
+      "rect": [
+        320.5,
+        733.5,
+        15.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#3/#0/key0/#0",
+      "rect": [
+        324.5,
+        735.0,
+        7.5,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "S"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#3/#1",
+      "rect": [
+        342.0,
+        733.0,
+        54.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "summary"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#4",
+      "rect": [
+        414.0,
+        740.5,
+        607.0,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#5",
+      "rect": [
+        1039.0,
+        733.0,
+        117.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Esc back to the feed"
+    }
+  ],
+  "reduced_motion": false,
+  "scale": 2.0,
+  "t": 0.0,
+  "time_scale": 1.0,
+  "title": "hn",
+  "viewport": [
+    1180.0,
+    760.0
+  ],
+  "warnings": []
+}

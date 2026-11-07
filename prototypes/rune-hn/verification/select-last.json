@@ -1,0 +1,14 @@
+[
+  {"t": 0.10, "type": "key", "name": "j"},
+  {"t": 0.20, "type": "key", "name": "j"},
+  {"t": 0.30, "type": "key", "name": "j"},
+  {"t": 0.40, "type": "key", "name": "j"},
+  {"t": 0.50, "type": "key", "name": "j"},
+  {"t": 0.60, "type": "key", "name": "j"},
+  {"t": 0.70, "type": "key", "name": "j"},
+  {"t": 0.80, "type": "key", "name": "j"},
+  {"t": 0.90, "type": "key", "name": "j"},
+  {"t": 1.00, "type": "key", "name": "j"},
+  {"t": 1.10, "type": "key", "name": "j"},
+  {"t": 1.20, "type": "mark", "name": "end"}
+]

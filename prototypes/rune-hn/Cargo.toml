@@ -1,0 +1,21 @@
+[package]
+name = "rune-hn"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Prototype: a native-UI Hacker News top-stories list built with Rune"
+
+# Its own workspace root, so this crate never joins the `hn` package at the repo root and
+# never touches the root Cargo.toml or Cargo.lock.
+[workspace]
+
+[dependencies]
+# Rune is pre-release: it is only consumable as a git dependency pinned to a `dev` rev.
+rune = { git = "https://github.com/anomalyco/rune", rev = "53c7f60f51ce12bd5da53145d9d86ce1552324e4" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ureq = "3"
+
+# Rune's own workspace does the same: debug info for wgpu/winit/parley is dead weight.
+[profile.dev.package."*"]
+debug = false

@@ -1,0 +1,1168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>hn for the desktop — Rune design mockups</title>
+<style>
+:root{
+  --bg:#141719; --panel:#191d20; --card:#1e2326; --card2:#232a2d; --bar:#1b2023;
+  --line:#2b3235; --line2:#353d40; --fg:#e1e5e5; --dim:#a1acb0; --faint:#6f7a7e;
+  --accent:#f3b77b; --accent-ink:#141719; --link:#80c9d5; --sel:#25322f;
+  --ui:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{background:#0f1214}
+body{margin:0;background:#0f1214;color:var(--fg);font:14px/1.6 var(--ui);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1560px;margin:0 auto;padding:56px 32px 96px}
+a{color:var(--link)}
+code{font:12px var(--mono);color:var(--accent)}
+h1,h2,h3,h4{margin:0;font-weight:600;letter-spacing:-.01em}
+p{margin:0}
+
+/* ---------- page header ---------- */
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+h1{font-size:40px;line-height:1.1;margin:14px 0 16px;max-width:22ch}
+.lede{max-width:74ch;color:var(--dim);font-size:15px}
+.lede strong{color:var(--fg);font-weight:500}
+.principles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:34px 0 0;padding:0;list-style:none}
+.principles li{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.principles b{display:block;font-size:13px;margin-bottom:4px}
+.principles span{font-size:12px;color:var(--dim);line-height:1.5}
+.flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:30px 0 0;font:12px var(--mono);color:var(--dim)}
+.flow b{color:var(--fg);font-weight:500}
+.flow i{color:var(--faint);font-style:normal}
+
+/* ---------- sections ---------- */
+section{margin-top:64px}
+.sec-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:8px}
+.sec-head h2{font-size:22px}
+.sec-head p{color:var(--dim);font-size:13px;max-width:80ch}
+.sec-note{color:var(--dim);font-size:13px;max-width:88ch;margin-bottom:22px}
+
+/* ---------- rune renders ---------- */
+.shots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.shots figure{margin:0}
+.shots .span2{grid-column:span 2}
+.shots img{width:100%;display:block;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.shots figcaption{font-size:12px;color:var(--dim);margin-top:8px}
+.shots figcaption b{color:var(--fg);font-weight:500}
+
+/* ---------- window chrome ---------- */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:26px;align-items:start}
+.win{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.win.wide{grid-column:1/-1}
+.bar{display:flex;align-items:center;gap:10px;padding:9px 13px;background:var(--bar);border-bottom:1px solid var(--line);font:500 12px/1 var(--ui);color:var(--dim)}
+.lights{display:flex;gap:6px;margin-right:2px}
+.lights i{width:10px;height:10px;border-radius:50%;background:#394144;display:block}
+.bar .name{color:var(--fg)}
+.bar .right{margin-left:auto;display:flex;gap:8px;align-items:center;font:11px var(--mono);color:var(--faint)}
+.body{background:var(--bg);color:var(--fg);font:13px/1.5 var(--ui);min-width:0;position:relative}
+
+/* ---------- mock primitives ---------- */
+.tb{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--line);min-width:0}
+.tb .grow{flex:1 1 auto;min-width:0}
+.tb .h{font-weight:600;font-size:14px;white-space:nowrap}
+.tb .meta{color:var(--dim);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tabs{display:flex;gap:2px;background:var(--bar);border:1px solid var(--line);border-radius:7px;padding:2px}
+.tab{padding:4px 12px;border-radius:5px;color:var(--dim);font-size:12px;white-space:nowrap}
+.tab.on{background:var(--card2);color:var(--fg);box-shadow:0 0 0 1px var(--line2)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:5px;background:var(--card2);color:var(--dim);font-size:11px;white-space:nowrap}
+.pill.acc{color:var(--accent)}
+.pill .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);display:block}
+/* the saved marker: a 6 pt amber dot beside the rank, never right-aligned chrome */
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:0 0 auto;display:block}
+.k{display:inline-block;min-width:16px;padding:1px 5px;border-radius:3px;background:var(--card2);color:var(--dim);font:500 11px/1.5 var(--mono);text-align:center}
+.k.acc{color:var(--accent)}
+.foot{display:flex;align-items:center;gap:14px;padding:9px 16px;border-top:1px solid var(--line);color:var(--dim);font-size:11px;flex-wrap:wrap}
+.foot .grow{flex:1 1 auto}
+
+/* feed rows */
+.list{padding:6px 8px}
+.row{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:6px;min-width:0}
+.row.sel{background:var(--card);box-shadow:inset 2px 0 var(--accent)}
+.row.hov{background:#1b2023}
+.lead{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.rank{width:18px;text-align:right;color:var(--faint);font:500 12px var(--mono);flex:0 0 auto}
+.row.sel .rank{color:var(--accent)}
+.row .col{flex:1 1 auto;min-width:0}
+.row .t{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .sub{color:var(--dim);font-size:12px}
+.row .end{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.acts{display:flex;gap:6px;opacity:0}
+.row.hov .acts{opacity:1}
+.act{padding:2px 7px;border-radius:4px;background:var(--card2);color:var(--dim);font-size:11px}
+.act.acc{color:var(--accent)}
+
+/* two-column feed: column-major (left column first, then right), one shared scroll, a hairline between */
+.feed2{display:grid;grid-auto-flow:column;grid-template-rows:repeat(15,auto);grid-template-columns:1fr 1fr;padding:6px 8px}
+.feed2 .row{border-radius:0;padding:8px 12px}
+.feed2 .row:nth-child(16){border-left:1px solid var(--line)}
+
+/* page stepper: the current page only — the HN API reports no total */
+.stepper{display:flex;align-items:center;gap:2px;margin-left:auto}
+.stepper .chev{width:18px;height:18px;border-radius:4px;background:var(--card2);color:var(--dim);font:11px/18px var(--mono);text-align:center}
+.stepper .n{min-width:20px;text-align:center;font:500 11px var(--mono);color:var(--fg)}
+
+/* transient save confirmation */
+.toast{position:absolute;right:32px;bottom:48px;display:flex;gap:10px;align-items:flex-start;max-width:320px;padding:10px 14px;border-radius:8px;background:var(--card2);border:1px solid var(--line2);box-shadow:0 12px 28px rgba(0,0,0,.45)}
+.toast .sdot{margin-top:5px}
+.toast b{display:block;font-size:12.5px;font-weight:600}
+.toast span{font-size:11.5px;color:var(--dim)}
+
+/* split */
+.split{display:flex;min-height:0}
+.pane{min-width:0;display:flex;flex-direction:column}
+.pane.art{flex:0 0 54%;padding:18px 22px;gap:12px}
+.pane.disc{flex:1 1 auto;padding:16px 18px;gap:12px;min-width:0}
+.grip{flex:0 0 9px;position:relative;cursor:col-resize;background:var(--bg)}
+.grip::before{content:"";position:absolute;left:4px;top:0;bottom:0;width:1px;background:var(--line)}
+.grip::after{content:"";position:absolute;left:3px;top:50%;transform:translateY(-50%);width:3px;height:28px;border-radius:2px;background:#4a5457}
+.eyebrow2{font:600 10px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.headline{font-size:22px;font-weight:600;line-height:1.25}
+.byline{color:var(--dim);font-size:12px}
+.para{color:var(--fg);font-size:13px;line-height:1.62}
+.code{background:var(--card);border-radius:6px;padding:9px 11px;font:12px/1.7 var(--mono);color:var(--fg)}
+.code .dim{color:var(--dim)}
+.figure{background:var(--card);border:1px solid var(--line);border-radius:6px;height:74px;display:flex;align-items:center;justify-content:center;color:var(--faint);font:11px var(--mono)}
+
+/* summary */
+.sum{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:9px}
+.sum .top{display:flex;align-items:center;gap:8px}
+.sum .top .grow{flex:1 1 auto}
+.sum .top .when{color:var(--dim);font-size:11px}
+.pt{display:flex;gap:9px;align-items:flex-start}
+.pt .n{color:var(--accent);font:600 12px/1.5 var(--mono);flex:0 0 auto}
+.pt .txt{font-size:12.5px;line-height:1.55}
+.cites{display:flex;gap:5px;margin-top:5px}
+.cite{display:inline-block;min-width:18px;text-align:center;padding:1px 5px;border-radius:4px;background:#2a3235;color:var(--accent);font:500 11px/1.5 var(--mono)}
+.cite.on{background:var(--accent);color:var(--accent-ink)}
+.rule{height:1px;background:var(--line);margin:2px 0}
+
+/* comments */
+.cm{display:flex;gap:10px;padding:7px 9px;border-radius:6px;min-width:0}
+.cm.sel{background:var(--card);box-shadow:inset 2px 0 var(--accent)}
+.cm.hov{background:#1b2023}
+.guides{display:flex;gap:13px;flex:0 0 auto}
+.guides i{width:1px;background:var(--line2);display:block}
+.cm .col{flex:1 1 auto;min-width:0}
+.cm .who{display:flex;gap:8px;align-items:baseline}
+.cm .who b{font-weight:500;font-size:12px}
+.cm.sel .who b{color:var(--accent)}
+.cm .who span{color:var(--dim);font-size:11px}
+.cm .txt{font-size:12.5px;line-height:1.55}
+.cm .acts{margin-left:auto;display:flex;gap:6px;opacity:0}
+.cm.hov .acts{opacity:1}
+.collapsed{display:flex;align-items:center;gap:8px;color:var(--dim);font-size:12px;padding:5px 9px}
+.chev{width:14px;height:14px;border-radius:3px;background:var(--card2);color:var(--dim);font:10px/14px var(--mono);text-align:center;flex:0 0 auto}
+
+/* the ancestor trail: sticky at the top of the scroll viewport, one segment per ancestor */
+.trail{display:flex;align-items:center;gap:6px;padding:7px 12px;background:var(--card);border-bottom:1px solid var(--line2);font:11.5px var(--ui);color:var(--dim);position:sticky;top:0;z-index:2;box-shadow:0 6px 14px rgba(0,0,0,.35);overflow:hidden;white-space:nowrap}
+.trail .seg{padding:1px 6px;border-radius:4px;background:var(--card2);color:var(--dim)}
+.trail .seg.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.trail .sep{color:var(--faint)}
+.trail .grow{flex:1 1 auto}
+.trail .hint{color:var(--faint);font:11px var(--mono)}
+/* focus mode: everything that is neither an ancestor nor a descendant of the cursor */
+.cm.dim{opacity:.35}
+/* the depth cap: a re-root target, not a child row */
+.cont{display:flex;align-items:center;gap:8px;padding:5px 9px;color:var(--accent);font-size:12px}
+.cont .arrow{font:11px var(--mono)}
+
+/* popover / menu */
+.pop{background:var(--card2);border:1px solid var(--line2);border-radius:8px;padding:5px;box-shadow:0 12px 28px rgba(0,0,0,.45);width:250px}
+.pop .item{display:flex;gap:8px;align-items:center;padding:5px 8px;border-radius:5px;font-size:12px;color:var(--fg)}
+.pop .item.on{background:var(--sel)}
+.pop .item .u{color:var(--dim);font:11px var(--mono);margin-left:auto;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pop .lbl{font:600 10px/1 var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--faint);padding:6px 8px 4px}
+
+/* settings */
+.form{display:flex;flex-direction:column;gap:12px;padding:16px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;color:var(--dim)}
+.input{background:var(--card);border:1px solid var(--line2);border-radius:6px;padding:6px 9px;font:12px var(--mono);color:var(--fg)}
+.input.mask{letter-spacing:.12em}
+.radios{display:flex;gap:8px}
+.radio{display:flex;align-items:center;gap:7px;padding:6px 10px;border-radius:6px;border:1px solid var(--line);font-size:12px;color:var(--dim)}
+.radio.on{border-color:var(--accent);color:var(--fg)}
+.radio .mark{width:11px;height:11px;border-radius:50%;border:1px solid var(--line2);display:block}
+.radio.on .mark{border-color:var(--accent);background:radial-gradient(circle,var(--accent) 0 3px,transparent 3px)}
+.switch{width:34px;height:20px;border-radius:10px;background:var(--accent);position:relative;flex:0 0 auto}
+.switch i{position:absolute;top:2px;left:16px;width:16px;height:16px;border-radius:50%;background:#fff;display:block}
+.switch.off{background:#3a4245}
+.switch.off i{left:2px}
+.line{display:flex;align-items:center;gap:10px;font-size:12px}
+.line .grow{flex:1 1 auto}
+.btn{padding:5px 11px;border-radius:6px;background:var(--card2);color:var(--fg);font-size:12px;border:1px solid var(--line2)}
+.btn.acc{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
+
+/* help overlay */
+.overlay{position:relative;background:var(--bg);min-height:300px}
+.overlay .dimmed{opacity:.35;filter:saturate(.6)}
+.modal{position:absolute;inset:18px 24px;background:var(--panel);border:1px solid var(--line2);border-radius:10px;box-shadow:0 24px 60px rgba(0,0,0,.55);padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.modal .cols{display:grid;grid-template-columns:1fr 1fr;gap:6px 22px}
+.modal .grp{font:600 10px/1 var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:6px 0 4px}
+.modal .kv{display:flex;gap:8px;align-items:baseline;font-size:12px;color:var(--dim)}
+.modal .kv .k{flex:0 0 auto}
+
+/* summary states */
+.states{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}
+.state{background:var(--bg);padding:14px 16px;display:flex;flex-direction:column;gap:9px;min-height:186px}
+.state .cap{font:600 10px/1 var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.sk{height:9px;border-radius:4px;background:linear-gradient(90deg,#232a2d,#2f383b,#232a2d);background-size:200% 100%;animation:sh 1.6s linear infinite}
+.sk.s{width:62%}
+.sk.m{width:88%}
+.sk.l{width:100%}
+@keyframes sh{to{background-position:-200% 0}}
+.spin{width:13px;height:13px;border-radius:50%;border:2px solid #2c3437;border-top-color:var(--accent);animation:sp .9s linear infinite;flex:0 0 auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+.caret{display:inline-block;width:2px;height:12px;background:var(--accent);vertical-align:-2px;animation:bl 1s steps(1) infinite}
+@keyframes bl{50%{opacity:0}}
+.err{border:1px solid #6b3a34;background:#241a19;border-radius:6px;padding:9px 11px;font-size:12px;color:#e8b4ac}
+.err b{color:#f0c9c2;font-weight:600}
+.retry{display:flex;gap:8px;align-items:center;margin-top:2px}
+.quote{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:9px 11px;font-size:12px;line-height:1.55}
+.quote .who{color:var(--accent);font-size:11px;margin-bottom:4px}
+.quote.alt{background:#1b2023;color:var(--dim)}
+.quote.alt .who{color:var(--dim)}
+
+/* notes */
+.notes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding:14px 16px;border-top:1px solid var(--line);background:#171b1d}
+.notes h4{font:600 10px/1 var(--ui);letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin-bottom:7px}
+.notes ul{margin:0;padding:0;list-style:none}
+.notes li{font-size:12px;line-height:1.5;color:var(--dim);margin-bottom:5px;padding-left:11px;position:relative}
+.notes li::before{content:"";position:absolute;left:0;top:7px;width:4px;height:4px;border-radius:50%;background:var(--line2)}
+.notes li b{color:var(--fg);font-weight:500}
+.notes code{font:11px var(--mono);color:var(--accent)}
+
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 10px/1 var(--ui);letter-spacing:.09em;text-transform:uppercase;color:var(--faint)}
+td code{font:11.5px var(--mono);color:var(--accent)}
+td.dim{color:var(--dim)}
+.tbl{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+
+.deltas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.delta{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.delta b{display:block;font-size:13px;margin-bottom:5px}
+.delta p{font-size:12.5px;color:var(--dim);line-height:1.55}
+.delta .was{color:var(--faint);font:11px var(--mono);display:block;margin-top:6px}
+
+footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--line);color:var(--faint);font-size:12px;display:flex;gap:18px;flex-wrap:wrap}
+footer code{color:var(--dim)}
+
+@media (max-width:1180px){
+  .grid,.shots,.principles,.deltas{grid-template-columns:1fr}
+  .win.wide{grid-column:auto}
+  .states{grid-template-columns:1fr}
+  .notes{grid-template-columns:1fr}
+  .pane.art{flex:0 0 50%}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">hn · desktop design · Rune</p>
+  <h1>hn, as a native window</h1>
+  <p class="lede">The terminal app keeps its keyboard. The desktop app adds what a window can do that a
+  80×24 grid cannot: <strong>two panes side by side</strong>, an article you can actually read, comment
+  threads with real indentation, and a summary that streams in place instead of repainting a block of
+  text. Every element below is drawn with a component that exists in Rune at
+  <code>53c7f60</code> — the same rev <code>prototypes/rune-hn</code> pins.</p>
+
+  <ul class="principles">
+    <li><b>Keyboard parity, not keyboard compromise</b><span>Every key the TUI has still works. Mouse is additive: hover, click, drag, right-click.</span></li>
+    <li><b>The split replaces the Ghostty pane</b><span>Article and discussion live in one window on macOS, Linux and Windows — no companion process, no 110-column rule.</span></li>
+    <li><b>Readability is the feature</b><span>Proportional UI type, a 66-character measure, real code blocks, images and a table of contents.</span></li>
+    <li><b>Motion that explains state</b><span>Springs on selection, pane resize and summary arrival. Nothing moves on the first frame; reduced motion fades instead.</span></li>
+  </ul>
+
+  <div class="flow">
+    <b>Feed</b><i>→</i><b>Story split</b><i>→</i><b>Summary</b><i>→</i><b>Citation source</b>
+    <i>·</i><span>the same path the TUI takes, with the article pane always present</span>
+  </div>
+</header>
+
+<section id="rune">
+  <div class="sec-head">
+    <h2>Rendered by Rune, not by CSS</h2>
+    <p>Seven of these screens are real frames from <code>prototypes/rune-mocks</code>: a Rune app at the
+    pinned rev, rendered headlessly with <code>--snap</code>. The HTML mocks below cover the states a
+    static frame cannot show.</p>
+  </div>
+  <div class="shots">
+    <figure>
+      <img src="../../prototypes/rune-mocks/verification/feed.png" alt="Rune render of the hn feed at 1180x760: segmented Top/New/Best/Saved tabs, twelve story rows in one column, saved dots beside ranks 1, 2, 6 and 11, a page stepper reading 1 in the footer.">
+      <figcaption><b>Feed, one column.</b> 1180×760. <code>SegmentedControl</code> tabs, a saved dot
+      beside the rank, <code>Keybind</code> hints and the <code>‹ 1 ›</code> stepper in the footer.</figcaption>
+    </figure>
+    <figure class="span2">
+      <img src="../../prototypes/rune-mocks/verification/feed-wide.png" alt="Rune render of the same feed at 1600x900: two columns of twelve story rows separated by a hairline, column-major order so ranks 1 to 15 fill the left column and 16 to 30 the right, one row showing hover actions on the right.">
+      <figcaption><b>Feed, two columns.</b> 1600×900. Same page, same keys: story <i>i</i> sits at
+      <code>c × rows + r</code>, so <code>j</code> runs straight down the left column and then down the
+      right — never sideways. The grid is filled from the visible capacity
+      (<code>pagesNeeded = ceil(rows × 2 / 30)</code>), so the right column is never half empty. One
+      shared scroll, a hairline between the columns, hover actions on the right edge only.</figcaption>
+    </figure>
+    <figure>
+      <img src="../../prototypes/rune-mocks/verification/feed-saved.png" alt="Rune render of the feed with a transient save confirmation: an amber dot beside rank 3 and a toast reading Saved, Press 4 for Saved, bottom right.">
+      <figcaption><b>Save confirmation.</b> The dot pops in beside the rank; the
+      <code>Toast</code> carries the words and then leaves. Nothing persists on the row's right edge.</figcaption>
+    </figure>
+    <figure>
+      <img src="../../prototypes/rune-mocks/verification/story.png" alt="Rune render of the story split view: article on the left, pinned summary with numbered citations and the discussion on the right.">
+      <figcaption><b>Story split.</b> Article pane, 9 pt drag grip, pinned summary card with citation
+      chips, threaded comments with indent guides.</figcaption>
+    </figure>
+    <figure>
+      <img src="../../prototypes/rune-mocks/verification/citation.png" alt="Rune render of the citation source viewer: the excerpt sent to the model and additional captured text, with the article dimmed.">
+      <figcaption><b>Citation source.</b> The excerpt sent to the model, the extra captured text, and the
+      article dimmed to <code>0.55</code> behind it.</figcaption>
+    </figure>
+    <figure>
+      <img src="../../prototypes/rune-mocks/verification/comments.png" alt="Rune render of the discussion overview: a sticky ancestor trail across the top, comment rows with author and depth labels, indent guides, a folded thread reading 3 replies hidden, and a continue thread row reading 6 replies.">
+      <figcaption><b>Discussion overview.</b> The sticky ancestor trail, indent guides capped at four
+      levels, a folded thread stating <code>3 replies hidden</code>, and a
+      <code>continue thread → 6 replies</code> row where the cap bites.</figcaption>
+    </figure>
+    <figure>
+      <img src="../../prototypes/rune-mocks/verification/thread.png" alt="Rune render of a deep reply under its trail: a five-segment breadcrumb strip reading tptacek, kstrauser, jmillikin, simonw, dang, with the focused comment at depth 4 and its siblings dimmed by focus mode.">
+      <figcaption><b>Deep reply, focused.</b> The trail carries the depth the indent guides no longer
+      can; focus mode dims every row that is neither an ancestor nor a descendant of the cursor.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="screens">
+  <div class="sec-head">
+    <h2>The screens</h2>
+    <p>Ten states, side by side. Each card carries its interaction notes (mouse and keyboard) and the
+    motion it uses, named by Rune's spring tokens.</p>
+  </div>
+
+  <div class="grid">
+
+    <!-- ============ 01 STORY SPLIT (hero) ============ -->
+    <figure class="win wide" style="margin:0">
+      <div class="bar">
+        <span class="lights"><i></i><i></i><i></i></span>
+        <span class="name">hn</span><span>— Libghostty 1.0</span>
+        <span class="right"><span class="k">⌘\</span> toggle split</span>
+      </div>
+      <div class="body">
+        <div class="tb">
+          <span class="k">Esc</span>
+          <span class="h">Libghostty 1.0</span>
+          <span class="sdot" title="saved"></span>
+          <span class="meta">mfiguiere · 718 points · 116 comments</span>
+          <span class="grow"></span>
+          <span class="pill acc"><span class="dot"></span>summary · fast</span>
+        </div>
+        <div class="split">
+          <div class="pane art">
+            <span class="eyebrow2">Article · ghostty.org</span>
+            <div class="headline">Libghostty 1.0</div>
+            <div class="byline">mfiguiere · extracted 4.2k words · 3 min read</div>
+            <p class="para">Today we are splitting Ghostty's core into a library. The app you run keeps its
+            window, its fonts and its configuration; the terminal underneath becomes something another
+            program can embed.</p>
+            <p class="para">The surface is deliberately small. A host hands libghostty a native surface and
+            a size, and gets back a grid of cells it can draw however it likes. Input arrives as an event
+            queue, not as callbacks into the host's event loop.</p>
+            <div class="code"><span class="dim">$</span> zig build -Doptimize=ReleaseFast<br><span class="dim">$</span> ./zig-out/bin/libghostty-demo</div>
+            <div class="figure">figure 1 · the surface handshake</div>
+            <p class="para">What does not change: the parser, the renderer's cell model, and the
+            escape-sequence coverage. What does: everything that used to assume it owned a window.</p>
+          </div>
+          <div class="grip" title="drag to resize · double-click to reset"></div>
+          <div class="pane disc">
+            <div class="sum">
+              <div class="top">
+                <b style="font-size:13px">Summary</b>
+                <span class="grow"></span>
+                <span class="when">captured 2m ago · 3 of 3 sources</span>
+              </div>
+              <div class="pt"><span class="n">1</span><div><div class="txt">libghostty splits Ghostty's core out of the app so other frontends can embed the terminal without the macOS shell.</div><div class="cites"><span class="cite">1</span><span class="cite">2</span></div></div></div>
+              <div class="pt"><span class="n">2</span><div><div class="txt">The ABI is deliberately narrow: a surface, a grid of cells and an input queue, with no windowing or font policy in the library.</div><div class="cites"><span class="cite on">3</span></div></div></div>
+              <div class="pt"><span class="n">3</span><div><div class="txt">Commenters split on whether a stable C ABI is worth the loss of Zig's comptime ergonomics inside the core.</div><div class="cites"><span class="cite">4</span><span class="cite">5</span></div></div></div>
+              <div class="rule"></div>
+              <div style="font-size:11px;color:var(--dim)">Tab selects a citation · Enter reads its source · S hides the summary</div>
+            </div>
+            <span class="eyebrow2">Discussion · 116 comments</span>
+            <div class="cm sel">
+              <div class="guides"></div>
+              <div class="col">
+                <div class="who"><b>tptacek</b><span>2 hours ago</span></div>
+                <div class="txt">The interesting part is what they left out. No windowing, no font stack, no config language — those all stay in the app. That is the whole reason this can be embedded.</div>
+              </div>
+            </div>
+            <div class="cm hov">
+              <div class="guides"><i></i></div>
+              <div class="col">
+                <div class="who"><b>kstrauser</b><span>1 hour ago</span></div>
+                <div class="txt">I have wanted this for years. Every terminal library I have tried eventually grows its own opinion about how a window should look.</div>
+              </div>
+              <div class="acts"><span class="act">save</span><span class="act">links</span><span class="act">collapse</span></div>
+            </div>
+            <div class="cm">
+              <div class="guides"><i></i></div>
+              <div class="col">
+                <div class="who"><b>jmillikin</b><span>1 hour ago</span></div>
+                <div class="txt">A narrow ABI is great until you need one more callback. Then you version the struct and every embedder has to care.</div>
+              </div>
+            </div>
+            <div class="collapsed"><span class="chev">▸</span> 3 replies hidden · Enter expands</div>
+          </div>
+        </div>
+        <div class="foot">
+          <span class="k">j</span><span class="k">k</span> comment
+          <span class="k">[</span><span class="k">]</span> sibling
+          <span class="k">Tab</span> citation
+          <span class="k">S</span> summary
+        </div>
+      </div>
+      <div class="notes">
+        <div>
+          <h4>Mouse</h4>
+          <ul>
+            <li><b>Drag the grip</b> to resize; <b>double-click</b> resets to 54/46. Dragging below half the minimum collapses the pane.</li>
+            <li><b>Click a citation chip</b> to open its source in the right pane; the article dims behind it.</li>
+            <li><b>Hover a comment</b> for save / links / collapse. <b>Click the chevron</b> to fold a thread.</li>
+            <li><b>Wheel</b> scrolls the pane under the pointer, independently.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Keyboard</h4>
+          <ul>
+            <li><b>j/k, [/], u, g/G, PgUp/PgDn</b> — unchanged from the TUI.</li>
+            <li><b>Tab / Shift-Tab</b> select a citation, <b>Enter</b> opens the source, <b>Esc</b> returns to your place.</li>
+            <li><b>S</b> toggles the summary without moving the comment cursor; <b>J/K</b> scrolls it.</li>
+            <li><b>L</b> opens the link chooser; <b>⌘\</b> collapses the split.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Motion</h4>
+          <ul>
+            <li>Pane resize: <code>PaneMotion</code> on <code>SETTLE</code> 0.3/0, <code>scale_with_width(480, .15, .3)</code>.</li>
+            <li>Source viewer: <code>GLIDE</code> 0.32/0 slide, contents fade over the last 15%.</li>
+            <li>Citation focus: <code>SNAP</code> 0.25/0 on the chip fill; the summary pin is sticky, so it never moves.</li>
+            <li>Reduced motion: panes snap, the source viewer fades in place over <code>REDUCED_FADE</code> 0.15 s.</li>
+          </ul>
+        </div>
+      </div>
+    </figure>
+
+    <!-- ============ 02 FEED, ONE COLUMN ============ -->
+    <figure class="win" style="margin:0">
+      <div class="bar">
+        <span class="lights"><i></i><i></i><i></i></span>
+        <span class="name">hn</span><span>— Top</span>
+        <span class="right"><span class="k">⌘R</span> refresh</span>
+      </div>
+      <div class="body">
+        <div class="tb">
+          <div class="tabs"><span class="tab on">Top</span><span class="tab">New</span><span class="tab">Best</span><span class="tab">Saved</span></div>
+        </div>
+        <div class="list">
+          <div class="row"><span class="lead"><span class="rank">1</span><span class="sdot" title="saved"></span></span><div class="col"><div class="t">Tesla to wind down Cybertruck production</div><div class="sub">1038 points · by PLenz · 1887 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">2</span><span class="sdot" title="saved"></span></span><div class="col"><div class="t">Libghostty 1.0</div><div class="sub">718 points · by mfiguiere · 116 comments</div></div></div>
+          <div class="row sel"><span class="lead"><span class="rank">3</span><span class="sdot" title="saved"></span></span><div class="col"><div class="t">A Jev that can ask Opus for help gives Opus accuracy at 4x lower cost</div><div class="sub">503 points · by theanomaly · 120 comments</div></div></div>
+          <div class="row hov"><span class="lead"><span class="rank">4</span></span><div class="col"><div class="t">US FAA says it will phase out floppy disks from air traffic control by 2028</div><div class="sub">349 points · by ChrisArchitect · 285 comments</div></div><div class="end"><div class="acts"><span class="act acc">save</span><span class="act">open</span><span class="act">browser</span></div></div></div>
+          <div class="row"><span class="lead"><span class="rank">5</span></span><div class="col"><div class="t">Gemini Omni 1.2 Flash</div><div class="sub">343 points · by thisisauserid · 233 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">6</span></span><div class="col"><div class="t">AI is dramatically accelerating AI research</div><div class="sub">325 points · by yurivish · 281 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">7</span><span class="sdot" title="saved"></span></span><div class="col"><div class="t">Firecracker VM Escape: PwnEscape Part 2</div><div class="sub">249 points · by SerCe · 109 comments</div></div></div>
+        </div>
+        <div class="toast"><span class="sdot"></span><div><b>Saved</b><span>Press 4 for Saved</span></div></div>
+        <div class="foot">
+          <span class="k">j</span><span class="k">k</span> move
+          <span class="k">Enter</span> open
+          <span class="k">s</span> save
+          <span class="k">n</span><span class="k">p</span> page
+          <span class="stepper"><span class="chev">‹</span><span class="n">1</span><span class="chev">›</span></span>
+        </div>
+      </div>
+      <div class="notes">
+        <div>
+          <h4>Mouse</h4>
+          <ul>
+            <li><b>Click</b> selects, <b>double-click</b> opens the story, <b>right-click</b> opens a context menu (open, save, copy link).</li>
+            <li><b>Hover</b> reveals per-row actions on the right edge — the only thing that ever lives there.</li>
+            <li><b>Click a tab</b> to switch feeds; the indicator slides. <b>Click ‹ ›</b> to page.</li>
+            <li><b>Wheel</b> scrolls; the list keeps the selection in view.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Keyboard</h4>
+          <ul>
+            <li><b>j/k, g/G, n/p, 1–4</b> — identical to the TUI, including j-past-the-end paging.</li>
+            <li><b>s</b> saves, <b>Enter/o</b> opens the split, <b>O</b> opens the browser, <b>r</b> refreshes, <b>?</b> help.</li>
+            <li><b>⌘1–4</b> jumps to a feed; <b>⌘F</b> focuses a filter field (new, not in the TUI).</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Motion</h4>
+          <ul>
+            <li>Selection card: <code>SETTLE</code> 0.3/0 on fill and the amber edge.</li>
+            <li>Hover overlay: <code>INSTANT</code> 0.1/0 — pointer-tied, never lags the hand.</li>
+            <li>Save: the dot <code>POP</code>s 0.25/0.15 beside the rank; the toast fades in and leaves after 2.4 s.</li>
+            <li>Page turn: <code>GLIDE</code> 0.32/0 offset on the list; reduced motion crossfades only.</li>
+          </ul>
+        </div>
+      </div>
+    </figure>
+
+    <!-- ============ 03 FEED, TWO COLUMNS ============ -->
+    <figure class="win wide" style="margin:0">
+      <div class="bar">
+        <span class="lights"><i></i><i></i><i></i></span>
+        <span class="name">hn</span><span>— Top</span>
+        <span class="right">1600 × 900 · two columns</span>
+      </div>
+      <div class="body">
+        <div class="tb">
+          <div class="tabs"><span class="tab on">Top</span><span class="tab">New</span><span class="tab">Best</span><span class="tab">Saved</span></div>
+        </div>
+        <div class="feed2">
+          <div class="row"><span class="lead"><span class="rank">1</span><span class="sdot" title="saved"></span></span><div class="col"><div class="t">Tesla to wind down Cybertruck production</div><div class="sub">1057 points · by PLenz · 1913 comments</div></div></div>
+          <div class="row sel"><span class="lead"><span class="rank">2</span><span class="sdot" title="saved"></span></span><div class="col"><div class="t">Libghostty 1.0</div><div class="sub">771 points · by mfiguiere · 122 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">3</span></span><div class="col"><div class="t">A Jev that can ask Opus for help gives Opus accuracy at 4x lower cost</div><div class="sub">513 points · by theanomaly · 122 comments</div></div></div>
+          <div class="row hov"><span class="lead"><span class="rank">4</span></span><div class="col"><div class="t">US FAA says it will phase out floppy disks from air traffic control by 2028</div><div class="sub">356 points · by ChrisArchitect · 289 comments</div></div><div class="end"><div class="acts"><span class="act acc">save</span><span class="act">open</span><span class="act">browser</span></div></div></div>
+          <div class="row"><span class="lead"><span class="rank">5</span></span><div class="col"><div class="t">Gemini Omni 1.2 Flash</div><div class="sub">347 points · by thisisauserid · 234 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">6</span><span class="sdot" title="saved"></span></span><div class="col"><div class="t">Firecracker VM Escape: PwnEscape Part 2</div><div class="sub">257 points · by SerCe · 110 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">7</span></span><div class="col"><div class="t">First steps in bare-metal programming using UEFI</div><div class="sub">233 points · by LaSombra · 46 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">8</span></span><div class="col"><div class="t">Every Mac comes with an (undocumented) family member classifier</div><div class="sub">219 points · by infwhispers · 106 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">9</span></span><div class="col"><div class="t">Upload Your RAM</div><div class="sub">180 points · by susanthenerd · 129 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">10</span></span><div class="col"><div class="t">Devvm.dev: One VM for every project</div><div class="sub">169 points · by luispa · 64 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">11</span><span class="sdot" title="saved"></span></span><div class="col"><div class="t">GitHub&#x27;s new Git storage architecture</div><div class="sub">168 points · by DAlperin · 38 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">12</span></span><div class="col"><div class="t">RealPage rent-pricing case wraps with nearly $360M to renters</div><div class="sub">143 points · by raybb · 84 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">13</span></span><div class="col"><div class="t">Need for Speed Underground 2 online in the browser</div><div class="sub">141 points · by fluxusars · 43 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">14</span></span><div class="col"><div class="t">Restaurant Delivery Payment-Skimming Campaign</div><div class="sub">138 points · by fiej · 71 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">15</span></span><div class="col"><div class="t">Greece has its own Pompeii: Thera buried Akrotiri in ash 17th-16th century BCE</div><div class="sub">138 points · by derbOac · 15 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">16</span></span><div class="col"><div class="t">A barbarian tribe&#x27;s mythic origin story is true, ancient DNA reveals</div><div class="sub">136 points · by benbreen · 104 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">17</span></span><div class="col"><div class="t">Chomsky and the two cultures of statistical learning (2011)</div><div class="sub">135 points · by andsoitis · 104 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">18</span></span><div class="col"><div class="t">Can GROUP BY still be optimized after all these years?</div><div class="sub">95 points · by ntur1337 · 16 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">19</span></span><div class="col"><div class="t">Notes on San Marino</div><div class="sub">90 points · by yorwba · 34 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">20</span></span><div class="col"><div class="t">Google has acquired Crusoe&#x27;s data center site in southeast Wyoming</div><div class="sub">86 points · by rexbee · 33 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">21</span></span><div class="col"><div class="t">The Components of Agent Memory</div><div class="sub">76 points · by geoffbp · 40 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">22</span></span><div class="col"><div class="t">The Flash C Compiler</div><div class="sub">64 points · by AlexeyBrin · 19 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">23</span></span><div class="col"><div class="t">Every Windows 11 app should kill Electron, and Discord just showed why</div><div class="sub">47 points · by thunderbong · 34 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">24</span></span><div class="col"><div class="t">PostgreSQL Internals [pdf]</div><div class="sub">45 points · by Foe · 5 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">25</span></span><div class="col"><div class="t">The great butter and cheese fire of 1991</div><div class="sub">43 points · by subroutine · 16 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">26</span></span><div class="col"><div class="t">8088 Domination Post-Mortem</div><div class="sub">30 points · by cosmojg · 5 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">27</span></span><div class="col"><div class="t">Running a law firm on Free software</div><div class="sub">28 points · by DeepLogin · 3 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">28</span></span><div class="col"><div class="t">ToothPaste</div><div class="sub">22 points · by speckx · 5 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">29</span></span><div class="col"><div class="t">Port 0: The Port That Does Not Exist</div><div class="sub">22 points · by NewCzech · 4 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">30</span></span><div class="col"><div class="t">Show HN: Spindle – a full-featured, type-safe web framework for OCaml 5</div><div class="sub">7 points · by zaiev · 0 comments</div></div></div>
+        </div>
+        <div class="foot">
+          <span class="k">j</span><span class="k">k</span> move
+          <span class="k">Enter</span> open
+          <span class="k">s</span> save
+          <span class="k">n</span><span class="k">p</span> page
+          <span class="stepper"><span class="chev">‹</span><span class="n">1</span><span class="chev">›</span></span>
+        </div>
+      </div>
+      <div class="notes">
+        <div>
+          <h4>When it splits</h4>
+          <ul>
+            <li>Two columns at a window width of <b>1400 pt or more</b>; below that the layout is exactly the one-column feed.</li>
+            <li><b>Column-major:</b> story <i>i</i> sits at <code>c × rows + r</code>, so ranks 1–15 fill the left column and 16–30 the right. <code>j</code> runs straight down a column and never alternates sideways.</li>
+            <li>One shared scroll. The hairline between the columns is a divider, not a second viewport.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Filling the grid</h4>
+          <ul>
+            <li>The grid is filled from the visible capacity, not from one page: <code>visibleCells = visibleRows × cols</code>, <code>pagesNeeded = ceil(visibleCells / pageSize)</code>.</li>
+            <li>At 1600 × 1200 with 30 per page: 19 rows × 2 = 38 cells → <code>ceil(38 / 30) = 2</code> pages fetched, so the right column is never half empty.</li>
+            <li>Recomputed on resize and on page turn; the extra pages are appended to the same list, so the scroll and the keys do not change.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Motion</h4>
+          <ul>
+            <li>Crossing the threshold reflows the list on <code>REFLOW</code> 0.4/0; the selection keeps its story, not its row.</li>
+            <li>Page turn: <code>GLIDE</code> 0.32/0 offset across both columns at once.</li>
+            <li>Reduced motion: the reflow lands at once and the page turn crossfades.</li>
+          </ul>
+        </div>
+      </div>
+    </figure>
+
+    <!-- ============ 04 SUMMARY STATES ============ -->
+    <figure class="win" style="margin:0">
+      <div class="bar">
+        <span class="lights"><i></i><i></i><i></i></span>
+        <span class="name">hn</span><span>— summary states</span>
+        <span class="right">S · M · Tab</span>
+      </div>
+      <div class="body">
+        <div class="states">
+          <div class="state">
+            <span class="cap">Generating</span>
+            <div class="line"><span class="spin"></span><span style="font-size:12px">Reading the article…</span></div>
+            <div class="sk l"></div><div class="sk m"></div><div class="sk s"></div>
+            <div class="sk l"></div><div class="sk m"></div>
+            <div style="font-size:11px;color:var(--dim)">2 of 3 sources captured<span class="caret"></span></div>
+          </div>
+          <div class="state">
+            <span class="cap">Done · citations</span>
+            <div class="pt"><span class="n">1</span><div><div class="txt" style="font-size:12px">libghostty splits the core out so other frontends can embed it.</div><div class="cites"><span class="cite">1</span><span class="cite">2</span></div></div></div>
+            <div class="pt"><span class="n">2</span><div><div class="txt" style="font-size:12px">The ABI is narrow: a surface, a cell grid, an input queue.</div><div class="cites"><span class="cite">3</span></div></div></div>
+            <div class="pt"><span class="n">3</span><div><div class="txt" style="font-size:12px">Commenters split on the cost of a stable C ABI.</div><div class="cites"><span class="cite">4</span><span class="cite">5</span></div></div></div>
+            <div style="font-size:11px;color:var(--dim)">captured 2m ago · 3 of 3 sources</div>
+          </div>
+          <div class="state">
+            <span class="cap">Failed · retry</span>
+            <div class="err"><b>Discussion summary failed.</b><br>Provider returned 529 after 12 s. The article summary is still readable.</div>
+            <div class="retry"><span class="btn acc">Retry failed sections</span><span class="btn">Change provider</span></div>
+            <div style="font-size:11px;color:var(--dim)">Retry reuses the capture that already succeeded — no second article fetch.</div>
+          </div>
+          <div class="state">
+            <span class="cap">Citation source</span>
+            <div class="line" style="justify-content:space-between"><b style="font-size:12px">Source 2 of 3</b><span class="pill acc">citation 2</span></div>
+            <div class="quote"><div class="who">kstrauser, 1 hour ago</div>I have wanted this for years. Every terminal library I have tried eventually grows its own opinion about how a window should look.</div>
+            <div class="quote alt"><div class="who">jmillikin, 1 hour ago</div>A narrow ABI is great until you need one more callback.</div>
+            <div style="font-size:11px;color:var(--dim)">Esc returns to your place in the discussion.</div>
+          </div>
+        </div>
+        <div class="foot">
+          <span class="k">S</span> show / hide
+          <span class="k">M</span> provider &amp; profile
+          <span class="k">Tab</span> citation
+          <span class="k">Enter</span> source
+        </div>
+      </div>
+      <div class="notes">
+        <div>
+          <h4>Mouse</h4>
+          <ul>
+            <li><b>Hover a point</b> to highlight the comments it cites; <b>click a chip</b> to open the source.</li>
+            <li><b>Click Retry</b> to re-run only the failed sections; the old summary stays readable until the new one lands.</li>
+            <li><b>Click the summary header</b> to collapse it without losing the comment cursor.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Keyboard</h4>
+          <ul>
+            <li><b>S</b> generates, shows or hides; <b>M</b> opens provider, key, automatic mode, profile and refresh.</li>
+            <li><b>Tab / Shift-Tab</b> walk citations; <b>Enter</b> opens the source; <b>Esc</b> returns.</li>
+            <li><b>J/K</b> scroll an overflowing summary while <b>j/k</b> keeps moving comments.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Motion</h4>
+          <ul>
+            <li>Streaming rows: <code>growth</code> 0.32/0 with <code>streaming(true)</code>; appended words fade in 20 → 5.5 ms.</li>
+            <li>Spinner: 900 ms rotation, static pose under reduced motion.</li>
+            <li>Failure: <code>SETTLE</code> card plus a <code>Toast</code>; retry press uses <code>press_scale(0.97)</code>.</li>
+            <li>Source viewer: <code>GLIDE</code> 0.32/0; the article dims to 0.55 rather than moving.</li>
+          </ul>
+        </div>
+      </div>
+    </figure>
+
+    <!-- ============ 05 COMMENTS ============ -->
+    <figure class="win" style="margin:0">
+      <div class="bar">
+        <span class="lights"><i></i><i></i><i></i></span>
+        <span class="name">hn</span><span>— discussion</span>
+        <span class="right">L · link chooser</span>
+      </div>
+      <div class="body">
+        <div class="tb">
+          <span class="h">Discussion</span>
+          <span class="meta">116 comments · 3 collapsed</span>
+          <span class="grow"></span>
+          <span class="pill">sort: default</span>
+        </div>
+        <div style="padding:10px 12px;display:flex;flex-direction:column;gap:2px">
+          <div class="cm"><div class="guides"></div><div class="col"><div class="who"><b>dang</b><span>3 hours ago</span></div><div class="txt">Related from 2024: the original libghostty design notes. Worth reading alongside this.</div></div></div>
+          <div class="cm hov"><div class="guides"><i></i></div><div class="col"><div class="who"><b>simonw</b><span>2 hours ago</span></div><div class="txt">Does this mean a browser-based Ghostty is now plausible, or is the renderer still tied to the native surface?</div></div><div class="acts"><span class="act">save</span><span class="act acc">links</span><span class="act">collapse</span></div></div>
+          <div class="cm sel"><div class="guides"><i></i><i></i></div><div class="col"><div class="who"><b>kstrauser</b><span>1 hour ago</span></div><div class="txt">I have wanted this for years. Every terminal library I have tried eventually grows its own opinion about how a window should look.</div></div></div>
+          <div class="collapsed" style="margin-left:23px"><span class="chev">▸</span> 3 replies hidden</div>
+          <div class="cm"><div class="guides"><i></i></div><div class="col"><div class="who"><b>jmillikin</b><span>1 hour ago</span></div><div class="txt">A narrow ABI is great until you need one more callback. Then you version the struct and every embedder has to care.</div></div></div>
+          <div style="display:flex;justify-content:flex-end;padding:6px 0 0">
+            <div class="pop">
+              <div class="lbl">Links in this comment</div>
+              <div class="item on"><span class="k">1</span>ghostty.org/blog/libghostty<span class="u">ghostty.org</span></div>
+              <div class="item"><span class="k">2</span>github.com/ghostty-org<span class="u">github.com</span></div>
+              <div class="item"><span class="k">3</span>Original design notes (2024)<span class="u">news.ycombinator</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="foot">
+          <span class="k">Enter</span> expand
+          <span class="k">c</span> collapse thread
+          <span class="k">[</span><span class="k">]</span> sibling
+          <span class="k">u</span> parent
+          <span class="k">L</span> links
+        </div>
+      </div>
+      <div class="notes">
+        <div>
+          <h4>Mouse</h4>
+          <ul>
+            <li><b>Hover</b> a comment for save / links / collapse; the row highlights without stealing the keyboard cursor.</li>
+            <li><b>Click a chevron</b> to fold; <b>click an indent guide</b> to fold the whole parent thread.</li>
+            <li><b>Right-click</b> a comment for the link chooser and copy actions.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Keyboard</h4>
+          <ul>
+            <li><b>j/k</b> moves, <b>Enter/l</b> expands, <b>c</b> collapses the thread, <b>[/]</b> skips siblings, <b>u</b> goes to the parent.</li>
+            <li><b>L</b> opens the link chooser; <b>j/k</b> selects, <b>Enter</b> opens, <b>Esc</b> closes.</li>
+            <li><b>PgUp/PgDn</b> scrolls without moving the selection.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Motion</h4>
+          <ul>
+            <li>Collapse / expand: <code>REFLOW</code> 0.4/0 on height; the chevron turns on <code>SNAP</code>.</li>
+            <li>Hover: <code>INSTANT</code> 0.1/0. Link chooser: <code>MORPH</code> 0.3/0.16 out of the row.</li>
+            <li>Reduced motion: heights land at once, the chooser fades in place.</li>
+          </ul>
+        </div>
+      </div>
+    </figure>
+
+    <!-- ============ 06 COMMENTS OVERVIEW ============ -->
+    <figure class="win wide" style="margin:0">
+      <div class="bar">
+        <span class="lights"><i></i><i></i><i></i></span>
+        <span class="name">hn</span><span>— discussion</span>
+        <span class="right">f · focus mode</span>
+      </div>
+      <div class="body">
+        <div class="tb">
+          <span class="h">Discussion</span>
+          <span class="meta">116 comments · 3 collapsed · depth cap 4</span>
+          <span class="grow"></span>
+          <span class="pill">sort: default</span>
+        </div>
+        <div class="trail">
+          <span class="seg">tptacek</span><span class="sep">›</span>
+          <span class="seg">kstrauser</span><span class="sep">›</span>
+          <span class="seg on">jmillikin</span>
+          <span class="grow"></span>
+          <span class="hint">⌫ pops a segment</span>
+        </div>
+        <div style="padding:10px 12px;display:flex;flex-direction:column;gap:2px">
+          <div class="cm"><div class="guides"></div><div class="col"><div class="who"><b>dang</b><span>3 hours ago</span></div><div class="txt">Related from 2024: the original libghostty design notes. Worth reading alongside this.</div></div></div>
+          <div class="cm"><div class="guides"><i></i></div><div class="col"><div class="who"><b>simonw</b><span>2 hours ago</span></div><div class="txt">Does this mean a browser-based Ghostty is now plausible, or is the renderer still tied to the native surface?</div></div></div>
+          <div class="cm sel"><div class="guides"><i></i><i></i></div><div class="col"><div class="who"><b>kstrauser</b><span>1 hour ago</span></div><div class="txt">I have wanted this for years. Every terminal library I have tried eventually grows its own opinion about how a window should look.</div></div></div>
+          <div class="collapsed" style="margin-left:23px"><span class="chev">▸</span> 3 replies hidden <span style="color:var(--faint)">· Enter expands</span></div>
+          <div class="cm"><div class="guides"><i></i><i></i></div><div class="col"><div class="who"><b>jmillikin</b><span>1 hour ago</span></div><div class="txt">A narrow ABI is great until you need one more callback. Then you version the struct and every embedder has to care.</div></div></div>
+          <div class="cm"><div class="guides"><i></i><i></i><i></i></div><div class="col"><div class="who"><b>tptacek</b><span>58 minutes ago</span></div><div class="txt">That is the trade. You get a stable surface and you pay for it in every future addition.</div></div></div>
+          <div class="cont" style="margin-left:36px"><span class="arrow">→</span> continue thread <span style="color:var(--dim)">· 6 replies</span></div>
+          <div class="cm"><div class="guides"><i></i></div><div class="col"><div class="who"><b>mfiguere</b><span>44 minutes ago</span></div><div class="txt">The comparison to libvterm is the useful one here.</div></div></div>
+        </div>
+        <div class="foot">
+          <span class="k">j</span><span class="k">k</span> comment
+          <span class="k">Enter</span> expand / continue
+          <span class="k">⌫</span> up a level
+          <span class="k">f</span> focus
+          <span class="k">u</span> parent
+          <span class="k">L</span> links
+        </div>
+      </div>
+      <div class="notes">
+        <div>
+          <h4>Where am I</h4>
+          <ul>
+            <li>The <b>trail</b> is sticky at the top of the scroll viewport: it holds the edge while the thread moves under it, so the answer never scrolls away.</li>
+            <li>Each segment is a click target and a <b>⌫</b> step. The last segment is the comment you are reading.</li>
+            <li>Indent guides stop at <b>four levels</b>; depth beyond that is carried by the trail, not by whitespace.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>What is the rest of it</h4>
+          <ul>
+            <li>A folded comment keeps its header and states what it hides: <b>3 replies hidden · Enter expands</b>. The count is derived from the tree, never stored.</li>
+            <li>At the cap, a comment with replies shows <b>continue thread → 6 replies</b> instead of its children. <b>Enter</b> re-roots there and pushes a segment.</li>
+            <li><b>f</b> dims every row that is neither an ancestor nor a descendant of the cursor to <code>0.35</code>. Nothing is hidden, so nothing has to be found again.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Motion</h4>
+          <ul>
+            <li>Re-root (continue thread, <b>⌫</b>): <code>GLIDE</code> 0.32/0 on the scroll offset, rows crossfading on <code>REDUCED_FADE</code>.</li>
+            <li>Trail segment added or removed: <code>SNAP</code> 0.25/0 on the strip's width. The strip itself has no motion — it follows the offset.</li>
+            <li>Focus mode: <code>REFLOW</code> 0.40/0 on the dimmed subtrees' opacity; the chain does not move.</li>
+          </ul>
+        </div>
+      </div>
+    </figure>
+
+    <!-- ============ 07 FOCUSED DEEP REPLY ============ -->
+    <figure class="win" style="margin:0">
+      <div class="bar">
+        <span class="lights"><i></i><i></i><i></i></span>
+        <span class="name">hn</span><span>— thread</span>
+        <span class="right">f on</span>
+      </div>
+      <div class="body">
+        <div class="trail">
+          <span class="seg">tptacek</span><span class="sep">›</span>
+          <span class="seg">kstrauser</span><span class="sep">›</span>
+          <span class="seg">jmillikin</span><span class="sep">›</span>
+          <span class="seg">simonw</span><span class="sep">›</span>
+          <span class="seg on">dang</span>
+        </div>
+        <div style="padding:10px 12px;display:flex;flex-direction:column;gap:2px">
+          <div class="cm dim"><div class="guides"></div><div class="col"><div class="who"><b>dang</b><span>3 hours ago</span></div><div class="txt">Related from 2024: the original libghostty design notes.</div></div></div>
+          <div class="cm dim"><div class="guides"><i></i></div><div class="col"><div class="who"><b>simonw</b><span>2 hours ago</span></div><div class="txt">Does this mean a browser-based Ghostty is now plausible?</div></div></div>
+          <div class="cm dim"><div class="guides"><i></i><i></i></div><div class="col"><div class="who"><b>kstrauser</b><span>1 hour ago</span></div><div class="txt">I have wanted this for years.</div></div></div>
+          <div class="cm dim"><div class="guides"><i></i><i></i><i></i></div><div class="col"><div class="who"><b>jmillikin</b><span>1 hour ago</span></div><div class="txt">A narrow ABI is great until you need one more callback.</div></div></div>
+          <div class="cm dim"><div class="guides"><i></i><i></i><i></i><i></i></div><div class="col"><div class="who"><b>simonw</b><span>52 minutes ago</span></div><div class="txt">Right, but the versioning story is the whole point of a C ABI.</div></div></div>
+          <div class="cm sel"><div class="guides"><i></i><i></i><i></i><i></i></div><div class="col"><div class="who"><b>dang</b><span>41 minutes ago</span></div><div class="txt">The versioning story is the whole point of a C ABI, and it is also the reason nobody wants to be the second embedder. You inherit every decision the first one made.</div></div></div>
+          <div class="cm"><div class="guides"><i></i><i></i><i></i><i></i><i></i></div><div class="col"><div class="who"><b>tptacek</b><span>30 minutes ago</span></div><div class="txt">Second embedder is the only test that matters.</div></div></div>
+          <div class="cont" style="margin-left:49px"><span class="arrow">→</span> continue thread <span style="color:var(--dim)">· 2 replies</span></div>
+        </div>
+        <div class="foot">
+          <span class="k">⌫</span> up a level
+          <span class="k">f</span> focus off
+          <span class="k">Esc</span> back to feed
+        </div>
+      </div>
+      <div class="notes">
+        <div>
+          <h4>Why the trail, not more indent</h4>
+          <ul>
+            <li>At depth 8 the inspector's measure is ~390pt — under Butterick's 45-character floor. Indent cannot carry depth here.</li>
+            <li>The trail carries it instead: five segments, one line, always at the top edge.</li>
+            <li>Ancestors stay at full contrast; siblings between them dim to <code>0.35</code> without disappearing.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Keyboard</h4>
+          <ul>
+            <li><b>⌫</b> pops one segment (re-root to the parent); <b>u</b> jumps to the parent without re-rooting.</li>
+            <li><b>f</b> toggles focus mode; <b>Esc</b> leaves focus mode, then goes back to the feed.</li>
+            <li><b>j/k</b>, <b>[/]</b>, <b>h/l</b>, <b>Enter</b> keep their meanings from the overview.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Motion</h4>
+          <ul>
+            <li>Re-root: <code>GLIDE</code> 0.32/0 on the offset; the trail segment leaves on <code>SNAP</code>.</li>
+            <li>Focus on/off: <code>REFLOW</code> 0.40/0 on opacity. The focused row never moves.</li>
+            <li>Reduced motion: re-root lands at once, rows fade in place.</li>
+          </ul>
+        </div>
+      </div>
+    </figure>
+
+    <!-- ============ 08 COLLAPSED DEEP SUBTREE ============ -->
+    <figure class="win" style="margin:0">
+      <div class="bar">
+        <span class="lights"><i></i><i></i><i></i></span>
+        <span class="name">hn</span><span>— thread, folded</span>
+        <span class="right">c · collapse</span>
+      </div>
+      <div class="body">
+        <div class="trail">
+          <span class="seg">tptacek</span><span class="sep">›</span>
+          <span class="seg on">kstrauser</span>
+        </div>
+        <div style="padding:10px 12px;display:flex;flex-direction:column;gap:2px">
+          <div class="cm"><div class="guides"></div><div class="col"><div class="who"><b>dang</b><span>3 hours ago</span></div><div class="txt">Related from 2024: the original libghostty design notes.</div></div></div>
+          <div class="cm sel"><div class="guides"><i></i></div><div class="col"><div class="who"><b>kstrauser</b><span>1 hour ago</span></div><div class="txt">I have wanted this for years. Every terminal library I have tried eventually grows its own opinion about how a window should look.</div></div></div>
+          <div class="collapsed" style="margin-left:23px"><span class="chev">▸</span> 3 replies hidden <span style="color:var(--faint)">· Enter expands</span></div>
+          <div class="collapsed" style="margin-left:23px"><span class="chev">▸</span> 2 replies hidden <span style="color:var(--faint)">· Enter expands</span></div>
+          <div class="cm"><div class="guides"><i></i></div><div class="col"><div class="who"><b>mfiguere</b><span>44 minutes ago</span></div><div class="txt">The comparison to libvterm is the useful one here.</div></div></div>
+          <div class="cm"><div class="guides"><i></i><i></i></div><div class="col"><div class="who"><b>SerCe</b><span>38 minutes ago</span></div><div class="txt">libvterm is a good reference but it never had to survive a second consumer.</div></div></div>
+          <div class="cont" style="margin-left:23px"><span class="arrow">→</span> continue thread <span style="color:var(--dim)">· 4 replies</span></div>
+        </div>
+        <div class="foot">
+          <span class="k">Enter</span> expand
+          <span class="k">c</span> collapse thread
+          <span class="k">h</span><span class="k">l</span> fold / unfold
+        </div>
+      </div>
+      <div class="notes">
+        <div>
+          <h4>Folding is a header, not a disappearance</h4>
+          <ul>
+            <li>A folded comment keeps its row and its author; only the body and the children go.</li>
+            <li>The count is <b>derived from the tree</b>, so it cannot drift from the rows it describes.</li>
+            <li>The folded header stays put on <code>REFLOW</code>, so the click target does not move under the pointer.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Two fold targets</h4>
+          <ul>
+            <li><b>Click the chevron</b> folds that comment; <b>click an indent guide</b> folds the whole parent thread.</li>
+            <li><b>h/l</b> fold and unfold the current comment; <b>c</b> collapses the thread the cursor is in.</li>
+            <li>Folding never moves the cursor: the row you folded is still the row you are on.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Motion</h4>
+          <ul>
+            <li>Fold / unfold: <code>REFLOW</code> 0.40/0 on height; the chevron turns on <code>SNAP</code> 0.25/0.</li>
+            <li>The comments below close the gap in the same spring — one reflow, not two.</li>
+            <li>Reduced motion: heights land at once.</li>
+          </ul>
+        </div>
+      </div>
+    </figure>
+
+    <!-- ============ 09 SAVED ============ -->
+    <figure class="win" style="margin:0">
+      <div class="bar">
+        <span class="lights"><i></i><i></i><i></i></span>
+        <span class="name">hn</span><span>— Saved</span>
+        <span class="right">~/.local/share/hn/saved.json</span>
+      </div>
+      <div class="body">
+        <div class="tb">
+          <div class="tabs"><span class="tab">Top</span><span class="tab">New</span><span class="tab">Best</span><span class="tab on">Saved</span></div>
+          <span class="grow"></span>
+          <span class="meta">4 stories</span>
+        </div>
+        <div class="list">
+          <div class="row sel hov"><span class="lead"><span class="rank">1</span></span><div class="col"><div class="t">Libghostty 1.0</div><div class="sub">saved 2 minutes ago · 718 points · 116 comments</div></div><div class="end"><div class="acts"><span class="act acc">unsave</span><span class="act">open</span></div></div></div>
+          <div class="row"><span class="lead"><span class="rank">2</span></span><div class="col"><div class="t">Tesla to wind down Cybertruck production</div><div class="sub">saved yesterday · 1038 points · 1887 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">3</span></span><div class="col"><div class="t">Firecracker VM Escape: PwnEscape Part 2</div><div class="sub">saved 3 days ago · 249 points · 109 comments</div></div></div>
+          <div class="row"><span class="lead"><span class="rank">4</span></span><div class="col"><div class="t">GitHub's new Git storage architecture</div><div class="sub">saved last week · 157 points · 34 comments</div></div></div>
+        </div>
+        <div class="foot">
+          <span class="k">4</span> saved
+          <span class="k">s</span> unsave
+          <span class="k">r</span> reload file
+          <span class="stepper"><span class="chev">‹</span><span class="n">1</span><span class="chev">›</span></span>
+        </div>
+      </div>
+      <div class="notes">
+        <div>
+          <h4>Mouse</h4>
+          <ul>
+            <li><b>Click</b> selects, <b>double-click</b> opens the split, <b>hover</b> reveals <b>unsave</b> on the right edge.</li>
+            <li>Rows carry <b>no saved dot</b> here: every story in this list is saved, so the marker would say nothing.</li>
+            <li>If the file cannot be read, the banner offers <b>Reload</b> and <b>Reveal in Finder</b> instead of silently emptying the list.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Keyboard</h4>
+          <ul>
+            <li><b>4</b> opens Saved, <b>j/k</b> moves, <b>s</b> unsaves, <b>r</b> reloads the file, <b>Enter</b> opens.</li>
+            <li>Same keys as the TUI; the list is the same <code>saved.json</code>.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Motion</h4>
+          <ul>
+            <li>Row removal: <code>REFLOW</code> 0.4/0 closes the gap after the row fades.</li>
+            <li>Empty state: 0.15 fade, no travel.</li>
+          </ul>
+        </div>
+      </div>
+    </figure>
+
+    <!-- ============ 10 SETTINGS ============ -->
+    <figure class="win" style="margin:0">
+      <div class="bar">
+        <span class="lights"><i></i><i></i><i></i></span>
+        <span class="name">hn</span><span>— Summary settings</span>
+        <span class="right">M</span>
+      </div>
+      <div class="body">
+        <div class="form">
+          <div class="field">
+            <label>Provider</label>
+            <div class="radios">
+              <span class="radio on"><span class="mark"></span>OpenRouter</span>
+              <span class="radio"><span class="mark"></span>Anthropic</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>API key · stored in ~/.config/hn/summary.json, owner-only</label>
+            <div class="input mask">sk-or-v1-••••••••••••••••••••••••</div>
+          </div>
+          <div class="line"><span class="grow">Automatic summaries</span><span class="switch"><i></i></span></div>
+          <div class="field">
+            <label>Profile</label>
+            <div class="tabs" style="align-self:flex-start"><span class="tab on">Fast</span><span class="tab">Thorough</span></div>
+          </div>
+          <div class="line" style="color:var(--dim);font-size:11px">Fast: Claude Haiku 5.5, up to three insights. Thorough: Sonnet 5.5, broader coverage.</div>
+          <div class="rule"></div>
+          <div class="line"><span class="grow" style="color:var(--dim);font-size:11px">Changing provider keeps completed summaries.</span><span class="btn">Refresh sources &amp; summary</span></div>
+          <div class="line" style="justify-content:flex-end;gap:8px"><span class="btn">Cancel</span><span class="btn acc">Apply</span></div>
+        </div>
+      </div>
+      <div class="notes">
+        <div>
+          <h4>Mouse</h4>
+          <ul>
+            <li><b>Click</b> a provider radio, the key field, the switch, or a profile segment.</li>
+            <li><b>Apply</b> commits; <b>Cancel</b> and <b>Esc</b> discard. The key is masked and never echoed.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Keyboard</h4>
+          <ul>
+            <li><b>Tab / arrows</b> move between settings, <b>Space</b> toggles, <b>Enter</b> applies, <b>Esc</b> cancels — the TUI's <code>M</code> form, unchanged.</li>
+            <li><b>⌘,</b> opens the same sheet from anywhere.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Motion</h4>
+          <ul>
+            <li>Sheet: <code>MORPH</code> 0.3/0.16 out of the toolbar button; backdrop dims over 0.15.</li>
+            <li>Switch knob: <code>SNAP</code> 0.25/0. Segment indicator: <code>SNAP</code>.</li>
+            <li>Reduced motion: the sheet fades, the knob jumps.</li>
+          </ul>
+        </div>
+      </div>
+    </figure>
+
+    <!-- ============ 11 HELP ============ -->
+    <figure class="win wide" style="margin:0">
+      <div class="bar">
+        <span class="lights"><i></i><i></i><i></i></span>
+        <span class="name">hn</span><span>— help</span>
+        <span class="right">?</span>
+      </div>
+      <div class="body overlay">
+        <div class="dimmed" style="padding:14px 16px">
+          <div class="tb" style="border:0;padding:0 0 10px"><span class="h">Libghostty 1.0</span><span class="meta">mfiguiere · 718 points · 116 comments</span></div>
+          <div class="sum" style="margin-bottom:10px">
+            <div class="top"><b style="font-size:13px">Summary</b><span class="grow"></span><span class="when">captured 2m ago</span></div>
+            <div class="pt"><span class="n">1</span><div><div class="txt">libghostty splits Ghostty's core out of the app so other frontends can embed the terminal.</div></div></div>
+            <div class="pt"><span class="n">2</span><div><div class="txt">The ABI is deliberately narrow: a surface, a grid of cells and an input queue.</div></div></div>
+          </div>
+          <div class="cm"><div class="guides"></div><div class="col"><div class="who"><b>tptacek</b><span>2 hours ago</span></div><div class="txt">The interesting part is what they left out.</div></div></div>
+        </div>
+        <div class="modal">
+          <div class="line"><b style="font-size:14px">Keyboard</b><span class="grow"></span><span class="pill">Esc or ? closes</span></div>
+          <div class="cols">
+            <div>
+              <div class="grp">Feed</div>
+              <div class="kv"><span class="k">j</span><span class="k">k</span> next / previous story</div>
+              <div class="kv"><span class="k">g</span><span class="k">G</span> first / last on the page</div>
+              <div class="kv"><span class="k">n</span><span class="k">p</span> next / previous page</div>
+              <div class="kv"><span class="k">1</span><span class="k">2</span><span class="k">3</span><span class="k">4</span> Top / New / Best / Saved</div>
+              <div class="kv"><span class="k">s</span> save · <span class="k">Enter</span> open · <span class="k">O</span> browser</div>
+              <div class="grp">Summary</div>
+              <div class="kv"><span class="k">S</span> show / hide · <span class="k">M</span> settings</div>
+              <div class="kv"><span class="k">Tab</span> citation · <span class="k">Enter</span> source</div>
+            </div>
+            <div>
+              <div class="grp">Discussion</div>
+              <div class="kv"><span class="k">j</span><span class="k">k</span> next / previous comment</div>
+              <div class="kv"><span class="k">[</span><span class="k">]</span> sibling thread · <span class="k">u</span> parent</div>
+              <div class="kv"><span class="k">Enter</span> expand · <span class="k">c</span> collapse thread</div>
+              <div class="kv"><span class="k">L</span> link chooser · <span class="k">r</span> refresh</div>
+              <div class="grp">Window</div>
+              <div class="kv"><span class="k">⌘\</span> toggle the split · <span class="k">⌘,</span> settings</div>
+              <div class="kv"><span class="k">⌘1</span>–<span class="k">⌘4</span> feeds · <span class="k">⌘F</span> filter</div>
+              <div class="kv"><span class="k">Esc</span> back one level · <span class="k">q</span> quit</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="notes">
+        <div>
+          <h4>Mouse</h4>
+          <ul>
+            <li><b>Click a group</b> to jump to that section; the sheet scrolls.</li>
+            <li><b>Click outside</b> or the close button to dismiss.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Keyboard</h4>
+          <ul>
+            <li><b>?</b> toggles, <b>Esc</b> or <b>q</b> closes. The same key list the TUI shows, plus the window chords.</li>
+            <li>Focus is trapped while open and restored to the opener on close.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Motion</h4>
+          <ul>
+            <li>Sheet: <code>MORPH</code> 0.3/0.16; backdrop dims over 0.15.</li>
+            <li>Reduced motion: fade only, no scale.</li>
+          </ul>
+        </div>
+      </div>
+    </figure>
+
+  </div>
+</section>
+
+<section id="chrome">
+  <div class="sec-head">
+    <h2>Chrome that was removed</h2>
+    <p>Three things the first pass showed and this one does not. Each was either false precision or the
+    same fact stated twice.</p>
+  </div>
+  <div class="deltas">
+    <div class="delta"><b>No "live" badge</b><p>The feed tab already says which list you are on, and a refresh is visible in the list itself. A badge that is always on is decoration, not status.</p><span class="was">was: an amber "live" pill in the top-right corner</span></div>
+    <div class="delta"><b>No "page 1 of 3"</b><p>The HN API returns a page of ids and no total, so "of 3" was invented. The stepper shows the one number that is known: <code>‹ 1 ›</code>.</p><span class="was">was: a "page 1 / 3" pill beside the live badge</span></div>
+    <div class="delta"><b>No repeated chrome</b><p>The toolbar is navigation only — the feed tabs. Key hints live in the footer, the pointer model lives in these notes, and the titlebar names the app. Nothing is stated twice.</p><span class="was">was: a toolbar wordmark, a footer mouse hint, a "saved" label on every saved row</span></div>
+  </div>
+</section>
+
+<section id="motion">
+  <div class="sec-head">
+    <h2>Motion spec</h2>
+    <p>Rune's springs are duration + bounce, retargeted with exact position and velocity. These are the
+    tokens from <code>crates/rune-motion/src/tokens.rs</code>; nothing here is a CSS easing curve.</p>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Token</th><th>Spring</th><th>Used for</th><th>Reduced motion</th></tr></thead>
+      <tbody>
+        <tr><td><code>INSTANT</code></td><td>0.10 s / 0</td><td class="dim">Hover overlays, pointer-tied feedback</td><td class="dim">unchanged (no travel)</td></tr>
+        <tr><td><code>SNAP</code></td><td>0.25 s / 0</td><td class="dim">Tab indicator, citation chip, switch knob, chevron</td><td class="dim">snaps</td></tr>
+        <tr><td><code>SETTLE</code></td><td>0.30 s / 0</td><td class="dim">Selection card, failure card, list rows</td><td class="dim">snaps</td></tr>
+        <tr><td><code>GLIDE</code></td><td>0.32 s / 0</td><td class="dim">Source viewer; page turn, offset across both columns at once</td><td class="dim">fades in place</td></tr>
+        <tr><td><code>REFLOW</code></td><td>0.40 s / 0</td><td class="dim">Thread fold; row removal; one-column ↔ two-column reflow</td><td class="dim">lands at once</td></tr>
+        <tr><td><code>MORPH</code></td><td>0.30 s / 0.16</td><td class="dim">Split opening from 0 width; settings, help, link chooser</td><td class="dim">fades</td></tr>
+        <tr><td><code>POP</code></td><td>0.25 s / 0.15</td><td class="dim">The saved dot beside the rank; the toast follows it</td><td class="dim">fades</td></tr>
+        <tr><td><code>REDUCED_FADE</code></td><td>0.15 s curve</td><td class="dim">The replacement for every spatial move</td><td class="dim">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="sec-note" style="margin-top:14px">Reduced motion follows the OS setting through
+  <code>cx.is_reduced_motion()</code>, and <code>HN_REDUCED_MOTION=1</code> keeps working as an override —
+  the same variable the TUI honours. Nothing animates on the first frame, so a cold launch is a still
+  image, not an entrance.</p>
+</section>
+
+<section id="deltas">
+  <div class="sec-head">
+    <h2>What deliberately differs from the terminal</h2>
+    <p>Each of these is a place where the terminal was working around a constraint, not expressing a
+    preference.</p>
+  </div>
+  <div class="deltas">
+    <div class="delta"><b>A real split, not a Ghostty companion</b><p>Article and discussion are two panes of one window on every platform. No <code>terminal-browser</code> install, no 110-column minimum, no Cmd+W dance.</p><span class="was">was: macOS + Ghostty only, one tab owned by hn</span></div>
+    <div class="delta"><b>An article you can read</b><p>Proportional type at a 66-character measure, real code blocks with syntax colour, images, and a table of contents that tracks your position.</p><span class="was">was: extracted text reflowed into the terminal grid</span></div>
+    <div class="delta"><b>Indentation you can see</b><p>Comment depth is a guide rail plus a hover target that folds the parent thread. The TUI can only indent with spaces.</p><span class="was">was: two spaces per level, no fold target</span></div>
+    <div class="delta"><b>Hover as a third input</b><p>Row actions, citation previews and link targets appear under the pointer without moving the keyboard cursor.</p><span class="was">was: every action needed a key or a mode</span></div>
+    <div class="delta"><b>Summaries that arrive</b><p>Streaming rows grow and fade words in; a failure is a card with a retry button, not a status line that replaces the summary.</p><span class="was">was: a spinner line, then a block of text</span></div>
+    <div class="delta"><b>Resizable, remembered layout</b><p>Pane widths, window size and the last feed persist per window. The TUI has no layout to remember.</p><span class="was">was: fixed 80-column composition</span></div>
+    <div class="delta"><b>The feed uses the width it has</b><p>Past 1400 pt the list becomes two columns with one shared scroll, in column-major order: <code>j</code> goes straight down the left column, then the right. The page size and every key are unchanged.</p><span class="was">was: one column at any width, half the window empty</span></div>
+  </div>
+</section>
+
+<footer>
+  <span>Rune rev <code>53c7f60f51ce12bd5da53145d9d86ce1552324e4</code> · branch <code>dev</code></span>
+  <span>Renders: <code>prototypes/rune-mocks/verification/</code></span>
+  <span>Spec: <code>mockups/desktop/DESIGN.md</code></span>
+  <span>Regenerate: the five <code>cargo run -- --scene …</code> commands in <code>DESIGN.md</code></span>
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,110 @@
+[
+  {
+    "id": 50391456,
+    "title": "Tesla to wind down Cybertruck production",
+    "by": "PLenz",
+    "score": 1038,
+    "descendants": 1887,
+    "url": "https://www.nbcnews.com/tech/tech-news/tesla-wind-cybertruck-production-years-poor-sales-markets-rcna607817",
+    "time": 1793967231
+  },
+  {
+    "id": 50399933,
+    "title": "Libghostty 1.0",
+    "by": "mfiguiere",
+    "score": 718,
+    "descendants": 116,
+    "url": "https://mitchellh.com/writing/libghostty-1-0",
+    "time": 1794007852
+  },
+  {
+    "id": 50397429,
+    "title": "A Jev that can ask Opus for help gives Opus accuracy at 4x lower cost",
+    "by": "theanomaly",
+    "score": 503,
+    "descendants": 120,
+    "url": "https://hightouch.com/blog/llm-judges-identity-resolution",
+    "time": 1793994531
+  },
+  {
+    "id": 50388001,
+    "title": "US FAA says it will phase out floppy disks from air traffic control by 2028",
+    "by": "ChrisArchitect",
+    "score": 349,
+    "descendants": 285,
+    "url": "https://www.reuters.com/world/us/us-faa-says-it-will-phase-out-floppy-disks-air-traffic-control-by-2028-2026-11-05/",
+    "time": 1793937628
+  },
+  {
+    "id": 50392118,
+    "title": "Gemini Omni 1.2 Flash",
+    "by": "thisisauserid",
+    "score": 343,
+    "descendants": 233,
+    "url": "https://blog.google/innovation-and-ai/technology/developers-tools/introducing-gemini-omni-1-2-flash/",
+    "time": 1793972127
+  },
+  {
+    "id": 50397994,
+    "title": "AI is dramatically accelerating AI research",
+    "by": "yurivish",
+    "score": 325,
+    "descendants": 281,
+    "url": "https://www.planned-obsolescence.org/p/ai-is-dramatically-accelerating-ai",
+    "time": 1793996843
+  },
+  {
+    "id": 50397219,
+    "title": "Firecracker VM Escape: PwnEscape Part 2",
+    "by": "SerCe",
+    "score": 249,
+    "descendants": 109,
+    "url": "https://pwn.ai/blog/firecracker-escape",
+    "time": 1793993618
+  },
+  {
+    "id": 50394855,
+    "title": "First steps in bare-metal programming using UEFI",
+    "by": "LaSombra",
+    "score": 227,
+    "descendants": 42,
+    "url": "https://kevinboone.me/efitest_index.html",
+    "time": 1793983829
+  },
+  {
+    "id": 50401867,
+    "title": "Asahi Linux Progress Linux 7.3",
+    "by": "ackyshake",
+    "score": 204,
+    "descendants": 168,
+    "url": "https://asahilinux.org/2026/11/progress-report-7-3/",
+    "time": 1794028818
+  },
+  {
+    "id": 50395450,
+    "title": "Devvm.dev: One VM for every project",
+    "by": "luispa",
+    "score": 162,
+    "descendants": 62,
+    "url": "https://devvm.dev/",
+    "time": 1793986222
+  },
+  {
+    "id": 50397099,
+    "title": "GitHub's new Git storage architecture",
+    "by": "DAlperin",
+    "score": 157,
+    "descendants": 34,
+    "url": "https://github.blog/engineering/architecture-optimization/inside-githubs-new-git-storage-architecture/",
+    "time": 1793993061
+  },
+  {
+    "id": 50403097,
+    "title": "Every Mac comes with an (undocumented) family member classifier",
+    "by": "infwhispers",
+    "score": 144,
+    "descendants": 60,
+    "url": "https://8rank.ai/game/apple-intelligence-personal-knowledge-graph",
+    "time": 1794044763
+  }
+]

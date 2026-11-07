@@ -1,0 +1,2340 @@
+{
+  "accessibility": {
+    "bounds": [
+      0.0,
+      0.0,
+      760.0,
+      620.0
+    ],
+    "children": [
+      {
+        "bounds": [
+          20.0,
+          16.3,
+          83.5,
+          16.5
+        ],
+        "name": "Hacker News",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          113.5,
+          17.0,
+          65.0,
+          15.0
+        ],
+        "name": "Top Stories",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          674.5,
+          14.0,
+          65.5,
+          21.0
+        ],
+        "children": [
+          {
+            "bounds": [
+              694.5,
+              17.0,
+              37.5,
+              15.0
+            ],
+            "name": "fixture",
+            "role": "label"
+          }
+        ],
+        "key": "source",
+        "role": "group"
+      },
+      {
+        "actions": [
+          "scroll-up",
+          "scroll-down",
+          "set-scroll-offset"
+        ],
+        "bounds": [
+          0.0,
+          50.0,
+          760.0,
+          534.0
+        ],
+        "children": [
+          {
+            "actions": [
+              "click",
+              "scroll-into-view"
+            ],
+            "bounds": [
+              0.0,
+              50.0,
+              760.0,
+              52.0
+            ],
+            "children": [
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  20.0,
+                  68.5,
+                  5.0,
+                  15.0
+                ],
+                "name": "1",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  39.0,
+                  58.8,
+                  701.0,
+                  16.5
+                ],
+                "name": "Tesla to wind down Cybertruck production",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  39.0,
+                  78.3,
+                  701.0,
+                  15.0
+                ],
+                "name": "1038 points  ·  by PLenz  ·  1887 comments",
+                "role": "label"
+              }
+            ],
+            "key": "story-50391456",
+            "name": "1 Tesla to wind down Cybertruck production 1038 points  ·  by PLenz  ·  1887 comments",
+            "role": "button"
+          },
+          {
+            "actions": [
+              "click",
+              "scroll-into-view"
+            ],
+            "bounds": [
+              0.0,
+              104.0,
+              760.0,
+              52.0
+            ],
+            "children": [
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  20.0,
+                  122.5,
+                  7.5,
+                  15.0
+                ],
+                "name": "2",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  41.5,
+                  112.8,
+                  698.5,
+                  16.5
+                ],
+                "name": "Libghostty 1.0",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  41.5,
+                  132.3,
+                  698.5,
+                  15.0
+                ],
+                "name": "718 points  ·  by mfiguiere  ·  116 comments",
+                "role": "label"
+              }
+            ],
+            "key": "story-50399933",
+            "name": "2 Libghostty 1.0 718 points  ·  by mfiguiere  ·  116 comments",
+            "role": "button"
+          },
+          {
+            "actions": [
+              "click",
+              "scroll-into-view"
+            ],
+            "bounds": [
+              0.0,
+              158.0,
+              760.0,
+              52.0
+            ],
+            "children": [
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  20.0,
+                  176.5,
+                  8.0,
+                  15.0
+                ],
+                "name": "3",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  42.0,
+                  166.8,
+                  698.0,
+                  16.5
+                ],
+                "name": "A Jev that can ask Opus for help gives Opus accuracy at 4x lower cost",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  42.0,
+                  186.3,
+                  698.0,
+                  15.0
+                ],
+                "name": "503 points  ·  by theanomaly  ·  120 comments",
+                "role": "label"
+              }
+            ],
+            "key": "story-50397429",
+            "name": "3 A Jev that can ask Opus for help gives Opus accuracy at 4x lower cost 503 points  ·  by theanomaly  ·  120 comments",
+            "role": "button"
+          },
+          {
+            "actions": [
+              "click",
+              "scroll-into-view"
+            ],
+            "bounds": [
+              0.0,
+              212.0,
+              760.0,
+              52.0
+            ],
+            "children": [
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  20.0,
+                  230.5,
+                  8.0,
+                  15.0
+                ],
+                "name": "4",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  42.0,
+                  220.8,
+                  698.0,
+                  16.5
+                ],
+                "name": "US FAA says it will phase out floppy disks from air traffic control by 2028",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  42.0,
+                  240.3,
+                  698.0,
+                  15.0
+                ],
+                "name": "349 points  ·  by ChrisArchitect  ·  285 comments",
+                "role": "label"
+              }
+            ],
+            "key": "story-50388001",
+            "name": "4 US FAA says it will phase out floppy disks from air traffic control by 2028 349 points  ·  by ChrisArchitect  ·  285 comments",
+            "role": "button"
+          },
+          {
+            "actions": [
+              "click",
+              "scroll-into-view"
+            ],
+            "bounds": [
+              0.0,
+              266.0,
+              760.0,
+              52.0
+            ],
+            "children": [
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  20.0,
+                  284.5,
+                  7.5,
+                  15.0
+                ],
+                "name": "5",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  41.5,
+                  274.8,
+                  698.5,
+                  16.5
+                ],
+                "name": "Gemini Omni 1.2 Flash",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  41.5,
+                  294.3,
+                  698.5,
+                  15.0
+                ],
+                "name": "343 points  ·  by thisisauserid  ·  233 comments",
+                "role": "label"
+              }
+            ],
+            "key": "story-50392118",
+            "name": "5 Gemini Omni 1.2 Flash 343 points  ·  by thisisauserid  ·  233 comments",
+            "role": "button"
+          },
+          {
+            "actions": [
+              "click",
+              "scroll-into-view"
+            ],
+            "bounds": [
+              0.0,
+              320.0,
+              760.0,
+              52.0
+            ],
+            "children": [
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  20.0,
+                  338.5,
+                  8.0,
+                  15.0
+                ],
+                "name": "6",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  42.0,
+                  328.8,
+                  698.0,
+                  16.5
+                ],
+                "name": "AI is dramatically accelerating AI research",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  42.0,
+                  348.3,
+                  698.0,
+                  15.0
+                ],
+                "name": "325 points  ·  by yurivish  ·  281 comments",
+                "role": "label"
+              }
+            ],
+            "key": "story-50397994",
+            "name": "6 AI is dramatically accelerating AI research 325 points  ·  by yurivish  ·  281 comments",
+            "role": "button"
+          },
+          {
+            "actions": [
+              "click",
+              "scroll-into-view"
+            ],
+            "bounds": [
+              0.0,
+              374.0,
+              760.0,
+              52.0
+            ],
+            "children": [
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  20.0,
+                  392.5,
+                  7.0,
+                  15.0
+                ],
+                "name": "7",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  41.0,
+                  382.8,
+                  699.0,
+                  16.5
+                ],
+                "name": "Firecracker VM Escape: PwnEscape Part 2",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  41.0,
+                  402.3,
+                  699.0,
+                  15.0
+                ],
+                "name": "249 points  ·  by SerCe  ·  109 comments",
+                "role": "label"
+              }
+            ],
+            "key": "story-50397219",
+            "name": "7 Firecracker VM Escape: PwnEscape Part 2 249 points  ·  by SerCe  ·  109 comments",
+            "role": "button"
+          },
+          {
+            "actions": [
+              "click",
+              "scroll-into-view"
+            ],
+            "bounds": [
+              0.0,
+              428.0,
+              760.0,
+              52.0
+            ],
+            "children": [
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  20.0,
+                  446.5,
+                  8.0,
+                  15.0
+                ],
+                "name": "8",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  42.0,
+                  436.8,
+                  698.0,
+                  16.5
+                ],
+                "name": "First steps in bare-metal programming using UEFI",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  42.0,
+                  456.3,
+                  698.0,
+                  15.0
+                ],
+                "name": "227 points  ·  by LaSombra  ·  42 comments",
+                "role": "label"
+              }
+            ],
+            "key": "story-50394855",
+            "name": "8 First steps in bare-metal programming using UEFI 227 points  ·  by LaSombra  ·  42 comments",
+            "role": "button"
+          },
+          {
+            "actions": [
+              "click",
+              "scroll-into-view"
+            ],
+            "bounds": [
+              0.0,
+              482.0,
+              760.0,
+              52.0
+            ],
+            "children": [
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  20.0,
+                  500.5,
+                  8.0,
+                  15.0
+                ],
+                "name": "9",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  42.0,
+                  490.8,
+                  698.0,
+                  16.5
+                ],
+                "name": "Asahi Linux Progress Linux 7.3",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  42.0,
+                  510.3,
+                  698.0,
+                  15.0
+                ],
+                "name": "204 points  ·  by ackyshake  ·  168 comments",
+                "role": "label"
+              }
+            ],
+            "key": "story-50401867",
+            "name": "9 Asahi Linux Progress Linux 7.3 204 points  ·  by ackyshake  ·  168 comments",
+            "role": "button"
+          },
+          {
+            "actions": [
+              "click",
+              "scroll-into-view"
+            ],
+            "bounds": [
+              0.0,
+              536.0,
+              760.0,
+              52.0
+            ],
+            "children": [
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  20.0,
+                  554.5,
+                  13.0,
+                  15.0
+                ],
+                "name": "10",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  47.0,
+                  544.8,
+                  693.0,
+                  16.5
+                ],
+                "name": "Devvm.dev: One VM for every project",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  47.0,
+                  564.3,
+                  693.0,
+                  15.0
+                ],
+                "name": "162 points  ·  by luispa  ·  62 comments",
+                "role": "label"
+              }
+            ],
+            "key": "story-50395450",
+            "name": "10 Devvm.dev: One VM for every project 162 points  ·  by luispa  ·  62 comments",
+            "role": "button"
+          },
+          {
+            "actions": [
+              "click",
+              "scroll-into-view"
+            ],
+            "bounds": [
+              0.0,
+              590.0,
+              760.0,
+              52.0
+            ],
+            "children": [
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  20.0,
+                  608.5,
+                  10.0,
+                  15.0
+                ],
+                "name": "11",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  44.0,
+                  598.8,
+                  696.0,
+                  16.5
+                ],
+                "name": "GitHub's new Git storage architecture",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  44.0,
+                  618.3,
+                  696.0,
+                  15.0
+                ],
+                "name": "157 points  ·  by DAlperin  ·  34 comments",
+                "role": "label"
+              }
+            ],
+            "key": "story-50397099",
+            "name": "11 GitHub's new Git storage architecture 157 points  ·  by DAlperin  ·  34 comments",
+            "role": "button"
+          },
+          {
+            "actions": [
+              "click",
+              "scroll-into-view"
+            ],
+            "bounds": [
+              0.0,
+              644.0,
+              760.0,
+              52.0
+            ],
+            "children": [
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  20.0,
+                  662.5,
+                  12.5,
+                  15.0
+                ],
+                "name": "12",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  46.5,
+                  652.8,
+                  693.5,
+                  16.5
+                ],
+                "name": "Every Mac comes with an (undocumented) family member classifier",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  46.5,
+                  672.3,
+                  693.5,
+                  15.0
+                ],
+                "name": "144 points  ·  by infwhispers  ·  60 comments",
+                "role": "label"
+              }
+            ],
+            "key": "story-50403097",
+            "name": "12 Every Mac comes with an (undocumented) family member classifier 144 points  ·  by infwhispers  ·  60 comments",
+            "role": "button"
+          }
+        ],
+        "key": "stories",
+        "role": "scroll-view",
+        "scroll": [
+          0.0,
+          0.0,
+          112.0
+        ],
+        "states": [
+          "clips"
+        ]
+      },
+      {
+        "bounds": [
+          20.0,
+          595.0,
+          110.5,
+          15.0
+        ],
+        "name": "j / k  or  ↑ ↓   move",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          146.5,
+          595.0,
+          113.5,
+          15.0
+        ],
+        "name": "click a row to select",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          430.0,
+          595.0,
+          310.0,
+          15.0
+        ],
+        "name": "HN API unreachable — showing the bundled snapshot",
+        "role": "label"
+      }
+    ],
+    "name": "Hacker News",
+    "role": "window"
+  },
+  "anim_t": 0.0,
+  "animating": false,
+  "dark_system": true,
+  "elements": [
+    {
+      "blur": 0.0,
+      "fill": "#121314ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0",
+      "rect": [
+        0.0,
+        0.0,
+        760.0,
+        620.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0",
+      "rect": [
+        0.0,
+        0.0,
+        760.0,
+        49.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#0",
+      "rect": [
+        20.0,
+        16.25,
+        83.5,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Hacker News"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#1",
+      "rect": [
+        113.5,
+        17.0,
+        65.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Top Stories"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2",
+      "rect": [
+        188.5,
+        24.5,
+        476.0,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "source",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/source",
+      "rect": [
+        674.5,
+        14.0,
+        65.5,
+        21.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#4392f7ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/source/#0",
+      "rect": [
+        682.5,
+        21.5,
+        6.0,
+        6.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/source/#1",
+      "rect": [
+        694.5,
+        17.0,
+        37.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "fixture"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#1",
+      "rect": [
+        0.0,
+        49.0,
+        760.0,
+        1.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "stories",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories",
+      "rect": [
+        0.0,
+        50.0,
+        760.0,
+        534.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#1c1d20ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-50391456",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50391456",
+      "rect": [
+        0.0,
+        50.0,
+        760.0,
+        52.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#4392f7ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50391456/#0",
+      "rect": [
+        20.0,
+        68.5,
+        5.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "1"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50391456/#1",
+      "rect": [
+        39.0,
+        58.75,
+        701.0,
+        34.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50391456/#1/#0",
+      "rect": [
+        39.0,
+        58.75,
+        701.0,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Tesla to wind down Cybertruck production"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50391456/#1/#1",
+      "rect": [
+        39.0,
+        78.25,
+        701.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "1038 points  ·  by PLenz  ·  1887 comments"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-50399933",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50399933",
+      "rect": [
+        0.0,
+        104.0,
+        760.0,
+        52.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50399933/#0",
+      "rect": [
+        20.0,
+        122.5,
+        7.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "2"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50399933/#1",
+      "rect": [
+        41.5,
+        112.75,
+        698.5,
+        34.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50399933/#1/#0",
+      "rect": [
+        41.5,
+        112.75,
+        698.5,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Libghostty 1.0"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50399933/#1/#1",
+      "rect": [
+        41.5,
+        132.25,
+        698.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "718 points  ·  by mfiguiere  ·  116 comments"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-50397429",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397429",
+      "rect": [
+        0.0,
+        158.0,
+        760.0,
+        52.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397429/#0",
+      "rect": [
+        20.0,
+        176.5,
+        8.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "3"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397429/#1",
+      "rect": [
+        42.0,
+        166.75,
+        698.0,
+        34.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397429/#1/#0",
+      "rect": [
+        42.0,
+        166.75,
+        698.0,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "A Jev that can ask Opus for help gives Opus accuracy at 4x lower cost"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397429/#1/#1",
+      "rect": [
+        42.0,
+        186.25,
+        698.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "503 points  ·  by theanomaly  ·  120 comments"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-50388001",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50388001",
+      "rect": [
+        0.0,
+        212.0,
+        760.0,
+        52.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50388001/#0",
+      "rect": [
+        20.0,
+        230.5,
+        8.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "4"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50388001/#1",
+      "rect": [
+        42.0,
+        220.75,
+        698.0,
+        34.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50388001/#1/#0",
+      "rect": [
+        42.0,
+        220.75,
+        698.0,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "US FAA says it will phase out floppy disks from air traffic control by 2028"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50388001/#1/#1",
+      "rect": [
+        42.0,
+        240.25,
+        698.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "349 points  ·  by ChrisArchitect  ·  285 comments"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-50392118",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50392118",
+      "rect": [
+        0.0,
+        266.0,
+        760.0,
+        52.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50392118/#0",
+      "rect": [
+        20.0,
+        284.5,
+        7.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "5"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50392118/#1",
+      "rect": [
+        41.5,
+        274.75,
+        698.5,
+        34.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50392118/#1/#0",
+      "rect": [
+        41.5,
+        274.75,
+        698.5,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Gemini Omni 1.2 Flash"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50392118/#1/#1",
+      "rect": [
+        41.5,
+        294.25,
+        698.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "343 points  ·  by thisisauserid  ·  233 comments"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-50397994",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397994",
+      "rect": [
+        0.0,
+        320.0,
+        760.0,
+        52.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397994/#0",
+      "rect": [
+        20.0,
+        338.5,
+        8.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "6"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397994/#1",
+      "rect": [
+        42.0,
+        328.75,
+        698.0,
+        34.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397994/#1/#0",
+      "rect": [
+        42.0,
+        328.75,
+        698.0,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "AI is dramatically accelerating AI research"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397994/#1/#1",
+      "rect": [
+        42.0,
+        348.25,
+        698.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "325 points  ·  by yurivish  ·  281 comments"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-50397219",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397219",
+      "rect": [
+        0.0,
+        374.0,
+        760.0,
+        52.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397219/#0",
+      "rect": [
+        20.0,
+        392.5,
+        7.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "7"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397219/#1",
+      "rect": [
+        41.0,
+        382.75,
+        699.0,
+        34.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397219/#1/#0",
+      "rect": [
+        41.0,
+        382.75,
+        699.0,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Firecracker VM Escape: PwnEscape Part 2"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397219/#1/#1",
+      "rect": [
+        41.0,
+        402.25,
+        699.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "249 points  ·  by SerCe  ·  109 comments"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-50394855",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50394855",
+      "rect": [
+        0.0,
+        428.0,
+        760.0,
+        52.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50394855/#0",
+      "rect": [
+        20.0,
+        446.5,
+        8.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "8"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50394855/#1",
+      "rect": [
+        42.0,
+        436.75,
+        698.0,
+        34.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50394855/#1/#0",
+      "rect": [
+        42.0,
+        436.75,
+        698.0,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "First steps in bare-metal programming using UEFI"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50394855/#1/#1",
+      "rect": [
+        42.0,
+        456.25,
+        698.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "227 points  ·  by LaSombra  ·  42 comments"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-50401867",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50401867",
+      "rect": [
+        0.0,
+        482.0,
+        760.0,
+        52.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50401867/#0",
+      "rect": [
+        20.0,
+        500.5,
+        8.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "9"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50401867/#1",
+      "rect": [
+        42.0,
+        490.75,
+        698.0,
+        34.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50401867/#1/#0",
+      "rect": [
+        42.0,
+        490.75,
+        698.0,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Asahi Linux Progress Linux 7.3"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50401867/#1/#1",
+      "rect": [
+        42.0,
+        510.25,
+        698.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "204 points  ·  by ackyshake  ·  168 comments"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-50395450",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50395450",
+      "rect": [
+        0.0,
+        536.0,
+        760.0,
+        52.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50395450/#0",
+      "rect": [
+        20.0,
+        554.5,
+        13.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "10"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50395450/#1",
+      "rect": [
+        47.0,
+        544.75,
+        693.0,
+        34.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50395450/#1/#0",
+      "rect": [
+        47.0,
+        544.75,
+        693.0,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Devvm.dev: One VM for every project"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50395450/#1/#1",
+      "rect": [
+        47.0,
+        564.25,
+        693.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "162 points  ·  by luispa  ·  62 comments"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-50397099",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397099",
+      "rect": [
+        0.0,
+        590.0,
+        760.0,
+        52.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397099/#0",
+      "rect": [
+        20.0,
+        608.5,
+        10.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "11"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397099/#1",
+      "rect": [
+        44.0,
+        598.75,
+        696.0,
+        34.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397099/#1/#0",
+      "rect": [
+        44.0,
+        598.75,
+        696.0,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "GitHub's new Git storage architecture"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50397099/#1/#1",
+      "rect": [
+        44.0,
+        618.25,
+        696.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "157 points  ·  by DAlperin  ·  34 comments"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-50403097",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50403097",
+      "rect": [
+        0.0,
+        644.0,
+        760.0,
+        52.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50403097/#0",
+      "rect": [
+        20.0,
+        662.5,
+        12.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "12"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50403097/#1",
+      "rect": [
+        46.5,
+        652.75,
+        693.5,
+        34.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50403097/#1/#0",
+      "rect": [
+        46.5,
+        652.75,
+        693.5,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Every Mac comes with an (undocumented) family member classifier"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/stories/story-50403097/#1/#1",
+      "rect": [
+        46.5,
+        672.25,
+        693.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "144 points  ·  by infwhispers  ·  60 comments"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#3",
+      "rect": [
+        0.0,
+        584.0,
+        760.0,
+        1.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#4",
+      "rect": [
+        0.0,
+        585.0,
+        760.0,
+        35.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#4/#0",
+      "rect": [
+        20.0,
+        595.0,
+        110.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "j / k  or  ↑ ↓   move"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#4/#1",
+      "rect": [
+        146.5,
+        595.0,
+        113.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "click a row to select"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#4/#2",
+      "rect": [
+        276.0,
+        602.5,
+        138.0,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#4/#3",
+      "rect": [
+        430.0,
+        595.0,
+        310.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "HN API unreachable — showing the bundled snapshot"
+    }
+  ],
+  "reduced_motion": false,
+  "scale": 2.0,
+  "t": 0.0,
+  "time_scale": 1.0,
+  "title": "Hacker News",
+  "viewport": [
+    760.0,
+    620.0
+  ],
+  "warnings": []
+}

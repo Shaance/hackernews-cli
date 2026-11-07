@@ -1,0 +1,3627 @@
+{
+  "accessibility": {
+    "bounds": [
+      0.0,
+      0.0,
+      1180.0,
+      760.0
+    ],
+    "children": [
+      {
+        "bounds": [
+          24.0,
+          14.8,
+          5.5,
+          16.5
+        ],
+        "name": "‹",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          43.5,
+          14.8,
+          88.5,
+          16.5
+        ],
+        "name": "Libghostty 1.0",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          146.0,
+          20.0,
+          6.0,
+          6.0
+        ],
+        "key": "story-saved",
+        "name": "saved",
+        "role": "status",
+        "states": [
+          "live-polite"
+        ]
+      },
+      {
+        "bounds": [
+          166.0,
+          15.5,
+          228.0,
+          15.0
+        ],
+        "name": "mfiguiere  ·  771 points  ·  122 comments",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          1045.5,
+          14.0,
+          110.5,
+          18.0
+        ],
+        "children": [
+          {
+            "bounds": [
+              1063.5,
+              15.5,
+              85.5,
+              15.0
+            ],
+            "name": "summary · fast",
+            "role": "label"
+          }
+        ],
+        "name": "summary · fast",
+        "role": "status",
+        "states": [
+          "live-polite"
+        ]
+      },
+      {
+        "bounds": [
+          28.0,
+          69.0,
+          580.0,
+          14.5
+        ],
+        "name": "ARTICLE",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          28.0,
+          97.5,
+          580.0,
+          27.5
+        ],
+        "name": "Libghostty 1.0",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          28.0,
+          139.0,
+          580.0,
+          15.0
+        ],
+        "name": "mfiguiere  ·  ghostty.org  ·  extracted, 4.2k words",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          28.0,
+          168.0,
+          580.0,
+          49.0
+        ],
+        "name": "Today we are splitting Ghostty's core into a library. The app you run keeps its window, its fonts and its configuration; the terminal underneath becomes something another program can embed.",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          28.0,
+          231.0,
+          580.0,
+          49.0
+        ],
+        "name": "The surface is deliberately small. A host hands libghostty a native surface and a size, and gets back a grid of cells it can draw however it likes. Input arrives as an event queue, not as callbacks into the host's event loop.",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          40.0,
+          304.0,
+          556.0,
+          15.0
+        ],
+        "name": "$ zig build -Doptimize=ReleaseFast",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          40.0,
+          323.0,
+          556.0,
+          15.0
+        ],
+        "name": "$ ./zig-out/bin/libghostty-demo",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          28.0,
+          362.0,
+          580.0,
+          32.5
+        ],
+        "name": "What does not change: the parser, the renderer's cell model, and the escape-sequence coverage. What does: everything that used to assume it owned a window.",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          667.0,
+          65.0,
+          491.0,
+          36.5
+        ],
+        "children": [
+          {
+            "bounds": [
+              681.0,
+              75.8,
+              6.0,
+              15.0
+            ],
+            "name": "▸",
+            "role": "label"
+          },
+          {
+            "bounds": [
+              695.0,
+              75.0,
+              60.5,
+              16.5
+            ],
+            "name": "Summary",
+            "role": "label"
+          },
+          {
+            "bounds": [
+              763.5,
+              75.8,
+              261.5,
+              15.0
+            ],
+            "name": "3 bullets  ·  captured 2m ago  ·  3 of 3 sources",
+            "role": "label"
+          },
+          {
+            "bounds": [
+              1084.0,
+              75.8,
+              60.0,
+              15.0
+            ],
+            "name": "S expands",
+            "role": "label"
+          }
+        ],
+        "key": "summary",
+        "role": "group"
+      },
+      {
+        "actions": [
+          "scroll-up",
+          "scroll-down",
+          "set-scroll-offset"
+        ],
+        "bounds": [
+          667.0,
+          115.5,
+          491.0,
+          586.5
+        ],
+        "children": [
+          {
+            "actions": [
+              "scroll-into-view"
+            ],
+            "bounds": [
+              667.0,
+              115.5,
+              491.0,
+              33.0
+            ],
+            "children": [
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  677.0,
+                  124.5,
+                  43.5,
+                  15.0
+                ],
+                "name": "tptacek",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  727.5,
+                  124.5,
+                  5.0,
+                  15.0
+                ],
+                "name": "›",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  739.5,
+                  124.5,
+                  54.5,
+                  15.0
+                ],
+                "name": "kstrauser",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  801.0,
+                  124.5,
+                  5.0,
+                  15.0
+                ],
+                "name": "›",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  813.0,
+                  124.5,
+                  43.0,
+                  15.0
+                ],
+                "name": "jmillikin",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  863.0,
+                  124.5,
+                  5.0,
+                  15.0
+                ],
+                "name": "›",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  875.0,
+                  124.5,
+                  45.0,
+                  15.0
+                ],
+                "name": "simonw",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  927.0,
+                  124.5,
+                  5.0,
+                  15.0
+                ],
+                "name": "›",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  939.0,
+                  124.5,
+                  29.0,
+                  15.0
+                ],
+                "name": "dang",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  1012.5,
+                  124.5,
+                  135.5,
+                  15.0
+                ],
+                "name": "focus  ·  ⌫ up one level",
+                "role": "label"
+              }
+            ],
+            "key": "thread-trail",
+            "name": "thread: tptacek > kstrauser > jmillikin > simonw > dang",
+            "role": "group"
+          },
+          {
+            "actions": [
+              "scroll-into-view"
+            ],
+            "bounds": [
+              667.0,
+              150.5,
+              491.0,
+              73.5
+            ],
+            "children": [
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  705.0,
+                  160.5,
+                  29.0,
+                  15.0
+                ],
+                "name": "dang",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  742.0,
+                  160.5,
+                  88.5,
+                  15.0
+                ],
+                "name": "52 minutes ago",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  705.0,
+                  181.5,
+                  441.0,
+                  32.5
+                ],
+                "name": "Related from 2024: the original libghostty design notes. The section on input is the one worth reading first.",
+                "role": "label"
+              }
+            ],
+            "key": "comment-c5",
+            "name": "dang · depth 4",
+            "role": "tree-item",
+            "states": [
+              "expanded"
+            ]
+          },
+          {
+            "actions": [
+              "scroll-into-view"
+            ],
+            "bounds": [
+              667.0,
+              226.0,
+              491.0,
+              53.5
+            ],
+            "children": [
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  680.0,
+                  226.0,
+                  54.5,
+                  15.0
+                ],
+                "name": "kstrauser",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  742.5,
+                  226.0,
+                  89.5,
+                  15.0
+                ],
+                "name": "40 minutes ago",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  680.0,
+                  247.0,
+                  478.0,
+                  32.5
+                ],
+                "name": "That section is the one I keep coming back to. An event queue instead of callbacks is the whole design in one sentence.",
+                "role": "label"
+              }
+            ],
+            "key": "comment-c6",
+            "name": "kstrauser · depth 5",
+            "role": "tree-item",
+            "states": [
+              "expanded"
+            ]
+          },
+          {
+            "actions": [
+              "scroll-into-view"
+            ],
+            "bounds": [
+              667.0,
+              281.5,
+              491.0,
+              53.5
+            ],
+            "children": [
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  694.0,
+                  281.5,
+                  43.5,
+                  15.0
+                ],
+                "name": "tptacek",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  745.5,
+                  281.5,
+                  86.0,
+                  15.0
+                ],
+                "name": "31 minutes ago",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  694.0,
+                  302.5,
+                  464.0,
+                  32.5
+                ],
+                "name": "Which is also why the queue is bounded. An unbounded queue in a terminal is just a memory leak with extra steps.",
+                "role": "label"
+              }
+            ],
+            "key": "comment-c7",
+            "name": "tptacek · depth 6",
+            "role": "tree-item",
+            "states": [
+              "expanded"
+            ]
+          },
+          {
+            "actions": [
+              "scroll-into-view"
+            ],
+            "bounds": [
+              667.0,
+              337.0,
+              491.0,
+              53.5
+            ],
+            "children": [
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  708.0,
+                  337.0,
+                  43.0,
+                  15.0
+                ],
+                "name": "jmillikin",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  759.0,
+                  337.0,
+                  88.5,
+                  15.0
+                ],
+                "name": "22 minutes ago",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  708.0,
+                  358.0,
+                  450.0,
+                  32.5
+                ],
+                "name": "Bounded, and the host decides what to drop. That is the part I would want documented before I trusted it under load.",
+                "role": "label"
+              }
+            ],
+            "key": "comment-c8",
+            "name": "jmillikin · depth 7",
+            "role": "tree-item",
+            "states": [
+              "expanded"
+            ]
+          },
+          {
+            "actions": [
+              "scroll-into-view"
+            ],
+            "bounds": [
+              667.0,
+              392.5,
+              491.0,
+              79.5
+            ],
+            "children": [
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  722.0,
+                  392.5,
+                  45.0,
+                  15.0
+                ],
+                "name": "simonw",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  775.0,
+                  392.5,
+                  86.5,
+                  15.0
+                ],
+                "name": "18 minutes ago",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  722.0,
+                  413.5,
+                  436.0,
+                  32.5
+                ],
+                "name": "The drop policy is the interesting bit. If the host drops input, the terminal shows a stale screen and nobody knows why.",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  722.0,
+                  452.0,
+                  436.0,
+                  20.0
+                ],
+                "children": [
+                  {
+                    "actions": [
+                      "scroll-into-view"
+                    ],
+                    "bounds": [
+                      722.0,
+                      454.5,
+                      164.0,
+                      15.0
+                    ],
+                    "name": "continue thread  →  2 replies",
+                    "role": "label"
+                  }
+                ],
+                "key": "more-c9",
+                "name": "continue thread  →  2 replies",
+                "role": "button"
+              }
+            ],
+            "key": "comment-c9",
+            "name": "simonw · depth 8",
+            "role": "tree-item",
+            "states": [
+              "expanded"
+            ]
+          },
+          {
+            "actions": [
+              "scroll-into-view"
+            ],
+            "bounds": [
+              667.0,
+              474.0,
+              491.0,
+              53.5
+            ],
+            "children": [
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  679.0,
+                  474.0,
+                  54.5,
+                  15.0
+                ],
+                "name": "kstrauser",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  741.5,
+                  474.0,
+                  89.5,
+                  15.0
+                ],
+                "name": "44 minutes ago",
+                "role": "label"
+              },
+              {
+                "actions": [
+                  "scroll-into-view"
+                ],
+                "bounds": [
+                  679.0,
+                  495.0,
+                  479.0,
+                  32.5
+                ],
+                "name": "The notes are also the only place the surface handshake is written down. The README skips it entirely.",
+                "role": "label"
+              }
+            ],
+            "key": "comment-c5b",
+            "name": "kstrauser · depth 4",
+            "role": "tree-item",
+            "states": [
+              "expanded"
+            ]
+          }
+        ],
+        "key": "discussion",
+        "role": "scroll-view",
+        "scroll": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "states": [
+          "clips"
+        ]
+      },
+      {
+        "bounds": [
+          24.0,
+          733.5,
+          32.5,
+          14.0
+        ],
+        "name": "j k",
+        "role": "group"
+      },
+      {
+        "bounds": [
+          62.5,
+          733.0,
+          54.0,
+          15.0
+        ],
+        "name": "comment",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          134.5,
+          733.5,
+          30.0,
+          14.0
+        ],
+        "name": "[ ]",
+        "role": "group"
+      },
+      {
+        "bounds": [
+          170.5,
+          733.0,
+          38.0,
+          15.0
+        ],
+        "name": "sibling",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          226.5,
+          733.5,
+          36.0,
+          14.0
+        ],
+        "name": "Enter",
+        "role": "group"
+      },
+      {
+        "bounds": [
+          268.5,
+          733.0,
+          90.5,
+          15.0
+        ],
+        "name": "continue thread",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          377.0,
+          733.5,
+          14.5,
+          14.0
+        ],
+        "name": "f",
+        "role": "group"
+      },
+      {
+        "bounds": [
+          397.5,
+          733.0,
+          32.5,
+          15.0
+        ],
+        "name": "focus",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          448.0,
+          733.5,
+          21.5,
+          14.0
+        ],
+        "name": "⌫",
+        "role": "group"
+      },
+      {
+        "bounds": [
+          475.5,
+          733.0,
+          69.5,
+          15.0
+        ],
+        "name": "up one level",
+        "role": "label"
+      },
+      {
+        "bounds": [
+          1059.5,
+          733.0,
+          96.5,
+          15.0
+        ],
+        "name": "Esc leaves focus",
+        "role": "label"
+      }
+    ],
+    "name": "hn",
+    "role": "window"
+  },
+  "anim_t": 0.0,
+  "animating": false,
+  "dark_system": true,
+  "elements": [
+    {
+      "blur": 0.0,
+      "fill": "#121314ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0",
+      "rect": [
+        0.0,
+        0.0,
+        1180.0,
+        760.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0",
+      "rect": [
+        0.0,
+        0.0,
+        1180.0,
+        760.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#0",
+      "rect": [
+        0.0,
+        0.0,
+        1180.0,
+        46.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#0/#0",
+      "rect": [
+        24.0,
+        14.75,
+        5.5,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "‹"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#0/#1",
+      "rect": [
+        43.5,
+        14.75,
+        88.5,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Libghostty 1.0"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f48d2fff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-saved",
+      "label": "saved",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#0/story-saved",
+      "rect": [
+        146.0,
+        20.0,
+        6.0,
+        6.0
+      ],
+      "role": "status",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#0/#3",
+      "rect": [
+        166.0,
+        15.5,
+        228.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "mfiguiere  ·  771 points  ·  122 comments"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#0/#4",
+      "rect": [
+        408.0,
+        23.0,
+        623.5,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "summary · fast",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#0/#5",
+      "rect": [
+        1045.5,
+        14.0,
+        110.5,
+        18.0
+      ],
+      "role": "status",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f48d2fff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#0/#5/#0",
+      "rect": [
+        1052.5,
+        20.5,
+        5.0,
+        5.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#f48d2fff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#0/#5/#1",
+      "rect": [
+        1063.5,
+        15.5,
+        85.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "summary · fast"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#1",
+      "rect": [
+        0.0,
+        46.0,
+        1180.0,
+        1.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2",
+      "rect": [
+        0.0,
+        47.0,
+        1180.0,
+        673.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0",
+      "rect": [
+        0.0,
+        47.0,
+        636.0,
+        673.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0/#0",
+      "rect": [
+        28.0,
+        69.0,
+        580.0,
+        14.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "ARTICLE"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0/#1",
+      "rect": [
+        28.0,
+        97.5,
+        580.0,
+        27.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Libghostty 1.0"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0/#2",
+      "rect": [
+        28.0,
+        139.0,
+        580.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "mfiguiere  ·  ghostty.org  ·  extracted, 4.2k words"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0/#3",
+      "rect": [
+        28.0,
+        168.0,
+        580.0,
+        49.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Today we are splitting Ghostty's core into a library. The app you run keeps its window, its fonts and its configuration; the terminal underneath becomes something another program can embed."
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0/#4",
+      "rect": [
+        28.0,
+        231.0,
+        580.0,
+        49.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "The surface is deliberately small. A host hands libghostty a native surface and a size, and gets back a grid of cells it can draw however it likes. Input arrives as an event queue, not as callbacks into the host's event loop."
+    },
+    {
+      "blur": 0.0,
+      "fill": "#1c1d20ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0/#5",
+      "rect": [
+        28.0,
+        294.0,
+        580.0,
+        54.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0/#5/#0",
+      "rect": [
+        40.0,
+        304.0,
+        556.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "$ zig build -Doptimize=ReleaseFast"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0/#5/#1",
+      "rect": [
+        40.0,
+        323.0,
+        556.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "$ ./zig-out/bin/libghostty-demo"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#0/#6",
+      "rect": [
+        28.0,
+        362.0,
+        580.0,
+        32.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "What does not change: the parser, the renderer's cell model, and the escape-sequence coverage. What does: everything that used to assume it owned a window."
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#1",
+      "rect": [
+        636.0,
+        47.0,
+        9.0,
+        673.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#1/#0",
+      "rect": [
+        640.0,
+        47.0,
+        1.0,
+        280.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#4e5053ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#1/#1",
+      "rect": [
+        639.0,
+        327.0,
+        3.0,
+        28.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#1/#2",
+      "rect": [
+        640.0,
+        355.0,
+        1.0,
+        280.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2",
+      "rect": [
+        645.0,
+        47.0,
+        535.0,
+        673.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#1c1d20ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "summary",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/summary",
+      "rect": [
+        667.0,
+        65.0,
+        491.0,
+        36.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/summary/#0",
+      "rect": [
+        681.0,
+        75.75,
+        6.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "▸"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/summary/#1",
+      "rect": [
+        695.0,
+        75.0,
+        60.5,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Summary"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/summary/#2",
+      "rect": [
+        763.5,
+        75.75,
+        261.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "3 bullets  ·  captured 2m ago  ·  3 of 3 sources"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/summary/#3",
+      "rect": [
+        1033.0,
+        83.25,
+        43.0,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/summary/#4",
+      "rect": [
+        1084.0,
+        75.75,
+        60.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "S expands"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "discussion",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion",
+      "rect": [
+        667.0,
+        115.5,
+        491.0,
+        586.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#1c1d20ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "thread-trail",
+      "label": "thread: tptacek > kstrauser > jmillikin > simonw > dang",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/thread-trail",
+      "rect": [
+        667.0,
+        115.5,
+        491.0,
+        33.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/thread-trail/#0",
+      "rect": [
+        677.0,
+        124.5,
+        43.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "tptacek"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/thread-trail/#1",
+      "rect": [
+        727.5,
+        124.5,
+        5.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "›"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/thread-trail/#2",
+      "rect": [
+        739.5,
+        124.5,
+        54.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "kstrauser"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/thread-trail/#3",
+      "rect": [
+        801.0,
+        124.5,
+        5.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "›"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/thread-trail/#4",
+      "rect": [
+        813.0,
+        124.5,
+        43.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "jmillikin"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/thread-trail/#5",
+      "rect": [
+        863.0,
+        124.5,
+        5.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "›"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/thread-trail/#6",
+      "rect": [
+        875.0,
+        124.5,
+        45.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "simonw"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/thread-trail/#7",
+      "rect": [
+        927.0,
+        124.5,
+        5.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "›"
+    },
+    {
+      "blur": 0.0,
+      "color": "#f48d2fff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/thread-trail/#8",
+      "rect": [
+        939.0,
+        124.5,
+        29.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "dang"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/thread-trail/#9",
+      "rect": [
+        975.0,
+        132.0,
+        30.5,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/thread-trail/#10",
+      "rect": [
+        1012.5,
+        124.5,
+        135.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "focus  ·  ⌫ up one level"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1",
+      "rect": [
+        667.0,
+        150.5,
+        491.0,
+        377.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "expanded": true,
+      "fill": "#1c1d20ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-c5",
+      "label": "dang · depth 4",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c5",
+      "rect": [
+        667.0,
+        150.5,
+        491.0,
+        73.5
+      ],
+      "role": "treeitem",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f48d2fff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c5/#0",
+      "rect": [
+        679.0,
+        160.5,
+        2.0,
+        24.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c5/#1",
+      "rect": [
+        693.0,
+        160.5,
+        0.0,
+        53.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c5/#2",
+      "rect": [
+        705.0,
+        160.5,
+        441.0,
+        53.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c5/#2/#0",
+      "rect": [
+        705.0,
+        160.5,
+        441.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#f48d2fff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c5/#2/#0/#0",
+      "rect": [
+        705.0,
+        160.5,
+        29.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "dang"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c5/#2/#0/#1",
+      "rect": [
+        742.0,
+        160.5,
+        88.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "52 minutes ago"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c5/#2/#1",
+      "rect": [
+        705.0,
+        181.5,
+        441.0,
+        32.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Related from 2024: the original libghostty design notes. The section on input is the one worth reading first."
+    },
+    {
+      "blur": 0.0,
+      "expanded": true,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-c6",
+      "label": "kstrauser · depth 5",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c6",
+      "rect": [
+        667.0,
+        226.0,
+        491.0,
+        53.5
+      ],
+      "role": "treeitem",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c6/#0",
+      "rect": [
+        667.0,
+        226.0,
+        1.0,
+        53.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c6/#0/#0",
+      "rect": [
+        667.0,
+        226.0,
+        1.0,
+        53.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c6/#1",
+      "rect": [
+        680.0,
+        226.0,
+        478.0,
+        53.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c6/#1/#0",
+      "rect": [
+        680.0,
+        226.0,
+        478.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c6/#1/#0/#0",
+      "rect": [
+        680.0,
+        226.0,
+        54.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "kstrauser"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c6/#1/#0/#1",
+      "rect": [
+        742.5,
+        226.0,
+        89.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "40 minutes ago"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c6/#1/#1",
+      "rect": [
+        680.0,
+        247.0,
+        478.0,
+        32.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "That section is the one I keep coming back to. An event queue instead of callbacks is the whole design in one sentence."
+    },
+    {
+      "blur": 0.0,
+      "expanded": true,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-c7",
+      "label": "tptacek · depth 6",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c7",
+      "rect": [
+        667.0,
+        281.5,
+        491.0,
+        53.5
+      ],
+      "role": "treeitem",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c7/#0",
+      "rect": [
+        667.0,
+        281.5,
+        15.0,
+        53.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c7/#0/#0",
+      "rect": [
+        667.0,
+        281.5,
+        1.0,
+        53.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c7/#0/#1",
+      "rect": [
+        681.0,
+        281.5,
+        1.0,
+        53.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c7/#1",
+      "rect": [
+        694.0,
+        281.5,
+        464.0,
+        53.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c7/#1/#0",
+      "rect": [
+        694.0,
+        281.5,
+        464.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c7/#1/#0/#0",
+      "rect": [
+        694.0,
+        281.5,
+        43.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "tptacek"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c7/#1/#0/#1",
+      "rect": [
+        745.5,
+        281.5,
+        86.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "31 minutes ago"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c7/#1/#1",
+      "rect": [
+        694.0,
+        302.5,
+        464.0,
+        32.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Which is also why the queue is bounded. An unbounded queue in a terminal is just a memory leak with extra steps."
+    },
+    {
+      "blur": 0.0,
+      "expanded": true,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-c8",
+      "label": "jmillikin · depth 7",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c8",
+      "rect": [
+        667.0,
+        337.0,
+        491.0,
+        53.5
+      ],
+      "role": "treeitem",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c8/#0",
+      "rect": [
+        667.0,
+        337.0,
+        29.0,
+        53.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c8/#0/#0",
+      "rect": [
+        667.0,
+        337.0,
+        1.0,
+        53.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c8/#0/#1",
+      "rect": [
+        681.0,
+        337.0,
+        1.0,
+        53.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c8/#0/#2",
+      "rect": [
+        695.0,
+        337.0,
+        1.0,
+        53.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c8/#1",
+      "rect": [
+        708.0,
+        337.0,
+        450.0,
+        53.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c8/#1/#0",
+      "rect": [
+        708.0,
+        337.0,
+        450.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c8/#1/#0/#0",
+      "rect": [
+        708.0,
+        337.0,
+        43.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "jmillikin"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c8/#1/#0/#1",
+      "rect": [
+        759.0,
+        337.0,
+        88.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "22 minutes ago"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c8/#1/#1",
+      "rect": [
+        708.0,
+        358.0,
+        450.0,
+        32.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Bounded, and the host decides what to drop. That is the part I would want documented before I trusted it under load."
+    },
+    {
+      "blur": 0.0,
+      "expanded": true,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-c9",
+      "label": "simonw · depth 8",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c9",
+      "rect": [
+        667.0,
+        392.5,
+        491.0,
+        79.5
+      ],
+      "role": "treeitem",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c9/#0",
+      "rect": [
+        667.0,
+        392.5,
+        43.0,
+        79.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c9/#0/#0",
+      "rect": [
+        667.0,
+        392.5,
+        1.0,
+        79.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c9/#0/#1",
+      "rect": [
+        681.0,
+        392.5,
+        1.0,
+        79.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c9/#0/#2",
+      "rect": [
+        695.0,
+        392.5,
+        1.0,
+        79.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c9/#0/#3",
+      "rect": [
+        709.0,
+        392.5,
+        1.0,
+        79.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c9/#1",
+      "rect": [
+        722.0,
+        392.5,
+        436.0,
+        79.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c9/#1/#0",
+      "rect": [
+        722.0,
+        392.5,
+        436.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c9/#1/#0/#0",
+      "rect": [
+        722.0,
+        392.5,
+        45.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "simonw"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c9/#1/#0/#1",
+      "rect": [
+        775.0,
+        392.5,
+        86.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "18 minutes ago"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c9/#1/#1",
+      "rect": [
+        722.0,
+        413.5,
+        436.0,
+        32.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "The drop policy is the interesting bit. If the host drops input, the terminal shows a stale screen and nobody knows why."
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "more-c9",
+      "label": "continue thread  →  2 replies",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c9/#1/more-c9",
+      "rect": [
+        722.0,
+        452.0,
+        436.0,
+        20.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c9/#1/more-c9/#0",
+      "rect": [
+        722.0,
+        454.5,
+        164.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "continue thread  →  2 replies"
+    },
+    {
+      "blur": 0.0,
+      "expanded": true,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-c5b",
+      "label": "kstrauser · depth 4",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c5b",
+      "rect": [
+        667.0,
+        474.0,
+        491.0,
+        53.5
+      ],
+      "role": "treeitem",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c5b/#0",
+      "rect": [
+        667.0,
+        474.0,
+        0.0,
+        53.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c5b/#1",
+      "rect": [
+        679.0,
+        474.0,
+        479.0,
+        53.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c5b/#1/#0",
+      "rect": [
+        679.0,
+        474.0,
+        479.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c5b/#1/#0/#0",
+      "rect": [
+        679.0,
+        474.0,
+        54.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "kstrauser"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c5b/#1/#0/#1",
+      "rect": [
+        741.5,
+        474.0,
+        89.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "44 minutes ago"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#2/#2/discussion/#1/comment-c5b/#1/#1",
+      "rect": [
+        679.0,
+        495.0,
+        479.0,
+        32.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "The notes are also the only place the surface handshake is written down. The README skips it entirely."
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#3",
+      "rect": [
+        0.0,
+        720.0,
+        1180.0,
+        1.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4",
+      "rect": [
+        0.0,
+        721.0,
+        1180.0,
+        39.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#0",
+      "rect": [
+        24.0,
+        733.0,
+        92.5,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "j k",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#0/#0",
+      "rect": [
+        24.0,
+        733.5,
+        32.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#0/#0/key0",
+      "rect": [
+        24.0,
+        733.5,
+        14.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#0/#0/key0/#0",
+      "rect": [
+        28.0,
+        735.0,
+        6.5,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "J"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key1",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#0/#0/key1",
+      "rect": [
+        40.5,
+        733.5,
+        16.0,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#0/#0/key1/#0",
+      "rect": [
+        44.5,
+        735.0,
+        8.0,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "K"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#0/#1",
+      "rect": [
+        62.5,
+        733.0,
+        54.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "comment"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#1",
+      "rect": [
+        134.5,
+        733.0,
+        74.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "[ ]",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#1/#0",
+      "rect": [
+        134.5,
+        733.5,
+        30.0,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#1/#0/key0",
+      "rect": [
+        134.5,
+        733.5,
+        14.0,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#1/#0/key0/#0",
+      "rect": [
+        139.25,
+        735.0,
+        4.5,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "["
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key1",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#1/#0/key1",
+      "rect": [
+        150.5,
+        733.5,
+        14.0,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#1/#0/key1/#0",
+      "rect": [
+        155.25,
+        735.0,
+        4.5,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "]"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#1/#1",
+      "rect": [
+        170.5,
+        733.0,
+        38.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "sibling"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#2",
+      "rect": [
+        226.5,
+        733.0,
+        132.5,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "Enter",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#2/#0",
+      "rect": [
+        226.5,
+        733.5,
+        36.0,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#2/#0/key0",
+      "rect": [
+        226.5,
+        733.5,
+        36.0,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#2/#0/key0/#0",
+      "rect": [
+        230.5,
+        735.0,
+        28.0,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Enter"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#2/#1",
+      "rect": [
+        268.5,
+        733.0,
+        90.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "continue thread"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#3",
+      "rect": [
+        377.0,
+        733.0,
+        53.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "f",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#3/#0",
+      "rect": [
+        377.0,
+        733.5,
+        14.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#3/#0/key0",
+      "rect": [
+        377.0,
+        733.5,
+        14.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#3/#0/key0/#0",
+      "rect": [
+        381.0,
+        735.0,
+        6.5,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "F"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#3/#1",
+      "rect": [
+        397.5,
+        733.0,
+        32.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "focus"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#4",
+      "rect": [
+        448.0,
+        733.0,
+        97.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "⌫",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#4/#0",
+      "rect": [
+        448.0,
+        733.5,
+        21.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#4/#0/key0",
+      "rect": [
+        448.0,
+        733.5,
+        21.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#4/#0/key0/#0",
+      "rect": [
+        452.0,
+        735.0,
+        13.5,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "⌫"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#4/#1",
+      "rect": [
+        475.5,
+        733.0,
+        69.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "up one level"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#5",
+      "rect": [
+        563.0,
+        740.5,
+        478.5,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "#0/#0/#4/#6",
+      "rect": [
+        1059.5,
+        733.0,
+        96.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Esc leaves focus"
+    }
+  ],
+  "reduced_motion": false,
+  "scale": 2.0,
+  "t": 0.0,
+  "time_scale": 1.0,
+  "title": "hn",
+  "viewport": [
+    1180.0,
+    760.0
+  ],
+  "warnings": []
+}
