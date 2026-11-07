@@ -1,6 +1,7 @@
 pub mod app;
 pub mod bookmarks;
 pub mod event;
+pub mod feed_state;
 mod hn_cli_service;
 pub mod hn_client;
 pub mod snapshot;

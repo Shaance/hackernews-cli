@@ -1,6 +1,10 @@
 //! Application state management for HackerNews TUI
 
-use crate::{theme::Theme, HNCLIItem};
+use crate::{
+    feed_state::{self, FeedAction, FeedState, FeedStatus},
+    theme::Theme,
+    HNCLIItem,
+};
 use std::{
     collections::HashMap,
     time::{Duration, Instant},
@@ -9,6 +13,10 @@ use std::{
 /// How long the selection highlight glides after a j/k move (ease-out, capped
 /// because this is the highest-frequency motion in the app).
 pub const SELECTION_GLIDE: Duration = Duration::from_millis(110);
+
+/// Shown instead of paging when a preview snapshot has one page per feed.
+const PREVIEW_PAGE_NOTICE: &str =
+    "This preview has one page per feed. Get the full CLI on GitHub to browse more stories.";
 
 /// Where the selection lands when a j/k-triggered page switch finishes loading.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -74,11 +82,12 @@ impl StoryType {
 }
 
 /// Last successfully displayed location in one feed for this session.
-struct FeedPosition {
-    page: u32,
-    selected_id: Option<i32>,
-    index: usize,
-    scroll: usize,
+#[derive(Debug, Clone)]
+pub struct FeedPosition {
+    pub page: u32,
+    pub selected_id: Option<i32>,
+    pub index: usize,
+    pub scroll: usize,
 }
 
 /// Main application state
@@ -225,22 +234,16 @@ impl App {
     /// or feed switch is still in flight, j/k are ignored so repeated presses
     /// cannot stack multiple page advances.
     pub fn next_story(&mut self) -> bool {
-        if self.stories.is_empty() || self.showing_stale_stories() {
-            return false;
-        }
-        if self.selected_index < self.stories.len() - 1 {
-            self.move_selection(self.selected_index + 1);
-            false
-        } else if self.is_loading() {
-            false
-        } else {
-            let page = self.current_page;
-            self.next_page();
-            let advanced = self.current_page != page;
-            if advanced {
-                self.page_landing = Some(PageLanding::Start);
+        match feed_state::next_story(&self.feed_state(), usize::from(self.page_size)) {
+            FeedAction::TurnPage { .. } if self.snapshot.is_some() => {
+                self.preview_notice = Some(PREVIEW_PAGE_NOTICE);
+                false
             }
-            advanced
+            action => {
+                let page = self.current_page;
+                self.apply_feed_action(action);
+                self.current_page != page
+            }
         }
     }
 
@@ -248,23 +251,12 @@ impl App {
     /// previous page. Returns true when the page changed and the caller should
     /// request it. Blocked while a page/feed switch is in flight, like next_story.
     pub fn prev_story(&mut self) -> bool {
-        if self.showing_stale_stories() {
-            return false;
-        }
-        if self.selected_index > 0 {
-            self.move_selection(self.selected_index - 1);
-            false
-        } else if self.is_loading() {
-            false
-        } else {
-            let page = self.current_page;
-            self.prev_page();
-            let changed = self.current_page != page;
-            if changed {
-                self.page_landing = Some(PageLanding::End);
-            }
-            changed
-        }
+        let page = self.current_page;
+        self.apply_feed_action(feed_state::prev_story(
+            &self.feed_state(),
+            usize::from(self.page_size),
+        ));
+        self.current_page != page
     }
 
     /// Jump straight to an index without the glide (g/G page-edge jumps snap).
@@ -312,31 +304,77 @@ impl App {
     /// Go to next page
     pub fn next_page(&mut self) {
         if self.snapshot.is_some() {
-            self.preview_notice = Some("This preview has one page per feed. Get the full CLI on GitHub to browse more stories.");
+            self.preview_notice = Some(PREVIEW_PAGE_NOTICE);
             return;
         }
-        if self.story_type == StoryType::Saved {
-            return;
-        }
-        self.current_page += 1;
+        self.apply_feed_action(feed_state::next_page(
+            &self.feed_state(),
+            usize::from(self.page_size),
+        ));
     }
 
     /// Go to previous page
     pub fn prev_page(&mut self) {
-        if self.story_type == StoryType::Saved {
-            return;
-        }
-        if self.current_page > 1 {
-            self.current_page -= 1;
-        }
+        self.apply_feed_action(feed_state::prev_page(
+            &self.feed_state(),
+            usize::from(self.page_size),
+        ));
     }
 
     /// Switch story type
     pub fn set_story_type(&mut self, story_type: StoryType) {
-        if self.story_type != story_type {
-            self.remember_feed_position();
-            self.story_type = story_type;
-            self.current_page = self.feed_positions.get(&story_type).map_or(1, |p| p.page);
+        self.apply_feed_action(feed_state::switch_tab(&self.feed_state(), story_type));
+    }
+
+    /// Snapshot of the feed fields the shared `feed_state` transitions read.
+    fn feed_state(&self) -> FeedState {
+        FeedState {
+            tab: self.story_type,
+            // The TUI pages by number; the ranked snapshot is the desktop's.
+            id_snapshot: Vec::new(),
+            stories: self.stories.clone(),
+            // App caches by (type, page); the id-keyed cache is the desktop's.
+            story_cache: HashMap::new(),
+            page_size: u32::from(self.page_size),
+            display_cursor: (self.current_page.saturating_sub(1) as usize)
+                * usize::from(self.page_size),
+            selected: self.selected_index,
+            status: FeedStatus {
+                loading: self.is_loading(),
+                error: self.error().map(str::to_string),
+                stale: self.showing_stale_stories(),
+            },
+            stories_for: self.stories_for,
+            feed_positions: self.feed_positions.clone(),
+            page_landing: self.page_landing,
+            bookmark_notice: self.bookmark_notice.clone(),
+        }
+    }
+
+    /// Apply a transition described by the shared `feed_state` functions.
+    fn apply_feed_action(&mut self, action: FeedAction) {
+        match action {
+            FeedAction::Move { selected } => self.move_selection(selected),
+            FeedAction::TurnPage {
+                display_cursor,
+                landing,
+            } => {
+                self.current_page =
+                    (display_cursor / usize::from(self.page_size).max(1)) as u32 + 1;
+                // A page turn with no landing preference leaves a pending one alone.
+                if landing.is_some() {
+                    self.page_landing = landing;
+                }
+            }
+            FeedAction::SwitchTab { tab, page } => {
+                self.remember_feed_position();
+                self.story_type = tab;
+                self.current_page = page;
+            }
+            FeedAction::None
+            | FeedAction::ToggleSaved { .. }
+            | FeedAction::ApplyPage { .. }
+            | FeedAction::Resize { .. } => {}
         }
     }
 

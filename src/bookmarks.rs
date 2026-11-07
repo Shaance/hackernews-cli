@@ -44,6 +44,24 @@ pub fn save(path: &Path, stories: &[HNCLIItem]) -> Result<()> {
     result.with_context(|| format!("Could not save stories at {}", path.display()))
 }
 
+/// The saved-story store: newest first, as written to `saved.json`.
+pub type SavedStore = Vec<HNCLIItem>;
+
+/// Toggle `item` in a store without touching `App` (the desktop path).
+/// Returns whether the item is saved afterwards.
+pub fn toggle_saved(store: &mut SavedStore, item: &HNCLIItem) -> bool {
+    match store.iter().position(|saved| saved.id == item.id) {
+        Some(index) => {
+            store.remove(index);
+            false
+        }
+        None => {
+            store.insert(0, item.clone());
+            true
+        }
+    }
+}
+
 pub fn toggle(app: &mut App, path: Option<&Path>) -> Result<()> {
     let path = path.context("Saved stories unavailable. Open Saved (4) and press r to retry")?;
     let Some(story) = app.bookmark_story().cloned() else {

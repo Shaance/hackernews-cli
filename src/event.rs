@@ -74,7 +74,7 @@ pub fn handle_comments_key(key: KeyCode) -> CommentAction {
 }
 
 /// Actions that can be performed in stories view
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum StoryAction {
     NextStory,
     PrevStory,

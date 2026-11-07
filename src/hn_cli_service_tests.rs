@@ -400,3 +400,36 @@ async fn real_service_distinguishes_total_failure_mixed_success_and_empty_batche
         server.abort();
     }
 }
+
+#[tokio::test]
+async fn fetch_pages_against_keeps_a_placeholder_for_a_failed_item() {
+    let mut hn_client = MockHackerNewsClient::new();
+    hn_client
+        .expect_get_items()
+        .times(1)
+        .withf(|ids| ids == [7, 8, 9])
+        .returning(|ids| {
+            ids.iter()
+                .map(|id| {
+                    if *id == 8 {
+                        Err(anyhow!("item 8 unavailable"))
+                    } else {
+                        Ok(story_item(*id))
+                    }
+                })
+                .collect()
+        });
+
+    let service = HackerNewsCliServiceImpl::new_with_client(hn_client);
+    let snapshot = [5, 6, 7, 8, 9, 10];
+
+    let window = service.fetch_pages_against(&snapshot, 2, 3).await;
+
+    assert_eq!(window.len(), 3, "a failed item never shrinks the window");
+    assert_eq!(window[0].as_ref().map(|item| item.id), Some(7));
+    assert!(window[1].is_none(), "a failed item is a placeholder row");
+    assert_eq!(window[2].as_ref().map(|item| item.id), Some(9));
+
+    // Ranks past the end of the snapshot are not requested at all.
+    assert!(service.fetch_pages_against(&snapshot, 6, 3).await.is_empty());
+}
