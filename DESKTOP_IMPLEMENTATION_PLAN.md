@@ -2,6 +2,8 @@
 
 Status: v4 — FINAL after 3 review rounds (Codex + DeepSeek in parallel each round; round-3 verdicts:
 Codex NO-GO→fixed here, DeepSeek GO-WITH-CHANGES→fixed here — see "Review log"). Baseline committed.
+MILESTONE 1 LANDED on main (ed518d3): WS-A core seams + WS-A2 reader lift + WS-B `desktop/` crate with
+passing acceptance gate. Next: WS-C story split + summary, WS-D comments, WS-E settings/help/a11y.
 Inputs: `mockups/desktop/DESIGN.md`, `mockups/desktop/index.html`, `prototypes/rune-hn/`,
 `prototypes/rune-mocks/`.
 
