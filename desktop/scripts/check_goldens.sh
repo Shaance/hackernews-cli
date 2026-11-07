@@ -87,10 +87,14 @@ SCENES=(
 )
 
 # name | scene | size | script
-# The story split's three frozen states. They share the render/tree/pixel/motion loops with the
+# The story split's five frozen states. They share the render/tree/pixel/motion loops with the
 # feed scenes but not the feed's fidelity loop: a story has no rank order and no page stepper.
+# `comments` is the discussion at the story's top level; `thread` is the same discussion re-rooted
+# four levels down with focus mode on, which is the state the trail and the dimming exist for.
 STORY_SCENES=(
   "story|story|1180x760|scripts/story.json"
+  "comments|comments|1180x760|scripts/thread.json"
+  "thread|thread|1180x760|scripts/thread.json"
   "citation|citation|1180x760|scripts/story.json"
   "summary-generating|summary-generating|1180x760|scripts/story.json"
 )
@@ -311,6 +315,33 @@ else
   bad "reduced motion ($spatial active spatial tracks)"
 fi
 
+# The thread's own motion: the trail snaps, the rows reflow, and a re-root glides the viewport.
+# Under reduced motion the same keys must still land the same state, with nothing travelling.
+HN_REDUCED_MOTION=1 "$BIN" --scene story --size 1180x760 --scale 2 --theme dark \
+  --script scripts/thread-keys.json --at mark:reroot --tree "$ACTUAL/reduced-thread.json" \
+  --trace "$ACTUAL/reduced-thread.trace.jsonl" >/dev/null
+reduced_rows=$(jq -r '[.elements[] | select((.key // "") | test("^comment-[0-9]+$"))
+    | {y: .rect[1], id: (.key | sub("comment-"; ""))}] | sort_by(.y) | map(.id) | join(",")' \
+  "$ACTUAL/reduced-thread.json")
+reduced_trail=$(jq -r '[.accessibility | .. | objects | select((.key // "") | startswith("trail-")) | .key] | join(",")' \
+  "$ACTUAL/reduced-thread.json")
+reduced_flag=$(jq -r '.reduced_motion' "$ACTUAL/reduced-thread.json")
+if [ "$reduced_flag" = true ] && [ "$reduced_rows" = "901000,9010000,90100000,90100001,9010001,9010002" ] \
+  && [ "$reduced_trail" = "trail-901,trail-9010,trail-90100,trail-901000" ]; then
+  pass "reduced motion thread (re-root lands the same tree and trail)"
+else
+  bad "reduced motion thread (flag $reduced_flag, rows '$reduced_rows', trail '$reduced_trail')"
+fi
+spatial=$(jq -s --arg spatial "$SPATIAL" \
+  '[.[] | select(.quality.animating == true) | (.tk // [])[] | select(.[2] == 1)
+    | select((.[1] | ascii_downcase) as $p | ($spatial | split(",") | index($p)) != null)] | length' \
+  "$ACTUAL/reduced-thread.trace.jsonl")
+if [ "$spatial" = 0 ]; then
+  pass "reduced motion thread (0 active spatial tracks)"
+else
+  bad "reduced motion thread ($spatial active spatial tracks)"
+fi
+
 step "resize proof (window width, not the inset card)"
 for mark in wide narrow; do
   "$BIN" --scene resize --size 1600x900 --scale 2 --theme dark --script scripts/resize.json \
@@ -361,9 +392,23 @@ for name in story citation summary-generating; do
   fi
 done
 
-# The card and the discussion, in the two scenes that show them: the citation scene gives the
+# The footer's hints fit the narrowest split: the last one ends inside the footer's own box, so a
+# key added to the row cannot silently run off the edge of the window.
+for name in story citation summary-generating; do
+  tree="$ACTUAL/$name.json"
+  edge=$(jq '[.elements[] | select((.key // "") == "story-footer") | .rect[0] + .rect[2]][0] // 0' "$tree")
+  last=$(jq '[.elements[] | select((.path // "") | contains("story-footer")) | select(.text != null)
+      | .rect[0] + .rect[2]] | max // 0' "$tree")
+  if awk -v a="$last" -v b="$edge" 'BEGIN { exit !(a > 0 && a <= b) }'; then
+    pass "$name footer hints fit (last ends at ${last}pt, footer at ${edge}pt)"
+  else
+    bad "$name footer hints overflow (last ends at ${last}pt, footer at ${edge}pt)"
+  fi
+done
+
+# The card and the discussion, in the three scenes that show them: the citation scene gives the
 # inspector to the source viewer instead.
-for name in story summary-generating; do
+for name in story comments summary-generating; do
   tree="$ACTUAL/$name.json"
   q() { jq -r "$1" "$tree"; }
 
@@ -379,14 +424,214 @@ for name in story summary-generating; do
     bad "$name summary pinned (card at top+12 / above first comment = '$pinned')"
   fi
 
-  # The discussion is a flat list of top-level comments: no comment inside another.
-  flat=$(q '[.elements[] | select((.path // "") | test("comment-[0-9]+/.*comment-[0-9]+"))] | length')
+  # The discussion is a tree, not a flat list: a reply draws at a deeper level than its parent,
+  # and the header counts the capture and the story's threads rather than the rows on screen.
+  deep=$(q '[.elements[] | select((.key // "") | test("^comment-[0-9]+$")) | select(.level > 1)] | length')
   count=$(q '[.elements[] | select((.key // "") == "discussion-count") | .text][0] // ""')
-  if [ "$flat" = 0 ] && [ "$count" = "5 top-level comments" ]; then
-    pass "$name discussion (flat, $count)"
+  if [ "$deep" -ge 1 ] && [ "$count" = "17 comments · 5 top-level" ]; then
+    pass "$name discussion (tree, $deep rows below the top level, '$count')"
   else
-    bad "$name discussion (nested $flat, count '$count')"
+    bad "$name discussion ($deep rows below the top level, count '$count')"
   fi
+done
+
+step "comment tree (depth rails, the cap, collapsed counts)"
+# Read from the tree, not the pixels: the rows in draw order with the depth each one draws at, the
+# hairline per ancestor level, and the cap's label. A golden cannot ratify a tree that indents
+# every reply by the same amount, or a `continue thread` that counts the wrong replies.
+rows=$(jq -r '[.elements[] | select((.key // "") | test("^comment-[0-9]+$"))
+    | {y: .rect[1], id: (.key | sub("comment-"; "")), level: .level}]
+  | sort_by(.y) | map("\(.id)@\(.level)") | join(",")' "$ACTUAL/comments.json")
+want_rows="901@1,9010@2,90100@3,901000@4,90101@3,9011@2,902@1,903@1,9030@2,90300@3,904@1,905@1"
+if [ "$rows" = "$want_rows" ]; then
+  pass "comments rows (12, depth first, levels 1-4)"
+else
+  bad "comments rows (got $rows)"
+fi
+
+# One hairline per ancestor level: 901000 draws three, a top-level comment draws none.
+guides=$(jq '[.elements[] | select((.key // "") | test("^guide-[0-9]+-[0-9]+$"))] | length' "$ACTUAL/comments.json")
+deepest=$(jq '[.elements[] | select((.key // "") | test("^guide-901000-[0-9]+$"))] | length' "$ACTUAL/comments.json")
+if [ "$guides" = 12 ] && [ "$deepest" = 3 ]; then
+  pass "comments depth rails ($guides hairlines, 3 under 901000)"
+else
+  bad "comments depth rails ($guides hairlines, $deepest under 901000)"
+fi
+
+# The cap: 901000 draws at depth 3 with five replies, so its children are behind a label that
+# counts every reply under it, not just the ones that would have been rows.
+cont=$(jq -r '[.elements[] | select((.path // "") | endswith("comment-continue-901000/#0")) | .text][0] // ""' "$ACTUAL/comments.json")
+cont_label=$(jq -r '[.elements[] | select((.key // "") == "comment-continue-901000") | .label][0] // ""' "$ACTUAL/comments.json")
+if [ "$cont" = "continue thread → 5 replies" ] && [ "$cont_label" = "Continue thread, 5 replies" ]; then
+  pass "comments cap ('$cont')"
+else
+  bad "comments cap (text '$cont', label '$cont_label')"
+fi
+
+# At the story's top level the trail is one segment long, so it is not drawn at all.
+trail=$(jq '[.elements[] | select((.key // "") == "trail")] | length' "$ACTUAL/comments.json")
+if [ "$trail" = 0 ]; then
+  pass "comments trail (absent at the top level)"
+else
+  bad "comments trail ($trail trail strips at the top level)"
+fi
+
+step "thread (sticky trail, focus mode)"
+# The trail is the cursor's ancestor chain, so its last segment is the comment being read: the
+# ancestors are buttons, the focused comment is not.
+segments=$(jq -r '[.accessibility | .. | objects | select((.key // "") | startswith("trail-"))
+    | "\(.key):\(.role)"] | join(",")' "$ACTUAL/thread.json")
+want_segments="trail-901:button,trail-9010:button,trail-90100:button,trail-901000:button,trail-9010000:label"
+if [ "$segments" = "$want_segments" ]; then
+  pass "thread trail (5 segments, last one not pressable)"
+else
+  bad "thread trail (got $segments)"
+fi
+
+# The trail sits above the rows it describes, and the re-rooted comment draws at depth 0.
+trail_y=$(jq '[.elements[] | select((.key // "") == "trail") | .rect[1]][0] // -1' "$ACTUAL/thread.json")
+first_y=$(jq '[.elements[] | select((.key // "") == "comment-901000") | .rect[1]][0] // -2' "$ACTUAL/thread.json")
+root_level=$(jq '[.elements[] | select((.key // "") == "comment-901000") | .level][0] // 0' "$ACTUAL/thread.json")
+if awk -v a="$trail_y" -v b="$first_y" 'BEGIN { exit !(a >= 0 && a < b) }' && [ "$root_level" = 1 ]; then
+  pass "thread re-root (trail y=$trail_y above the root row y=$first_y, drawn at level 1)"
+else
+  bad "thread re-root (trail y=$trail_y, root row y=$first_y at level $root_level)"
+fi
+
+# Focus mode: the pill is on, the chain keeps full contrast, and the two sibling replies under the
+# re-rooted comment dim to 0.35. Nothing is hidden, so nothing has to be found again.
+pill=$(jq '[.elements[] | select((.key // "") == "discussion-focus")] | length' "$ACTUAL/thread.json")
+dim=$(jq -r '[.elements[] | select((.key // "") | test("^comment-[0-9]+$"))
+    | select(.opacity < 0.99) | .key] | sort | join(",")' "$ACTUAL/thread.json")
+dim_op=$(jq -r '[.elements[] | select((.key // "") == "comment-9010001") | .opacity][0] // 0' "$ACTUAL/thread.json")
+chain_op=$(jq -r '[.elements[] | select((.key // "") == "comment-9010000") | .opacity][0] // 0' "$ACTUAL/thread.json")
+if [ "$pill" = 1 ] && [ "$dim" = "comment-9010001,comment-9010002" ] && [ "$dim_op" = "0.3499999940395355" ] && [ "$chain_op" = "1.0" ]; then
+  pass "thread focus (pill on, $dim dimmed to $dim_op, chain at $chain_op)"
+else
+  bad "thread focus (pill $pill, dimmed '$dim' at $dim_op, chain at $chain_op)"
+fi
+
+# The focused comment is the selected row, and it is the one the trail ends on.
+selected=$(jq -r '[.elements[] | select(.itemSelected == true) | .key] | join(",")' "$ACTUAL/thread.json")
+if [ "$selected" = "comment-9010000" ]; then
+  pass "thread selection (comment-9010000, the last trail segment)"
+else
+  bad "thread selection (got '$selected')"
+fi
+
+step "sticky trail (the rows scroll under the ancestor chain)"
+# The trail is the one thing in the discussion that does not move: the rows pass under it, so the
+# comment being read keeps its ancestry on screen however far down the thread it is.
+for mark in top scrolled; do
+  "$BIN" --scene thread --size 1180x760 --scale 2 --theme dark --script scripts/thread-scroll.json \
+    --at "mark:$mark" --tree "$ACTUAL/trail-$mark.json" >/dev/null
+done
+trail_top=$(jq '[.elements[] | select((.key // "") == "trail") | .rect[1]][0] // -1' "$ACTUAL/trail-top.json")
+trail_after=$(jq '[.elements[] | select((.key // "") == "trail") | .rect[1]][0] // -2' "$ACTUAL/trail-scrolled.json")
+viewport=$(jq '[.elements[] | select((.key // "") == "discussion-scroll") | .rect[1]][0] // -3' "$ACTUAL/trail-scrolled.json")
+row_top=$(jq '[.elements[] | select((.key // "") == "comment-901000") | .rect[1]][0] // -1' "$ACTUAL/trail-top.json")
+row_after=$(jq '[.elements[] | select((.key // "") == "comment-901000") | .rect[1]][0] // -2' "$ACTUAL/trail-scrolled.json")
+if [ "$trail_after" = "$viewport" ] && awk -v a="$row_top" -v b="$row_after" 'BEGIN { exit !(b < a) }'; then
+  pass "sticky trail (pinned at the viewport top y=$trail_after, rows $row_top -> $row_after)"
+else
+  bad "sticky trail (trail $trail_top -> $trail_after, viewport $viewport, rows $row_top -> $row_after)"
+fi
+
+step "thread keys (j [ ] u h l f Enter ⌫ Esc L Tab S, asserted after each)"
+# One render per mark in scripts/thread-keys.json, and the tree the app drew after each key. The
+# script is the proof that the keys are wired to the model, not just that the model has the
+# transitions: every assertion below reads the rendered tree, never the state a test set up.
+for mark in start next sibling sibling-back parent folded unfolded focus reroot pop focus2 esc \
+  links links-closed citation citation-closed summary-hidden summary-shown; do
+  "$BIN" --scene story --size 1180x760 --scale 2 --theme dark --script scripts/thread-keys.json \
+    --at "mark:$mark" --tree "$ACTUAL/keys-$mark.json" >/dev/null
+done
+
+# A mark's tree, read four ways: the rows in draw order, the selected row, the trail's segments,
+# and the rows focus mode dimmed.
+key_rows() { jq -r '[.elements[] | select((.key // "") | test("^comment-[0-9]+$"))
+    | {y: .rect[1], id: (.key | sub("comment-"; ""))}] | sort_by(.y) | map(.id) | join(",")' "$ACTUAL/keys-$1.json"; }
+key_sel() { jq -r '[.elements[] | select(.itemSelected == true) | .key] | join(",")' "$ACTUAL/keys-$1.json"; }
+key_trail() { jq -r '[.accessibility | .. | objects | select((.key // "") | startswith("trail-")) | .key] | join(",")' "$ACTUAL/keys-$1.json"; }
+key_dim() { jq -r '[.elements[] | select((.key // "") | test("^comment-[0-9]+$"))
+    | select(.opacity < 0.99) | .key] | sort | join(",")' "$ACTUAL/keys-$1.json"; }
+key_pill() { jq '[.elements[] | select((.key // "") == "discussion-focus")] | length' "$ACTUAL/keys-$1.json"; }
+
+check() { # mark got want what
+  if [ "$2" = "$3" ]; then
+    pass "keys $1: $4"
+  else
+    bad "keys $1: $4 (got '$2', want '$3')"
+  fi
+}
+
+check start "$(key_rows start)" "901,9010,90100,901000,90101,9011,902,903,9030,90300,904,905" "12 rows, depth first"
+check start "$(key_sel start)" "comment-901" "the cursor starts on the first row"
+check start "$(key_trail start)" "" "no trail at the top level"
+
+check next "$(key_sel next)" "comment-9010" "j moves to the next visible row"
+check next "$(key_trail next)" "trail-901,trail-9010" "the trail gains a segment"
+
+check sibling "$(key_sel sibling)" "comment-9011" "] moves to the next sibling thread"
+check sibling "$(key_trail sibling)" "trail-901,trail-9011" "the trail follows the cursor"
+
+check sibling-back "$(key_sel sibling-back)" "comment-9010" "[ moves back to the previous sibling"
+check sibling-back "$(key_trail sibling-back)" "trail-901,trail-9010" "and the trail follows it back"
+
+check parent "$(key_sel parent)" "comment-901" "u moves to the parent"
+check parent "$(key_trail parent)" "" "and the trail collapses back to one segment"
+
+check folded "$(key_rows folded)" "901,9010,9011,902,903,9030,90300,904,905" "h folds 9010's replies"
+hidden=$(jq -r '[.elements[] | select((.key // "") == "comment-hidden-9010") | .label][0] // ""' "$ACTUAL/keys-folded.json")
+check folded "$hidden" "3 replies hidden, Enter expands" "the fold counts the rows it hid"
+
+check unfolded "$(key_rows unfolded)" "901,9010,90100,901000,90101,9011,902,903,9030,90300,904,905" "l unfolds them again"
+
+check focus "$(key_pill focus)" "1" "f turns focus mode on"
+check focus "$(key_dim focus)" "comment-9011,comment-902,comment-903,comment-9030,comment-90300,comment-904,comment-905" "the rows off the chain dim"
+
+check reroot "$(key_rows reroot)" "901000,9010000,90100000,90100001,9010001,9010002" "Enter on continue thread re-roots"
+check reroot "$(key_trail reroot)" "trail-901,trail-9010,trail-90100,trail-901000" "and pushes a trail segment"
+check reroot "$(key_sel reroot)" "comment-901000" "the re-rooted comment is the cursor"
+
+check pop "$(key_rows pop)" "90100,901000,9010000,90100000,90100001,9010001,9010002" "Backspace pops one segment"
+check pop "$(key_trail pop)" "trail-901,trail-9010,trail-90100" "the trail is one segment shorter"
+
+check focus2 "$(key_pill focus2)" "1" "f again, deeper in the thread"
+check focus2 "$(key_dim focus2)" "comment-9010001,comment-9010002" "only the off-chain replies dim"
+
+check esc "$(key_pill esc)" "0" "Esc leaves focus mode"
+check esc "$(key_dim esc)" "" "and nothing is dimmed"
+check esc "$(key_rows esc)" "90100,901000,9010000,90100000,90100001,9010001,9010002" "the story stays open"
+
+chip=$(jq -r '[.elements[] | select((.key // "") == "links-chip") | .expanded][0]' "$ACTUAL/keys-links.json")
+links=$(jq '[.elements[] | select((.key // "") | test("^link-[0-9]+$"))] | length' "$ACTUAL/keys-links.json")
+check links "$chip/$links" "true/1" "L opens the chooser on the focused comment's links"
+chip=$(jq -r '[.elements[] | select((.key // "") == "links-chip") | .expanded][0]' "$ACTUAL/keys-links-closed.json")
+links=$(jq '[.elements[] | select((.key // "") | test("^link-[0-9]+$"))] | length' "$ACTUAL/keys-links-closed.json")
+check links-closed "$chip/$links" "false/0" "Esc closes it and keeps the discussion"
+
+# Tab selects a citation and Enter reads it; Esc comes back to the discussion, not to the feed.
+viewer=$(jq '[.elements[] | select((.key // "") == "source-viewer")] | length' "$ACTUAL/keys-citation.json")
+check citation "$viewer" "1" "Tab then Enter opens the cited comment"
+viewer=$(jq '[.elements[] | select((.key // "") == "source-viewer")] | length' "$ACTUAL/keys-citation-closed.json")
+check citation-closed "$viewer" "0" "Esc closes the viewer and keeps the discussion"
+
+# S collapses the summary card to its points and back, and the discussion does not move.
+hidden=$(jq -r '[.elements[] | select((.key // "") == "summary-provenance") | .text][0] // ""' "$ACTUAL/keys-summary-hidden.json")
+shown=$(jq -r '[.elements[] | select((.key // "") == "summary-provenance") | .text][0] // ""' "$ACTUAL/keys-summary-shown.json")
+check summary-hidden "$hidden" "3 points" "S collapses the summary card"
+check summary-shown "$shown" "3 of 3 sources" "S expands it again"
+
+# Every transition leaves the focused comment inside the discussion's viewport: the selection is
+# scrolled into view, so a key never moves the cursor somewhere the reader cannot see.
+for mark in start next sibling sibling-back parent folded unfolded focus reroot pop focus2 esc \
+  links links-closed citation-closed summary-hidden summary-shown; do
+  inside=$(jq -r '[.elements[] | select((.key // "") == "discussion-scroll") | .rect][0] as $vp
+    | [.elements[] | select(.itemSelected == true) | select((.key // "") | test("^comment-[0-9]+$")) | .rect][0] as $row
+    | if $vp == null or $row == null then "missing"
+      else "\($row[1] >= $vp[1] and $row[1] + $row[3] <= $vp[1] + $vp[3])" end' "$ACTUAL/keys-$mark.json")
+  check "$mark" "$inside" "true" "the focused comment is inside the viewport"
 done
 
 # The done state: numbered citation chips, one per cited source, each a control.

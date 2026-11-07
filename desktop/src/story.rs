@@ -1,4 +1,4 @@
-//! The story split's state: the article, the summary card's machine, and the flat discussion.
+//! The story split's state: the article, the summary card's machine, and the discussion tree.
 //!
 //! Every transition here is a pure function over owned fields, so a scene, the bridge's landing
 //! and the keyboard all move the same state. The summary machine is the desktop's own: the
@@ -6,14 +6,15 @@
 //! `Reader::request`/`poll_jobs`) is `pub(super)`, so the window drives the public
 //! `hn_lib::reader::Network` boundary itself and models the card's four states here.
 //!
-//! The discussion is a flat list of top-level comments. Threading, the ancestor trail, the depth
-//! cap and focus mode are WS-D's; nothing in this module knows about depth.
+//! The discussion is [`crate::comments::Thread`]: the tree, its fold set, the cursor, the
+//! re-root and focus mode. This module owns the story around it — the article, the card, the
+//! citation selection and the link chooser — and hands the thread's transitions straight through.
 
-use hn_lib::app::Comment;
 use hn_lib::reader::{Article, Discussion, Source as CapturedSource};
 use hn_lib::HNCLIItem;
 
 use crate::bridge::StoryFilled;
+use crate::comments::Thread;
 
 /// How many capture stages one story open runs: the article, the discussion, the summary.
 ///
@@ -88,35 +89,41 @@ pub enum ArticleState {
     Failed(String),
 }
 
-/// One top-level comment in the discussion pane: author, age, an excerpt of the text.
+/// One link the chooser offers: where it came from, and where it goes.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CommentRow {
-    pub id: i32,
-    pub author: String,
-    pub time_ago: String,
-    pub excerpt: String,
-    /// Replies under this comment. Shown as a count only — opening them is WS-D's.
-    pub replies: usize,
+pub struct LinkItem {
+    /// The comment's author, or "the post": the chooser says which surface the link is on.
+    pub source: String,
+    pub url: String,
 }
 
-/// How much of a comment the flat list shows before it stops.
-const EXCERPT_CHARS: usize = 320;
+/// `L`'s chooser: the links the post and the focused comment carry.
+///
+/// README.md's `L` is "choose a link from the post or selected comment", so the list is both,
+/// in that order, and the selection is a row index rather than a URL so two identical links stay
+/// two rows.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LinkChooser {
+    pub items: Vec<LinkItem>,
+    pub selected: usize,
+}
 
-impl CommentRow {
-    fn new(comment: &Comment) -> CommentRow {
-        let text = comment.text.trim();
-        let excerpt: String = text.chars().take(EXCERPT_CHARS).collect();
-        CommentRow {
-            id: comment.id,
-            author: comment.author.clone(),
-            time_ago: comment.time_ago.clone(),
-            excerpt: if excerpt.chars().count() < text.chars().count() {
-                format!("{excerpt}\u{2026}")
-            } else {
-                excerpt
-            },
-            replies: comment.child_ids.len(),
+impl LinkChooser {
+    /// The link `Enter` would open.
+    pub fn selected_url(&self) -> Option<&str> {
+        self.items.get(self.selected).map(|item| item.url.as_str())
+    }
+
+    fn step(&mut self, forward: bool) {
+        let count = self.items.len();
+        if count == 0 {
+            return;
         }
+        self.selected = if forward {
+            (self.selected + 1) % count
+        } else {
+            (self.selected + count - 1) % count
+        };
     }
 }
 
@@ -125,7 +132,8 @@ pub struct Story {
     pub story: HNCLIItem,
     pub article: ArticleState,
     pub summary: SummaryState,
-    pub discussion: Vec<CommentRow>,
+    /// The discussion: the tree, the fold set, the cursor, the re-root and focus mode.
+    pub thread: Thread,
     /// The captured comment sources, for the citation viewer's excerpt and extra text.
     pub sources: Vec<CapturedSource>,
     /// `S` folds the summary card; the discussion gets the height.
@@ -136,6 +144,12 @@ pub struct Story {
     pub citation_focus: bool,
     /// The source viewer's comment id, when it is open.
     pub source: Option<i32>,
+    /// `L`'s chooser, when it is open.
+    pub links: Option<LinkChooser>,
+    /// A comment the next frame must scroll into view again. A sticky element that leaves the
+    /// tree in the same commit aborts the reveal asked for that commit, so the trail's last
+    /// segment asks once more, when the layout no longer holds it.
+    pub pending_reveal: Option<i32>,
 }
 
 impl Story {
@@ -152,12 +166,14 @@ impl Story {
             } else {
                 SummaryState::Unconfigured
             },
-            discussion: Vec::new(),
+            thread: Thread::empty(),
             sources: Vec::new(),
             summary_open: true,
             citation: 0,
             citation_focus: false,
             source: None,
+            links: None,
+            pending_reveal: None,
         }
     }
 
@@ -178,7 +194,7 @@ impl Story {
             },
             Err(message) => ArticleState::Failed(message),
         };
-        self.discussion = filled.comments.iter().map(CommentRow::new).collect();
+        self.thread = Thread::from_comments(&filled.comments);
         self.sources = filled.sources;
         let previous = self.summary.readable().cloned().map(Box::new);
         self.summary = match filled.summary {
@@ -274,6 +290,65 @@ impl Story {
         self.sources.iter().find(|source| source.id == id)
     }
 
+    /// `L`: offer the links the post and the focused comment carry. Returns whether there is
+    /// anything to choose from — an empty chooser would be a dialog with nothing in it.
+    pub fn open_links(&mut self) -> bool {
+        let mut items: Vec<LinkItem> = self
+            .story
+            .links
+            .iter()
+            .map(|url| LinkItem {
+                source: "the post".to_string(),
+                url: url.clone(),
+            })
+            .collect();
+        if let Some(node) = self.thread.cursor().and_then(|id| self.thread.node(id)) {
+            items.extend(node.links.iter().map(|url| LinkItem {
+                source: node.author.clone(),
+                url: url.clone(),
+            }));
+        }
+        if items.is_empty() {
+            return false;
+        }
+        self.links = Some(LinkChooser { items, selected: 0 });
+        true
+    }
+
+    /// `j` in the chooser.
+    pub fn next_link(&mut self) -> bool {
+        match &mut self.links {
+            Some(chooser) => {
+                chooser.step(true);
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// `k` in the chooser.
+    pub fn prev_link(&mut self) -> bool {
+        match &mut self.links {
+            Some(chooser) => {
+                chooser.step(false);
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// `Esc` in the chooser: close it and keep the discussion where it was.
+    pub fn close_links(&mut self) -> bool {
+        self.links.take().is_some()
+    }
+
+    /// `Enter` in the chooser: the URL to open, and the chooser closes behind it.
+    pub fn take_link(&mut self) -> Option<String> {
+        let url = self.links.as_ref()?.selected_url()?.to_string();
+        self.links = None;
+        Some(url)
+    }
+
     /// `r`: ask for the aggregate again, keeping what is already readable on screen.
     pub fn retry(&mut self, configured: bool) {
         self.article = ArticleState::Loading;
@@ -322,7 +397,7 @@ mod tests {
                 text: "# Libghostty 1.0\n\nBody.".to_string(),
             }),
             article_partial: false,
-            comments: fixtures::comments(),
+            comments: fixtures::thread(),
             sources: fixtures::sources(),
             summary,
         }
@@ -355,7 +430,7 @@ mod tests {
                 of: STAGES
             }
         );
-        assert!(story.discussion.is_empty());
+        assert!(story.thread.is_empty());
         assert!(story.summary_open, "the card is pinned open on open");
         assert_eq!(story.citations(), Vec::<i32>::new());
     }
@@ -372,9 +447,9 @@ mod tests {
         let mut story = story();
         assert!(story.land(filled(Ok(discussion()))));
         assert!(matches!(story.article, ArticleState::Ready { .. }));
-        assert_eq!(story.discussion.len(), fixtures::comments().len());
-        assert_eq!(story.discussion[0].author, "tptacek");
-        assert_eq!(story.discussion[0].replies, 2);
+        assert_eq!(story.thread.len(), fixtures::thread().len());
+        assert_eq!(story.thread.node(901).unwrap().author, "tptacek");
+        assert_eq!(story.thread.children_of(901), vec![9010, 9011]);
         let SummaryState::Done(summary) = &story.summary else {
             panic!("a landed summary is done");
         };
@@ -390,7 +465,7 @@ mod tests {
         other.story_id = 99;
         assert!(!story.land(other));
         assert_eq!(story.article, ArticleState::Loading);
-        assert!(story.discussion.is_empty());
+        assert!(story.thread.is_empty());
     }
 
     #[test]
@@ -494,11 +569,46 @@ mod tests {
     }
 
     #[test]
-    fn a_long_comment_is_excerpted_with_an_ellipsis() {
-        let mut comment = fixtures::comments()[0].clone();
-        comment.text = "x".repeat(EXCERPT_CHARS + 10);
-        let row = CommentRow::new(&comment);
-        assert_eq!(row.excerpt.chars().count(), EXCERPT_CHARS + 1);
-        assert!(row.excerpt.ends_with('\u{2026}'));
+    fn the_link_chooser_offers_the_post_and_the_focused_comment() {
+        let mut story = story();
+        story.land(filled(Ok(discussion())));
+        // The fixture post is a link post, so its own links are empty; the focused comment
+        // (901) carries none either, so there is nothing to choose from.
+        assert!(!story.open_links());
+        assert!(story.links.is_none());
+        // 905 carries the design-notes link.
+        story.thread.select(905);
+        assert!(story.open_links());
+        let chooser = story.links.as_ref().unwrap();
+        assert_eq!(chooser.items.len(), 1);
+        assert_eq!(chooser.items[0].source, "dang");
+        assert_eq!(
+            chooser.selected_url(),
+            Some("https://mitchellh.com/writing/libghostty-is-coming")
+        );
+        // Enter takes the URL and closes the chooser behind it.
+        assert_eq!(
+            story.take_link().as_deref(),
+            Some("https://mitchellh.com/writing/libghostty-is-coming")
+        );
+        assert!(story.links.is_none());
+        assert!(story.take_link().is_none(), "a closed chooser opens nothing");
+    }
+
+    #[test]
+    fn the_chooser_wraps_and_esc_closes_it() {
+        let mut story = story();
+        story.land(filled(Ok(discussion())));
+        // 90100000 is behind the depth cap, so the tree has to be re-rooted at its parent.
+        story.thread.reroot(901000);
+        story.thread.select(90100000);
+        assert!(story.open_links());
+        assert_eq!(story.links.as_ref().unwrap().items.len(), 1);
+        assert!(story.next_link());
+        assert_eq!(story.links.as_ref().unwrap().selected, 0, "one row wraps to itself");
+        assert!(story.prev_link());
+        assert!(story.close_links());
+        assert!(!story.close_links(), "closing twice is not a transition");
+        assert!(!story.next_link(), "a closed chooser does not move");
     }
 }

@@ -205,20 +205,62 @@ until it asks for a field that did not exist yet.";
 
 /// The top-level comments of [`STORY_ID`], in HN's own order.
 pub fn comments() -> Vec<Comment> {
-    COMMENTS
+    THREAD
         .iter()
-        .map(|(id, author, age, text, replies)| Comment {
-            id: *id,
-            author: (*author).to_string(),
-            text: (*text).to_string(),
-            links: Vec::new(),
-            time_ago: (*age).to_string(),
-            state: CommentState::Collapsed,
-            depth: 0,
-            deleted: false,
-            child_ids: (0..*replies).map(|n| id * 10 + n).collect(),
-        })
+        .filter(|(_, parent, ..)| parent.is_none())
+        .map(|row| comment(row, 0))
         .collect()
+}
+
+/// The replies to `ids`, one level down: what `fetch_comment_children` answers with.
+pub fn replies(ids: &[i32]) -> Vec<Comment> {
+    THREAD
+        .iter()
+        .filter(|(_, parent, ..)| parent.is_some_and(|parent| ids.contains(&parent)))
+        .map(|row| comment(row, depth_of(row.0)))
+        .collect()
+}
+
+/// The whole discussion of [`STORY_ID`]: the top-level comments and every reply the fixture
+/// holds, level by level, as the desktop's tree walk collects them.
+pub fn thread() -> Vec<Comment> {
+    let mut all = comments();
+    let mut frontier: Vec<i32> = all.iter().map(|c| c.id).collect();
+    while !frontier.is_empty() {
+        let children = replies(&frontier);
+        frontier = children.iter().map(|c| c.id).collect();
+        all.extend(children);
+    }
+    all
+}
+
+fn comment(row: &(i32, Option<i32>, &str, &str, &str, &[&str]), depth: usize) -> Comment {
+    let (id, _, author, age, text, links) = *row;
+    Comment {
+        id,
+        author: author.to_string(),
+        text: text.to_string(),
+        links: links.iter().map(|link| (*link).to_string()).collect(),
+        time_ago: age.to_string(),
+        state: CommentState::Collapsed,
+        depth,
+        deleted: false,
+        child_ids: THREAD
+            .iter()
+            .filter(|(_, parent, ..)| *parent == Some(id))
+            .map(|(child, ..)| *child)
+            .collect(),
+    }
+}
+
+fn depth_of(id: i32) -> usize {
+    let mut depth = 0;
+    let mut at = id;
+    while let Some((_, Some(parent), ..)) = THREAD.iter().find(|(row, ..)| *row == at) {
+        depth += 1;
+        at = *parent;
+    }
+    depth
 }
 
 /// The same comments as the summary's captured sources: the excerpt the model saw, and the
@@ -265,47 +307,164 @@ comptime ergonomics inside the core."
     }
 }
 
-/// `(id, author, age, text, replies)` for one page of top-level comments.
-const COMMENTS: [(i32, &str, &str, &str, i32); 5] = [
+/// One row of [`THREAD`]: `(id, parent, author, age, text, links)`.
+type ThreadRow = (i32, Option<i32>, &'static str, &'static str, &'static str, &'static [&'static str]);
+
+/// The story's discussion, in HN's own order: the five top-level comments, then their replies
+/// level by level. The tree is deep enough to reach the depth cap (901000 draws at depth 3 with
+/// replies) and to give the trail four segments.
+const THREAD: [ThreadRow; 17] = [
     (
         901,
+        None,
         "tptacek",
         "2 hours ago",
         "The interesting part is what they left out. No windowing, no font stack, no config \
 language — those all stay in the app. That is the whole reason this can be embedded.",
-        2,
+        &[],
     ),
     (
         902,
+        None,
         "kstrauser",
         "1 hour ago",
         "I have wanted this for years. Every terminal library I have tried eventually grows its \
 own opinion about how a window should look.",
-        0,
+        &[],
     ),
     (
         903,
+        None,
         "jmillikin",
         "1 hour ago",
         "A narrow ABI is great until you need one more callback. Then you version the struct and \
 every embedder has to care.",
-        1,
+        &[],
     ),
     (
         904,
+        None,
         "simonw",
         "58 minutes ago",
         "Does the host get to choose the font, or does the library still own the cell grid? That \
 is the line I keep tripping over when I try to imagine embedding this in a browser.",
-        0,
+        &[],
     ),
     (
         905,
+        None,
         "dang",
         "52 minutes ago",
         "Related from 2024: the original libghostty design notes. The section on input is the one \
 worth reading first.",
-        0,
+        &["https://mitchellh.com/writing/libghostty-is-coming"],
+    ),
+    (
+        9010,
+        Some(901),
+        "kstrauser",
+        "1 hour ago",
+        "The windowing split is the part I keep coming back to. Every terminal library I have \
+tried eventually grows its own opinion about how a window should look, and then you are \
+fighting it instead of using it.",
+        &[],
+    ),
+    (
+        90100,
+        Some(9010),
+        "simonw",
+        "55 minutes ago",
+        "Does the host get to choose the font, or does the library still own the cell grid? That \
+is the line I keep tripping over when I try to imagine embedding this in a browser.",
+        &[],
+    ),
+    (
+        901000,
+        Some(90100),
+        "dang",
+        "50 minutes ago",
+        "The library owns the grid; the host owns the surface. Fonts are the host's, which is why \
+the cell metrics come in through the surface rather than through the config.",
+        &[],
+    ),
+    (
+        9010000,
+        Some(901000),
+        "tptacek",
+        "44 minutes ago",
+        "That is the right line, but it means the host has to do shaping and fallback, and that is \
+where most of the bugs in a terminal actually live.",
+        &[],
+    ),
+    (
+        90100000,
+        Some(9010000),
+        "kstrauser",
+        "40 minutes ago",
+        "Shaping is the part I would happily hand to HarfBuzz and never think about again.",
+        &["https://harfbuzz.github.io/"],
+    ),
+    (
+        90100001,
+        Some(9010000),
+        "simonw",
+        "38 minutes ago",
+        "Until you need a fallback chain for emoji and the shaping library disagrees with the \
+system about which font wins.",
+        &[],
+    ),
+    (
+        9010001,
+        Some(901000),
+        "jmillikin",
+        "42 minutes ago",
+        "The versioning story is the part I would want written down before anyone embeds this. \
+Struct size is fine until someone reorders a field.",
+        &[],
+    ),
+    (
+        9010002,
+        Some(901000),
+        "dang",
+        "36 minutes ago",
+        "Versioning by struct size is the one thing here I would copy from Vulkan without \
+hesitation.",
+        &[],
+    ),
+    (
+        90101,
+        Some(9010),
+        "dang",
+        "48 minutes ago",
+        "The design notes are worth reading for the input section alone. An event queue instead \
+of callbacks is the whole design in one sentence.",
+        &[],
+    ),
+    (
+        9011,
+        Some(901),
+        "jmillikin",
+        "1 hour ago",
+        "The interesting question is what happens to the app's own escape-sequence handling once \
+the library owns the parser. Two parsers in one process is a bad time.",
+        &[],
+    ),
+    (
+        9030,
+        Some(903),
+        "dang",
+        "50 minutes ago",
+        "There is only one parser; the app talks to the surface, not to the wire.",
+        &[],
+    ),
+    (
+        90300,
+        Some(9030),
+        "tptacek",
+        "45 minutes ago",
+        "Which is also why the input queue is an event queue and not callbacks. Callbacks would \
+put the app back on the parser's stack.",
+        &[],
     ),
 ];
 
@@ -354,5 +513,41 @@ mod tests {
     fn saved_ids_are_newest_first() {
         let saved = saved_ids();
         assert_eq!(saved, vec![11, 6, 2, 1]);
+    }
+
+    #[test]
+    fn the_thread_is_deep_enough_to_reach_the_cap() {
+        let thread = thread();
+        assert_eq!(thread.len(), 17, "five top-level comments and twelve replies");
+        assert_eq!(comments().len(), 5, "the capture's top level is unchanged");
+        assert_eq!(replies(&[901]).len(), 2);
+        // 901000 draws at depth 3, which is the cap: its replies are behind `continue thread`.
+        assert_eq!(depth_of(901000), 3);
+        assert_eq!(depth_of(90100000), 5);
+        // Every reply's parent is in the capture, so no row is orphaned.
+        for comment in &thread {
+            if let Some(parent) = THREAD
+                .iter()
+                .find(|(id, ..)| *id == comment.id)
+                .and_then(|(_, parent, ..)| *parent)
+            {
+                assert!(
+                    thread.iter().any(|other| other.id == parent),
+                    "{} has no parent row",
+                    comment.id
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn a_comment_carries_the_links_the_chooser_offers() {
+        let thread = thread();
+        let linked: Vec<i32> = thread
+            .iter()
+            .filter(|comment| !comment.links.is_empty())
+            .map(|comment| comment.id)
+            .collect();
+        assert_eq!(linked, vec![905, 90100000]);
     }
 }
