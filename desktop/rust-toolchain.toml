@@ -1,0 +1,4 @@
+# Rune's own workspace pins 1.99.1 (edition 2024, resolver 3). The repo root pins 1.88 for the
+# `hn` TUI; this file keeps a rustup-managed build of the desktop app on the toolchain Rune needs.
+[toolchain]
+channel = "1.99.1"

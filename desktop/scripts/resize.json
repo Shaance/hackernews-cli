@@ -1,0 +1,7 @@
+[
+  { "t": 0, "type": "key", "name": "Tab" },
+  { "t": 0.05, "type": "key", "name": "Tab" },
+  { "t": 0.1, "type": "mark", "name": "wide" },
+  { "t": 0.2, "type": "resize", "dw": -500, "dh": 0, "dur": 0.4 },
+  { "t": 0.9, "type": "mark", "name": "narrow" }
+]
