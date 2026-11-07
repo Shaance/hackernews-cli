@@ -344,6 +344,11 @@ fn citation_chip(id: i32, number: usize, selected: bool, t: tok::Theme, accent: 
         .fill(if selected { accent } else { t.control_off })
         .focusable(true)
         .focus_selected(selected)
+        .on_press(move |s: &mut App| {
+            if let Some(story) = s.story_mut() {
+                story.select_citation(number - 1);
+            }
+        })
         .child(
             text(format!("{number}"))
                 .font(type_::LABEL)
@@ -447,6 +452,7 @@ fn failure(message: &str, auth: bool, t: tok::Theme, accent: Color) -> El {
                         .radius(4.0)
                         .fill(accent)
                         .focusable(true)
+                        .on_press(|s: &mut App| s.retry_summary())
                         .child(text("Retry").font(type_::LABEL).color(t.bg)),
                 )
                 .child(
@@ -460,6 +466,7 @@ fn failure(message: &str, auth: bool, t: tok::Theme, accent: Color) -> El {
                         .radius(4.0)
                         .fill(t.control_off)
                         .focusable(true)
+                        .on_press(|s: &mut App| s.open_summary_settings())
                         .child(
                             text(if auth { "Add API key" } else { "Change provider" })
                                 .font(type_::LABEL)
@@ -497,6 +504,7 @@ fn unconfigured(t: tok::Theme, accent: Color) -> El {
                 .radius(4.0)
                 .fill(accent)
                 .focusable(true)
+                .on_press(|s: &mut App| s.open_summary_settings())
                 .child(text("Open settings").font(type_::LABEL).color(t.bg)),
         )
 }

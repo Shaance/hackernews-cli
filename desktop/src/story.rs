@@ -210,6 +210,25 @@ impl Story {
         true
     }
 
+    /// What the toast says when a summary lands, if anything. A success is worth confirming
+    /// because the card is in the inspector and may be folded; a failure is worth a toast
+    /// because the card may be scrolled away.
+    pub fn summary_notice(&self) -> Option<String> {
+        match &self.summary {
+            SummaryState::Done(summary) => Some(format!(
+                "Summary ready \u{00b7} {} of {} sources",
+                summary.captured, summary.of
+            )),
+            SummaryState::Failed { auth: true, .. } => {
+                Some("Summary failed \u{00b7} re-enter your key".to_string())
+            }
+            SummaryState::Failed { .. } => {
+                Some("Summary failed \u{00b7} press r to retry".to_string())
+            }
+            SummaryState::Generating { .. } | SummaryState::Unconfigured => None,
+        }
+    }
+
     /// `S`: fold or unfold the summary card.
     pub fn toggle_summary(&mut self) {
         self.summary_open = !self.summary_open;
@@ -265,6 +284,18 @@ impl Story {
             // The viewer follows the selection, so Tab walks the sources.
             self.source = Some(id);
         }
+    }
+
+    /// A press on citation chip `index`: select it and read it, which is what `Tab` then
+    /// `Enter` does from the keyboard.
+    pub fn select_citation(&mut self, index: usize) -> bool {
+        if index >= self.citations().len() {
+            return false;
+        }
+        self.citation = index;
+        self.citation_focus = true;
+        self.summary_open = true;
+        self.open_source()
     }
 
     /// `Enter` on a selected citation: open the source viewer. Returns whether it opened.
