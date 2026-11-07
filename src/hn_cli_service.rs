@@ -110,6 +110,30 @@ pub trait HackerNewsCliService {
     ///
     /// HashSet of valid story type strings
     fn get_valid_story_types() -> HashSet<&'static str>;
+
+    /// Fetch items by id, preserving order and position.
+    ///
+    /// A failed item is `None` so the caller can render a placeholder row; the
+    /// result never shrinks silently.
+    async fn fetch_items_by_ids(&self, ids: &[i32]) -> Vec<Option<HNCLIItem>>;
+
+    /// Fetch the ranked window `[from_rank, from_rank + count)` against a stable
+    /// id snapshot, composing [`Self::fetch_items_by_ids`].
+    ///
+    /// Ranks past the end of the snapshot are not returned: the caller renders
+    /// its "no more stories" footer instead of placeholder rows.
+    async fn fetch_pages_against(
+        &self,
+        id_snapshot: &[i32],
+        from_rank: usize,
+        count: usize,
+    ) -> Vec<Option<HNCLIItem>> {
+        let end = from_rank.saturating_add(count).min(id_snapshot.len());
+        if from_rank >= end {
+            return Vec::new();
+        }
+        self.fetch_items_by_ids(&id_snapshot[from_rank..end]).await
+    }
 }
 
 /// Implementation of the HackerNews CLI service
@@ -214,6 +238,15 @@ impl<C: HackerNewsClient + Sync> HackerNewsCliService for HackerNewsCliServiceIm
 
     fn get_valid_story_types() -> HashSet<&'static str> {
         HashSet::from(["best", "new", "top"])
+    }
+
+    async fn fetch_items_by_ids(&self, ids: &[i32]) -> Vec<Option<HNCLIItem>> {
+        self.hn_client
+            .get_items(ids)
+            .await
+            .into_iter()
+            .map(|item| item.ok().map(|item| self.api_item_to_hn_cli_item(item)))
+            .collect()
     }
 }
 
