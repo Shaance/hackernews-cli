@@ -853,6 +853,7 @@
                                                                 "children": [
                                                                   {
                                                                     "actions": [
+                                                                      "click",
                                                                       "focus"
                                                                     ],
                                                                     "bounds": [
@@ -879,6 +880,7 @@
                                                                   },
                                                                   {
                                                                     "actions": [
+                                                                      "click",
                                                                       "focus"
                                                                     ],
                                                                     "bounds": [
@@ -950,6 +952,7 @@
                                                                 "children": [
                                                                   {
                                                                     "actions": [
+                                                                      "click",
                                                                       "focus"
                                                                     ],
                                                                     "bounds": [
@@ -1021,6 +1024,7 @@
                                                                 "children": [
                                                                   {
                                                                     "actions": [
+                                                                      "click",
                                                                       "focus"
                                                                     ],
                                                                     "bounds": [
@@ -1047,6 +1051,7 @@
                                                                   },
                                                                   {
                                                                     "actions": [
+                                                                      "click",
                                                                       "focus"
                                                                     ],
                                                                     "bounds": [

@@ -10,6 +10,7 @@
 //! `MORPH`; `Esc` closes it and the feed is exactly where it was.
 
 use std::cell::Cell;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -28,8 +29,11 @@ use rune_kit::{Keybind, Kit, PaneState, SegmentedControl, SplitView, Toast, Toas
 use crate::bookmarks::SavedView;
 use crate::bridge::{Bridge, Request, StoryRequest};
 use crate::feed::{FeedModel, Fill};
-use crate::keys::{self, StoryKey};
+use crate::help;
+use crate::keys::{self, StoryKey, WindowKey};
+use crate::layout::Layout;
 use crate::service::Source;
+use crate::settings::Settings;
 use crate::story::{Story, SummaryState, STAGES};
 use crate::story_view;
 
@@ -44,6 +48,9 @@ const TOAST_SECONDS: f64 = 2.4;
 /// How long a request may stay in flight before the feed says so and offers a retry. Without
 /// it a dropped answer leaves the feed loading forever, and every page turn is refused.
 const LOAD_TIMEOUT: f64 = 10.0;
+/// How often the window's own state may be written. A grip drag moves the width every frame,
+/// and a file per frame is not worth it.
+const LAYOUT_SECONDS: f64 = 2.0;
 /// The inspector's width range: 46% of the 1180 pt default window, and enough either side for
 /// the summary card to stay readable.
 const INSPECTOR_WIDTH: f32 = 543.0;
@@ -85,6 +92,23 @@ pub struct App {
     inspector: PaneState,
     /// The reader's summary settings, loaded once at launch and never logged.
     config: Config,
+    /// The summary settings dialog, when it is open. `None` is closed.
+    settings: Option<Settings>,
+    /// The keyboard sheet, when it is open.
+    pub help: bool,
+    /// What the window remembers between runs, and where it writes it. A headless run has
+    /// neither: a golden must not depend on the machine's window size.
+    layout: Layout,
+    layout_path: Option<PathBuf>,
+    /// The layout as last written, so `poll` writes only when something moved.
+    layout_written: Layout,
+    /// When the layout was last written, on the frame clock, for [`LAYOUT_SECONDS`].
+    layout_saved_at: f64,
+    /// The window size the last commit measured. Written by `view`, read by `poll`.
+    window_size: Cell<Option<(f32, f32)>>,
+    /// Whether the remembered window size has been asked for. `AppSpec::size` is compile-time,
+    /// so the restore is one `Tx::resize_window_instant` on the first frame.
+    restored: bool,
     toast: Option<Notice>,
     /// `HN_REDUCED_MOTION=1`, the same override the terminal app honours.
     reduced: bool,
@@ -253,6 +277,117 @@ impl App {
     pub(crate) fn story_mut(&mut self) -> Option<&mut Story> {
         self.story.as_mut()
     }
+
+    /// The settings dialog's draft, for its own press handlers.
+    pub(crate) fn settings_mut(&mut self) -> Option<&mut Settings> {
+        self.settings.as_mut()
+    }
+
+    /// Whether the open story's summary failed because the provider rejected the key. That is
+    /// the one failure a retry cannot fix, so `M` opens the dialog asking for a new key.
+    fn auth_failed(&self) -> bool {
+        self.story.as_ref().is_some_and(|story| {
+            matches!(&story.summary, SummaryState::Failed { auth: true, .. })
+        })
+    }
+
+    /// The summary card's settings button, and `M`: the dialog, asking for a key when the
+    /// provider rejected the last one.
+    pub(crate) fn open_summary_settings(&mut self) {
+        self.open_settings(self.auth_failed());
+    }
+
+    /// The summary card's Retry: ask for the story again with the current config.
+    pub(crate) fn retry_summary(&mut self) {
+        let configured = self.configured();
+        if let Some(story) = self.story.as_mut() {
+            let item = story.story.clone();
+            story.retry(configured);
+            self.request_story(item);
+        }
+    }
+
+    /// `M` / `⌘,`: the summary settings dialog, on a copy of the reader's config.
+    fn open_settings(&mut self, reenter: bool) {
+        let path = if self.headless {
+            None
+        } else {
+            Config::path().ok()
+        };
+        self.settings = Some(Settings::open(&self.config, path, reenter));
+    }
+
+    /// `Cancel`, `Esc` or the close button: the draft is dropped and nothing is written.
+    pub(crate) fn close_settings(&mut self) {
+        self.settings = None;
+    }
+
+    /// `Apply`, and `Refresh sources & summary`. A save failure keeps the dialog open with the
+    /// message; a success closes it, adopts the config and says so.
+    pub(crate) fn apply_settings(&mut self, refresh: bool) {
+        let Some(settings) = self.settings.as_mut() else {
+            return;
+        };
+        let Ok(config) = settings.apply() else {
+            return;
+        };
+        self.config = config;
+        self.settings = None;
+        self.toast = Some(Notice {
+            message: "Settings saved".to_string(),
+            until: f64::INFINITY,
+        });
+        if refresh {
+            let configured = self.configured();
+            if let Some(story) = self.story.as_mut() {
+                let item = story.story.clone();
+                story.retry(configured);
+                self.request_story(item);
+            } else {
+                self.refresh();
+            }
+        }
+    }
+
+    /// Put the reader back where they left off: the tab, the page, the selected story and the
+    /// inspector's width. A headless run has no layout, so this is a no-op there.
+    fn restore(&mut self) {
+        if let Some(tab) = self.layout.tab {
+            self.feed.tab = tab;
+        }
+        if let Some(page) = self.layout.page.filter(|page| *page > 1) {
+            self.feed.display_cursor = (page as usize - 1) * self.feed.page_size as usize;
+        }
+        self.feed.pending_anchor = self.layout.selected;
+        if let Some(width) = self.layout.inspector {
+            self.inspector = PaneState::new(width.clamp(INSPECTOR_MIN, INSPECTOR_MAX))
+                .range(INSPECTOR_MIN, INSPECTOR_MAX)
+                .collapsed();
+        }
+    }
+
+    /// What the window would write now: its size, the inspector's width, and where the feed is.
+    fn snapshot(&self) -> Layout {
+        Layout {
+            window: self.window_size.get().or(self.layout.window),
+            inspector: Some(self.inspector.width()),
+            tab: Some(self.feed.tab),
+            page: Some(self.feed.stepper()),
+            selected: self.feed.selected_id(),
+        }
+    }
+
+    /// Write `layout`, remembering it so an unchanged window writes nothing.
+    fn write_layout(&mut self, layout: Layout, now: f64) {
+        let Some(path) = self.layout_path.as_ref() else {
+            return;
+        };
+        if layout.save(path).is_ok() {
+            self.layout = layout.clone();
+            self.layout_written = layout;
+            self.layout_saved_at = now;
+        }
+    }
 }
 
 fn init() -> App {
@@ -285,6 +420,13 @@ fn init() -> App {
             .and_then(|path| reader::load_config(&path).ok())
             .unwrap_or_default()
     };
+    // The window's own state, read once. A headless run has none: a golden must not depend on
+    // the machine's window size, and a golden run must not overwrite the reader's.
+    let layout_path = if headless { None } else { Layout::path() };
+    let layout = layout_path
+        .as_deref()
+        .map(Layout::load)
+        .unwrap_or_default();
     App {
         feed: FeedModel::new(),
         saved,
@@ -299,6 +441,14 @@ fn init() -> App {
             .range(INSPECTOR_MIN, INSPECTOR_MAX)
             .collapsed(),
         config,
+        settings: None,
+        help: false,
+        layout_written: layout.clone(),
+        layout,
+        layout_path,
+        layout_saved_at: 0.0,
+        window_size: Cell::new(None),
+        restored: false,
         toast: None,
         reduced: std::env::var("HN_REDUCED_MOTION").is_ok_and(|value| value == "1"),
         headless,
@@ -308,6 +458,9 @@ fn init() -> App {
 /// One aggregate fill request, then the waker that brings its answer back to `poll`.
 fn setup(s: &mut App, waker: Waker) {
     s.bridge.set_waker(waker);
+    // The remembered tab and page decide what the first request asks for, so they land before
+    // it. The measured grid re-requests if the window is not the default size.
+    s.restore();
     s.request(DEFAULT_GRID, Ranking::Fresh);
 }
 
@@ -318,8 +471,20 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
     }
     if let Some(filled) = s.bridge.take_story() {
         // A landing for a story that is no longer open is dropped by `Story::land`.
-        if let Some(open) = &mut s.story {
-            changed |= open.land(filled);
+        let landed = s.story.as_mut().map(|open| {
+            let landed = open.land(filled);
+            (landed, landed.then(|| open.summary_notice()).flatten())
+        });
+        if let Some((landed, notice)) = landed {
+            changed |= landed;
+            // The card is in the inspector and may be folded or scrolled away, so the summary's
+            // outcome is confirmed where the reader is looking.
+            if let Some(message) = notice {
+                s.toast = Some(Notice {
+                    message,
+                    until: f64::INFINITY,
+                });
+            }
         }
     }
     // A reveal the trail's removal aborted, asked again now that the layout has no trail.
@@ -348,6 +513,27 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
     } else {
         s.loading_since = None;
     }
+    // The window size the reader left, asked for once. `AppSpec::size` is compile-time, so a
+    // restore is a resize; a headless run has no window and no remembered size.
+    if !s.headless && !s.restored {
+        s.restored = true;
+        if let Some(size) = s.layout.window {
+            tx.resize_window_instant(size);
+            changed = true;
+        }
+    }
+    // The window's own state, written when it moves and at most every [`LAYOUT_SECONDS`].
+    if !s.headless {
+        let snapshot = s.snapshot();
+        if snapshot != s.layout_written {
+            let waited = now - s.layout_saved_at;
+            if waited >= LAYOUT_SECONDS {
+                s.write_layout(snapshot, now);
+            } else {
+                tx.wake_after(Duration::from_secs_f64(LAYOUT_SECONDS - waited));
+            }
+        }
+    }
     if let Some(notice) = &mut s.toast {
         if notice.until.is_infinite() {
             notice.until = now + TOAST_SECONDS;
@@ -364,6 +550,36 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
 }
 
 fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
+    // The shell's chords work everywhere, including over a dialog, as a menu item's would.
+    match keys::window_key(ev) {
+        WindowKey::Settings => {
+            s.open_summary_settings();
+            return true;
+        }
+        WindowKey::Help => {
+            s.help = !s.help;
+            return true;
+        }
+        WindowKey::ToggleSplit => {
+            if s.story.is_some() {
+                s.inspector.set_open(!s.inspector.is_open());
+            }
+            return true;
+        }
+        WindowKey::None => {}
+    }
+    // A dialog owns the keys while it is open: the feed behind it must not move. `Esc` never
+    // reaches here — the runtime dismisses the modal first — and `?` closes the sheet.
+    if s.settings.is_some() {
+        return false;
+    }
+    if s.help {
+        if keys::story_action(ev) == StoryAction::ToggleHelp {
+            s.help = false;
+            return true;
+        }
+        return false;
+    }
     if s.story.is_some() {
         return on_story_key(s, ev, tx);
     }
@@ -372,6 +588,11 @@ fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
     let action = match keys::story_action(ev) {
         StoryAction::None => return false,
         StoryAction::Quit => {
+            // The window's own state is written on the way out, whatever the throttle says.
+            if !s.headless {
+                let snapshot = s.snapshot();
+                s.write_layout(snapshot, rune::scene_clock().now);
+            }
             tx.quit();
             return true;
         }
@@ -398,8 +619,10 @@ fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             s.open_selected();
             return true;
         }
-        // Help is WS-E; the window has nothing for it yet, so it does not swallow the key.
-        StoryAction::ToggleHelp => return false,
+        StoryAction::ToggleHelp => {
+            s.help = true;
+            return true;
+        }
     };
     s.apply(action);
     if let Some(id) = s.feed.selected_id() {
@@ -415,7 +638,6 @@ fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
 /// it is open, then the source viewer, then the discussion, and only then the feed.
 fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
     let key = keys::story_key(ev);
-    let configured = s.configured();
     let Some(story) = s.story.as_mut() else {
         return false;
     };
@@ -511,13 +733,13 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             true
         }
         StoryKey::Refresh => {
-            let item = story.story.clone();
-            story.retry(configured);
-            s.request_story(item);
+            s.retry_summary();
             true
         }
-        // The settings dialog is WS-E. The key is not swallowed, so it can land there.
-        StoryKey::Settings => false,
+        StoryKey::Settings => {
+            s.open_summary_settings();
+            true
+        }
         StoryKey::Links => story.open_links(),
         StoryKey::ToggleSaved => {
             let id = story.id();
@@ -616,11 +838,17 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
     let t = tok::theme(dark);
     let k = Kit::neutral(dark);
     let accent = tok::accent(3, dark);
+    // DESIGN.md's focus affordance is amber, not AppKit's blue: the view-wide default, so every
+    // control that does not set its own ring gets the same one.
+    cx.focus_ring(2.0, 1.0, accent);
 
-    // The window root, not the shell's inset card: the breakpoint is a window width.
-    let wide = cx
-        .layout_with("window", |rect| rect[2] >= BREAKPOINT)
-        .unwrap_or(false);
+    // The window root, not the shell's inset card: the breakpoint is a window width. The rect
+    // is also the size `poll` remembers, so the reader's resize survives the next launch.
+    let window = cx.layout_with("window", |rect| rect);
+    if let Some(rect) = window {
+        s.window_size.set(Some((rect[2], rect[3])));
+    }
+    let wide = window.is_some_and(|rect| rect[2] >= BREAKPOINT);
     let cols = if wide { 2 } else { 1 };
     // The feed's grid is only measurable while the feed is on screen: a story open must not
     // overwrite it with the default and make `poll` re-request the wrong window.
@@ -697,6 +925,13 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
                 )
                 .build(&k),
         );
+    }
+    // The dialogs are the last layer, so they sit over the toast and the split.
+    if let Some(settings) = &s.settings {
+        settings.view(&k, t, accent, true, &mut overlays);
+    }
+    if s.help {
+        help::view(&k, t, accent, true, &mut overlays);
     }
     rune_kit::root(base, overlays)
 }
@@ -787,6 +1022,8 @@ fn story_row(s: &App, i: usize, t: tok::Theme, accent: Color) -> El {
 
     let mut r = row()
         .key(format!("story-{id}"))
+        .role("button")
+        .label(format!("{} \u{00b7} {}", story.title, meta(story, failed)))
         .h_full()
         .px(12.0)
         .gap(14.0)
@@ -906,11 +1143,14 @@ fn act(
     on_press: impl Fn(&mut App) + 'static,
 ) -> El {
     row()
+        .role("button")
+        .label(label)
         .h(20.0)
         .px(7.0)
         .center()
         .radius(4.0)
         .fill(t.control_off)
+        .focusable(true)
         .on_press(on_press)
         .child(text(label).font(type_::LABEL).color(color))
 }
@@ -956,22 +1196,50 @@ fn stepper(page: u32, t: tok::Theme, accent: Color) -> El {
         .label(format!("Page {page}"))
         .gap(2.0)
         .center_y()
-        .child(chev("\u{2039}", t))
+        .child(chev(
+            "\u{2039}",
+            "Previous page",
+            t,
+            |s: &mut App| {
+                let cells = s.cells();
+                let action = feed_state::prev_page(&s.feed.state(), cells);
+                s.apply(action);
+            },
+        ))
         .child(
             row()
                 .w(20.0)
                 .center()
                 .child(text(format!("{page}")).font(type_::LABEL).color(accent)),
         )
-        .child(chev("\u{203a}", t))
+        .child(chev(
+            "\u{203a}",
+            "Next page",
+            t,
+            |s: &mut App| {
+                let cells = s.cells();
+                let action = feed_state::next_page(&s.feed.state(), cells);
+                s.apply(action);
+            },
+        ))
 }
 
-fn chev(glyph: &str, t: tok::Theme) -> El {
+/// One arrow of the page stepper. It is a button, not decoration: a press turns the page.
+fn chev(
+    glyph: &str,
+    label: &str,
+    t: tok::Theme,
+    on_press: impl Fn(&mut App) + 'static,
+) -> El {
     row()
+        .role("button")
+        .label(label)
         .size(18.0, 18.0)
         .center()
         .radius(4.0)
         .fill(t.control_off)
+        .focusable(true)
+        .on_press(on_press)
         .child(text(glyph).font(type_::LABEL).color(t.text_secondary))
 }
 
@@ -1003,6 +1271,7 @@ fn banner(error: &str, t: tok::Theme, accent: Color) -> El {
                 .key("saved-reload")
                 .role("button")
                 .label("Reload")
+                .focusable(true)
                 .h(20.0)
                 .px(8.0)
                 .center()
@@ -1045,6 +1314,7 @@ fn feed_error(error: &str, t: tok::Theme, accent: Color) -> El {
                 .key("feed-retry")
                 .role("button")
                 .label("Retry")
+                .focusable(true)
                 .h(20.0)
                 .px(8.0)
                 .center()
@@ -1160,6 +1430,20 @@ fn scene_summary_generating(s: &mut App) {
     }
 }
 
+/// The summary settings dialog, open on a draft that already holds a key. The key is a fixture
+/// and the field is secure, so the golden proves the mask rather than the value: the string
+/// appears nowhere in the tree.
+fn scene_settings(s: &mut App) {
+    let mut config = Config::default();
+    config.api_key = "sk-or-v1-EXAMPLEKEYNOTREAL".to_string();
+    s.settings = Some(Settings::open(&config, None, false));
+}
+
+/// The keyboard sheet, open: two columns of the key map, generated from `keys::HELP`.
+fn scene_help(s: &mut App) {
+    s.help = true;
+}
+
 pub fn spec() -> AppSpec<App> {
     AppSpec {
         scenes: &[
@@ -1174,6 +1458,8 @@ pub fn spec() -> AppSpec<App> {
             ("thread", scene_thread),
             ("citation", scene_citation),
             ("summary-generating", scene_summary_generating),
+            ("settings", scene_settings),
+            ("help", scene_help),
         ],
         setup: Some(setup),
         poll: Some(poll),
@@ -1208,6 +1494,14 @@ mod tests {
             story: None,
             inspector: inspector(),
             config: Config::default(),
+            settings: None,
+            help: false,
+            layout: Layout::default(),
+            layout_path: None,
+            layout_written: Layout::default(),
+            layout_saved_at: 0.0,
+            window_size: Cell::new(None),
+            restored: true,
             toast: None,
             reduced: false,
             headless,
@@ -1361,5 +1655,107 @@ mod tests {
         assert!(pane.is_open());
         pane.reset_width();
         assert_eq!(pane.width(), INSPECTOR_WIDTH);
+    }
+
+    /// A directory of this process's own, so two test binaries never share a file.
+    fn temp_dir(name: &str) -> PathBuf {
+        std::env::temp_dir().join(format!("hn-desktop-{name}-{}", std::process::id()))
+    }
+
+    #[test]
+    fn apply_settings_writes_the_config_and_closes_the_dialog() {
+        let dir = temp_dir("apply");
+        let path = dir.join("hn/summary.json");
+        let mut s = app(true, SavedView::in_memory());
+        let mut settings = Settings::open(&s.config, Some(path.clone()), false);
+        settings.set_key("sk-or-v1-not-a-real-key");
+        settings.set_profile(reader::Profile::Thorough);
+        s.settings = Some(settings);
+
+        s.apply_settings(false);
+
+        assert!(s.settings.is_none(), "Apply closes the dialog");
+        assert_eq!(s.config.api_key, "sk-or-v1-not-a-real-key");
+        assert_eq!(s.config.profile, reader::Profile::Thorough);
+        assert_eq!(
+            s.toast.as_ref().map(|notice| notice.message.as_str()),
+            Some("Settings saved"),
+            "the save is confirmed in the toast region"
+        );
+        // The file is the one the terminal app reads: same writer, same path.
+        let saved = reader::load_config(&path).expect("the file Apply wrote");
+        assert_eq!(saved.api_key, "sk-or-v1-not-a-real-key");
+        assert_eq!(saved.profile, reader::Profile::Thorough);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_cancelled_dialog_writes_nothing() {
+        let dir = temp_dir("cancel");
+        let path = dir.join("hn/summary.json");
+        let mut s = app(true, SavedView::in_memory());
+        let mut settings = Settings::open(&s.config, Some(path.clone()), false);
+        settings.set_key("sk-or-v1-not-a-real-key");
+        s.settings = Some(settings);
+
+        s.close_settings();
+
+        assert!(s.settings.is_none());
+        assert!(s.config.api_key.is_empty(), "the draft was dropped");
+        assert!(!path.exists(), "Cancel writes no file");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn restore_puts_the_reader_back_where_they_left_off() {
+        let mut s = app(true, SavedView::in_memory());
+        s.layout = Layout {
+            window: Some((1280.0, 820.0)),
+            inspector: Some(512.0),
+            tab: Some(StoryType::Best),
+            page: Some(3),
+            selected: Some(42),
+        };
+
+        s.restore();
+
+        assert_eq!(s.feed.tab, StoryType::Best);
+        assert_eq!(
+            s.feed.display_cursor,
+            2 * s.feed.page_size as usize,
+            "page 3 is the third window of the page size"
+        );
+        assert_eq!(s.feed.pending_anchor, Some(42), "the feed re-anchors on it");
+        assert_eq!(s.inspector.width(), 512.0, "the grip's width came back");
+    }
+
+    #[test]
+    fn the_layout_file_round_trips_the_window_and_the_feed() {
+        let dir = temp_dir("layout");
+        let path = dir.join("hn/desktop.json");
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        s.layout_path = Some(path.clone());
+        s.window_size.set(Some((1280.0, 820.0)));
+        s.inspector = PaneState::new(512.0)
+            .range(INSPECTOR_MIN, INSPECTOR_MAX)
+            .collapsed();
+        s.feed.tab = StoryType::Best;
+        s.feed.selected = 4;
+
+        let snapshot = s.snapshot();
+        assert_eq!(snapshot.window, Some((1280.0, 820.0)));
+        assert_eq!(snapshot.selected, Some(5), "the selected story's id");
+        s.write_layout(snapshot.clone(), 0.0);
+        assert_eq!(Layout::load(&path), snapshot, "the file holds what was drawn");
+
+        // A second window starts from the file, not from the defaults.
+        let mut next = app(true, SavedView::in_memory());
+        next.layout = Layout::load(&path);
+        next.restore();
+        assert_eq!(next.feed.tab, StoryType::Best);
+        assert_eq!(next.feed.pending_anchor, Some(5));
+        assert_eq!(next.inspector.width(), 512.0);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

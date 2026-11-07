@@ -10,6 +10,7 @@
 //! source, and the test below spells its bindings out.
 
 use crossterm::event::KeyCode;
+use hn_lib::app::StoryType;
 use hn_lib::event::{StoryAction, handle_stories_key};
 use rune::{Key, KeyEvent};
 
@@ -171,6 +172,312 @@ pub fn story_key(ev: &KeyEvent) -> StoryKey {
         _ => StoryKey::None,
     }
 }
+
+/// A window-level binding: the keys the shell owns rather than the feed or the story.
+///
+/// These are chords, so they never reach the terminal app's tables — `parity_key` refuses a
+/// modifier, and `story_key` refuses one too. DESIGN.md's window table is the source.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum WindowKey {
+    /// `⌘,`: the summary settings dialog.
+    Settings,
+    /// `⌘?`: the keyboard sheet.
+    Help,
+    /// `⌘\`: show or hide the inspector.
+    ToggleSplit,
+    /// A key the window does not bind.
+    None,
+}
+
+/// The window action a Rune event means.
+///
+/// `⌘?` is `⌘⇧/`, and a shifted shortcut arrives as the character Shift makes — `?` on a US
+/// layout, `/` on a German one — so both spellings are accepted while Shift is held.
+pub fn window_key(ev: &KeyEvent) -> WindowKey {
+    let m = ev.mods;
+    if !(m.cmd || m.logo) || m.ctrl || m.alt {
+        return WindowKey::None;
+    }
+    let Key::Command(c) = &ev.key else {
+        return WindowKey::None;
+    };
+    match c {
+        ',' => WindowKey::Settings,
+        '?' => WindowKey::Help,
+        '/' if m.shift => WindowKey::Help,
+        '\\' => WindowKey::ToggleSplit,
+        _ => WindowKey::None,
+    }
+}
+
+/// What a help row does, so the sheet can be checked against the routing instead of trusted.
+#[derive(Clone, Debug, PartialEq)]
+pub enum HelpAction {
+    Feed(StoryAction),
+    Story(StoryKey),
+    Window(WindowKey),
+    /// The sheet's own dismissal. `Esc` is the runtime's (the dialog's `on_close`), and `?` is
+    /// the feed's `ToggleHelp`, which the sheet reads as "close me".
+    Close,
+}
+
+/// One row of the help sheet: the keycaps it draws, what it does, and the action it stands for.
+pub struct HelpRow {
+    pub keys: &'static [&'static str],
+    pub label: &'static str,
+    pub action: HelpAction,
+}
+
+/// One column section of the help sheet.
+pub struct HelpGroup {
+    pub title: &'static str,
+    /// Which of the sheet's two columns the group draws in. The split is by height, not by
+    /// halving the list: Feed and Summary are 19 rows together, Discussion and Window 23.
+    pub column: usize,
+    pub rows: &'static [HelpRow],
+}
+
+/// The help sheet's contents, in DESIGN.md's four groups.
+///
+/// This is the key map, not a copy of it: every row's keys are run back through [`story_action`],
+/// [`story_key`] and [`window_key`] by the tests below, and every action those tables can return
+/// must have a row. A binding added to the routing without a row here fails the build's tests.
+pub const HELP: &[HelpGroup] = &[
+    HelpGroup {
+        title: "Feed",
+        column: 0,
+        rows: &[
+            HelpRow {
+                keys: &["j", "\u{2193}"],
+                label: "Next story",
+                action: HelpAction::Feed(StoryAction::NextStory),
+            },
+            HelpRow {
+                keys: &["k", "\u{2191}"],
+                label: "Previous story",
+                action: HelpAction::Feed(StoryAction::PrevStory),
+            },
+            HelpRow {
+                keys: &["g"],
+                label: "First story",
+                action: HelpAction::Feed(StoryAction::FirstStory),
+            },
+            HelpRow {
+                keys: &["G"],
+                label: "Last story",
+                action: HelpAction::Feed(StoryAction::LastStory),
+            },
+            HelpRow {
+                keys: &["n", "\u{2192}", "Space", "Page Down"],
+                label: "Next page",
+                action: HelpAction::Feed(StoryAction::NextPage),
+            },
+            HelpRow {
+                keys: &["p", "\u{2190}", "Page Up"],
+                label: "Previous page",
+                action: HelpAction::Feed(StoryAction::PrevPage),
+            },
+            HelpRow {
+                keys: &["1"],
+                label: "Top",
+                action: HelpAction::Feed(StoryAction::SetType(StoryType::Top)),
+            },
+            HelpRow {
+                keys: &["2"],
+                label: "New",
+                action: HelpAction::Feed(StoryAction::SetType(StoryType::New)),
+            },
+            HelpRow {
+                keys: &["3"],
+                label: "Best",
+                action: HelpAction::Feed(StoryAction::SetType(StoryType::Best)),
+            },
+            HelpRow {
+                keys: &["4"],
+                label: "Saved",
+                action: HelpAction::Feed(StoryAction::SetType(StoryType::Saved)),
+            },
+            HelpRow {
+                keys: &["Enter", "o", "O"],
+                label: "Open the story",
+                action: HelpAction::Feed(StoryAction::OpenUrl),
+            },
+            HelpRow {
+                keys: &["c"],
+                label: "Open the discussion",
+                action: HelpAction::Feed(StoryAction::ViewComments),
+            },
+            HelpRow {
+                keys: &["r"],
+                label: "Refresh the feed",
+                action: HelpAction::Feed(StoryAction::Refresh),
+            },
+            HelpRow {
+                keys: &["s"],
+                label: "Save or unsave",
+                action: HelpAction::Feed(StoryAction::ToggleBookmark),
+            },
+            HelpRow {
+                keys: &["?"],
+                label: "Keyboard shortcuts",
+                action: HelpAction::Feed(StoryAction::ToggleHelp),
+            },
+            HelpRow {
+                keys: &["q"],
+                label: "Quit",
+                action: HelpAction::Feed(StoryAction::Quit),
+            },
+        ],
+    },
+    HelpGroup {
+        title: "Discussion",
+        column: 1,
+        rows: &[
+            HelpRow {
+                keys: &["j", "\u{2193}"],
+                label: "Next comment",
+                action: HelpAction::Story(StoryKey::NextComment),
+            },
+            HelpRow {
+                keys: &["k", "\u{2191}"],
+                label: "Previous comment",
+                action: HelpAction::Story(StoryKey::PrevComment),
+            },
+            HelpRow {
+                keys: &["g"],
+                label: "First comment",
+                action: HelpAction::Story(StoryKey::FirstComment),
+            },
+            HelpRow {
+                keys: &["G"],
+                label: "Last comment",
+                action: HelpAction::Story(StoryKey::LastComment),
+            },
+            HelpRow {
+                keys: &["]"],
+                label: "Next thread",
+                action: HelpAction::Story(StoryKey::NextSibling),
+            },
+            HelpRow {
+                keys: &["["],
+                label: "Previous thread",
+                action: HelpAction::Story(StoryKey::PrevSibling),
+            },
+            HelpRow {
+                keys: &["u"],
+                label: "Parent comment",
+                action: HelpAction::Story(StoryKey::Parent),
+            },
+            HelpRow {
+                keys: &["h", "c"],
+                label: "Fold replies",
+                action: HelpAction::Story(StoryKey::Fold),
+            },
+            HelpRow {
+                keys: &["l", "\u{2192}"],
+                label: "Unfold, or re-root at the cap",
+                action: HelpAction::Story(StoryKey::Unfold),
+            },
+            HelpRow {
+                keys: &["f"],
+                label: "Focus mode",
+                action: HelpAction::Story(StoryKey::Focus),
+            },
+            HelpRow {
+                keys: &["\u{232b}"],
+                label: "Up one ancestor",
+                action: HelpAction::Story(StoryKey::PopTrail),
+            },
+            HelpRow {
+                keys: &["Page Down"],
+                label: "Next screen",
+                action: HelpAction::Story(StoryKey::NextScreen),
+            },
+            HelpRow {
+                keys: &["Page Up"],
+                label: "Previous screen",
+                action: HelpAction::Story(StoryKey::PrevScreen),
+            },
+            HelpRow {
+                keys: &["Enter"],
+                label: "Expand, or read the citation",
+                action: HelpAction::Story(StoryKey::Enter),
+            },
+            HelpRow {
+                keys: &["Tab"],
+                label: "Next citation",
+                action: HelpAction::Story(StoryKey::NextCitation),
+            },
+            HelpRow {
+                keys: &["\u{21e7}Tab"],
+                label: "Previous citation",
+                action: HelpAction::Story(StoryKey::PrevCitation),
+            },
+            HelpRow {
+                keys: &["L"],
+                label: "Choose a link",
+                action: HelpAction::Story(StoryKey::Links),
+            },
+            HelpRow {
+                keys: &["s"],
+                label: "Save or unsave",
+                action: HelpAction::Story(StoryKey::ToggleSaved),
+            },
+            HelpRow {
+                keys: &["Esc", "q", "\u{2190}"],
+                label: "Back to the feed",
+                action: HelpAction::Story(StoryKey::Back),
+            },
+        ],
+    },
+    HelpGroup {
+        title: "Summary",
+        column: 0,
+        rows: &[
+            HelpRow {
+                keys: &["S"],
+                label: "Show or hide the summary",
+                action: HelpAction::Story(StoryKey::ToggleSummary),
+            },
+            HelpRow {
+                keys: &["r"],
+                label: "Regenerate the summary",
+                action: HelpAction::Story(StoryKey::Refresh),
+            },
+            HelpRow {
+                keys: &["M"],
+                label: "Summary settings",
+                action: HelpAction::Story(StoryKey::Settings),
+            },
+        ],
+    },
+    HelpGroup {
+        title: "Window",
+        column: 1,
+        rows: &[
+            HelpRow {
+                keys: &["\u{2318},"],
+                label: "Summary settings",
+                action: HelpAction::Window(WindowKey::Settings),
+            },
+            HelpRow {
+                keys: &["\u{2318}?"],
+                label: "Keyboard shortcuts",
+                action: HelpAction::Window(WindowKey::Help),
+            },
+            HelpRow {
+                keys: &["\u{2318}\\"],
+                label: "Show or hide the inspector",
+                action: HelpAction::Window(WindowKey::ToggleSplit),
+            },
+            HelpRow {
+                keys: &["Esc", "?"],
+                label: "Close this sheet",
+                action: HelpAction::Close,
+            },
+        ],
+    },
+];
 
 fn single_char(text: &str) -> Option<char> {
     let mut chars = text.chars();
@@ -396,6 +703,205 @@ mod tests {
                 pressed: true,
             })),
             StoryKey::None
+        );
+    }
+
+    /// The Rune event a help row's keycap stands for. The sheet draws keycaps, so the test has
+    /// to read them back: a row whose cap does not parse is a row the sheet cannot honour.
+    fn event(cap: &str) -> KeyEvent {
+        let plain = |key: Key| KeyEvent {
+            key,
+            mods: Mods::default(),
+        };
+        let shifted = |key: Key| KeyEvent {
+            key,
+            mods: Mods {
+                shift: true,
+                ..Mods::default()
+            },
+        };
+        let chord = |c: char, shift: bool| KeyEvent {
+            key: Key::Command(c),
+            mods: Mods {
+                cmd: true,
+                logo: true,
+                shift,
+                ..Mods::default()
+            },
+        };
+        match cap {
+            "Esc" => plain(Key::Escape),
+            "Enter" => plain(Key::Enter),
+            "Tab" => plain(Key::Tab),
+            "\u{21e7}Tab" => shifted(Key::Tab),
+            "\u{232b}" => plain(Key::Backspace),
+            "Space" => plain(Key::Text(" ".into())),
+            "Page Down" => plain(Key::PageDown),
+            "Page Up" => plain(Key::PageUp),
+            "\u{2193}" => plain(Key::Down),
+            "\u{2191}" => plain(Key::Up),
+            "\u{2190}" => plain(Key::Left),
+            "\u{2192}" => plain(Key::Right),
+            "\u{2318}," => chord(',', false),
+            "\u{2318}?" => chord('?', true),
+            "\u{2318}\\" => chord('\\', false),
+            _ => {
+                let mut chars = cap.chars();
+                match (chars.next(), chars.next()) {
+                    (Some(c), None) => plain(Key::Text(c.to_string())),
+                    _ => panic!("the help sheet has no keycap {cap:?}"),
+                }
+            }
+        }
+    }
+
+    /// The action a key means in the context a group stands for: the shell's chords, the
+    /// story's table while a story is open, or the feed's. `j` is both a feed key and a story
+    /// key, which is why the sheet groups by context rather than by key.
+    fn routed(ev: &KeyEvent, context: &HelpAction) -> HelpAction {
+        match context {
+            HelpAction::Feed(_) => HelpAction::Feed(story_action(ev)),
+            HelpAction::Story(_) => HelpAction::Story(story_key(ev)),
+            HelpAction::Window(_) => HelpAction::Window(window_key(ev)),
+            HelpAction::Close => HelpAction::Close,
+        }
+    }
+
+    #[test]
+    fn every_help_row_is_a_binding_the_window_actually_has() {
+        for group in HELP {
+            for row in group.rows {
+                // The group is the context: a Feed row must be a feed binding, and so on.
+                let context = match (group.title, &row.action) {
+                    ("Feed", HelpAction::Feed(_))
+                    | ("Discussion", HelpAction::Story(_))
+                    | ("Summary", HelpAction::Story(_))
+                    | ("Window", HelpAction::Window(_))
+                    | ("Window", HelpAction::Close) => row.action.clone(),
+                    (title, action) => panic!("{title} group holds {action:?}"),
+                };
+                for cap in row.keys {
+                    let ev = event(cap);
+                    if row.action == HelpAction::Close {
+                        // The sheet's own dismissal is not a routing table's: `Esc` is the
+                        // runtime's modal dismiss and `?` is the feed's `ToggleHelp`, which the
+                        // sheet reads as "close me". Nothing else may claim to close it.
+                        assert!(
+                            matches!(cap, &"Esc" | &"?"),
+                            "{}: {cap:?} does not close the sheet",
+                            group.title
+                        );
+                        continue;
+                    }
+                    assert_eq!(
+                        routed(&ev, &context),
+                        row.action,
+                        "{}: {cap:?} does not do {:?}",
+                        group.title,
+                        row.label
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn every_binding_the_window_has_is_in_the_help_sheet() {
+        // Spelled out, not sampled: a variant added to either enum is a compile error here
+        // until the sheet says what it does.
+        let story_keys = [
+            StoryKey::Back,
+            StoryKey::NextCitation,
+            StoryKey::PrevCitation,
+            StoryKey::Enter,
+            StoryKey::ToggleSummary,
+            StoryKey::Refresh,
+            StoryKey::Settings,
+            StoryKey::Links,
+            StoryKey::ToggleSaved,
+            StoryKey::NextComment,
+            StoryKey::PrevComment,
+            StoryKey::NextSibling,
+            StoryKey::PrevSibling,
+            StoryKey::Parent,
+            StoryKey::Fold,
+            StoryKey::Unfold,
+            StoryKey::FirstComment,
+            StoryKey::LastComment,
+            StoryKey::NextScreen,
+            StoryKey::PrevScreen,
+            StoryKey::Focus,
+            StoryKey::PopTrail,
+        ];
+        let feed_actions = [
+            StoryAction::NextStory,
+            StoryAction::PrevStory,
+            StoryAction::FirstStory,
+            StoryAction::LastStory,
+            StoryAction::NextPage,
+            StoryAction::PrevPage,
+            StoryAction::SetType(StoryType::Top),
+            StoryAction::SetType(StoryType::New),
+            StoryAction::SetType(StoryType::Best),
+            StoryAction::SetType(StoryType::Saved),
+            StoryAction::OpenUrl,
+            StoryAction::ViewComments,
+            StoryAction::Refresh,
+            StoryAction::ToggleBookmark,
+            StoryAction::ToggleHelp,
+            StoryAction::Quit,
+        ];
+        let window_keys = [WindowKey::Settings, WindowKey::Help, WindowKey::ToggleSplit];
+        let rows: Vec<HelpAction> = HELP
+            .iter()
+            .flat_map(|group| group.rows.iter().map(|row| row.action.clone()))
+            .collect();
+        for action in story_keys.map(HelpAction::Story) {
+            assert!(rows.contains(&action), "no help row for {action:?}");
+        }
+        for action in feed_actions.map(HelpAction::Feed) {
+            assert!(rows.contains(&action), "no help row for {action:?}");
+        }
+        for action in window_keys.map(HelpAction::Window) {
+            assert!(rows.contains(&action), "no help row for {action:?}");
+        }
+    }
+
+    #[test]
+    fn the_window_chords_are_the_ones_design_md_names() {
+        let chord = |c: char, shift: bool| KeyEvent {
+            key: Key::Command(c),
+            mods: Mods {
+                cmd: true,
+                logo: true,
+                shift,
+                ..Mods::default()
+            },
+        };
+        assert_eq!(window_key(&chord(',', false)), WindowKey::Settings);
+        assert_eq!(window_key(&chord('?', true)), WindowKey::Help);
+        // A shifted shortcut arrives as the character Shift makes, which moves between
+        // layouts: `⌘⇧/` is `?` on a US layout and `/` on a German one.
+        assert_eq!(window_key(&chord('/', true)), WindowKey::Help);
+        assert_eq!(window_key(&chord('\\', false)), WindowKey::ToggleSplit);
+        // A bare `/` is not the help chord, and neither is a chord with another modifier.
+        assert_eq!(window_key(&chord('/', false)), WindowKey::None);
+        let ctrl = KeyEvent {
+            key: Key::Command(','),
+            mods: Mods {
+                cmd: true,
+                ctrl: true,
+                ..Mods::default()
+            },
+        };
+        assert_eq!(window_key(&ctrl), WindowKey::None);
+        // The feed's own keys are not window chords.
+        assert_eq!(
+            window_key(&KeyEvent {
+                key: Key::Text("j".into()),
+                mods: Mods::default(),
+            }),
+            WindowKey::None
         );
     }
 

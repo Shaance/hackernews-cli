@@ -97,6 +97,8 @@ STORY_SCENES=(
   "thread|thread|1180x760|scripts/thread.json"
   "citation|citation|1180x760|scripts/story.json"
   "summary-generating|summary-generating|1180x760|scripts/story.json"
+  "settings|settings|1180x760|scripts/focus.json"
+  "help|help|1180x760|scripts/focus.json"
 )
 
 ALL=("${SCENES[@]}" "${STORY_SCENES[@]}")
@@ -340,6 +342,32 @@ if [ "$spatial" = 0 ]; then
   pass "reduced motion thread (0 active spatial tracks)"
 else
   bad "reduced motion thread ($spatial active spatial tracks)"
+fi
+
+# The same keys with motion on must land the same state: reduced motion changes how the window
+# gets there, never where it ends up. The bounds still differ by fractions while the animated run
+# settles, so the comparison is the state the reader sees — the rows, the trail, the selection,
+# the dimming and the focus pill — not the pixels.
+"$BIN" --scene story --size 1180x760 --scale 2 --theme dark \
+  --script scripts/thread-keys.json --at mark:reroot --tree "$ACTUAL/motion-thread.json" >/dev/null
+thread_state() { # tree
+  jq -r '
+    ([.elements[] | select((.key // "") | test("^comment-[0-9]+$"))
+      | {y: .rect[1], id: (.key | sub("comment-"; ""))}] | sort_by(.y) | map(.id) | join(",")) as $rows
+    | ([.accessibility | .. | objects | select((.key // "") | startswith("trail-")) | .key] | join(",")) as $trail
+    | ([.elements[] | select(.itemSelected == true) | .key] | join(",")) as $sel
+    | ([.elements[] | select((.key // "") | test("^comment-[0-9]+$")) | select(.opacity < 0.99)
+      | .key] | sort | join(",")) as $dim
+    | ([.elements[] | select((.key // "") == "discussion-focus")] | length) as $pill
+    | "rows=\($rows) trail=\($trail) sel=\($sel) dim=\($dim) pill=\($pill)"' "$1"
+}
+reduced_state=$(thread_state "$ACTUAL/reduced-thread.json")
+motion_state=$(thread_state "$ACTUAL/motion-thread.json")
+if [ "$reduced_state" = "$motion_state" ]; then
+  pass "reduced motion thread (same state as the animated run: $reduced_state)"
+else
+  bad "reduced motion thread (state differs)"
+  printf '        reduced: %s\n        animated: %s\n' "$reduced_state" "$motion_state"
 fi
 
 step "resize proof (window width, not the inset card)"
@@ -666,6 +694,134 @@ if [ "$skeletons" = 5 ] && [ "$chips" = 0 ] && [ "$captured" = "2 of 3 sources c
   pass "summary generating (5 skeleton rows, '$captured', no chips)"
 else
   bad "summary generating ($skeletons skeletons, $chips chips, '$captured')"
+fi
+
+step "settings and help (the two overlays, read from the tree)"
+# The settings dialog is the terminal reader's `M` overlay. The property the whole design rests on
+# is that the key field carries no text in the tree at all: a key that cannot be rendered cannot
+# be logged, traced or screenshotted.
+sq() { jq -r "$1" "$ACTUAL/settings.json"; }
+dialog=$(sq '[.accessibility | .. | objects | select((.key // "") == "settings-dialog")
+  | "\(.role)/\(.name)/\(.states | join(","))"][0] // ""')
+if [ "$dialog" = "dialog/Summary settings/modal" ]; then
+  pass "settings dialog (modal, named)"
+else
+  bad "settings dialog (got '$dialog')"
+fi
+
+field=$(sq '[.accessibility | .. | objects | select((.key // "") == "input")
+  | "\(.role)/\(.name)/\(.states | join(","))"][0] // ""')
+secure=$(sq '[.elements[] | select((.key // "") == "input") | .secure][0] // false')
+texts=$(sq '[.elements[] | select((.key // "") == "input") | select(.text != null)] | length')
+if [ "$field" = "password-input/OpenRouter key/focused" ] && [ "$secure" = true ] && [ "$texts" = 0 ]; then
+  pass "settings key field (password input, named, focused, no text)"
+else
+  bad "settings key field (a11y '$field', secure $secure, $texts texts)"
+fi
+
+# The scene's key is a fake, and it must not appear anywhere in the tree: not in a text run, not
+# in a label, not in a path.
+leak=$(grep -c 'EXAMPLEKEYNOTREAL' "$ACTUAL/settings.json" || true)
+if [ "$leak" = 0 ]; then
+  pass "settings key never reaches the tree"
+else
+  bad "settings key appears $leak times in the tree"
+fi
+
+# The two choices, and the model line the chosen profile resolves to on the chosen provider.
+provider=$(sq '[.accessibility | .. | objects | select((.key // "") == "item0" or (.key // "") == "item1")
+  | "\(.name):\(.states | join(","))"] | join(",")')
+profile=$(sq '[.accessibility | .. | objects | select((.key // "") | test("^segment[01]$"))
+  | "\(.name):\(.states | join(","))"] | join(",")')
+model=$(sq '[.elements[] | select((.key // "") == "settings-model") | .text][0] // ""')
+if [ "$provider" = "OpenRouter:checked,Anthropic:unchecked" ] \
+  && [ "$profile" = "Fast:checked,Thorough:unchecked" ] \
+  && [ "$model" = "anthropic/claude-haiku-5.5" ]; then
+  pass "settings choices ($provider; $profile; model $model)"
+else
+  bad "settings choices (provider '$provider', profile '$profile', model '$model')"
+fi
+
+# Every control in the dialog is a named, focusable role: the switch and the three buttons.
+controls=$(sq '[.accessibility | .. | objects | select(.role == "switch" or .role == "button")
+  | .name] | join(",")')
+if [ "$controls" = "Close,Automatic summaries,Refresh sources & summary,Cancel,Apply" ]; then
+  pass "settings controls ($controls)"
+else
+  bad "settings controls (got '$controls')"
+fi
+
+# The sheet is `keys::HELP` rendered, so the gate checks the shape rather than a hand-copied list:
+# four groups in draw order, and every row a keybind plus a label.
+hq() { jq -r "$1" "$ACTUAL/help.json"; }
+dialog=$(hq '[.accessibility | .. | objects | select((.key // "") == "help-dialog")
+  | "\(.role)/\(.name)/\(.states | join(","))"][0] // ""')
+if [ "$dialog" = "dialog/Keyboard/modal" ]; then
+  pass "help sheet (modal, named)"
+else
+  bad "help sheet (got '$dialog')"
+fi
+
+titles=$(hq '[.elements[] | select((.key // "") | startswith("help-title-")) | .text] | join(",")')
+if [ "$titles" = "Feed,Summary,Discussion,Window" ]; then
+  pass "help groups ($titles)"
+else
+  bad "help groups (got '$titles')"
+fi
+
+# A row with no keys is a label with nothing to press; a row with no label is keys with no
+# meaning. The count comes from expected/, so a sheet that silently lost rows fails here too.
+rows=$(hq '[.accessibility | .. | objects | select((.key // "") | startswith("help-row-"))] | length')
+want_rows=$(jq '[.elements[] | select((.key // "") | startswith("help-row-"))] | length' "$EXPECTED/help.json")
+bare=$(hq '[.accessibility | .. | objects | select((.key // "") | startswith("help-row-"))
+  | select(([.children[]? | select(.role == "group" and (.name // "") != "")] | length) != 1
+        or ([.children[]? | select(.role == "label" and (.name // "") != "")] | length) != 1)] | length')
+if [ "$rows" = "$want_rows" ] && [ "$bare" = 0 ]; then
+  pass "help rows ($rows rows, each a keybind and a label)"
+else
+  bad "help rows ($rows of $want_rows, $bare without both a keybind and a label)"
+fi
+
+step "settings and help (interactive: the keys and the presses, not just the picture)"
+# `M` opens the dialog from the story split and `Esc` closes it without losing the discussion.
+"$BIN" --scene story --size 1180x760 --scale 2 --theme dark --script scripts/settings-keys.json \
+  --at mark:open --tree "$ACTUAL/settings-open.json" >/dev/null
+"$BIN" --scene story --size 1180x760 --scale 2 --theme dark --script scripts/settings-keys.json \
+  --at mark:closed --tree "$ACTUAL/settings-closed.json" >/dev/null
+opened=$(jq '[.elements[] | select((.key // "") == "settings-dialog")] | length' "$ACTUAL/settings-open.json")
+closed=$(jq '[.elements[] | select((.key // "") == "settings-dialog")] | length' "$ACTUAL/settings-closed.json")
+kept=$(jq '[.elements[] | select((.key // "") | test("^comment-[0-9]+$"))] | length' "$ACTUAL/settings-closed.json")
+if [ "$opened" = 1 ] && [ "$closed" = 0 ] && [ "$kept" -ge 1 ]; then
+  pass "M opens the dialog, Esc closes it and the discussion stays ($kept rows)"
+else
+  bad "M/Esc ($opened dialogs open, $closed after Esc, $kept comment rows)"
+fi
+
+# The dialog is a form, not a picture: a press on the Anthropic radio and on the Thorough segment
+# moves both, the key field follows the provider, and the model line re-resolves.
+"$BIN" --scene settings --size 1180x760 --scale 2 --theme dark --script scripts/settings.json \
+  --at mark:picked --tree "$ACTUAL/settings-picked.json" >/dev/null
+picked=$(jq -r '[.elements[] | select((.key // "") == "item1") | .itemSelected][0] // false' "$ACTUAL/settings-picked.json")
+thorough=$(jq -r '[.elements[] | select((.key // "") == "segment1")
+  | select((.path // "") | contains("settings-profile")) | .itemSelected][0] // false' "$ACTUAL/settings-picked.json")
+field=$(jq -r '[.elements[] | select((.key // "") == "input") | .label][0] // ""' "$ACTUAL/settings-picked.json")
+model=$(jq -r '[.elements[] | select((.key // "") == "settings-model") | .text][0] // ""' "$ACTUAL/settings-picked.json")
+if [ "$picked" = true ] && [ "$thorough" = true ] && [ "$field" = "Anthropic key" ] \
+  && [ "$model" = "claude-sonnet-5-5" ]; then
+  pass "settings presses (Anthropic + Thorough -> $model, field '$field')"
+else
+  bad "settings presses (anthropic $picked, thorough $thorough, field '$field', model '$model')"
+fi
+
+# The sheet's close button dismisses it and the feed behind comes back to life.
+"$BIN" --scene help --size 1180x760 --scale 2 --theme dark --script scripts/help.json \
+  --at mark:closed --tree "$ACTUAL/help-closed.json" >/dev/null
+sheet=$(jq '[.elements[] | select((.key // "") == "help-dialog")] | length' "$ACTUAL/help-closed.json")
+live=$(jq '[.elements[] | select((.key // "") | startswith("story-")) | select(.inert == false)] | length' "$ACTUAL/help-closed.json")
+if [ "$sheet" = 0 ] && [ "$live" -ge 1 ]; then
+  pass "help close (sheet gone, $live feed rows live again)"
+else
+  bad "help close ($sheet sheets left, $live live feed rows)"
 fi
 
 step "split morph (Enter on a feed row opens the inspector from 0 width)"
