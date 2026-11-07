@@ -11,3 +11,5 @@ pub mod feed;
 pub mod fixtures;
 pub mod keys;
 pub mod service;
+pub mod story;
+pub mod story_view;

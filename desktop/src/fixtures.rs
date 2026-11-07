@@ -5,6 +5,8 @@
 //! `prototypes/rune-hn/fixtures/topstories.json` ships, extended to a full page so the
 //! two-column grid has enough rows to fill. Nothing here is fetched at run time.
 
+use hn_lib::app::{Comment, CommentState};
+use hn_lib::reader::{Discussion, Point, Source};
 use hn_lib::HNCLIItem;
 
 /// `(title, author, score, comments, saved)` for one page of 30, in rank order.
@@ -158,9 +160,184 @@ pub fn page() -> Vec<HNCLIItem> {
     (0..STORIES.len()).map(|index| item(index, index as i32 + 1)).collect()
 }
 
+/// The story the story-split scenes open: rank 2, "Libghostty 1.0".
+pub const STORY_INDEX: usize = 1;
+/// That story's id in the fixture page.
+pub const STORY_ID: i32 = 2;
+
+/// The captured article, as Markdown: a heading, prose, a fenced block the kit's highlighter
+/// colours, a list and a quote. Nothing here is fetched at run time.
+pub const ARTICLE: &str = "\
+Today we are splitting Ghostty's core into a library. The app you run keeps its window, its \
+fonts and its configuration; the terminal underneath becomes something another program can \
+embed.
+
+## The surface is deliberately small
+
+A host hands libghostty a native surface and a size, and gets back a grid of cells it can draw \
+however it likes. Input arrives as an event queue, not as callbacks into the host's event loop.
+
+```zig
+pub const Surface = struct {
+    grid: *Grid,
+    size: Size,
+    input: *EventQueue,
+
+    pub fn resize(self: *Surface, size: Size) void {
+        self.size = size;
+        self.grid.reflow(size);
+    }
+};
+```
+
+What does not change:
+
+- the parser, and its escape-sequence coverage
+- the renderer's cell model
+- the configuration language
+
+What does: everything that used to assume it owned a window.
+
+> An event queue instead of callbacks is the whole design in one sentence.
+
+The ABI is versioned by struct size, so an embedder built against an older header keeps working \
+until it asks for a field that did not exist yet.";
+
+/// The top-level comments of [`STORY_ID`], in HN's own order.
+pub fn comments() -> Vec<Comment> {
+    COMMENTS
+        .iter()
+        .map(|(id, author, age, text, replies)| Comment {
+            id: *id,
+            author: (*author).to_string(),
+            text: (*text).to_string(),
+            links: Vec::new(),
+            time_ago: (*age).to_string(),
+            state: CommentState::Collapsed,
+            depth: 0,
+            deleted: false,
+            child_ids: (0..*replies).map(|n| id * 10 + n).collect(),
+        })
+        .collect()
+}
+
+/// The same comments as the summary's captured sources: the excerpt the model saw, and the
+/// full text the citation viewer shows underneath it.
+pub fn sources() -> Vec<Source> {
+    comments()
+        .iter()
+        .map(|comment| Source {
+            id: comment.id,
+            parent: None,
+            author: comment.author.clone(),
+            text: comment.text.clone(),
+            excerpt: comment.text.chars().take(1800).collect(),
+        })
+        .collect()
+}
+
+/// The summary the fake provider returns for [`STORY_ID`]: three bullets citing the comments
+/// above, in the shape `Network::discussion` produces.
+pub fn summary() -> Discussion {
+    Discussion {
+        overview: "Commenters read the split as a narrow ABI bet, and split on whether it pays."
+            .to_string(),
+        points: vec![
+            Point {
+                text: "libghostty splits Ghostty's core out of the app so another frontend can \
+embed the terminal without the macOS shell."
+                    .to_string(),
+                sources: vec![901, 902],
+            },
+            Point {
+                text: "The ABI is deliberately narrow: a surface, a grid of cells and an input \
+queue, with no windowing or font policy in the library."
+                    .to_string(),
+                sources: vec![903],
+            },
+            Point {
+                text: "Commenters split on whether a stable C ABI is worth the loss of Zig's \
+comptime ergonomics inside the core."
+                    .to_string(),
+                sources: vec![904, 905],
+            },
+        ],
+    }
+}
+
+/// `(id, author, age, text, replies)` for one page of top-level comments.
+const COMMENTS: [(i32, &str, &str, &str, i32); 5] = [
+    (
+        901,
+        "tptacek",
+        "2 hours ago",
+        "The interesting part is what they left out. No windowing, no font stack, no config \
+language — those all stay in the app. That is the whole reason this can be embedded.",
+        2,
+    ),
+    (
+        902,
+        "kstrauser",
+        "1 hour ago",
+        "I have wanted this for years. Every terminal library I have tried eventually grows its \
+own opinion about how a window should look.",
+        0,
+    ),
+    (
+        903,
+        "jmillikin",
+        "1 hour ago",
+        "A narrow ABI is great until you need one more callback. Then you version the struct and \
+every embedder has to care.",
+        1,
+    ),
+    (
+        904,
+        "simonw",
+        "58 minutes ago",
+        "Does the host get to choose the font, or does the library still own the cell grid? That \
+is the line I keep tripping over when I try to imagine embedding this in a browser.",
+        0,
+    ),
+    (
+        905,
+        "dang",
+        "52 minutes ago",
+        "Related from 2024: the original libghostty design notes. The section on input is the one \
+worth reading first.",
+        0,
+    ),
+];
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_story_fixture_is_the_one_the_scenes_open() {
+        let story = item(STORY_INDEX, STORY_ID);
+        assert_eq!(story.title, "Libghostty 1.0");
+        assert_eq!(story.id, STORY_ID);
+    }
+
+    #[test]
+    fn every_summary_citation_is_a_captured_comment() {
+        let sources = sources();
+        for point in summary().points {
+            for id in point.sources {
+                assert!(
+                    sources.iter().any(|source| source.id == id),
+                    "citation {id} has no captured comment"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn the_article_fixture_has_a_fence_and_a_heading() {
+        assert!(ARTICLE.contains("```zig"));
+        assert!(ARTICLE.contains("## The surface is deliberately small"));
+    }
 
     #[test]
     fn the_fixture_is_a_full_page_with_unique_ids() {

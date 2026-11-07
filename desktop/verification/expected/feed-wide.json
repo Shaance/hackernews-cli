@@ -8125,6 +8125,86 @@
       "role": "text",
       "scale": 1.0,
       "text": "›"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "inspector-pane",
+      "label": "Inspector",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane",
+      "rect": [
+        1600.0,
+        48.0,
+        0.0,
+        852.0
+      ],
+      "role": "region",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "pane-content",
+      "loopPhase": null,
+      "opacity": 0.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content",
+      "rect": [
+        1600.0,
+        48.0,
+        543.0,
+        852.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "pane-body",
+      "loopPhase": null,
+      "opacity": 0.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body",
+      "rect": [
+        1600.0,
+        48.0,
+        543.0,
+        852.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 0.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0",
+      "rect": [
+        1600.0,
+        48.0,
+        543.0,
+        852.0
+      ],
+      "role": "group",
+      "scale": 1.0
     }
   ],
   "reduced_motion": false,
