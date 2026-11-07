@@ -29,6 +29,14 @@ use hn_lib::{HNCLIItem, HackerNewsCliService, HackerNewsCliServiceImpl};
 use crate::bridge::SummaryError;
 use crate::fixtures;
 
+/// How many reply levels one story open walks below the top-level comments. The depth cap is
+/// four levels, so this leaves room for one `continue thread` re-root before the walk's edge.
+const TREE_DEPTH: usize = 6;
+
+/// How many comments one story open collects, across every level. A front-page thread can run to
+/// thousands; the reader gets the top of it, and `r` refetches.
+const TREE_NODES: usize = 200;
+
 /// Where the feed's ranked ids, the story's article and its discussion come from.
 pub enum Source {
     Live {
@@ -103,6 +111,32 @@ impl Source {
             Source::Live { service, .. } => service.fetch_top_level_comments(story_id).await,
             Source::Fake(fake) => fake.fetch_top_level_comments(story_id).await,
         }
+    }
+
+    /// The story's discussion as a tree: the top-level comments, then their replies level by
+    /// level, through the same frozen seam the terminal reader uses.
+    ///
+    /// The walk is bounded twice — [`TREE_DEPTH`] levels and [`TREE_NODES`] comments — because
+    /// one story open is one aggregate request and a front-page thread can run to thousands of
+    /// comments. A level that fails to fetch stops the walk and keeps what landed: a partial
+    /// thread is readable, and a row never claims a reply the capture does not hold.
+    pub async fn thread(&self, story_id: i32) -> Result<Vec<Comment>> {
+        let mut all = self.comments(story_id).await?;
+        let mut frontier: Vec<i32> = all.iter().map(|c| c.id).collect();
+        let mut depth = 1;
+        while !frontier.is_empty() && depth <= TREE_DEPTH && all.len() < TREE_NODES {
+            let children = match self {
+                Source::Live { service, .. } => {
+                    service.fetch_comment_children(&frontier, depth).await
+                }
+                Source::Fake(fake) => fake.fetch_comment_children(&frontier, depth).await,
+            };
+            let Ok(children) = children else { break };
+            frontier = children.iter().map(|c| c.id).collect();
+            all.extend(children);
+            depth += 1;
+        }
+        Ok(all)
     }
 
     /// The captured sources a summary is written from: the same comments, with the excerpt the
@@ -294,10 +328,10 @@ impl HackerNewsCliService for FakeService {
 
     async fn fetch_comment_children(
         &self,
-        _comment_ids: &[i32],
+        comment_ids: &[i32],
         _depth: usize,
     ) -> Result<Vec<Comment>> {
-        Ok(Vec::new())
+        Ok(fixtures::replies(comment_ids))
     }
 
     fn get_valid_story_types() -> HashSet<&'static str> {

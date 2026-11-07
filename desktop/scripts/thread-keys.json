@@ -1,0 +1,217 @@
+[
+  {
+    "t": 0.1,
+    "type": "mark",
+    "name": "start"
+  },
+  {
+    "t": 0.5,
+    "type": "key",
+    "name": "j"
+  },
+  {
+    "t": 0.85,
+    "type": "mark",
+    "name": "next"
+  },
+  {
+    "t": 1.2,
+    "type": "key",
+    "name": "]"
+  },
+  {
+    "t": 1.55,
+    "type": "mark",
+    "name": "sibling"
+  },
+  {
+    "t": 1.9,
+    "type": "key",
+    "name": "["
+  },
+  {
+    "t": 2.25,
+    "type": "mark",
+    "name": "sibling-back"
+  },
+  {
+    "t": 2.6,
+    "type": "key",
+    "name": "u"
+  },
+  {
+    "t": 2.95,
+    "type": "mark",
+    "name": "parent"
+  },
+  {
+    "t": 3.3,
+    "type": "key",
+    "name": "j"
+  },
+  {
+    "t": 3.65,
+    "type": "key",
+    "name": "h"
+  },
+  {
+    "t": 4.0,
+    "type": "mark",
+    "name": "folded"
+  },
+  {
+    "t": 4.35,
+    "type": "key",
+    "name": "l"
+  },
+  {
+    "t": 4.7,
+    "type": "mark",
+    "name": "unfolded"
+  },
+  {
+    "t": 5.05,
+    "type": "key",
+    "name": "f"
+  },
+  {
+    "t": 5.4,
+    "type": "mark",
+    "name": "focus"
+  },
+  {
+    "t": 5.75,
+    "type": "key",
+    "name": "f"
+  },
+  {
+    "t": 6.1,
+    "type": "key",
+    "name": "j"
+  },
+  {
+    "t": 6.45,
+    "type": "key",
+    "name": "j"
+  },
+  {
+    "t": 6.8,
+    "type": "key",
+    "name": "Enter"
+  },
+  {
+    "t": 7.15,
+    "type": "mark",
+    "name": "reroot"
+  },
+  {
+    "t": 7.5,
+    "type": "key",
+    "name": "Backspace"
+  },
+  {
+    "t": 7.85,
+    "type": "mark",
+    "name": "pop"
+  },
+  {
+    "t": 8.2,
+    "type": "key",
+    "name": "j"
+  },
+  {
+    "t": 8.55,
+    "type": "key",
+    "name": "j"
+  },
+  {
+    "t": 8.9,
+    "type": "key",
+    "name": "f"
+  },
+  {
+    "t": 9.25,
+    "type": "mark",
+    "name": "focus2"
+  },
+  {
+    "t": 9.6,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 9.95,
+    "type": "mark",
+    "name": "esc"
+  },
+  {
+    "t": 10.3,
+    "type": "key",
+    "name": "j"
+  },
+  {
+    "t": 10.65,
+    "type": "key",
+    "name": "L"
+  },
+  {
+    "t": 11.0,
+    "type": "mark",
+    "name": "links"
+  },
+  {
+    "t": 11.35,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 11.7,
+    "type": "mark",
+    "name": "links-closed"
+  },
+  {
+    "t": 12.05,
+    "type": "key",
+    "name": "Tab"
+  },
+  {
+    "t": 12.4,
+    "type": "key",
+    "name": "Enter"
+  },
+  {
+    "t": 12.75,
+    "type": "mark",
+    "name": "citation"
+  },
+  {
+    "t": 13.1,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 13.45,
+    "type": "mark",
+    "name": "citation-closed"
+  },
+  {
+    "t": 13.8,
+    "type": "key",
+    "name": "S"
+  },
+  {
+    "t": 14.15,
+    "type": "mark",
+    "name": "summary-hidden"
+  },
+  {
+    "t": 14.5,
+    "type": "key",
+    "name": "S"
+  },
+  {
+    "t": 14.85,
+    "type": "mark",
+    "name": "summary-shown"
+  }
+]

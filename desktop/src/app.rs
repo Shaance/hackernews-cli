@@ -247,6 +247,12 @@ impl App {
         self.inspector.set_open(false);
         self.bridge.cancel_story();
     }
+
+    /// The open story, for the views' press handlers: a press on a comment row, a trail segment
+    /// or a link is a transition on the thread, and the thread lives here.
+    pub(crate) fn story_mut(&mut self) -> Option<&mut Story> {
+        self.story.as_mut()
+    }
 }
 
 fn init() -> App {
@@ -316,6 +322,11 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
             changed |= open.land(filled);
         }
     }
+    // A reveal the trail's removal aborted, asked again now that the layout has no trail.
+    if let Some(id) = s.story.as_mut().and_then(|open| open.pending_reveal.take()) {
+        tx.scroll_into_view_in("discussion-scroll", format!("comment-{id}"));
+        changed = true;
+    }
     // One request per invalidation: the measured grid is the only thing that moves it. A
     // resize pages against the ranking on screen, so the ranks do not move under the reader.
     if let Some(grid) = s.measured.get() {
@@ -354,7 +365,7 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
 
 fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
     if s.story.is_some() {
-        return on_story_key(s, ev);
+        return on_story_key(s, ev, tx);
     }
     let cells = s.cells();
     let state = s.feed.state();
@@ -397,20 +408,84 @@ fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
     true
 }
 
-/// The story split's keys, from `src/reader/interaction.rs:7` through [`keys::story_key`].
-fn on_story_key(s: &mut App, ev: &KeyEvent) -> bool {
+/// The story split's keys, from `src/reader/interaction.rs:7` through [`keys::story_key`], plus
+/// DESIGN.md's thread table.
+///
+/// The order is the layering, and `Esc` unwinds it in reverse: the link chooser takes keys while
+/// it is open, then the source viewer, then the discussion, and only then the feed.
+fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
     let key = keys::story_key(ev);
     let configured = s.configured();
     let Some(story) = s.story.as_mut() else {
         return false;
     };
+    // The chooser is a surface over the discussion: while it is open it owns j/k, Enter and Esc.
+    if story.links.is_some() {
+        match key {
+            StoryKey::NextComment => {
+                story.next_link();
+                return true;
+            }
+            StoryKey::PrevComment => {
+                story.prev_link();
+                return true;
+            }
+            StoryKey::Enter => {
+                if let Some(url) = story.take_link() {
+                    let _ = tx.open_url(&url);
+                }
+                return true;
+            }
+            StoryKey::Back => {
+                story.close_links();
+                return true;
+            }
+            _ => {}
+        }
+    }
+    // The source viewer scrolls its own text, as README.md says: j/k, Page Up/Down and g/G.
+    if story.source.is_some() {
+        match key {
+            StoryKey::Back => {
+                story.close_source();
+                return true;
+            }
+            StoryKey::NextComment | StoryKey::NextScreen => {
+                tx.scroll_page("source-viewer", 1);
+                return true;
+            }
+            StoryKey::PrevComment | StoryKey::PrevScreen => {
+                tx.scroll_page("source-viewer", -1);
+                return true;
+            }
+            StoryKey::FirstComment => {
+                tx.scroll_to_y("source-viewer", 0.0);
+                return true;
+            }
+            StoryKey::LastComment => {
+                tx.scroll_to_bottom("source-viewer");
+                return true;
+            }
+            StoryKey::NextCitation => {
+                story.next_citation();
+                return true;
+            }
+            StoryKey::PrevCitation => {
+                story.prev_citation();
+                return true;
+            }
+            _ => {}
+        }
+    }
+    let root = story.thread.root();
     match key {
         StoryKey::None => false,
         StoryKey::Back => {
-            // Esc leaves the source viewer first, then the story, as in the terminal reader.
-            if !story.close_source() {
-                s.close_story();
+            // Esc leaves focus mode before it leaves the story, as DESIGN.md's table says.
+            if story.thread.leave_focus() {
+                return true;
             }
+            s.close_story();
             true
         }
         StoryKey::NextCitation => {
@@ -421,7 +496,16 @@ fn on_story_key(s: &mut App, ev: &KeyEvent) -> bool {
             story.prev_citation();
             true
         }
-        StoryKey::OpenSource => story.open_source(),
+        StoryKey::Enter => {
+            // A selected citation is what Enter reads; otherwise it is the thread's own expand,
+            // which re-roots on a `continue thread` row.
+            if story.open_source() {
+                return true;
+            }
+            story.thread.activate();
+            thread_moved(story, root, tx);
+            true
+        }
         StoryKey::ToggleSummary => {
             story.toggle_summary();
             true
@@ -434,8 +518,92 @@ fn on_story_key(s: &mut App, ev: &KeyEvent) -> bool {
         }
         // The settings dialog is WS-E. The key is not swallowed, so it can land there.
         StoryKey::Settings => false,
-        // The link chooser is WS-D.
-        StoryKey::Links => false,
+        StoryKey::Links => story.open_links(),
+        StoryKey::ToggleSaved => {
+            let id = story.id();
+            s.toggle_saved_id(id);
+            true
+        }
+        StoryKey::NextComment => {
+            story.thread.next();
+            thread_moved(story, root, tx);
+            true
+        }
+        StoryKey::PrevComment => {
+            story.thread.prev();
+            thread_moved(story, root, tx);
+            true
+        }
+        StoryKey::NextSibling => {
+            story.thread.next_sibling();
+            thread_moved(story, root, tx);
+            true
+        }
+        StoryKey::PrevSibling => {
+            story.thread.prev_sibling();
+            thread_moved(story, root, tx);
+            true
+        }
+        StoryKey::Parent => {
+            story.thread.to_parent();
+            thread_moved(story, root, tx);
+            true
+        }
+        StoryKey::Fold => {
+            story.thread.fold();
+            thread_moved(story, root, tx);
+            true
+        }
+        StoryKey::Unfold => {
+            story.thread.unfold();
+            thread_moved(story, root, tx);
+            true
+        }
+        StoryKey::FirstComment => {
+            story.thread.first();
+            thread_moved(story, root, tx);
+            true
+        }
+        StoryKey::LastComment => {
+            story.thread.last();
+            thread_moved(story, root, tx);
+            true
+        }
+        StoryKey::NextScreen => {
+            tx.scroll_page("discussion-scroll", 1);
+            true
+        }
+        StoryKey::PrevScreen => {
+            tx.scroll_page("discussion-scroll", -1);
+            true
+        }
+        StoryKey::Focus => {
+            story.thread.toggle_focus();
+            true
+        }
+        StoryKey::PopTrail => {
+            story.thread.pop_trail();
+            thread_moved(story, root, tx);
+            true
+        }
+    }
+}
+
+/// Keep the focused comment in view after a thread transition.
+///
+/// A transition that re-roots the tree glides the viewport to the new root on `GLIDE` — the
+/// rows crossfade in place, so the offset is the only thing that travels. Anything else just
+/// reveals the row the cursor landed on.
+fn thread_moved(story: &mut Story, before: Option<i32>, tx: &mut Tx) {
+    if story.thread.root() != before {
+        tx.scroll_to("discussion-scroll", 0.0, 0.0);
+    } else if let Some(id) = story.thread.cursor() {
+        tx.scroll_into_view_in("discussion-scroll", format!("comment-{id}"));
+        // The trail is sticky, and a sticky element that leaves the tree in the same commit
+        // aborts the reveal asked for that commit: the row lands where the trail's removal
+        // left it. With no ancestors left there is no trail, so ask again next frame, when
+        // the layout no longer holds one.
+        story.pending_reveal = (story.thread.trail().len() == 1).then_some(id);
     }
 }
 
@@ -492,6 +660,9 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
 
     // One window, one `SplitView`: the feed is this window with the inspector collapsed, so the
     // inspector's slot exists before a story opens and its width can spring out from 0.
+    // The overlay layer is built before the panes, because a pane can own a surface in it: the
+    // discussion's link chooser hangs off a chip inside the inspector.
+    let mut overlays = Vec::new();
     let (main, toolbar, inspector) = match &s.story {
         Some(story) => (
             story_main(story, &k, t),
@@ -503,7 +674,7 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
                 s.config.profile.label(),
                 s.saved.contains(story.id()),
             )),
-            story_view::inspector_pane(story, &k, t, accent),
+            story_view::inspector_pane(story, &k, t, accent, &mut overlays),
         ),
         None => (feed_body(s, &k, t, accent, cols), toolbar, col()),
     };
@@ -516,7 +687,6 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
         .build(&k);
 
     let base = col().key("window").w_full().h_full().fill(t.bg).child(shell);
-    let mut overlays = Vec::new();
     if let Some(notice) = &s.toast {
         overlays.push(
             ToastRegion::new()
@@ -552,7 +722,7 @@ fn story_main(story: &Story, k: &Kit, t: tok::Theme) -> El {
                 .min_h(0.0),
         )
         .child(el().w_full().h(1.0).fill(t.separator))
-        .child(story_view::story_footer(story, k, t))
+        .child(story_view::story_footer(k, t))
 }
 
 fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize) -> El {
@@ -952,6 +1122,23 @@ fn scene_story(s: &mut App) {
     ));
 }
 
+/// The discussion as it opens: the tree at the story's top level, the cursor on the first
+/// comment, no re-root and no focus mode.
+fn scene_comments(s: &mut App) {
+    scene_story(s);
+}
+
+/// A thread you did not start: re-rooted at the comment that hit the depth cap, the cursor on
+/// its first reply, focus mode on. The trail carries the four ancestors above it.
+fn scene_thread(s: &mut App) {
+    scene_story(s);
+    if let Some(story) = &mut s.story {
+        story.thread.reroot(901000);
+        story.thread.select(9010000);
+        story.thread.toggle_focus();
+    }
+}
+
 /// The citation source viewer: `Tab` twice selects the second citation, `Enter` reads it.
 fn scene_citation(s: &mut App) {
     scene_story(s);
@@ -983,6 +1170,8 @@ pub fn spec() -> AppSpec<App> {
             ("feed-saved-corrupt", scene_saved_corrupt),
             ("resize", scene_resize),
             ("story", scene_story),
+            ("comments", scene_comments),
+            ("thread", scene_thread),
             ("citation", scene_citation),
             ("summary-generating", scene_summary_generating),
         ],

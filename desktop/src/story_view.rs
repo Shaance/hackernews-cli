@@ -1,26 +1,36 @@
-//! The story split's view: the article pane, the pinned summary card, the flat discussion.
+//! The story split's view: the article pane, the pinned summary card, the comment tree.
 //!
 //! Every function here is a pure function of [`Story`] plus the theme, so a scene, a scripted
 //! key and a landed request all draw the same tree. The card's four states are
-//! [`SummaryState`]'s; this module only draws them, and the discussion is a flat list of
-//! top-level comments — threading, the ancestor trail and focus mode are WS-D's.
+//! [`SummaryState`]'s; this module only draws them.
+//!
+//! The discussion is DESIGN.md's "Comments: reading a thread you did not start", drawn from
+//! [`crate::comments::Thread`]: a tree with one indent guide per ancestor, a sticky ancestor
+//! trail above the focused comment, a depth cap that turns deeper replies into
+//! `continue thread → N replies`, focus mode's 0.35 dim on everything off the chain, and a
+//! folded comment's derived `N replies hidden`. The state is the thread's; this module only
+//! draws it and hands presses back to it.
 //!
 //! The article is `rune_kit::Markdown`, so headings, lists, quotes and fenced code are the
 //! kit's, including its syntax colouring. Nothing here parses Markdown.
 
-use hn_lib::reader::Source as CapturedSource;
-use rune::tok::{self, radius, type_};
-use rune::{Color, El, ScrollSpec, TextStyle, col, el, row, text};
-use rune_kit::{Keybind, Kit, Markdown, Spinner};
+use std::f32::consts::FRAC_PI_2;
 
-use crate::story::{ArticleState, CommentRow, Story, Summary, SummaryState};
+use hn_lib::reader::Source as CapturedSource;
+use rune::tok::{self, motion, radius, type_};
+use rune::{Color, El, ScrollSpec, TextStyle, Tx, col, el, icon, row, text};
+use rune_kit::{Keybind, Kit, Markdown, Placement, Popover, Spinner};
+
+use crate::app::App;
+use crate::comments::{DIMMED, INDENT};
+use crate::story::{ArticleState, Story, Summary, SummaryState};
 
 /// The article's measure: 66 characters at [`type_::BODY`] (13 pt), 6.8 pt per character.
 /// DESIGN.md's reading measure, and the reason the article column does not fill the pane.
 pub const MEASURE: f32 = 448.8;
 
 /// The article's opacity while a citation source is open (DESIGN.md screen 04).
-const DIMMED: f32 = 0.55;
+const ARTICLE_DIMMED: f32 = 0.55;
 
 /// The article's headline. `type_::TITLE` is a row title; a headline is a step above it.
 const HEADLINE: TextStyle = TextStyle::new(21.0, 600.0);
@@ -30,7 +40,7 @@ pub fn article_pane(s: &Story, k: &Kit, t: tok::Theme) -> El {
     let mut pane = col().key("article-pane").w_full().h_full();
     if s.source.is_some() {
         // The source viewer takes the inspector; the article stays as context, dimmed.
-        pane = pane.opacity(DIMMED);
+        pane = pane.opacity(ARTICLE_DIMMED);
     }
     pane.child(
         col()
@@ -159,7 +169,18 @@ fn article_body(s: &Story, k: &Kit, t: tok::Theme) -> El {
 
 /// The inspector: the summary card pinned at the top, the discussion below it, or the source
 /// viewer in their place.
-pub fn inspector_pane(s: &Story, k: &Kit, t: tok::Theme, accent: Color) -> El {
+///
+/// The card and the discussion are siblings in a column that does not scroll, so the card is
+/// pinned by layout rather than by `sticky_top`: the discussion has its own viewport and moves
+/// under the card, and the card never moves at all. `overlays` takes the link chooser's surface,
+/// which is anchored to a chip in the discussion header.
+pub fn inspector_pane(
+    s: &Story,
+    k: &Kit,
+    t: tok::Theme,
+    accent: Color,
+    overlays: &mut Vec<El>,
+) -> El {
     if let Some(source) = s.shown_source() {
         return source_viewer(s, source, k, t, accent);
     }
@@ -167,17 +188,20 @@ pub fn inspector_pane(s: &Story, k: &Kit, t: tok::Theme, accent: Color) -> El {
         .key("inspector")
         .w_full()
         .h_full()
-        .scroll(ScrollSpec { stick_bottom: false })
-        .scroll_edge_fade(20.0)
         .child(
             col()
                 .key("inspector-content")
                 .w_full()
+                .h_full()
                 .px(14.0)
                 .py(12.0)
                 .gap(10.0)
                 .child(summary_card(s, k, t, accent))
-                .child(discussion(s, t)),
+                .child(
+                    discussion_pane(s, k, t, accent, overlays)
+                        .grow(1.0)
+                        .min_h(0.0),
+                ),
         )
 }
 
@@ -519,103 +543,398 @@ fn folded_summary(s: &Story, k: &Kit, t: tok::Theme) -> El {
         )
 }
 
-/// The discussion: a flat list of top-level comments. Threading is WS-D's.
-fn discussion(s: &Story, t: tok::Theme) -> El {
+/// The discussion's viewport: the tree scrolls here, under the pinned card, and nowhere else.
+fn discussion_pane(
+    s: &Story,
+    k: &Kit,
+    t: tok::Theme,
+    accent: Color,
+    overlays: &mut Vec<El>,
+) -> El {
+    col()
+        .key("discussion-scroll")
+        .w_full()
+        .grow(1.0)
+        .min_h(0.0)
+        .scroll(ScrollSpec { stick_bottom: false })
+        .scroll_edge_fade(20.0)
+        .child(discussion(s, k, t, accent, overlays))
+}
+
+/// The discussion: the header, the sticky ancestor trail, then the tree's visible rows.
+fn discussion(s: &Story, k: &Kit, t: tok::Theme, accent: Color, overlays: &mut Vec<El>) -> El {
+    let thread = &s.thread;
     let mut list = col()
         .key("discussion")
         .w_full()
         .gap(2.0)
-        .child(
-            row()
-                .key("discussion-header")
-                .w_full()
-                .px(2.0)
-                .py(6.0)
-                .gap(8.0)
-                .center_y()
-                .child(
-                    text("Discussion")
-                        .font(type_::SECTION)
-                        .color(t.text_secondary),
-                )
-                .child(
-                    text(format!(
-                        "{} top-level {}",
-                        s.discussion.len(),
-                        if s.discussion.len() == 1 {
-                            "comment"
-                        } else {
-                            "comments"
-                        }
-                    ))
-                    .key("discussion-count")
-                    .font(type_::LABEL)
-                    .color(t.text_secondary),
-                ),
-        );
-    if s.discussion.is_empty() {
-        list = list.child(
+        .child(discussion_header(s, k, t, accent, overlays));
+    if thread.is_empty() {
+        return list.child(
             text("No comments yet.")
                 .key("discussion-empty")
                 .font(type_::LABEL)
                 .color(t.text_secondary),
         );
     }
-    for comment in &s.discussion {
-        list = list.child(comment_row(comment, t));
+    // The trail is the cursor's ancestor chain, so it only has something to say once the cursor
+    // is below the top level: one segment is the comment itself, and the row already says that.
+    let trail = thread.trail();
+    if trail.len() > 1 {
+        list = list.child(trail_strip(s, &trail, t));
+    }
+    for row in thread.rows() {
+        list = list.child(comment_row(s, row.id, row.depth, k, t, accent));
     }
     list
 }
 
-fn comment_row(c: &CommentRow, t: tok::Theme) -> El {
-    let mut who = row()
-        .key(format!("comment-who-{}", c.id))
+/// The discussion's header: what the capture holds, whether focus mode is on, and `L`'s chip.
+fn discussion_header(
+    s: &Story,
+    k: &Kit,
+    t: tok::Theme,
+    accent: Color,
+    overlays: &mut Vec<El>,
+) -> El {
+    let thread = &s.thread;
+    let mut header = row()
+        .key("discussion-header")
         .w_full()
+        .px(2.0)
+        .py(6.0)
         .gap(8.0)
         .center_y()
         .child(
-            text(c.author.clone())
-                .key(format!("comment-author-{}", c.id))
+            text("Discussion")
+                .font(type_::SECTION)
+                .color(t.text_secondary),
+        )
+        .child(
+            text(format!(
+                "{} {} \u{00b7} {} top-level",
+                thread.len(),
+                if thread.len() == 1 { "comment" } else { "comments" },
+                thread.roots()
+            ))
+            .key("discussion-count")
+            .font(type_::LABEL)
+            .color(t.text_secondary),
+        );
+    if thread.focus() {
+        header = header.child(
+            row()
+                .key("discussion-focus")
+                .role("status")
+                .label("focus mode")
+                .h(16.0)
+                .px(6.0)
+                .center()
+                .radius(4.0)
+                .fill(accent)
+                .child(text("focus").font(type_::LABEL).color(t.bg)),
+        );
+    }
+    header
+        .child(el().grow(1.0))
+        .child(link_chooser(s, k, t, accent, overlays))
+}
+
+/// The ancestor trail: `tptacek › kstrauser › jmillikin`, held to the top of the discussion's
+/// viewport so "where am I" never scrolls away. Every segment but the last re-roots there.
+fn trail_strip(s: &Story, trail: &[i32], t: tok::Theme) -> El {
+    let last = trail.len() - 1;
+    let mut strip = row()
+        .key("trail")
+        .role("region")
+        .label("Thread trail")
+        .w_full()
+        .gap(6.0)
+        .px(2.0)
+        .py(6.0)
+        .center_y()
+        // Opaque, so the rows scroll under the trail rather than through it.
+        .fill(t.bg)
+        // A segment added or removed is SNAP on the strip's width; the strip itself does not
+        // move, it follows the scroll offset.
+        .motion(motion::SNAP)
+        .sticky_top(0.0);
+    for (at, id) in trail.iter().enumerate() {
+        if at > 0 {
+            strip = strip.child(
+                text("\u{203a}")
+                    .font(type_::LABEL)
+                    .color(t.text_secondary),
+            );
+        }
+        let author = s
+            .thread
+            .node(*id)
+            .map(|node| node.author.clone())
+            .unwrap_or_default();
+        if at == last {
+            // The comment you are reading: named, not a target.
+            strip = strip.child(
+                text(author)
+                    .key(format!("trail-{id}"))
+                    .font(type_::LABEL)
+                    .color(t.text),
+            );
+        } else {
+            let target = *id;
+            strip = strip.child(
+                row()
+                    .key(format!("trail-{id}"))
+                    .role("button")
+                    .label(format!("Back to {author}"))
+                    .px(4.0)
+                    .py(1.0)
+                    .radius(3.0)
+                    .focusable(true)
+                    .on_press(move |s: &mut App| {
+                        if let Some(story) = s.story_mut() {
+                            story.thread.reroot(target);
+                        }
+                    })
+                    .child(text(author).font(type_::LABEL).color(t.text_secondary)),
+            );
+        }
+    }
+    strip
+}
+
+/// One comment: its indent guides, its header, its text, and what it is hiding.
+///
+/// The row is the fold target and the cursor target at once. A folded comment keeps its header
+/// and states the count it hides; a comment at the depth cap states the replies behind
+/// `continue thread` instead of drawing them.
+fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: Color) -> El {
+    let thread = &s.thread;
+    let Some(node) = thread.node(id) else {
+        return el();
+    };
+    let selected = thread.cursor() == Some(id);
+    let folded = thread.is_folded(id);
+    let capped = thread.capped(id);
+    let replies = thread.children_of(id).len();
+    let mut r = col()
+        .key(format!("comment-{id}"))
+        .role("article")
+        .label(format!("Comment by {}", node.author))
+        .level(depth + 1)
+        .expanded(!folded)
+        .w_full()
+        .gap(4.0)
+        .pl(8.0 + depth as f32 * INDENT)
+        .pr(10.0)
+        .py(8.0)
+        .radius(radius::SM)
+        .focusable(true)
+        .focus_selected(selected)
+        .focus_ring(1.5, 0.0, accent)
+        // Focus mode dims everything off the chain on REFLOW; the chain does not move.
+        .motion(motion::REFLOW)
+        .opacity(if thread.dimmed(id) { DIMMED } else { 1.0 })
+        .on_press(move |s: &mut App| {
+            if let Some(story) = s.story_mut() {
+                story.thread.select(id);
+            }
+        });
+    // One hairline per ancestor level: the threadline that says how deep this row is.
+    for level in 1..=depth {
+        r = r.child(
+            el()
+                .key(format!("guide-{id}-{level}"))
+                .pin(
+                    Some(8.0 + level as f32 * INDENT),
+                    Some(0.0),
+                    None,
+                    Some(0.0),
+                )
+                .w(1.0)
+                .fill(t.separator),
+        );
+    }
+    let mut who = row()
+        .key(format!("comment-who-{id}"))
+        .w_full()
+        .gap(6.0)
+        .center_y();
+    if replies > 0 || capped {
+        who = who.child(
+            icon(k.glyph.chevron_down, 12.0)
+                .icon_rotation(if folded { -FRAC_PI_2 } else { 0.0 })
+                .motion(motion::SNAP)
+                .color(t.text_secondary),
+        );
+    } else {
+        // A leaf keeps the chevron's lane, so authors line up down the thread.
+        who = who.child(el().size(12.0, 12.0));
+    }
+    who = who
+        .child(
+            text(node.author.clone())
+                .key(format!("comment-author-{id}"))
                 .font(type_::TITLE)
                 .color(t.text),
         )
         .child(
-            text(c.time_ago.clone())
-                .key(format!("comment-age-{}", c.id))
+            text(node.time_ago.clone())
+                .key(format!("comment-age-{id}"))
                 .font(type_::LABEL)
                 .color(t.text_secondary),
         )
         .child(el().grow(1.0));
-    if c.replies > 0 {
-        // A count, not a fold target: opening a thread is WS-D's.
-        who = who.child(
-            text(if c.replies == 1 {
-                "1 reply".to_string()
-            } else {
-                format!("{} replies", c.replies)
-            })
-                .key(format!("comment-replies-{}", c.id))
-                .font(type_::LABEL)
-                .color(t.text_secondary),
-        );
-    }
-    col()
-        .key(format!("comment-{}", c.id))
-        .role("article")
-        .label(format!("Comment by {}", c.author))
-        .w_full()
-        .gap(4.0)
-        .px(10.0)
-        .py(8.0)
-        .radius(radius::SM)
-        .child(who)
-        .child(
-            text(c.excerpt.clone())
-                .key(format!("comment-text-{}", c.id))
+    r = r.child(who);
+    if !folded {
+        r = r.child(
+            text(node.text.clone())
+                .key(format!("comment-text-{id}"))
                 .font(type_::BODY)
                 .color(t.text_secondary)
                 .wrap(),
-        )
+        );
+    }
+    if folded {
+        let hidden = thread.hidden_count(id);
+        r = r.child(
+            row()
+                .key(format!("comment-hidden-{id}"))
+                .role("button")
+                .label(format!("{hidden} replies hidden, Enter expands"))
+                .h(18.0)
+                .px(6.0)
+                .center()
+                .radius(4.0)
+                .fill(t.control_off)
+                .focusable(true)
+                .on_press(move |s: &mut App| {
+                    if let Some(story) = s.story_mut() {
+                        story.thread.select(id);
+                        story.thread.unfold();
+                    }
+                })
+                .child(
+                    text(format!("{hidden} replies hidden \u{00b7} Enter expands"))
+                        .font(type_::LABEL)
+                        .color(t.text_secondary),
+                ),
+        );
+    }
+    if capped {
+        let behind = thread.reply_count(id);
+        r = r.child(
+            row()
+                .key(format!("comment-continue-{id}"))
+                .role("button")
+                .label(format!("Continue thread, {behind} replies"))
+                .h(20.0)
+                .px(8.0)
+                .center_y()
+                .radius(4.0)
+                .fill(t.control_off)
+                .focusable(true)
+                .on_press(move |s: &mut App| {
+                    if let Some(story) = s.story_mut() {
+                        story.thread.reroot(id);
+                    }
+                })
+                .child(
+                    text(format!("continue thread \u{2192} {behind} replies"))
+                        .font(type_::LABEL)
+                        .color(accent),
+                ),
+        );
+    }
+    r
+}
+
+/// `L`'s chooser: the links the post and the focused comment carry, anchored to a chip in the
+/// discussion header. The surface goes into the overlay layer; the chip is what it hangs from.
+fn link_chooser(
+    s: &Story,
+    k: &Kit,
+    t: tok::Theme,
+    accent: Color,
+    overlays: &mut Vec<El>,
+) -> El {
+    let mut pop = Popover::new("links")
+        .label("Links")
+        .placement(Placement::BottomEnd)
+        .open(s.links.is_some())
+        .on_close(|s: &mut App| {
+            if let Some(story) = s.story_mut() {
+                story.close_links();
+            }
+        });
+    if let Some(chooser) = &s.links {
+        for (index, item) in chooser.items.iter().enumerate() {
+            let selected = index == chooser.selected;
+            pop = pop.child(
+                row()
+                    .key(format!("link-{index}"))
+                    .role("button")
+                    .label(format!("{}: {}", item.source, item.url))
+                    .w_full()
+                    .gap(8.0)
+                    .px(8.0)
+                    .py(6.0)
+                    .radius(4.0)
+                    .fill(if selected { accent } else { t.control_off })
+                    .focusable(true)
+                    .focus_selected(selected)
+                    .on_press_tx(move |s: &mut App, tx: &mut Tx| {
+                        let Some(story) = s.story_mut() else {
+                            return;
+                        };
+                        if let Some(chooser) = &mut story.links {
+                            chooser.selected = index;
+                        }
+                        if let Some(url) = story.take_link() {
+                            let _ = tx.open_url(&url);
+                        }
+                    })
+                    .child(
+                        col()
+                            .grow(1.0)
+                            .min_w(0.0)
+                            .gap(2.0)
+                            .child(
+                                text(item.source.clone())
+                                    .key(format!("link-source-{index}"))
+                                    .font(type_::LABEL)
+                                    .color(if selected { t.bg } else { t.text_secondary }),
+                            )
+                            .child(
+                                text(item.url.clone())
+                                    .key(format!("link-url-{index}"))
+                                    .font(type_::LABEL)
+                                    .color(if selected { t.bg } else { t.text })
+                                    .truncate_middle(),
+                            ),
+                    ),
+            );
+        }
+    }
+    let trigger = row()
+        .key("links-chip")
+        .role("button")
+        .label("Links")
+        .h(18.0)
+        .px(6.0)
+        .gap(4.0)
+        .center_y()
+        .radius(4.0)
+        .fill(t.control_off)
+        .focusable(true)
+        .on_press(|s: &mut App| {
+            if let Some(story) = s.story_mut() {
+                story.open_links();
+            }
+        })
+        .child(Keybind::new(&["L"]).build(k))
+        .child(text("links").font(type_::LABEL).color(t.text_secondary));
+    pop.trigger(trigger).build(k, overlays)
 }
 
 /// The citation source viewer: the excerpt the model saw, then whatever the capture holds
@@ -755,8 +1074,12 @@ pub fn extra_text(source: &CapturedSource) -> Option<&str> {
 }
 
 /// The story's footer: the keys this view binds, and no page stepper — a story is not a page.
-pub fn story_footer(s: &Story, k: &Kit, t: tok::Theme) -> El {
-    let mut f = row()
+///
+/// The discussion's keys are here rather than in a second footer, so the seven hints are what the
+/// row has room for at the narrowest split. The source viewer says "back to the discussion" in its
+/// own header, so the footer does not repeat it.
+pub fn story_footer(k: &Kit, t: tok::Theme) -> El {
+    row()
         .key("story-footer")
         .w_full()
         .px(24.0)
@@ -764,19 +1087,13 @@ pub fn story_footer(s: &Story, k: &Kit, t: tok::Theme) -> El {
         .gap(18.0)
         .center_y()
         .child(hint(k, t, &["Esc"], "feed"))
+        .child(hint(k, t, &["j", "k"], "move"))
+        .child(hint(k, t, &["f"], "focus"))
+        .child(hint(k, t, &["L"], "links"))
         .child(hint(k, t, &["Tab"], "citation"))
         .child(hint(k, t, &["S"], "summary"))
         .child(hint(k, t, &["r"], "refresh"))
-        .child(el().grow(1.0));
-    if s.source.is_some() {
-        f = f.child(
-            text("Reading a citation")
-                .key("story-footer-note")
-                .font(type_::LABEL)
-                .color(t.text_secondary),
-        );
-    }
-    f
+        .child(el().grow(1.0))
 }
 
 fn hint(k: &Kit, t: tok::Theme, keys: &[&str], label: &str) -> El {
@@ -883,12 +1200,11 @@ fn host_of(url: &str) -> String {
     }
 }
 
-/// The age of the comment a citation points at, from the discussion rows.
+/// The age of the comment a citation points at, from the discussion tree.
 fn age_of(s: &Story, id: i32) -> String {
-    s.discussion
-        .iter()
-        .find(|comment| comment.id == id)
-        .map(|comment| comment.time_ago.clone())
+    s.thread
+        .node(id)
+        .map(|node| node.time_ago.clone())
         .unwrap_or_else(|| "captured".to_string())
 }
 

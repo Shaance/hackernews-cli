@@ -71,6 +71,7 @@ pub struct StoryFilled {
     pub story_id: i32,
     pub article: Result<Article, String>,
     pub article_partial: bool,
+    /// The discussion as a tree: the top-level comments and their replies, level by level.
     pub comments: Vec<Comment>,
     pub sources: Vec<CapturedSource>,
     pub summary: Result<Discussion, SummaryError>,
@@ -216,14 +217,22 @@ async fn run(source: &Source, request: Request) -> Filled {
 /// The order is the card's provenance: the article and the discussion are the two captures the
 /// summary is written from, so a summary is never requested over a discussion that failed to
 /// load. A failed article does not stop the discussion — the reader can still read the thread.
+///
+/// The discussion is fetched as a tree, because the inspector draws one; the summary is written
+/// from the top-level comments only, which is the capture the card's coverage line describes.
 async fn run_story(source: &Source, request: StoryRequest) -> StoryFilled {
     let story_id = request.story.id;
     let (article, article_partial) = match source.article(&request.story).await {
         Ok((text, partial)) => (Ok(Article { text }), partial),
         Err(message) => (Err(message), false),
     };
-    let comments = source.comments(story_id).await.unwrap_or_default();
-    let sources = source.capture(&comments);
+    let comments = source.thread(story_id).await.unwrap_or_default();
+    let top_level: Vec<Comment> = comments
+        .iter()
+        .filter(|comment| comment.depth == 0)
+        .cloned()
+        .collect();
+    let sources = source.capture(&top_level);
     let summary = source
         .summary(&request.config, &request.story, &sources)
         .await;
@@ -391,11 +400,24 @@ mod tests {
             "the article comes from the reader's own extractor"
         );
         assert!(!filled.article_partial);
-        assert_eq!(filled.comments.len(), 5, "the top-level discussion");
+        assert_eq!(
+            filled.comments.len(),
+            crate::fixtures::thread().len(),
+            "the discussion is the whole tree"
+        );
+        assert_eq!(
+            filled
+                .comments
+                .iter()
+                .filter(|comment| comment.depth == 0)
+                .count(),
+            5,
+            "five top-level threads"
+        );
         assert_eq!(
             filled.sources.len(),
             5,
-            "one captured source per comment, which is what the card counts"
+            "one captured source per top-level comment, which is what the card counts"
         );
         let summary = filled.summary.expect("the fake provider always answers");
         assert_eq!(summary.points.len(), 3);

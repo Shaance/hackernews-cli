@@ -70,26 +70,60 @@ pub fn story_action(ev: &KeyEvent) -> StoryAction {
 ///
 /// The terminal app splits these across `Reader::key` (`src/reader/interaction.rs:7`) and
 /// `reader_actions::handle` (`src/reader_actions.rs:60`); this is the union, minus the
-/// bindings the window has no counterpart for (`o` opens a browser tab, `J`/`K` scroll the
-/// summary, `j`/`k`/`g`/`G` scroll the source viewer — the panes scroll themselves).
+/// bindings the window has no counterpart for (`o`/`O` open a browser tab, `J`/`K` scroll the
+/// summary — the card is not a viewport, `j`/`k`/`g`/`G` scroll the source viewer — the panes
+/// scroll themselves).
+///
+/// `h` and `l` are the one place the two tables disagree. README.md's discussion table has
+/// `h` as back and `l` as expand/collapse; DESIGN.md's keyboard table has `h`/`l` as
+/// fold/unfold, which is what a tree needs and what the task asked for. `←`, `Esc` and `q`
+/// still leave, so nothing is lost, and `c` folds as README.md says.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StoryKey {
-    /// `Esc`, `q`, `h`, `Left`: leave the source viewer, else close the story.
+    /// `Esc`, `q`, `Left`: leave the source viewer, then focus mode, then the story.
     Back,
     /// `Tab`: select the next citation.
     NextCitation,
     /// `Shift+Tab`: select the previous citation.
     PrevCitation,
-    /// `Enter` with a citation selected: open the source viewer on it.
-    OpenSource,
+    /// `Enter`: read the selected citation, else expand or re-root the focused comment.
+    Enter,
     /// `S`: show or hide the summary card.
     ToggleSummary,
     /// `r`: refetch the discussion.
     Refresh,
     /// `M`: summary settings. The dialog is WS-E; the window only notes the key.
     Settings,
-    /// `L`: link chooser, deferred to WS-D.
+    /// `L`: the link chooser for the post and the focused comment.
     Links,
+    /// `s`: save or unsave the open story.
+    ToggleSaved,
+    /// `j`, `Down`: the next visible comment.
+    NextComment,
+    /// `k`, `Up`: the previous visible comment.
+    PrevComment,
+    /// `]`: the next sibling thread.
+    NextSibling,
+    /// `[`: the previous sibling thread.
+    PrevSibling,
+    /// `u`: the parent comment.
+    Parent,
+    /// `h`, `c`: fold the focused comment's replies.
+    Fold,
+    /// `l`, `Right`: unfold the focused comment, or re-root at it when it is at the cap.
+    Unfold,
+    /// `g`: the first visible comment.
+    FirstComment,
+    /// `G`: the last visible comment.
+    LastComment,
+    /// `PageDown`: the next screen of the discussion.
+    NextScreen,
+    /// `PageUp`: the previous screen of the discussion.
+    PrevScreen,
+    /// `f`: toggle focus mode.
+    Focus,
+    /// `Backspace`: pop one segment off the ancestor trail.
+    PopTrail,
     /// A key the story view does not bind.
     None,
 }
@@ -106,11 +140,28 @@ pub fn story_key(ev: &KeyEvent) -> StoryKey {
     match &ev.key {
         Key::Escape => StoryKey::Back,
         Key::Left => StoryKey::Back,
+        Key::Right => StoryKey::Unfold,
+        Key::Up => StoryKey::PrevComment,
+        Key::Down => StoryKey::NextComment,
+        Key::PageUp => StoryKey::PrevScreen,
+        Key::PageDown => StoryKey::NextScreen,
+        Key::Backspace => StoryKey::PopTrail,
         Key::Tab if m.shift => StoryKey::PrevCitation,
         Key::Tab => StoryKey::NextCitation,
-        Key::Enter => StoryKey::OpenSource,
+        Key::Enter => StoryKey::Enter,
         Key::Text(text) => match single_char(text) {
-            Some('q') | Some('h') => StoryKey::Back,
+            Some('q') => StoryKey::Back,
+            Some('j') => StoryKey::NextComment,
+            Some('k') => StoryKey::PrevComment,
+            Some(']') => StoryKey::NextSibling,
+            Some('[') => StoryKey::PrevSibling,
+            Some('u') => StoryKey::Parent,
+            Some('h') | Some('c') => StoryKey::Fold,
+            Some('l') => StoryKey::Unfold,
+            Some('g') => StoryKey::FirstComment,
+            Some('G') => StoryKey::LastComment,
+            Some('f') => StoryKey::Focus,
+            Some('s') => StoryKey::ToggleSaved,
             Some('S') => StoryKey::ToggleSummary,
             Some('r') => StoryKey::Refresh,
             Some('M') => StoryKey::Settings,
@@ -273,7 +324,8 @@ mod tests {
 
     #[test]
     fn story_keys_match_the_reader_bindings() {
-        // `src/reader/interaction.rs:7` and `src/reader_actions.rs:60`, as Rune keys.
+        // `src/reader/interaction.rs:7` and `src/reader_actions.rs:60`, as Rune keys, plus
+        // DESIGN.md's thread table (`h`/`l`, `f`, `⌫`, `Enter` on `continue thread`).
         let plain = |key: Key| KeyEvent {
             key,
             mods: Mods::default(),
@@ -281,14 +333,31 @@ mod tests {
         let bindings = [
             (Key::Escape, StoryKey::Back),
             (Key::Text("q".into()), StoryKey::Back),
-            (Key::Text("h".into()), StoryKey::Back),
             (Key::Left, StoryKey::Back),
             (Key::Tab, StoryKey::NextCitation),
-            (Key::Enter, StoryKey::OpenSource),
+            (Key::Enter, StoryKey::Enter),
             (Key::Text("S".into()), StoryKey::ToggleSummary),
             (Key::Text("r".into()), StoryKey::Refresh),
             (Key::Text("M".into()), StoryKey::Settings),
             (Key::Text("L".into()), StoryKey::Links),
+            (Key::Text("s".into()), StoryKey::ToggleSaved),
+            (Key::Text("j".into()), StoryKey::NextComment),
+            (Key::Down, StoryKey::NextComment),
+            (Key::Text("k".into()), StoryKey::PrevComment),
+            (Key::Up, StoryKey::PrevComment),
+            (Key::Text("]".into()), StoryKey::NextSibling),
+            (Key::Text("[".into()), StoryKey::PrevSibling),
+            (Key::Text("u".into()), StoryKey::Parent),
+            (Key::Text("h".into()), StoryKey::Fold),
+            (Key::Text("c".into()), StoryKey::Fold),
+            (Key::Text("l".into()), StoryKey::Unfold),
+            (Key::Right, StoryKey::Unfold),
+            (Key::Text("g".into()), StoryKey::FirstComment),
+            (Key::Text("G".into()), StoryKey::LastComment),
+            (Key::PageDown, StoryKey::NextScreen),
+            (Key::PageUp, StoryKey::PrevScreen),
+            (Key::Text("f".into()), StoryKey::Focus),
+            (Key::Backspace, StoryKey::PopTrail),
         ];
         for (key, expected) in bindings {
             assert_eq!(story_key(&plain(key.clone())), expected, "{key:?}");
@@ -302,8 +371,9 @@ mod tests {
             },
         };
         assert_eq!(story_key(&back_tab), StoryKey::PrevCitation);
-        // The feed's own bindings are not story bindings.
-        for key in ["j", "k", "g", "G", "n", "p", "s", "?", "c", "1"] {
+        // The feed's page and tab keys are not story bindings: the discussion pages with
+        // Page Up/Down, and `n`/`p`/`1`-`4` belong to the feed.
+        for key in ["n", "p", "?", "1", "2", "3", "4", "o", "O"] {
             assert_eq!(
                 story_key(&plain(Key::Text(key.into()))),
                 StoryKey::None,

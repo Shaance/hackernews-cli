@@ -596,6 +596,66 @@
                                             "bounds": [
                                               109.0,
                                               725.5,
+                                              32.5,
+                                              14.0
+                                            ],
+                                            "name": "j k",
+                                            "role": "group"
+                                          },
+                                          {
+                                            "bounds": [
+                                              147.5,
+                                              725.0,
+                                              31.5,
+                                              15.0
+                                            ],
+                                            "name": "move",
+                                            "role": "label"
+                                          },
+                                          {
+                                            "bounds": [
+                                              197.0,
+                                              725.5,
+                                              14.5,
+                                              14.0
+                                            ],
+                                            "name": "f",
+                                            "role": "group"
+                                          },
+                                          {
+                                            "bounds": [
+                                              217.5,
+                                              725.0,
+                                              32.5,
+                                              15.0
+                                            ],
+                                            "name": "focus",
+                                            "role": "label"
+                                          },
+                                          {
+                                            "bounds": [
+                                              268.0,
+                                              725.5,
+                                              14.5,
+                                              14.0
+                                            ],
+                                            "name": "L",
+                                            "role": "group"
+                                          },
+                                          {
+                                            "bounds": [
+                                              288.5,
+                                              725.0,
+                                              26.5,
+                                              15.0
+                                            ],
+                                            "name": "links",
+                                            "role": "label"
+                                          },
+                                          {
+                                            "bounds": [
+                                              333.0,
+                                              725.5,
                                               27.5,
                                               14.0
                                             ],
@@ -604,7 +664,7 @@
                                           },
                                           {
                                             "bounds": [
-                                              142.5,
+                                              366.5,
                                               725.0,
                                               42.5,
                                               15.0
@@ -614,7 +674,7 @@
                                           },
                                           {
                                             "bounds": [
-                                              203.0,
+                                              427.0,
                                               725.5,
                                               15.5,
                                               14.0
@@ -624,7 +684,7 @@
                                           },
                                           {
                                             "bounds": [
-                                              224.5,
+                                              448.5,
                                               725.0,
                                               54.0,
                                               15.0
@@ -634,7 +694,7 @@
                                           },
                                           {
                                             "bounds": [
-                                              296.5,
+                                              520.5,
                                               725.5,
                                               15.5,
                                               14.0
@@ -644,23 +704,12 @@
                                           },
                                           {
                                             "bounds": [
-                                              318.0,
+                                              542.0,
                                               725.0,
                                               41.5,
                                               15.0
                                             ],
                                             "name": "refresh",
-                                            "role": "label"
-                                          },
-                                          {
-                                            "bounds": [
-                                              510.5,
-                                              725.0,
-                                              102.5,
-                                              15.0
-                                            ],
-                                            "key": "story-footer-note",
-                                            "name": "Reading a citation",
                                             "role": "label"
                                           }
                                         ],
@@ -2304,7 +2353,7 @@
       "rect": [
         109.0,
         725.0,
-        76.0,
+        70.0,
         15.0
       ],
       "role": "group",
@@ -2317,14 +2366,14 @@
       "focusable": false,
       "focused": false,
       "inert": false,
-      "label": "Tab",
+      "label": "j k",
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1/#0",
       "rect": [
         109.0,
         725.5,
-        27.5,
+        32.5,
         14.0
       ],
       "role": "group",
@@ -2344,7 +2393,7 @@
       "rect": [
         109.0,
         725.5,
-        27.5,
+        14.5,
         14.0
       ],
       "role": "group",
@@ -2364,12 +2413,53 @@
       "rect": [
         113.0,
         727.0,
-        19.5,
+        6.5,
         11.0
       ],
       "role": "text",
       "scale": 1.0,
-      "text": "Tab"
+      "text": "J"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key1",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1/#0/key1",
+      "rect": [
+        125.5,
+        725.5,
+        16.0,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1/#0/key1/#0",
+      "rect": [
+        129.5,
+        727.0,
+        8.0,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "K"
     },
     {
       "blur": 0.0,
@@ -2383,14 +2473,14 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1/#1",
       "rect": [
-        142.5,
+        147.5,
         725.0,
-        42.5,
+        31.5,
         15.0
       ],
       "role": "text",
       "scale": 1.0,
-      "text": "citation"
+      "text": "move"
     },
     {
       "blur": 0.0,
@@ -2403,9 +2493,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2",
       "rect": [
-        203.0,
+        197.0,
         725.0,
-        75.5,
+        53.0,
         15.0
       ],
       "role": "group",
@@ -2418,14 +2508,14 @@
       "focusable": false,
       "focused": false,
       "inert": false,
-      "label": "S",
+      "label": "f",
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2/#0",
       "rect": [
-        203.0,
+        197.0,
         725.5,
-        15.5,
+        14.5,
         14.0
       ],
       "role": "group",
@@ -2443,9 +2533,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2/#0/key0",
       "rect": [
-        203.0,
+        197.0,
         725.5,
-        15.5,
+        14.5,
         14.0
       ],
       "role": "group",
@@ -2463,7 +2553,310 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2/#0/key0/#0",
       "rect": [
-        207.0,
+        201.0,
+        727.0,
+        6.5,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "F"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2/#1",
+      "rect": [
+        217.5,
+        725.0,
+        32.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "focus"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3",
+      "rect": [
+        268.0,
+        725.0,
+        47.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "L",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#0",
+      "rect": [
+        268.0,
+        725.5,
+        14.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#0/key0",
+      "rect": [
+        268.0,
+        725.5,
+        14.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#0/key0/#0",
+      "rect": [
+        272.0,
+        727.0,
+        6.5,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "L"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#1",
+      "rect": [
+        288.5,
+        725.0,
+        26.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "links"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#4",
+      "rect": [
+        333.0,
+        725.0,
+        76.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "Tab",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#4/#0",
+      "rect": [
+        333.0,
+        725.5,
+        27.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#4/#0/key0",
+      "rect": [
+        333.0,
+        725.5,
+        27.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#4/#0/key0/#0",
+      "rect": [
+        337.0,
+        727.0,
+        19.5,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Tab"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#4/#1",
+      "rect": [
+        366.5,
+        725.0,
+        42.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "citation"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#5",
+      "rect": [
+        427.0,
+        725.0,
+        75.5,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "S",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#5/#0",
+      "rect": [
+        427.0,
+        725.5,
+        15.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#5/#0/key0",
+      "rect": [
+        427.0,
+        725.5,
+        15.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#5/#0/key0/#0",
+      "rect": [
+        431.0,
         727.0,
         7.5,
         11.0
@@ -2482,9 +2875,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#5/#1",
       "rect": [
-        224.5,
+        448.5,
         725.0,
         54.0,
         15.0
@@ -2502,9 +2895,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#6",
       "rect": [
-        296.5,
+        520.5,
         725.0,
         63.0,
         15.0
@@ -2522,9 +2915,9 @@
       "label": "r",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#6/#0",
       "rect": [
-        296.5,
+        520.5,
         725.5,
         15.5,
         14.0
@@ -2542,9 +2935,9 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#0/key0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#6/#0/key0",
       "rect": [
-        296.5,
+        520.5,
         725.5,
         15.5,
         14.0
@@ -2562,9 +2955,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#0/key0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#6/#0/key0/#0",
       "rect": [
-        300.5,
+        524.5,
         727.0,
         7.5,
         11.0
@@ -2583,9 +2976,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#6/#1",
       "rect": [
-        318.0,
+        542.0,
         725.0,
         41.5,
         15.0
@@ -2603,37 +2996,15 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#4",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#7",
       "rect": [
-        377.5,
+        601.5,
         732.5,
-        115.0,
+        11.5,
         0.0
       ],
       "role": "group",
       "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "key": "story-footer-note",
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/story-footer-note",
-      "rect": [
-        510.5,
-        725.0,
-        102.5,
-        15.0
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "Reading a citation"
     },
     {
       "blur": 0.0,
