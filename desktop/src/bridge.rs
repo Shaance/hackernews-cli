@@ -28,26 +28,21 @@ use tokio::runtime::{Handle, Runtime};
 use crate::feed::{Fill, Filled};
 use crate::service::Source;
 
-/// One fill request: the window, plus the ranking when the caller already knows it.
+/// One fill request: the window, plus the ranking to page it against.
 ///
-/// Saved is the local store, not a network feed, so its ids come from the caller. Every other
-/// tab asks the source for its snapshot.
+/// `snapshot` is the feed's `id_snapshot`. A page turn or a resize pages against the ranking
+/// the feed already has, so the ranks on screen stay the ranks that were shown; only a refresh
+/// (or the first load of a tab) asks the source for a new one.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Request {
     pub fill: Fill,
-    pub ids: Option<Vec<i32>>,
+    pub snapshot: Option<Vec<i32>>,
 }
 
 impl Request {
-    pub fn new(fill: Fill) -> Request {
-        Request { fill, ids: None }
-    }
-
-    pub fn against(fill: Fill, ids: Vec<i32>) -> Request {
-        Request {
-            fill,
-            ids: Some(ids),
-        }
+    /// A request that pages against `snapshot`, taking a fresh one only when there is none.
+    pub fn new(fill: Fill, snapshot: Option<Vec<i32>>) -> Request {
+        Request { fill, snapshot }
     }
 }
 
@@ -185,13 +180,24 @@ impl Bridge {
 }
 
 /// The one request shape: take the ranking (or the caller's), then fetch the window against it.
+///
+/// A ranking that cannot be fetched is an error the feed renders with a retry, not an empty
+/// list: `unwrap_or_default` here would turn a network failure into "no stories".
 async fn run(source: &Source, request: Request) -> Filled {
-    let ids = match request.ids {
+    let ids = match request.snapshot {
         Some(ids) => ids,
-        None => source
-            .ranked_ids(request.fill.tab)
-            .await
-            .unwrap_or_default(),
+        None => match source.ranked_ids(request.fill.tab).await {
+            Ok(ids) => ids,
+            Err(error) => {
+                return Filled {
+                    tab: request.fill.tab,
+                    ids: Vec::new(),
+                    from_rank: request.fill.from_rank,
+                    items: Vec::new(),
+                    error: Some(format!("{error:#}")),
+                };
+            }
+        },
     };
     let items = source
         .fetch_pages_against(&ids, request.fill.from_rank, request.fill.count)
@@ -201,6 +207,7 @@ async fn run(source: &Source, request: Request) -> Filled {
         ids,
         from_rank: request.fill.from_rank,
         items,
+        error: None,
     }
 }
 
@@ -248,32 +255,54 @@ mod tests {
     fn a_synchronous_fill_returns_the_window_in_rank_order() {
         let bridge = Bridge::new().unwrap();
         let source = Source::fake();
-        let filled = bridge.fill_now(&source, Request::new(fill(StoryType::Top, 0, 11)));
+        let filled = bridge.fill_now(&source, Request::new(fill(StoryType::Top, 0, 11), None));
         assert_eq!(filled.ids.len(), 30);
         assert_eq!(filled.items.len(), 11);
         assert_eq!(filled.items[0].as_ref().unwrap().id, 1);
         assert_eq!(filled.items[10].as_ref().unwrap().id, 11);
+        assert!(filled.error.is_none());
     }
 
     #[test]
-    fn a_saved_fill_uses_the_callers_ids_and_never_the_source() {
+    fn a_request_with_a_snapshot_pages_against_it_and_never_re_ranks() {
         let bridge = Bridge::new().unwrap();
         let source = Source::fake();
-        let filled = bridge.fill_now(
+        let first = bridge.fill_now(&source, Request::new(fill(StoryType::Top, 0, 11), None));
+        let snapshot = first.ids.clone();
+        // The ranking changes upstream, as it does between two refreshes.
+        if let Source::Fake(fake) = &source {
+            fake.set_ranking(StoryType::Top, vec![9, 8, 7]);
+        }
+        // A page turn carries the snapshot it was shown with, so the ranks do not move.
+        let next = bridge.fill_now(
             &source,
-            Request::against(fill(StoryType::Saved, 0, 4), vec![11, 6, 2, 1]),
+            Request::new(fill(StoryType::Top, 11, 11), Some(snapshot.clone())),
         );
-        assert_eq!(filled.ids, vec![11, 6, 2, 1]);
+        assert_eq!(next.ids, snapshot, "the ranking did not change under the reader");
+        assert_eq!(next.items[0].as_ref().unwrap().id, 12);
+        // A refresh is the one request that takes a new one.
+        let refreshed = bridge.fill_now(&source, Request::new(fill(StoryType::Top, 0, 11), None));
+        assert_eq!(refreshed.ids, vec![9, 8, 7]);
+    }
+
+    #[test]
+    fn a_ranking_failure_is_reported_not_swallowed() {
+        let bridge = Bridge::new().unwrap();
+        let source = Source::fake();
+        if let Source::Fake(fake) = &source {
+            fake.fail_ranking(StoryType::Top);
+        }
+        let filled = bridge.fill_now(&source, Request::new(fill(StoryType::Top, 0, 11), None));
+        assert!(filled.items.is_empty());
         assert_eq!(
-            filled
-                .items
-                .iter()
-                .flatten()
-                .map(|item| item.id)
-                .collect::<Vec<_>>(),
-            vec![11, 6, 2, 1],
-            "save-time order, not rank order"
+            filled.error.as_deref(),
+            Some("the ranking request failed"),
+            "a failed ranking is an error, not an empty feed"
         );
+        // Another tab is unaffected.
+        let other = bridge.fill_now(&source, Request::new(fill(StoryType::New, 0, 11), None));
+        assert!(other.error.is_none());
+        assert_eq!(other.items.len(), 11);
     }
 
     #[test]
@@ -283,7 +312,7 @@ mod tests {
         if let Source::Fake(fake) = &source {
             fake.fail(3);
         }
-        let filled = bridge.fill_now(&source, Request::new(fill(StoryType::Top, 0, 5)));
+        let filled = bridge.fill_now(&source, Request::new(fill(StoryType::Top, 0, 5), None));
         assert_eq!(filled.items.len(), 5);
         assert!(filled.items[2].is_none());
     }
@@ -291,27 +320,27 @@ mod tests {
     #[test]
     fn a_newer_request_supersedes_an_older_one() {
         let bridge = Bridge::new().unwrap();
-        let source = Arc::new(Source::fake());
-        // A slow request for Top, then a fast one for New: only New's answer lands.
-        if let Source::Fake(fake) = source.as_ref() {
-            fake.fail(1);
-        }
-        bridge.request(
-            source.clone(),
-            Request::new(fill(StoryType::Top, 0, 11)),
-        );
-        bridge.request(source, Request::new(fill(StoryType::New, 0, 11)));
+        // The older request is genuinely slower, so if `Latest` did not supersede it, its
+        // answer would land last and win.
+        let slow = Arc::new(Source::Fake(
+            crate::service::FakeService::fixture().with_delay(Duration::from_millis(150)),
+        ));
+        let fast = Arc::new(Source::fake());
+        bridge.request(slow, Request::new(fill(StoryType::Top, 0, 11), None));
+        bridge.request(fast, Request::new(fill(StoryType::New, 0, 11), None));
         let landed = wait_for(&bridge);
         assert_eq!(landed.tab, StoryType::New);
         assert_eq!(landed.items[0].as_ref().unwrap().id, 101);
-        assert!(bridge.take().is_none(), "an answer lands once");
+        // The slow answer is discarded when it arrives, not taken as the newest.
+        std::thread::sleep(Duration::from_millis(250));
+        assert!(bridge.take().is_none(), "the superseded answer never lands");
     }
 
     #[test]
     fn a_cancelled_request_never_lands() {
         let bridge = Bridge::new().unwrap();
         let source = Arc::new(Source::fake());
-        bridge.request(source, Request::new(fill(StoryType::Top, 0, 11)));
+        bridge.request(source, Request::new(fill(StoryType::Top, 0, 11), None));
         bridge.cancel();
         std::thread::sleep(Duration::from_millis(120));
         assert!(bridge.take().is_none());
@@ -416,7 +445,7 @@ mod tests {
     fn a_story_open_leaves_the_feed_request_alone() {
         let bridge = Bridge::new().unwrap();
         let source = Arc::new(Source::fake());
-        bridge.request(source.clone(), Request::new(fill(StoryType::Top, 0, 11)));
+        bridge.request(source.clone(), Request::new(fill(StoryType::Top, 0, 11), None));
         bridge.request_story(
             source,
             story_request(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID),

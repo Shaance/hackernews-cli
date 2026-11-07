@@ -859,10 +859,11 @@ pub fn story_toolbar(
 }
 
 fn comments_label(comments: Option<i32>) -> String {
+    // The terminal app's wording, singular included.
     match comments {
-        Some(0) => "discuss".to_string(),
+        Some(1) => "1 comment".to_string(),
         Some(n) => format!("{n} comments"),
-        None => "no comments".to_string(),
+        None => "discuss".to_string(),
     }
 }
 

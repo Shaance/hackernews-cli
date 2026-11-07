@@ -3,17 +3,20 @@
 #
 # For every frozen scenario it renders the app offscreen, then checks four independent things:
 #
-#   1. the element tree, canonicalised with `jq -S`, is byte-identical to expected/;
+#   1. the element tree, canonicalised with `jq -S`, matches expected/ — byte-identical on
+#      macOS, semantic-only elsewhere (see SEMANTIC below);
 #   2. the PNG is within 0.5% of expected/ (macOS only: cross-platform pixel equality is not
 #      claimed, so Linux and Windows run with HN_TREES_ONLY=1);
 #   3. the motion lint: nothing animates at rest, and no spatial track is ever active;
 #   4. fidelity invariants read from the tree, not the pixels — column x-positions, rank order,
 #      stepper text, and the selected row's focus flags. These exist so a self-generated golden
-#      cannot ratify a wrong layout.
+#      cannot ratify a wrong layout, so their expected values come from expected/, never from
+#      the tree just rendered.
 #
 # Usage:  bash desktop/scripts/check_goldens.sh
 #   HN_TREES_ONLY=1   skip the PNG comparison (Linux/Windows CI)
 #   HN_SKIP_BUILD=1   use the binary already in target/debug
+#   HN_EXACT_TREES=0  force the semantic tree comparison (the non-macOS default)
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -27,11 +30,35 @@ TREES_ONLY=${HN_TREES_ONLY:-0}
 AT_REST_MS=1000
 # Spatial properties: anything that moves or resizes. A fade is not one of them.
 SPATIAL='frame,offset,scale,rotation,travel,scroll'
+# Off macOS the geometry differs (font metrics, layout rounding, GPU rounding), so the tree
+# comparison is semantic: keys, paths, roles, labels, text and focus flags, with no rects or
+# paint values. macOS compares the trees byte-for-byte, which is the stronger claim.
+SEMANTIC='del(.t, .anim_t, .animating, .time_scale, .viewport, .scale)
+  | .elements |= map(del(.rect, .scale, .opacity, .blur, .fill, .color, .loopPhase))
+  | .accessibility |= walk(if type == "object" then del(.bounds) else . end)'
+if [ "${HN_EXACT_TREES:-}" = 1 ]; then
+  EXACT_TREES=1
+elif [ "${HN_EXACT_TREES:-}" = 0 ]; then
+  EXACT_TREES=0
+elif [ "$(uname -s)" = Darwin ]; then
+  EXACT_TREES=1
+else
+  EXACT_TREES=0
+fi
 
 fail=0
 pass() { printf '  ok    %s\n' "$*"; }
 bad() { printf '  FAIL  %s\n' "$*"; fail=1; }
 step() { printf '\n== %s\n' "$*"; }
+
+# Canonicalise a tree for comparison: exact on macOS, semantic elsewhere.
+canon() { # in out
+  if [ "$EXACT_TREES" = 1 ]; then
+    jq -S . "$1" >"$2"
+  else
+    jq -S "$SEMANTIC" "$1" >"$2"
+  fi
+}
 
 for tool in jq; do
   command -v "$tool" >/dev/null || { echo "missing $tool"; exit 2; }
@@ -88,10 +115,15 @@ for row in "${ALL[@]}"; do
 done
 
 step "trees (jq -S canonical diff must be empty)"
+if [ "$EXACT_TREES" = 1 ]; then
+  printf '        exact trees (macOS)\n'
+else
+  printf '        semantic trees (no geometry: %s)\n' "$(uname -s)"
+fi
 for row in "${ALL[@]}"; do
   IFS='|' read -r name _ _ _ _ <<<"$row"
-  jq -S . "$EXPECTED/$name.json" >"$ACTUAL/$name.expected.canon.json"
-  jq -S . "$ACTUAL/$name.json" >"$ACTUAL/$name.actual.canon.json"
+  canon "$EXPECTED/$name.json" "$ACTUAL/$name.expected.canon.json"
+  canon "$ACTUAL/$name.json" "$ACTUAL/$name.actual.canon.json"
   if diff -q "$ACTUAL/$name.expected.canon.json" "$ACTUAL/$name.actual.canon.json" >/dev/null; then
     pass "$name tree"
   else
@@ -179,23 +211,26 @@ for row in "${SCENES[@]}"; do
 
   # Rank order and column-major placement. The fixture's Top ids are 1..30 in rank order, so
   # reading the story keys in (x, y) order must give 1..N: down the first column, then the next.
+  # N is pinned from the golden, not counted from the tree just rendered: a self-generated
+  # golden must not be able to ratify a wrong number of rows.
   order=$(jq -r '[.elements[] | select((.key // "") | startswith("story-"))
       | {x: .rect[0], y: .rect[1], id: (.key | sub("story-"; "") | tonumber)}]
     | sort_by(.x, .y) | map(.id) | @csv' "$tree")
-  n=$(jq '[.elements[] | select((.key // "") | startswith("story-"))] | length' "$tree")
-  want_order=$(seq 1 "$n" | paste -sd, -)
-  if [ "$order" = "$want_order" ]; then
-    pass "$name rank order (column-major 1..$n)"
+  want_n=$(jq '[.elements[] | select((.key // "") | startswith("story-"))] | length' "$EXPECTED/$name.json")
+  got_n=$(jq '[.elements[] | select((.key // "") | startswith("story-"))] | length' "$tree")
+  want_order=$(seq 1 "$want_n" | paste -sd, -)
+  if [ "$got_n" = "$want_n" ] && [ "$order" = "$want_order" ]; then
+    pass "$name rank order (column-major 1..$want_n)"
   else
-    bad "$name rank order (got $order, want $want_order)"
+    bad "$name rank order ($got_n rows: $order, want $want_n: $want_order)"
   fi
 
   # The rank labels agree with the keys.
   ranks=$(jq -r '[.elements[] | select((.key // "") | startswith("rank-")) | .text | tonumber] | sort | @csv' "$tree")
   if [ "$ranks" = "$want_order" ]; then
-    pass "$name rank labels (1..$n)"
+    pass "$name rank labels (1..$want_n)"
   else
-    bad "$name rank labels (got $ranks)"
+    bad "$name rank labels (got $ranks, want $want_order)"
   fi
 
   # The stepper shows the page and nothing else: no "of N", because the API reports no total.
@@ -280,8 +315,8 @@ step "resize proof (window width, not the inset card)"
 for mark in wide narrow; do
   "$BIN" --scene resize --size 1600x900 --scale 2 --theme dark --script scripts/resize.json \
     --at "mark:$mark" --tree "$ACTUAL/resize-$mark.json" >/dev/null
-  jq -S . "$EXPECTED/resize-proof-$mark.json" >"$ACTUAL/resize-proof-$mark.expected.canon.json"
-  jq -S . "$ACTUAL/resize-$mark.json" >"$ACTUAL/resize-proof-$mark.actual.canon.json"
+  canon "$EXPECTED/resize-proof-$mark.json" "$ACTUAL/resize-proof-$mark.expected.canon.json"
+  canon "$ACTUAL/resize-$mark.json" "$ACTUAL/resize-proof-$mark.actual.canon.json"
   if diff -q "$ACTUAL/resize-proof-$mark.expected.canon.json" "$ACTUAL/resize-proof-$mark.actual.canon.json" >/dev/null; then
     pass "resize proof $mark tree"
   else
