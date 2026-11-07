@@ -25,13 +25,13 @@ chrono = "0.4.22"
 crossterm = { version = "0.29", features = ["event-stream"] }
 futures = "0.3.23"
 html-escape = "0.2"
-icu_collections = { version = ">=2.0.0", default-features = false }
-icu_locale_core = { version = ">=2.0.0", default-features = false }
-icu_normalizer = { version = ">=2.0.0", default-features = false }
-icu_normalizer_data = { version = ">=2.0.0", default-features = false }
-icu_properties = { version = ">=2.0.0", default-features = false }
-icu_properties_data = { version = ">=2.0.0", default-features = false }
-icu_provider = { version = ">=2.0.0", default-features = false }
+icu_collections = { version = ">=2.0.0, <3.0.0", default-features = false }
+icu_locale_core = { version = ">=2.0.0, <3.0.0", default-features = false }
+icu_normalizer = { version = ">=2.0.0, <3.0.0", default-features = false }
+icu_normalizer_data = { version = ">=2.0.0, <3.0.0", default-features = false }
+icu_properties = { version = ">=2.0.0, <3.0.0", default-features = false }
+icu_properties_data = { version = ">=2.0.0, <3.0.0", default-features = false }
+icu_provider = { version = ">=2.0.0, <3.0.0", default-features = false }
 open = "5"
 ratatui = "0.30"
 readability = { version = "0.3", default-features = false }

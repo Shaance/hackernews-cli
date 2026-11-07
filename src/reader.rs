@@ -117,6 +117,11 @@ impl Failure {
             auth: false,
         }
     }
+    /// True when the failure was an auth error (401/403) — desktop callers use
+    /// this to decide whether to re-prompt for an API key.
+    pub fn is_auth(&self) -> bool {
+        self.auth
+    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct Attempt {

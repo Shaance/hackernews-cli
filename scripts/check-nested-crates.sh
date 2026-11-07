@@ -12,27 +12,30 @@ cd "$root"
 
 # Root package plus every nested crate that declares its own [workspace].
 crates="."
-for manifest in $(find . -name Cargo.toml \
-        -not -path './target/*' -not -path './*/target/*' \
-        -not -path './preview/*' -not -path './.git/*' | sort); do
+while IFS= read -r manifest; do
     dir=$(dirname "$manifest")
     [ "$dir" = "." ] && continue
     if grep -q '^\[workspace\]' "$manifest"; then
         crates="$crates $dir"
     fi
-done
+done <<EOF
+$(find . -name Cargo.toml \
+        -not -path './target/*' -not -path './*/target/*' \
+        -not -path './preview/*' -not -path './.git/*' | sort)
+EOF
 
+err=$(mktemp)
+trap 'rm -f "$err"' EXIT
 fail=0
 for crate in $crates; do
-    if (cd "$crate" && cargo metadata --locked --format-version 1 >/dev/null 2>/tmp/check-nested-crates.err); then
+    if (cd "$crate" && cargo metadata --locked --format-version 1 >/dev/null 2>"$err"); then
         echo "PASS  $crate"
     else
         echo "FAIL  $crate"
-        sed 's/^/      /' /tmp/check-nested-crates.err | head -8
+        sed 's/^/      /' "$err" | head -8
         fail=1
     fi
 done
-rm -f /tmp/check-nested-crates.err
 if [ "$fail" -ne 0 ]; then
     echo "Dependency resolution failed. If a nested crate needs a root Cargo.toml pin relaxed,"
     echo "declare it in the workstream brief and land it on main BEFORE cutting the worktree."
