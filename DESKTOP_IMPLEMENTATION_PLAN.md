@@ -1,9 +1,14 @@
 # Desktop implementation plan — `hn-desktop` on Rune
 
 Status: v4 — FINAL after 3 review rounds (Codex + DeepSeek in parallel each round; round-3 verdicts:
-Codex NO-GO→fixed here, DeepSeek GO-WITH-CHANGES→fixed here — see "Review log"). Baseline committed.
-MILESTONE 1 LANDED on main (ed518d3): WS-A core seams + WS-A2 reader lift + WS-B `desktop/` crate with
-passing acceptance gate. Next: WS-C story split + summary, WS-D comments, WS-E settings/help/a11y.
+Codex NO-GO→fixed here, DeepSeek GO-WITH-CHANGES→fixed here — see "Review log"). ALL WORKSTREAMS
+LANDED on main: WS-A seams (a05dbd8), WS-A2 reader lift (e79f779), icu pin fix (f4950e1),
+milestone-1 review fixes (251babc), WS-B shell+feed (ed518d3), WS-C story split+summary (65d2221),
+WS-FIX all 11 review findings (75bfac2), WS-D comments (62dfa51), WS-E settings/help/a11y/
+packaging spike (707fe8b). Combined acceptance on main: resolver PASS (4 crates), root
+`cargo test --locked` 4 suites green, desktop 5 test suites green (101 tests),
+`check_goldens.sh` PASS (goldens + motion lint + fidelity). Remaining: packaging/notarization
+milestone, Linux/Windows verification, manual VoiceOver pass, rune pin rebases.
 Inputs: `mockups/desktop/DESIGN.md`, `mockups/desktop/index.html`, `prototypes/rune-hn/`,
 `prototypes/rune-mocks/`.
 
