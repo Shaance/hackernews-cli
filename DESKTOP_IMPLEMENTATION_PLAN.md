@@ -126,6 +126,16 @@ Parallelism holds only while: disjoint worktrees + explicit file ownership + fro
 B's worktree includes the phase-0 commit. Combined A+B result gets a full root+desktop acceptance
 rerun. Otherwise serialize under WS-A.
 
+**Pre-flight gate against repo-wide constraint files** (learned from the icu/parley conflict,
+enforced by `scripts/check-nested-crates.sh` + a CI `resolve` job in `.github/workflows/rust.yml`):
+before any parallel writer starts — (1) run `scripts/check-nested-crates.sh` in a scratch clone
+with the workstream's proposed new deps; every crate must resolve `--locked` against the frozen root
+manifest; (2) any root-manifest / toolchain / CI change a workstream needs must be DECLARED in its
+brief and applied to main by the coordinator BEFORE the worktree is cut (root `Cargo.toml`,
+`Cargo.lock`, `rust-toolchain.toml`, `.github/workflows/*` stay coordinator-owned); (3) CI resolves
+every crate on main so a conflict can never merge silently. Rule of thumb: a file that constrains
+the whole repo is never workstream-owned; a workstream may only declare, not edit, such files.
+
 ## Acceptance gate (executable)
 
 - Root: `cargo test --locked` (CI also runs it on toolchain 1.88 via rustup; local 1.99.1 green is

@@ -10,6 +10,15 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  resolve:
+    # Fail fast on root-pin vs nested-crate dependency conflicts (the icu/parley
+    # class) — resolution only, no full build.
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Resolve all crates against frozen root manifest
+      run: scripts/check-nested-crates.sh
+
   build:
 
     runs-on: ubuntu-latest
