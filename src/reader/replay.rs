@@ -1,6 +1,6 @@
 //! Test-only composition of the real event loop with local fixture services.
 use super::*;
-use hn_lib::{
+use crate::{
     app::App,
     hn_client::{HackerNewsClientConfig, HackerNewsClientImpl},
     HackerNewsCliServiceImpl,
@@ -34,11 +34,11 @@ async fn terminal() {
         ..Reader::default()
     };
     let mut app = App::new();
-    let mut bookmark_path = hn_lib::bookmarks::reload(&mut app);
+    let mut bookmark_path = crate::bookmarks::reload(&mut app);
     let (tx, mut rx) = mpsc::unbounded_channel();
-    crate::request_stories(&mut app, tx.clone(), service.clone(), false);
+    crate::tui::request_stories(&mut app, tx.clone(), service.clone(), false);
     let mut terminal = crate::terminal_session::TerminalSession::new().unwrap();
-    let result = crate::run_app(
+    let result = crate::tui::run_app(
         terminal.terminal_mut(),
         &mut app,
         tx,

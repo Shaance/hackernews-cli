@@ -1,11 +1,12 @@
-use crate::{handle_comment_action, handle_story_action, reader::Reader, AppMessage};
-use anyhow::Result;
-use crossterm::event::KeyCode;
-use hn_lib::{
+use crate::{
     app::{App, View},
     event::{handle_comments_key, StoryAction},
+    reader::Reader,
+    tui::{handle_comment_action, handle_story_action, AppMessage},
     HackerNewsCliServiceImpl,
 };
+use anyhow::Result;
+use crossterm::event::KeyCode;
 use std::path::PathBuf;
 use tokio::sync::mpsc;
 

@@ -1,6 +1,6 @@
 //! Prepare bounded source material without a private service or browser crawler.
 use super::{network::Network, ArticleCapture, Capture, DiscussionCapture, Failure, Source};
-use hn_lib::{HNCLIItem, HackerNewsCliService, HackerNewsCliServiceImpl};
+use crate::{HNCLIItem, HackerNewsCliService, HackerNewsCliServiceImpl};
 use reqwest::Client;
 use std::collections::VecDeque;
 

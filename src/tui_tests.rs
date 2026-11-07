@@ -4,8 +4,8 @@ mod child_responses;
 mod story_responses;
 mod view_scope;
 
-pub(super) fn test_comment(id: i32, state: CommentState) -> hn_lib::app::Comment {
-    hn_lib::app::Comment {
+pub(super) fn test_comment(id: i32, state: CommentState) -> crate::app::Comment {
+    crate::app::Comment {
         id,
         author: format!("user{id}"),
         text: format!("comment {id}"),
@@ -22,7 +22,7 @@ pub(super) fn loading(generation: u64) -> CommentState {
     CommentState::Loading { generation }
 }
 
-pub(super) fn expanded(children: Vec<hn_lib::app::Comment>) -> CommentState {
+pub(super) fn expanded(children: Vec<crate::app::Comment>) -> CommentState {
     CommentState::Expanded { children }
 }
 

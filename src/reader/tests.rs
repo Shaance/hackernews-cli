@@ -103,7 +103,7 @@ pub(super) fn discussion_capture() -> DiscussionCapture {
 }
 pub(super) fn screen(
     p: &mut Reader,
-    app: &mut hn_lib::app::App,
+    app: &mut crate::app::App,
     width: u16,
     height: u16,
 ) -> String {
@@ -117,8 +117,8 @@ pub(super) fn screen(
         .map(|c| c.symbol())
         .collect()
 }
-pub(super) fn comments_app() -> hn_lib::app::App {
-    use hn_lib::app::{App, Comment, CommentState};
+pub(super) fn comments_app() -> crate::app::App {
+    use crate::app::{App, Comment, CommentState};
     let mut app = App::with_theme(Theme::TRUE_DARK);
     app.view_comments(1, "An example story".into(), "https://example.com".into());
     app.set_comments(

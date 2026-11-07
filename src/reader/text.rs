@@ -1,5 +1,5 @@
 use super::{Progress, Reading, Section};
-use hn_lib::theme::Theme;
+use crate::theme::Theme;
 use ratatui::{
     style::{Modifier, Style},
     text::{Line, Span},

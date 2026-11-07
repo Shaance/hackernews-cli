@@ -3,7 +3,7 @@ use super::{
     config::{Profile, Provider},
     sources, summary_prompts, Article, ArticleCapture, Discussion, DiscussionCapture, Failure,
 };
-use hn_lib::HackerNewsCliServiceImpl;
+use crate::HackerNewsCliServiceImpl;
 use reqwest::Client;
 use serde_json::{json, Value};
 use std::{
@@ -40,7 +40,7 @@ impl Default for Network {
     }
 }
 impl Network {
-    pub(super) async fn article(
+    pub async fn article(
         &self,
         provider: Provider,
         key: &str,
@@ -71,7 +71,7 @@ impl Network {
             text: sources::clean(summary),
         })
     }
-    pub(super) async fn discussion(
+    pub async fn discussion(
         &self,
         provider: Provider,
         key: &str,

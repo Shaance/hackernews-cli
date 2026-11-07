@@ -1,4 +1,20 @@
 //! Story reader, optional AI summaries, and companion article pane.
+//!
+//! # Public boundary
+//!
+//! A non-terminal front end drives summaries through the items below and never touches the
+//! terminal front end ([`crate::tui`], [`crate::reader_actions`]):
+//!
+//! - Configuration: [`Config`], [`load_config`], [`save_config`], [`Provider`],
+//!   [`SummaryProfile`].
+//! - Request inputs: [`ArticleCapture`], [`DiscussionCapture`].
+//! - Provider calls: [`Network::article`], [`Network::discussion`].
+//! - Results: [`Article`], [`Discussion`], [`Point`], [`Source`]; failures are [`Failure`].
+//! - Source material: [`sources::article`], [`sources::clean`].
+//! - Snapshot summaries: [`snapshot::prepare`].
+//!
+//! [`Reader`] is the terminal reader pane. It is public so the TUI can own it, but it is not
+//! the interface a desktop front end binds to.
 mod browser;
 #[cfg(test)]
 mod capture_tests;
@@ -12,16 +28,17 @@ mod replay;
 #[cfg(test)]
 mod sampling_tests;
 mod settings;
-pub(crate) mod snapshot;
-pub(crate) mod sources;
+pub mod snapshot;
+pub mod sources;
 mod summary_prompts;
 #[cfg(test)]
 mod tests;
 mod text;
 mod view;
 
-use config::{Config, Profile};
-use hn_lib::{theme::Theme, HNCLIItem};
+pub use config::{Config, Profile, Profile as SummaryProfile, Provider};
+pub use network::Network;
+use crate::{theme::Theme, HNCLIItem};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -30,6 +47,15 @@ use std::{
     time::{Duration, Instant},
 };
 use tokio::{sync::mpsc, task::JoinSet};
+
+/// Load summary settings from `path`, falling back to defaults when the file is absent.
+pub fn load_config(path: &std::path::Path) -> anyhow::Result<Config> {
+    Config::load(path)
+}
+/// Persist summary settings to `path`.
+pub fn save_config(config: &Config, path: &std::path::Path) -> anyhow::Result<()> {
+    config.save(path)
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Source {
@@ -51,20 +77,20 @@ pub struct Discussion {
 }
 #[derive(Debug)]
 pub struct Article {
-    text: String,
+    pub text: String,
 }
 #[derive(Debug)]
-struct ArticleCapture {
-    title: String,
-    text: String,
-    partial: bool,
+pub struct ArticleCapture {
+    pub title: String,
+    pub text: String,
+    pub partial: bool,
 }
 #[derive(Debug)]
-struct DiscussionCapture {
-    title: String,
-    post: String,
-    sources: Vec<Source>,
-    coverage: String,
+pub struct DiscussionCapture {
+    pub title: String,
+    pub post: String,
+    pub sources: Vec<Source>,
+    pub coverage: String,
 }
 #[derive(Debug)]
 struct Capture<T> {
@@ -81,7 +107,7 @@ impl<T> Capture<T> {
 }
 #[derive(Debug, Clone)]
 pub struct Failure {
-    pub(crate) message: String,
+    pub message: String,
     auth: bool,
 }
 impl Failure {
@@ -216,7 +242,7 @@ impl Reading {
     }
 }
 pub struct Reader {
-    snapshot: Option<Arc<hn_lib::snapshot::Snapshot>>,
+    snapshot: Option<Arc<crate::snapshot::Snapshot>>,
     theme: Theme,
     readings: HashMap<i32, Reading>,
     active: Option<i32>,

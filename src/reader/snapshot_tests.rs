@@ -1,6 +1,6 @@
 use super::*;
 use crate::reader::{config::Provider, network::tests::serve};
-use hn_lib::snapshot::Snapshot;
+use crate::snapshot::Snapshot;
 use serde_json::{json, Value};
 
 fn fixture() -> Snapshot {

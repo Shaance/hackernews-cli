@@ -32,7 +32,7 @@ pub async fn capture(path: &Path) -> Result<()> {
             let service = HackerNewsCliServiceImpl::new_with_client(client.clone());
             let cli = service.story_with_comment_ids(id).await?.0;
             let article = match public_article_client(&cli.url).await {
-                Ok(http) => match crate::reader::sources::article(&http, &cli).await {
+                Ok(http) => match hn_lib::reader::sources::article(&http, &cli).await {
                     Ok((text, partial)) => CapturedArticle {
                         text,
                         partial,
@@ -86,8 +86,8 @@ pub async fn capture(path: &Path) -> Result<()> {
     while let Some(result) = captures.next().await {
         let (id, captured, article) = result?;
         for mut item in captured {
-            item.title = crate::reader::sources::clean(&item.title);
-            item.text = item.text.map(|s| crate::reader::sources::clean(&s));
+            item.title = hn_lib::reader::sources::clean(&item.title);
+            item.text = item.text.map(|s| hn_lib::reader::sources::clean(&s));
             items.insert(item.id, item);
         }
         articles.insert(id, article);
@@ -160,6 +160,6 @@ async fn public_article_client(raw: &str) -> Result<reqwest::Client> {
 /// Enrich a validated capture without replacing it if any selected summary fails.
 pub async fn prepare(path: &Path) -> Result<()> {
     let mut snapshot = Snapshot::load(path)?;
-    crate::reader::snapshot::prepare(&mut snapshot).await?;
+    hn_lib::reader::snapshot::prepare(&mut snapshot).await?;
     snapshot.write_atomic(path)
 }
