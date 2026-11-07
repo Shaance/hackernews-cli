@@ -39,6 +39,9 @@ pub struct Filled {
     pub ids: Vec<i32>,
     pub from_rank: usize,
     pub items: Vec<Option<HNCLIItem>>,
+    /// The ranking itself could not be fetched. The window is not replaced: the feed keeps
+    /// what it has and says so, rather than rendering an empty list.
+    pub error: Option<String>,
 }
 
 pub struct FeedModel {
@@ -50,6 +53,11 @@ pub struct FeedModel {
     pub failed: HashSet<i32>,
     pub page_size: u32,
     pub display_cursor: usize,
+    /// The cursor a page turn is loading. `display_cursor` stays put until the new window
+    /// lands, so the rows on screen keep their own ranks while the next page is in flight.
+    pub pending_cursor: Option<usize>,
+    /// The story a refresh must keep selected, applied when the new snapshot lands.
+    pub pending_anchor: Option<i32>,
     pub selected: usize,
     pub status: FeedStatus,
     pub stories_for: Option<(StoryType, u32)>,
@@ -74,6 +82,8 @@ impl FeedModel {
             failed: HashSet::new(),
             page_size: feed_state::API_PAGE_SIZE,
             display_cursor: 0,
+            pending_cursor: None,
+            pending_anchor: None,
             selected: 0,
             status: FeedStatus::default(),
             stories_for: None,
@@ -103,12 +113,17 @@ impl FeedModel {
 
     /// The ranked window a `rows` × `columns` viewport needs, from the current cursor.
     pub fn grid(&self, rows: usize, columns: usize) -> (usize, usize, u32) {
-        feed_state::fill_grid(rows, columns, self.page_size, self.display_cursor)
+        feed_state::fill_grid(rows, columns, self.page_size, self.target_cursor())
     }
 
     /// The `‹ N ›` page number: current page only, no invented total.
     pub fn stepper(&self) -> u32 {
         feed_state::stepper(self.display_cursor, self.page_size)
+    }
+
+    /// The rank the feed is loading towards: a pending page turn's cursor, else the shown one.
+    pub fn target_cursor(&self) -> usize {
+        self.pending_cursor.unwrap_or(self.display_cursor)
     }
 
     /// The fill a `rows` × `columns` viewport needs right now.
@@ -131,6 +146,11 @@ impl FeedModel {
         match action {
             FeedAction::None => Applied::default(),
             FeedAction::Move { selected } => {
+                // While a page turn is in flight the rows on screen are the page being left:
+                // selecting one would select it under the ranks of the page being loaded.
+                if self.status.loading {
+                    return Applied::default();
+                }
                 self.selected = selected;
                 Applied {
                     changed: true,
@@ -141,7 +161,12 @@ impl FeedModel {
                 display_cursor,
                 landing,
             } => {
-                self.display_cursor = display_cursor;
+                // One page turn at a time: a second one would page from a cursor that is not
+                // on screen yet.
+                if self.status.loading {
+                    return Applied::default();
+                }
+                self.pending_cursor = Some(display_cursor);
                 if landing.is_some() {
                     self.page_landing = landing;
                 }
@@ -155,6 +180,8 @@ impl FeedModel {
                 self.remember_position();
                 self.tab = tab;
                 self.display_cursor = (page.saturating_sub(1) as usize) * self.page_size as usize;
+                self.pending_cursor = None;
+                self.pending_anchor = None;
                 self.selected = 0;
                 self.stories.clear();
                 self.failed.clear();
@@ -198,9 +225,19 @@ impl FeedModel {
 
     /// Take a settled fill. A fill for another tab or another cursor is stale and dropped.
     pub fn apply_fill(&mut self, filled: Filled) -> bool {
-        if filled.tab != self.tab || filled.from_rank != self.display_cursor {
+        if filled.tab != self.tab || filled.from_rank != self.target_cursor() {
             return false;
         }
+        // A ranking that could not be fetched is an error state, not an empty feed: the window
+        // the reader is looking at stays, and the banner offers a retry.
+        if let Some(error) = filled.error {
+            self.status.loading = false;
+            self.status.error = Some(error);
+            self.pending_cursor = None;
+            return true;
+        }
+        self.display_cursor = filled.from_rank;
+        self.pending_cursor = None;
         self.id_snapshot = filled.ids;
         self.stories.clear();
         self.failed.clear();
@@ -216,10 +253,15 @@ impl FeedModel {
                     self.story_cache.insert(item.id, item.clone());
                     self.stories.push(item);
                 }
-                None => {
-                    self.failed.insert(id);
-                    self.stories.push(placeholder(id));
-                }
+                // A page the feed already holds is not dropped because this fill could not
+                // return it: a shrink, or a transient item failure, keeps what was fetched.
+                None => match self.story_cache.get(&id) {
+                    Some(held) => self.stories.push(held.clone()),
+                    None => {
+                        self.failed.insert(id);
+                        self.stories.push(placeholder(id));
+                    }
+                },
             }
         }
         self.status.loading = false;
@@ -230,14 +272,59 @@ impl FeedModel {
             Some(PageLanding::End) => self.selected = self.stories.len().saturating_sub(1),
             None => self.selected = self.selected.min(self.stories.len().saturating_sub(1)),
         }
+        // A refresh re-anchors on the story the reader had selected, by id: the ranking moved,
+        // the story did not.
+        if let Some(id) = self.pending_anchor.take() {
+            self.anchor_on(id);
+        }
         true
     }
 
-    /// Re-anchor the cursor on `id` after a refresh replaced the snapshot.
-    pub fn anchor_on(&mut self, id: i32) {
-        if let Some(index) = self.stories.iter().position(|story| story.id == id) {
-            self.selected = index;
+    /// The Saved tab is the local store, not a feed: every saved story, in save-time order,
+    /// with no request at all. The viewport applies to display only.
+    pub fn apply_saved(&mut self, store: &[HNCLIItem]) -> bool {
+        self.id_snapshot = store.iter().map(|story| story.id).collect();
+        self.stories = store.to_vec();
+        self.failed.clear();
+        for story in store {
+            self.story_cache.insert(story.id, story.clone());
         }
+        self.display_cursor = 0;
+        self.pending_cursor = None;
+        self.pending_anchor = None;
+        self.page_landing = None;
+        self.selected = self.selected.min(self.stories.len().saturating_sub(1));
+        self.status = FeedStatus::default();
+        self.stories_for = Some((StoryType::Saved, 1));
+        true
+    }
+
+    /// Re-anchor on `id` after a refresh replaced the snapshot: the story keeps its selection
+    /// and the window follows it, so a rank change never moves the reader to another story.
+    /// A move of `display_cursor` changes [`FeedModel::fill`], which is what asks for the
+    /// window the story now lives in.
+    pub fn anchor_on(&mut self, id: i32) {
+        let Some(rank) = self.id_snapshot.iter().position(|ranked| *ranked == id) else {
+            return;
+        };
+        if rank >= self.display_cursor && rank < self.display_cursor + self.stories.len() {
+            self.selected = rank - self.display_cursor;
+        } else {
+            self.display_cursor = rank;
+            self.selected = 0;
+        }
+    }
+
+    /// Give up on a request that has not landed within `timeout` seconds. Without this a
+    /// dropped answer leaves the feed loading forever, and every page turn is refused.
+    pub fn timed_out(&mut self, elapsed: f64, timeout: f64) -> bool {
+        if !self.status.loading || elapsed < timeout {
+            return false;
+        }
+        self.status.loading = false;
+        self.status.error = Some("The feed did not load. Press r to retry.".to_string());
+        self.pending_cursor = None;
+        true
     }
 
     /// Whether the snapshot runs out before the window does: the "no more stories" footer.
@@ -290,6 +377,7 @@ mod tests {
             ids,
             from_rank,
             items,
+            error: None,
         }
     }
 
@@ -339,7 +427,8 @@ mod tests {
         feed.selected = 10;
         let action = feed_state::next_story(&feed.state(), 11);
         let applied = feed.apply(action, (11, 1));
-        assert_eq!(feed.display_cursor, 11);
+        assert_eq!(feed.target_cursor(), 11, "the page being loaded");
+        assert_eq!(feed.display_cursor, 0, "the page on screen until it lands");
         assert_eq!(feed.stepper(), 1, "11/30 + 1 is still page 1");
         assert_eq!(
             applied.fill,
@@ -351,6 +440,7 @@ mod tests {
         );
         assert_eq!(feed.page_landing, Some(PageLanding::Start));
         feed.apply_fill(filled(StoryType::Top, 11, 11));
+        assert_eq!(feed.display_cursor, 11);
         assert_eq!(feed.selected, 0, "j lands on the first story of the page");
         assert_eq!(feed.stories[0].id, 12);
     }
@@ -363,8 +453,9 @@ mod tests {
         feed.selected = 0;
         let action = feed_state::prev_story(&feed.state(), 11);
         feed.apply(action, (11, 1));
-        assert_eq!(feed.display_cursor, 0);
+        assert_eq!(feed.target_cursor(), 0);
         feed.apply_fill(filled(StoryType::Top, 0, 11));
+        assert_eq!(feed.display_cursor, 0);
         assert_eq!(feed.selected, 10, "k lands on the last story of the page");
     }
 
@@ -462,8 +553,181 @@ mod tests {
             ids,
             from_rank: 0,
             items,
+            error: None,
         });
         feed.anchor_on(id);
         assert_eq!(feed.selected_id(), Some(id));
+    }
+
+    #[test]
+    fn a_refresh_that_moves_the_story_moves_the_window_with_it() {
+        let mut feed = loaded(11, 1);
+        feed.selected = 4;
+        let id = feed.selected_id().unwrap();
+        assert_eq!(id, 5);
+        // The refresh puts the same story at rank 20, outside the window on screen.
+        let mut ids: Vec<i32> = (1..=30).collect();
+        ids.swap(4, 20);
+        feed.pending_anchor = Some(id);
+        let items = (0..11).map(|rank| Some(fixtures::item(rank, ids[rank]))).collect();
+        feed.apply_fill(Filled {
+            tab: StoryType::Top,
+            ids: ids.clone(),
+            from_rank: 0,
+            items,
+            error: None,
+        });
+        assert_eq!(feed.display_cursor, 20, "the window follows the story");
+        assert_eq!(feed.selected, 0);
+        // The moved cursor is what asks for the window the story now lives in.
+        assert_eq!(feed.fill(11, 1).from_rank, 20);
+        let items = (20..30).map(|rank| Some(fixtures::item(rank, ids[rank]))).collect();
+        feed.apply_fill(Filled {
+            tab: StoryType::Top,
+            ids,
+            from_rank: 20,
+            items,
+            error: None,
+        });
+        assert_eq!(feed.selected_id(), Some(id), "the same story stays selected");
+    }
+
+    #[test]
+    fn a_refresh_that_keeps_the_story_in_the_window_keeps_the_window() {
+        let mut feed = loaded(11, 1);
+        feed.selected = 4;
+        let id = feed.selected_id().unwrap();
+        // The story moves from rank 5 to rank 2, still inside the window.
+        let mut ids: Vec<i32> = (1..=30).collect();
+        ids.swap(4, 1);
+        feed.pending_anchor = Some(id);
+        let items = (0..11).map(|rank| Some(fixtures::item(rank, ids[rank]))).collect();
+        feed.apply_fill(Filled {
+            tab: StoryType::Top,
+            ids,
+            from_rank: 0,
+            items,
+            error: None,
+        });
+        assert_eq!(feed.display_cursor, 0, "no scroll for a story already on screen");
+        assert_eq!(feed.selected_id(), Some(id));
+        assert_eq!(feed.selected, 1);
+    }
+
+    #[test]
+    fn a_page_turn_keeps_the_shown_page_until_the_new_one_lands() {
+        let mut feed = loaded(11, 1);
+        feed.selected = 10;
+        let action = feed_state::next_story(&feed.state(), 11);
+        feed.apply(action, (11, 1));
+        // The rows on screen are still page 1, so they keep page 1's ranks and stepper.
+        assert_eq!(feed.display_cursor, 0);
+        assert_eq!(feed.stepper(), 1);
+        assert_eq!(feed.stories[0].id, 1, "the old page is still what is shown");
+        assert_eq!(feed.target_cursor(), 11, "the request is for the next page");
+        assert_eq!(feed.fill(11, 1).from_rank, 11);
+        // And nothing on the old page can be selected under the new ranks.
+        assert_eq!(
+            feed.apply(FeedAction::Move { selected: 3 }, (11, 1)),
+            Applied::default()
+        );
+        assert_eq!(feed.selected, 10, "the selection did not move");
+        // A second page turn is refused while the first is in flight.
+        assert_eq!(
+            feed.apply(feed_state::next_page(&feed.state(), 11), (11, 1)),
+            Applied::default()
+        );
+        assert_eq!(feed.target_cursor(), 11);
+        // The new page lands: the cursor moves and the old rows are replaced.
+        feed.apply_fill(filled(StoryType::Top, 11, 11));
+        assert_eq!(feed.display_cursor, 11);
+        assert_eq!(feed.pending_cursor, None);
+        assert_eq!(feed.stories[0].id, 12);
+        assert_eq!(feed.selected, 0, "j lands on the first story of the page");
+    }
+
+    #[test]
+    fn a_rejected_fill_does_not_leave_the_feed_loading_forever() {
+        let mut feed = loaded(11, 1);
+        feed.selected = 10;
+        feed.apply(feed_state::next_story(&feed.state(), 11), (11, 1));
+        assert!(feed.status.loading);
+        // A fill for the page being left is stale and dropped.
+        assert!(!feed.apply_fill(filled(StoryType::Top, 0, 11)));
+        assert!(feed.status.loading, "the newest request is still in flight");
+        // The timeout is what ends the wait when no answer comes.
+        assert!(!feed.timed_out(1.0, 10.0), "not yet");
+        assert!(feed.timed_out(10.0, 10.0));
+        assert!(!feed.status.loading);
+        assert!(feed.status.error.is_some(), "the feed says it did not load");
+        assert_eq!(feed.pending_cursor, None, "the pending turn is dropped");
+        assert_eq!(feed.display_cursor, 0, "the page on screen is still page 1");
+        assert_eq!(feed.stories[0].id, 1, "and it is still there");
+    }
+
+    #[test]
+    fn a_ranking_failure_is_an_error_state_not_an_empty_feed() {
+        let mut feed = loaded(11, 1);
+        let before = feed.stories.len();
+        assert!(feed.apply_fill(Filled {
+            tab: StoryType::Top,
+            ids: Vec::new(),
+            from_rank: 0,
+            items: Vec::new(),
+            error: Some("the ranking request failed".to_string()),
+        }));
+        assert_eq!(feed.stories.len(), before, "the window the reader has stays");
+        assert!(!feed.status.loading);
+        assert_eq!(
+            feed.status.error.as_deref(),
+            Some("the ranking request failed")
+        );
+        // A later successful fill clears it.
+        feed.apply_fill(filled(StoryType::Top, 0, 11));
+        assert!(feed.status.error.is_none());
+    }
+
+    #[test]
+    fn a_shrink_keeps_the_pages_the_feed_already_holds() {
+        let mut feed = loaded(19, 2);
+        assert_eq!(feed.stories.len(), 30, "the whole 30-id snapshot");
+        // Shrinking asks for fewer cells; the window shrinks with the viewport.
+        let action = feed_state::resize(&feed.state(), 11, 1);
+        let applied = feed.apply(action, (11, 1));
+        assert_eq!(applied.fill.unwrap().count, 11);
+        feed.apply_fill(filled(StoryType::Top, 0, 11));
+        assert_eq!(feed.stories.len(), 11);
+        // Growing back is served from the held pages: a rank the source cannot return now
+        // renders the story the feed already has, not a placeholder.
+        let mut grow = filled(StoryType::Top, 0, 38);
+        grow.items[20] = None;
+        feed.apply_fill(grow);
+        assert_eq!(feed.stories.len(), 30);
+        assert_eq!(feed.stories[20].id, 21, "the held page, not a placeholder");
+        assert!(!feed.failed.contains(&21));
+    }
+
+    #[test]
+    fn saved_renders_the_whole_store_not_the_viewport() {
+        let mut feed = FeedModel::new();
+        feed.tab = StoryType::Saved;
+        // Four saved stories, newest first, in a viewport that holds eleven cells.
+        let store: Vec<HNCLIItem> = [11, 6, 2, 1]
+            .into_iter()
+            .enumerate()
+            .map(|(index, id)| fixtures::item(index, id))
+            .collect();
+        assert!(feed.apply_saved(&store));
+        assert_eq!(feed.stories.len(), 4, "every saved story, not a window of them");
+        assert_eq!(
+            feed.stories.iter().map(|story| story.id).collect::<Vec<_>>(),
+            vec![11, 6, 2, 1],
+            "save-time order"
+        );
+        assert_eq!(feed.id_snapshot, vec![11, 6, 2, 1]);
+        assert!(!feed.status.loading, "the store is local: nothing is in flight");
+        assert_eq!(feed.stories_for, Some((StoryType::Saved, 1)));
+        // The viewport still applies to display: the fill is the visible window.
+        assert_eq!(feed.fill(11, 1).count, 11);
     }
 }

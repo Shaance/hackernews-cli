@@ -41,6 +41,9 @@ const BREAKPOINT: f32 = 1400.0;
 const DEFAULT_GRID: (usize, usize) = (11, 1);
 /// How long the save confirmation stays.
 const TOAST_SECONDS: f64 = 2.4;
+/// How long a request may stay in flight before the feed says so and offers a retry. Without
+/// it a dropped answer leaves the feed loading forever, and every page turn is refused.
+const LOAD_TIMEOUT: f64 = 10.0;
 /// The inspector's width range: 46% of the 1180 pt default window, and enough either side for
 /// the summary card to stay readable.
 const INSPECTOR_WIDTH: f32 = 543.0;
@@ -53,6 +56,16 @@ struct Notice {
     until: f64,
 }
 
+/// Whether a request takes a new ranking or pages against the one the feed already has.
+///
+/// Only a refresh (and the first load of a tab) re-snapshots: a page turn or a resize must keep
+/// the ranks the reader was shown, or the story under the cursor changes under them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Ranking {
+    Fresh,
+    Keep,
+}
+
 pub struct App {
     feed: FeedModel,
     saved: SavedView,
@@ -62,6 +75,8 @@ pub struct App {
     measured: Cell<Option<(usize, usize)>>,
     /// The fill the newest request asked for, so `poll` asks once per invalidation.
     requested: Option<Fill>,
+    /// When the in-flight request started, on the frame clock, for [`LOAD_TIMEOUT`].
+    loading_since: Option<f64>,
     /// The row under the pointer, for the hover actions.
     hover: Option<i32>,
     /// The open story, when the split is showing one. `None` is the feed.
@@ -79,14 +94,24 @@ pub struct App {
 }
 
 impl App {
-    fn request(&mut self, grid: (usize, usize)) {
+    /// Ask for the window `grid` shows. `ranking` says whether this request re-snapshots.
+    ///
+    /// Saved is the local store, not a feed: it renders every saved story from memory and
+    /// never reaches the source, so the viewport applies to display only.
+    fn request(&mut self, grid: (usize, usize), ranking: Ranking) {
         let fill = self.feed.fill(grid.0, grid.1);
         self.requested = Some(fill);
-        let request = if fill.tab == StoryType::Saved {
-            Request::against(fill, self.saved.ids())
-        } else {
-            Request::new(fill)
+        if fill.tab == StoryType::Saved {
+            self.feed.apply_saved(self.saved.store());
+            return;
+        }
+        let snapshot = match ranking {
+            Ranking::Fresh => None,
+            Ranking::Keep if !self.feed.id_snapshot.is_empty() => Some(self.feed.id_snapshot.clone()),
+            Ranking::Keep => None,
         };
+        self.feed.status.loading = true;
+        let request = Request::new(fill, snapshot);
         if self.headless {
             let filled = self.bridge.fill_now(self.source.as_ref(), request);
             self.feed.apply_fill(filled);
@@ -95,26 +120,44 @@ impl App {
         }
     }
 
-    /// Re-request the current window, as `r` does.
+    /// Re-request the current window with a new ranking, as `r` does. The story the reader has
+    /// selected stays selected: the feed re-anchors on its id when the new snapshot lands.
     fn refresh(&mut self) {
-        self.requested = None;
+        self.feed.pending_anchor = self.feed.selected_id();
         let grid = self.measured.get().unwrap_or(DEFAULT_GRID);
-        self.request(grid);
+        self.request(grid, Ranking::Fresh);
     }
 
     fn toggle_saved(&mut self) {
-        let Some(story) = self.feed.stories.get(self.feed.selected).cloned() else {
+        let Some(id) = self.feed.selected_id() else {
+            return;
+        };
+        self.toggle_saved_id(id);
+    }
+
+    /// Save or unsave `id`, wherever the press came from: the row's hover action, or `s` on
+    /// the selected row.
+    fn toggle_saved_id(&mut self, id: i32) {
+        let Some(story) = self
+            .feed
+            .stories
+            .iter()
+            .find(|story| story.id == id)
+            .cloned()
+        else {
             return;
         };
         if self.feed.failed.contains(&story.id) {
             return;
         }
         let saved = self.saved.toggle(&story);
+        // A store that could not be read or written says so, rather than confirming a save
+        // that did not land.
         self.toast = Some(Notice {
-            message: if saved {
-                "Saved · Press 4 for Saved".to_string()
-            } else {
-                "Removed from Saved".to_string()
+            message: match (self.saved.error(), saved) {
+                (Some(_), _) => "Saved stories unavailable · Reload in Saved".to_string(),
+                (None, true) => "Saved · Press 4 for Saved".to_string(),
+                (None, false) => "Removed from Saved".to_string(),
             },
             until: f64::INFINITY,
         });
@@ -125,20 +168,15 @@ impl App {
 
     fn apply(&mut self, action: feed_state::FeedAction) {
         let grid = self.measured.get().unwrap_or(DEFAULT_GRID);
+        // A tab switch is a new feed and needs its own ranking; a page turn or a resize pages
+        // against the one on screen.
+        let ranking = match action {
+            feed_state::FeedAction::SwitchTab { .. } => Ranking::Fresh,
+            _ => Ranking::Keep,
+        };
         let applied = self.feed.apply(action, grid);
-        if let Some(fill) = applied.fill {
-            self.requested = Some(fill);
-            let request = if fill.tab == StoryType::Saved {
-                Request::against(fill, self.saved.ids())
-            } else {
-                Request::new(fill)
-            };
-            if self.headless {
-                let filled = self.bridge.fill_now(self.source.as_ref(), request);
-                self.feed.apply_fill(filled);
-            } else {
-                self.bridge.request(self.source.clone(), request);
-            }
+        if applied.fill.is_some() {
+            self.request(grid, ranking);
         }
     }
 
@@ -163,7 +201,22 @@ impl App {
 
     /// The row the feed has selected, if it is a story that loaded.
     fn open_selected(&mut self) {
-        let Some(story) = self.feed.stories.get(self.feed.selected).cloned() else {
+        let Some(id) = self.feed.selected_id() else {
+            return;
+        };
+        self.open_id(id);
+    }
+
+    /// Open `id`, wherever the press came from: the row's hover action, or `Enter` on the
+    /// selected row.
+    fn open_id(&mut self, id: i32) {
+        let Some(story) = self
+            .feed
+            .stories
+            .iter()
+            .find(|story| story.id == id)
+            .cloned()
+        else {
             return;
         };
         if self.feed.failed.contains(&story.id) {
@@ -233,6 +286,7 @@ fn init() -> App {
         bridge: Bridge::new().expect("a tokio runtime for the feed's requests"),
         measured: Cell::new(None),
         requested: None,
+        loading_since: None,
         hover: None,
         story: None,
         inspector: PaneState::new(INSPECTOR_WIDTH)
@@ -248,7 +302,7 @@ fn init() -> App {
 /// One aggregate fill request, then the waker that brings its answer back to `poll`.
 fn setup(s: &mut App, waker: Waker) {
     s.bridge.set_waker(waker);
-    s.request(DEFAULT_GRID);
+    s.request(DEFAULT_GRID, Ranking::Fresh);
 }
 
 fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
@@ -262,13 +316,26 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
             changed |= open.land(filled);
         }
     }
-    // One request per invalidation: the measured grid is the only thing that moves it.
+    // One request per invalidation: the measured grid is the only thing that moves it. A
+    // resize pages against the ranking on screen, so the ranks do not move under the reader.
     if let Some(grid) = s.measured.get() {
         let need = s.feed.fill(grid.0, grid.1);
         if s.requested != Some(need) {
-            s.request(grid);
+            s.request(grid, Ranking::Keep);
             changed = true;
         }
+    }
+    // A request that never lands must not leave the feed loading forever.
+    if s.feed.status.loading {
+        let since = *s.loading_since.get_or_insert(now);
+        if s.feed.timed_out(now - since, LOAD_TIMEOUT) {
+            s.loading_since = None;
+            changed = true;
+        } else {
+            tx.wake_after(Duration::from_secs_f64(LOAD_TIMEOUT));
+        }
+    } else {
+        s.loading_since = None;
     }
     if let Some(notice) = &mut s.toast {
         if notice.until.is_infinite() {
@@ -493,6 +560,12 @@ fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize) -> El 
     if let Some(error) = s.saved.error() {
         body = body.child(banner(error, t, accent));
     }
+    // A failed ranking or window is a state with a retry, never a blank list.
+    if let Some(error) = s.feed.status.error.as_deref() {
+        body = body.child(feed_error(error, t, accent));
+    } else if s.feed.status.loading && s.feed.stories.is_empty() {
+        body = body.child(feed_loading(t));
+    }
     body.child(
         feed_list(s, t, accent, cols)
             .scroll(ScrollSpec { stick_bottom: false })
@@ -555,6 +628,11 @@ fn story_row(s: &App, i: usize, t: tok::Theme, accent: Color) -> El {
         // solid overlay, which would bury the selected row's card fill, so the ring carries it.
         .focus_ring(1.5, 0.0, accent)
         .on_press(move |s: &mut App| {
+            // While a page turn is in flight the rows on screen are the page being left:
+            // selecting one would select it under the ranks of the page being loaded.
+            if s.feed.status.loading {
+                return;
+            }
             if let Some(index) = s.feed.stories.iter().position(|story| story.id == id) {
                 s.feed.selected = index;
             }
@@ -602,16 +680,17 @@ fn story_row(s: &App, i: usize, t: tok::Theme, accent: Color) -> El {
     );
     // The right edge is hover-actions only; nothing persists there.
     if s.hover == Some(id) {
+        let save = if in_saved_view { "unsave" } else { "save" };
         r = r.child(
             row()
                 .gap(6.0)
                 .center_y()
-                .child(act(
-                    if in_saved_view { "unsave" } else { "save" },
-                    accent,
-                    t,
-                ))
-                .child(act("open", t.text_secondary, t)),
+                .child(act(save, accent, t, move |s: &mut App| {
+                    s.toggle_saved_id(id)
+                }))
+                .child(act("open", t.text_secondary, t, move |s: &mut App| {
+                    s.open_id(id)
+                })),
         );
     }
     if selected {
@@ -624,10 +703,11 @@ fn meta(story: &HNCLIItem, failed: bool) -> String {
     if failed {
         return "Could not load this story · press r to retry".to_string();
     }
+    // The terminal app's wording, singular included.
     let comments = match story.comments {
-        Some(0) => "discuss".to_string(),
+        Some(1) => "1 comment".to_string(),
         Some(n) => format!("{n} comments"),
-        None => "no comments".to_string(),
+        None => "discuss".to_string(),
     };
     format!(
         "{} points  \u{00b7}  by {}  \u{00b7}  {comments}",
@@ -647,13 +727,21 @@ fn saved_dot(key: impl Into<String>, accent: Color) -> El {
         .label("saved")
 }
 
-fn act(label: &str, color: Color, t: tok::Theme) -> El {
+/// A hover action on a row. It is a control in its own right: a press on it runs its own
+/// handler, not the row's select, because Rune dispatches a press to the deepest handler.
+fn act(
+    label: &str,
+    color: Color,
+    t: tok::Theme,
+    on_press: impl Fn(&mut App) + 'static,
+) -> El {
     row()
         .h(20.0)
         .px(7.0)
         .center()
         .radius(4.0)
         .fill(t.control_off)
+        .on_press(on_press)
         .child(text(label).font(type_::LABEL).color(color))
 }
 
@@ -758,6 +846,61 @@ fn banner(error: &str, t: tok::Theme, accent: Color) -> El {
         )
 }
 
+/// The feed's own failure: the ranking or the window could not be loaded. It is a state with a
+/// retry, never a blank list.
+fn feed_error(error: &str, t: tok::Theme, accent: Color) -> El {
+    row()
+        .key("feed-error")
+        .role("alert")
+        .w_full()
+        .px(24.0)
+        .py(10.0)
+        .gap(12.0)
+        .center_y()
+        .fill(t.card)
+        .child(
+            text("Could not load the feed")
+                .font(type_::LABEL)
+                .color(t.text),
+        )
+        .child(
+            text(error.to_string())
+                .font(type_::LABEL)
+                .color(t.text_secondary)
+                .truncate_middle(),
+        )
+        .child(el().grow(1.0))
+        .child(
+            row()
+                .key("feed-retry")
+                .role("button")
+                .label("Retry")
+                .h(20.0)
+                .px(8.0)
+                .center()
+                .radius(4.0)
+                .fill(t.control_off)
+                .on_press(|s: &mut App| s.refresh())
+                .child(text("Retry").font(type_::LABEL).color(accent)),
+        )
+}
+
+/// The first load: the window is empty because nothing has landed yet, not because the feed
+/// failed.
+fn feed_loading(t: tok::Theme) -> El {
+    row()
+        .key("feed-loading")
+        .role("status")
+        .w_full()
+        .px(24.0)
+        .py(10.0)
+        .child(
+            text("Loading stories")
+                .font(type_::LABEL)
+                .color(t.text_secondary),
+        )
+}
+
 fn tab_index(tab: StoryType) -> usize {
     match tab {
         StoryType::Top => 0,
@@ -859,6 +1002,142 @@ mod tests {
         PaneState::new(INSPECTOR_WIDTH)
             .range(INSPECTOR_MIN, INSPECTOR_MAX)
             .collapsed()
+    }
+
+    /// An app built the way `init` builds one, without the machine's files or the network.
+    /// `headless` runs the requests to completion, so a test sees the settled feed.
+    fn app(headless: bool, saved: SavedView) -> App {
+        App {
+            feed: FeedModel::new(),
+            saved,
+            source: Arc::new(Source::fake()),
+            bridge: Bridge::new().expect("a tokio runtime for the feed's requests"),
+            measured: Cell::new(None),
+            requested: None,
+            loading_since: None,
+            hover: None,
+            story: None,
+            inspector: inspector(),
+            config: Config::default(),
+            toast: None,
+            reduced: false,
+            headless,
+        }
+    }
+
+    fn saved_store() -> SavedView {
+        let store = [11, 6, 2, 1]
+            .into_iter()
+            .enumerate()
+            .map(|(index, id)| crate::fixtures::item(index, id))
+            .collect();
+        SavedView::seeded(store)
+    }
+
+    #[test]
+    fn the_saved_view_renders_from_the_store_and_never_asks_the_source() {
+        let mut s = app(false, saved_store());
+        s.feed.tab = StoryType::Saved;
+        s.request((11, 1), Ranking::Fresh);
+        assert!(!s.bridge.is_pending(), "no request went out");
+        assert_eq!(
+            s.feed.stories.len(),
+            4,
+            "every saved story, not a viewport of them"
+        );
+        assert_eq!(
+            s.feed
+                .stories
+                .iter()
+                .map(|story| story.id)
+                .collect::<Vec<_>>(),
+            vec![11, 6, 2, 1],
+            "save-time order"
+        );
+        assert!(!s.feed.status.loading, "the store is local: nothing is in flight");
+    }
+
+    #[test]
+    fn a_page_turn_pages_against_the_snapshot_and_only_a_refresh_re_ranks() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        let snapshot: Vec<i32> = (1..=30).collect();
+        assert_eq!(s.feed.id_snapshot, snapshot);
+        // The ranking changes upstream, as it does between two refreshes.
+        if let Source::Fake(fake) = s.source.as_ref() {
+            fake.set_ranking(StoryType::Top, vec![9, 8, 7]);
+        }
+        // A page turn keeps the ranks the reader was shown.
+        s.feed.selected = 10;
+        s.apply(feed_state::next_story(&s.feed.state(), 11));
+        assert_eq!(s.feed.id_snapshot, snapshot, "a page turn does not re-snapshot");
+        assert_eq!(s.feed.stories[0].id, 12, "rank 12 of the snapshot it was shown");
+        // A refresh is the one action that takes a new ranking.
+        s.refresh();
+        assert_eq!(s.feed.id_snapshot, vec![9, 8, 7]);
+    }
+
+    #[test]
+    fn a_failed_ranking_reaches_the_feed_error_state() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        let before = s.feed.stories.len();
+        if let Source::Fake(fake) = s.source.as_ref() {
+            fake.fail_ranking(StoryType::Top);
+        }
+        s.refresh();
+        assert_eq!(
+            s.feed.status.error.as_deref(),
+            Some("the ranking request failed"),
+            "the failure is a state the view renders with a retry"
+        );
+        assert_eq!(s.feed.stories.len(), before, "the feed is not blanked");
+        assert!(!s.feed.status.loading);
+    }
+
+    #[test]
+    fn a_hover_action_saves_the_row_it_belongs_to_not_the_selected_one() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        s.feed.selected = 0;
+        // The hover action on rank 3 saves rank 3, not the selected row.
+        s.toggle_saved_id(3);
+        assert_eq!(s.saved.ids(), vec![3]);
+        assert_eq!(s.feed.selected, 0, "the selection did not move");
+        s.toggle_saved_id(3);
+        assert!(s.saved.ids().is_empty(), "the same action unsaves it");
+    }
+
+    #[test]
+    fn a_hover_action_opens_the_row_it_belongs_to() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        s.feed.selected = 0;
+        s.open_id(4);
+        assert_eq!(s.story.as_ref().map(|story| story.id()), Some(4));
+    }
+
+    #[test]
+    fn a_store_that_could_not_be_read_does_not_confirm_a_save() {
+        let mut s = app(
+            true,
+            SavedView::corrupt(
+                std::path::PathBuf::from("/nope/hn/saved.json"),
+                "expected value at line 1 column 2",
+            ),
+        );
+        s.request((11, 1), Ranking::Fresh);
+        s.toggle_saved_id(1);
+        assert!(s.saved.ids().is_empty(), "nothing was saved");
+        assert!(
+            s.toast
+                .as_ref()
+                .unwrap()
+                .message
+                .contains("unavailable"),
+            "the toast says so instead of confirming: {:?}",
+            s.toast.as_ref().map(|notice| &notice.message)
+        );
     }
 
     #[test]

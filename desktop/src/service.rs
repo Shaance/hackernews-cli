@@ -64,7 +64,10 @@ impl Source {
     pub async fn ranked_ids(&self, tab: StoryType) -> Result<Vec<i32>> {
         match self {
             Source::Live { client, .. } => client.get_story_ids(tab.as_str()).await,
-            Source::Fake(fake) => Ok(fake.ranked_ids(tab)),
+            Source::Fake(fake) => match fake.ranking_error(tab) {
+                Some(error) => Err(anyhow::anyhow!(error)),
+                None => Ok(fake.ranked_ids(tab)),
+            },
         }
     }
 
@@ -168,6 +171,7 @@ pub struct FakeService {
     ids: Mutex<HashMap<StoryType, Vec<i32>>>,
     items: Mutex<HashMap<i32, HNCLIItem>>,
     failing: Mutex<HashSet<i32>>,
+    failing_rankings: Mutex<HashSet<StoryType>>,
     delay: Duration,
 }
 
@@ -193,6 +197,7 @@ impl FakeService {
             ids: Mutex::new(ids),
             items: Mutex::new(items),
             failing: Mutex::new(HashSet::new()),
+            failing_rankings: Mutex::new(HashSet::new()),
             delay: Duration::ZERO,
         }
     }
@@ -203,6 +208,7 @@ impl FakeService {
             ids: Mutex::new(HashMap::new()),
             items: Mutex::new(HashMap::new()),
             failing: Mutex::new(HashSet::new()),
+            failing_rankings: Mutex::new(HashSet::new()),
             delay: Duration::ZERO,
         }
     }
@@ -219,6 +225,20 @@ impl FakeService {
     /// Make `id` fail to fetch, so it renders as a placeholder row.
     pub fn fail(&self, id: i32) {
         self.failing.lock().unwrap().insert(id);
+    }
+
+    /// Make `tab`'s ranking request fail, so the feed's error state is reachable in a test.
+    pub fn fail_ranking(&self, tab: StoryType) {
+        self.failing_rankings.lock().unwrap().insert(tab);
+    }
+
+    /// The failure a ranking request for `tab` reports, when a test asked for one.
+    pub fn ranking_error(&self, tab: StoryType) -> Option<String> {
+        self.failing_rankings
+            .lock()
+            .unwrap()
+            .contains(&tab)
+            .then(|| "the ranking request failed".to_string())
     }
 
     /// Hold every fetch for `delay`, so a test can see a request in flight.

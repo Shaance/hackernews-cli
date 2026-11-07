@@ -15,6 +15,10 @@ pub struct SavedView {
     store: SavedStore,
     /// The last load or save failure, shown as the Saved view's banner.
     error: Option<String>,
+    /// Whether `store` is what the file holds. A file that failed to load is *not*: writing
+    /// over it would replace stories the user still has with the empty store we could read,
+    /// so writes are refused until a Reload succeeds.
+    loaded: bool,
 }
 
 impl SavedView {
@@ -26,6 +30,7 @@ impl SavedView {
                 path: None,
                 store: Vec::new(),
                 error: Some(format!("{error:#}")),
+                loaded: false,
             },
         }
     }
@@ -35,6 +40,7 @@ impl SavedView {
             path: Some(path),
             store: Vec::new(),
             error: None,
+            loaded: false,
         };
         view.reload();
         view
@@ -47,6 +53,7 @@ impl SavedView {
             path: None,
             store: Vec::new(),
             error: None,
+            loaded: true,
         }
     }
 
@@ -57,6 +64,7 @@ impl SavedView {
             path: None,
             store,
             error: None,
+            loaded: true,
         }
     }
 
@@ -67,6 +75,7 @@ impl SavedView {
             path: Some(path),
             store: Vec::new(),
             error: Some(message.into()),
+            loaded: false,
         }
     }
 
@@ -74,14 +83,19 @@ impl SavedView {
     pub fn reload(&mut self) {
         let Some(path) = self.path.clone() else {
             self.error = None;
+            self.loaded = true;
             return;
         };
         match bookmarks::load(&path) {
             Ok(store) => {
                 self.store = store;
                 self.error = None;
+                self.loaded = true;
             }
-            Err(error) => self.error = Some(format!("{error:#}")),
+            Err(error) => {
+                self.error = Some(format!("{error:#}"));
+                self.loaded = false;
+            }
         }
     }
 
@@ -115,7 +129,18 @@ impl SavedView {
 
     /// Toggle `item`, returning whether it is saved afterwards. A failed write leaves the
     /// previous file in place and raises the banner.
+    ///
+    /// A file that could not be read is never written over: the store in memory is not what
+    /// the file holds, so saving it would destroy the stories that are still there. The toggle
+    /// is refused and the banner says why until a Reload succeeds.
     pub fn toggle(&mut self, item: &HNCLIItem) -> bool {
+        if self.path.is_some() && !self.loaded {
+            self.error = Some(format!(
+                "{} could not be read, so it was not overwritten. Reload to retry.",
+                self.path_label()
+            ));
+            return self.contains(item.id);
+        }
         let mut next = self.store.clone();
         let saved = bookmarks::toggle_saved(&mut next, item);
         if let Some(path) = self.path.clone() {
@@ -191,6 +216,41 @@ mod tests {
         std::fs::write(&path, b"[]").unwrap();
         view.reload();
         assert!(view.error().is_none());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_corrupt_file_is_never_overwritten_by_a_toggle() {
+        let dir = temp_dir("corrupt-write");
+        let path = dir.join("hn/saved.json");
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        // A file the user still has stories in, in a shape this build cannot read.
+        let original = br#"[{"id": 7, "title": "still here"}]"#;
+        std::fs::write(&path, original).unwrap();
+        let mut view = SavedView::load_at(path.clone());
+        assert!(view.error().is_some(), "the unreadable file is a banner");
+
+        // Saving must not replace it with the empty store we could read.
+        let saved = view.toggle(&fixtures::item(0, 1));
+        assert!(!saved, "the toggle did not land");
+        assert!(view.store().is_empty(), "nothing was added in memory either");
+        assert_eq!(
+            std::fs::read(&path).unwrap(),
+            original,
+            "the file the user still has is untouched"
+        );
+        assert!(
+            view.error().unwrap().contains("not overwritten"),
+            "the banner says why: {:?}",
+            view.error()
+        );
+
+        // Reload after the file is repaired is what re-enables writing.
+        std::fs::write(&path, b"[]").unwrap();
+        view.reload();
+        assert!(view.error().is_none());
+        assert!(view.toggle(&fixtures::item(0, 1)), "writes resume after Reload");
+        assert_eq!(SavedView::load_at(path).ids(), vec![1]);
         let _ = std::fs::remove_dir_all(&dir);
     }
 
