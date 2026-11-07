@@ -1,0 +1,4529 @@
+{
+  "accessibility": {
+    "bounds": [
+      0.0,
+      0.0,
+      1180.0,
+      760.0
+    ],
+    "children": [
+      {
+        "bounds": [
+          0.0,
+          0.0,
+          1180.0,
+          760.0
+        ],
+        "children": [
+          {
+            "bounds": [
+              0.0,
+              0.0,
+              1180.0,
+              760.0
+            ],
+            "children": [
+              {
+                "bounds": [
+                  0.0,
+                  0.0,
+                  1180.0,
+                  760.0
+                ],
+                "children": [
+                  {
+                    "bounds": [
+                      0.0,
+                      0.0,
+                      1180.0,
+                      760.0
+                    ],
+                    "children": [
+                      {
+                        "bounds": [
+                          0.0,
+                          0.0,
+                          1180.0,
+                          760.0
+                        ],
+                        "children": [
+                          {
+                            "bounds": [
+                              0.0,
+                              0.0,
+                              1180.0,
+                              48.0
+                            ],
+                            "children": [
+                              {
+                                "bounds": [
+                                  75.0,
+                                  14.0,
+                                  513.0,
+                                  20.0
+                                ],
+                                "children": [
+                                  {
+                                    "bounds": [
+                                      75.0,
+                                      14.0,
+                                      513.0,
+                                      20.0
+                                    ],
+                                    "children": [
+                                      {
+                                        "bounds": [
+                                          75.0,
+                                          17.0,
+                                          27.0,
+                                          14.0
+                                        ],
+                                        "name": "Esc",
+                                        "role": "group"
+                                      },
+                                      {
+                                        "bounds": [
+                                          112.0,
+                                          15.8,
+                                          88.5,
+                                          16.5
+                                        ],
+                                        "key": "story-toolbar-title",
+                                        "name": "Libghostty 1.0",
+                                        "role": "label"
+                                      },
+                                      {
+                                        "bounds": [
+                                          210.5,
+                                          16.5,
+                                          228.0,
+                                          15.0
+                                        ],
+                                        "key": "story-toolbar-meta",
+                                        "name": "mfiguiere  ·  771 points  ·  122 comments",
+                                        "role": "label"
+                                      },
+                                      {
+                                        "bounds": [
+                                          448.5,
+                                          21.0,
+                                          6.0,
+                                          6.0
+                                        ],
+                                        "key": "story-saved-dot",
+                                        "name": "saved",
+                                        "role": "status",
+                                        "states": [
+                                          "live-polite"
+                                        ]
+                                      },
+                                      {
+                                        "bounds": [
+                                          474.5,
+                                          14.0,
+                                          113.5,
+                                          20.0
+                                        ],
+                                        "children": [
+                                          {
+                                            "bounds": [
+                                              494.5,
+                                              16.5,
+                                              85.5,
+                                              15.0
+                                            ],
+                                            "name": "summary · fast",
+                                            "role": "label"
+                                          }
+                                        ],
+                                        "key": "summary-pill",
+                                        "name": "summary · fast",
+                                        "role": "status",
+                                        "states": [
+                                          "live-polite"
+                                        ]
+                                      }
+                                    ],
+                                    "key": "story-toolbar",
+                                    "role": "group"
+                                  }
+                                ],
+                                "key": "leading",
+                                "role": "group"
+                              },
+                              {
+                                "bounds": [
+                                  1168.0,
+                                  24.0,
+                                  0.0,
+                                  0.0
+                                ],
+                                "key": "trailing",
+                                "role": "group"
+                              }
+                            ],
+                            "key": "toolbar",
+                            "role": "toolbar"
+                          },
+                          {
+                            "bounds": [
+                              0.0,
+                              48.0,
+                              1180.0,
+                              712.0
+                            ],
+                            "children": [
+                              {
+                                "bounds": [
+                                  8.0,
+                                  48.0,
+                                  629.0,
+                                  704.0
+                                ],
+                                "children": [
+                                  {
+                                    "bounds": [
+                                      8.0,
+                                      48.0,
+                                      629.0,
+                                      704.0
+                                    ],
+                                    "children": [
+                                      {
+                                        "bounds": [
+                                          8.0,
+                                          48.0,
+                                          629.0,
+                                          664.0
+                                        ],
+                                        "children": [
+                                          {
+                                            "actions": [
+                                              "scroll-up",
+                                              "scroll-down",
+                                              "set-scroll-offset"
+                                            ],
+                                            "bounds": [
+                                              8.0,
+                                              48.0,
+                                              629.0,
+                                              664.0
+                                            ],
+                                            "children": [
+                                              {
+                                                "actions": [
+                                                  "scroll-into-view"
+                                                ],
+                                                "bounds": [
+                                                  8.0,
+                                                  48.0,
+                                                  629.0,
+                                                  872.4
+                                                ],
+                                                "children": [
+                                                  {
+                                                    "actions": [
+                                                      "scroll-into-view"
+                                                    ],
+                                                    "bounds": [
+                                                      40.0,
+                                                      68.0,
+                                                      565.0,
+                                                      78.0
+                                                    ],
+                                                    "children": [
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          40.0,
+                                                          68.0,
+                                                          565.0,
+                                                          14.5
+                                                        ],
+                                                        "key": "article-eyebrow",
+                                                        "name": "Article · example.com",
+                                                        "role": "label"
+                                                      },
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          40.0,
+                                                          88.5,
+                                                          565.0,
+                                                          26.5
+                                                        ],
+                                                        "key": "article-title",
+                                                        "name": "Libghostty 1.0",
+                                                        "role": "label"
+                                                      },
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          40.0,
+                                                          121.0,
+                                                          565.0,
+                                                          15.0
+                                                        ],
+                                                        "key": "article-meta",
+                                                        "name": "mfiguiere  ·  771 points  ·  122 comments",
+                                                        "role": "label"
+                                                      }
+                                                    ],
+                                                    "key": "article-header",
+                                                    "role": "group"
+                                                  },
+                                                  {
+                                                    "actions": [
+                                                      "scroll-into-view"
+                                                    ],
+                                                    "bounds": [
+                                                      40.0,
+                                                      160.0,
+                                                      565.0,
+                                                      740.4
+                                                    ],
+                                                    "children": [
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          40.0,
+                                                          160.0,
+                                                          448.8,
+                                                          67.2
+                                                        ],
+                                                        "key": "b0",
+                                                        "name": "Today we are splitting Ghostty's core into a library. The app you run keeps its window, its fonts and its configuration; the terminal underneath becomes something another program can embed.",
+                                                        "role": "label"
+                                                      },
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          40.0,
+                                                          251.2,
+                                                          448.8,
+                                                          24.0
+                                                        ],
+                                                        "key": "b1",
+                                                        "level": 2,
+                                                        "name": "The surface is deliberately small",
+                                                        "role": "heading"
+                                                      },
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          40.0,
+                                                          285.2,
+                                                          448.8,
+                                                          67.2
+                                                        ],
+                                                        "key": "b2",
+                                                        "name": "A host hands libghostty a native surface and a size, and gets back a grid of cells it can draw however it likes. Input arrives as an event queue, not as callbacks into the host's event loop.",
+                                                        "role": "label"
+                                                      },
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          40.0,
+                                                          364.4,
+                                                          448.8,
+                                                          224.0
+                                                        ],
+                                                        "children": [
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              52.0,
+                                                              376.4,
+                                                              424.8,
+                                                              200.0
+                                                            ],
+                                                            "name": "pub const Surface = struct {\n    grid: *Grid,\n    size: Size,\n    input: *EventQueue,\n\n    pub fn resize(self: *Surface, size: Size) void {\n        self.size = size;\n        self.grid.reflow(size);\n    }\n};",
+                                                            "role": "label"
+                                                          }
+                                                        ],
+                                                        "key": "b3",
+                                                        "role": "code"
+                                                      },
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          40.0,
+                                                          612.4,
+                                                          448.8,
+                                                          22.4
+                                                        ],
+                                                        "key": "b4",
+                                                        "name": "What does not change:",
+                                                        "role": "label"
+                                                      },
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          40.0,
+                                                          646.8,
+                                                          448.8,
+                                                          75.2
+                                                        ],
+                                                        "children": [
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              40.0,
+                                                              646.8,
+                                                              448.8,
+                                                              22.4
+                                                            ],
+                                                            "children": [
+                                                              {
+                                                                "actions": [
+                                                                  "scroll-into-view"
+                                                                ],
+                                                                "bounds": [
+                                                                  72.0,
+                                                                  646.8,
+                                                                  416.8,
+                                                                  22.4
+                                                                ],
+                                                                "key": "b0",
+                                                                "name": "the parser, and its escape-sequence coverage",
+                                                                "role": "label"
+                                                              }
+                                                            ],
+                                                            "key": "i0",
+                                                            "name": "the parser, and its escape-sequence coverage",
+                                                            "position": 1,
+                                                            "role": "list-item"
+                                                          },
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              40.0,
+                                                              673.2,
+                                                              448.8,
+                                                              22.4
+                                                            ],
+                                                            "children": [
+                                                              {
+                                                                "actions": [
+                                                                  "scroll-into-view"
+                                                                ],
+                                                                "bounds": [
+                                                                  72.0,
+                                                                  673.2,
+                                                                  416.8,
+                                                                  22.4
+                                                                ],
+                                                                "key": "b0",
+                                                                "name": "the renderer's cell model",
+                                                                "role": "label"
+                                                              }
+                                                            ],
+                                                            "key": "i1",
+                                                            "name": "the renderer's cell model",
+                                                            "position": 2,
+                                                            "role": "list-item"
+                                                          },
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              40.0,
+                                                              699.6,
+                                                              448.8,
+                                                              22.4
+                                                            ],
+                                                            "children": [
+                                                              {
+                                                                "actions": [
+                                                                  "scroll-into-view"
+                                                                ],
+                                                                "bounds": [
+                                                                  72.0,
+                                                                  699.6,
+                                                                  416.8,
+                                                                  22.4
+                                                                ],
+                                                                "key": "b0",
+                                                                "name": "the configuration language",
+                                                                "role": "label"
+                                                              }
+                                                            ],
+                                                            "key": "i2",
+                                                            "name": "the configuration language",
+                                                            "position": 3,
+                                                            "role": "list-item"
+                                                          }
+                                                        ],
+                                                        "key": "b5",
+                                                        "role": "list",
+                                                        "setSize": 3
+                                                      },
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          40.0,
+                                                          734.0,
+                                                          448.8,
+                                                          22.4
+                                                        ],
+                                                        "key": "b6",
+                                                        "name": "What does: everything that used to assume it owned a window.",
+                                                        "role": "label"
+                                                      },
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          40.0,
+                                                          772.4,
+                                                          448.8,
+                                                          44.8
+                                                        ],
+                                                        "children": [
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              54.0,
+                                                              772.4,
+                                                              434.8,
+                                                              44.8
+                                                            ],
+                                                            "key": "b0",
+                                                            "name": "An event queue instead of callbacks is the whole design in one sentence.",
+                                                            "role": "label"
+                                                          }
+                                                        ],
+                                                        "key": "b7",
+                                                        "role": "blockquote"
+                                                      },
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          40.0,
+                                                          833.2,
+                                                          448.8,
+                                                          67.2
+                                                        ],
+                                                        "key": "b8",
+                                                        "name": "The ABI is versioned by struct size, so an embedder built against an older header keeps working until it asks for a field that did not exist yet.",
+                                                        "role": "label"
+                                                      }
+                                                    ],
+                                                    "key": "article-body",
+                                                    "role": "group"
+                                                  }
+                                                ],
+                                                "key": "article-content",
+                                                "role": "group"
+                                              }
+                                            ],
+                                            "key": "article-scroll",
+                                            "role": "scroll-view",
+                                            "scroll": [
+                                              0.0,
+                                              0.0,
+                                              208.4
+                                            ],
+                                            "states": [
+                                              "clips"
+                                            ]
+                                          }
+                                        ],
+                                        "key": "article-pane",
+                                        "role": "group"
+                                      },
+                                      {
+                                        "bounds": [
+                                          8.0,
+                                          713.0,
+                                          629.0,
+                                          39.0
+                                        ],
+                                        "children": [
+                                          {
+                                            "bounds": [
+                                              32.0,
+                                              725.5,
+                                              27.0,
+                                              14.0
+                                            ],
+                                            "name": "Esc",
+                                            "role": "group"
+                                          },
+                                          {
+                                            "bounds": [
+                                              65.0,
+                                              725.0,
+                                              26.0,
+                                              15.0
+                                            ],
+                                            "name": "feed",
+                                            "role": "label"
+                                          },
+                                          {
+                                            "bounds": [
+                                              109.0,
+                                              725.5,
+                                              27.5,
+                                              14.0
+                                            ],
+                                            "name": "Tab",
+                                            "role": "group"
+                                          },
+                                          {
+                                            "bounds": [
+                                              142.5,
+                                              725.0,
+                                              42.5,
+                                              15.0
+                                            ],
+                                            "name": "citation",
+                                            "role": "label"
+                                          },
+                                          {
+                                            "bounds": [
+                                              203.0,
+                                              725.5,
+                                              15.5,
+                                              14.0
+                                            ],
+                                            "name": "S",
+                                            "role": "group"
+                                          },
+                                          {
+                                            "bounds": [
+                                              224.5,
+                                              725.0,
+                                              54.0,
+                                              15.0
+                                            ],
+                                            "name": "summary",
+                                            "role": "label"
+                                          },
+                                          {
+                                            "bounds": [
+                                              296.5,
+                                              725.5,
+                                              15.5,
+                                              14.0
+                                            ],
+                                            "name": "r",
+                                            "role": "group"
+                                          },
+                                          {
+                                            "bounds": [
+                                              318.0,
+                                              725.0,
+                                              41.5,
+                                              15.0
+                                            ],
+                                            "name": "refresh",
+                                            "role": "label"
+                                          }
+                                        ],
+                                        "key": "story-footer",
+                                        "role": "group"
+                                      }
+                                    ],
+                                    "key": "story-main",
+                                    "role": "group"
+                                  }
+                                ],
+                                "key": "main-pane",
+                                "role": "main"
+                              },
+                              {
+                                "bounds": [
+                                  637.0,
+                                  48.0,
+                                  543.0,
+                                  712.0
+                                ],
+                                "children": [
+                                  {
+                                    "bounds": [
+                                      637.0,
+                                      48.0,
+                                      543.0,
+                                      712.0
+                                    ],
+                                    "children": [
+                                      {
+                                        "bounds": [
+                                          637.0,
+                                          48.0,
+                                          543.0,
+                                          712.0
+                                        ],
+                                        "children": [
+                                          {
+                                            "actions": [
+                                              "scroll-up",
+                                              "scroll-down",
+                                              "set-scroll-offset"
+                                            ],
+                                            "bounds": [
+                                              637.0,
+                                              48.0,
+                                              543.0,
+                                              712.0
+                                            ],
+                                            "children": [
+                                              {
+                                                "actions": [
+                                                  "scroll-into-view"
+                                                ],
+                                                "bounds": [
+                                                  637.0,
+                                                  48.0,
+                                                  543.0,
+                                                  613.5
+                                                ],
+                                                "children": [
+                                                  {
+                                                    "actions": [
+                                                      "scroll-into-view"
+                                                    ],
+                                                    "bounds": [
+                                                      651.0,
+                                                      60.0,
+                                                      515.0,
+                                                      164.5
+                                                    ],
+                                                    "children": [
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          665.0,
+                                                          74.0,
+                                                          487.0,
+                                                          16.5
+                                                        ],
+                                                        "children": [
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              665.0,
+                                                              74.0,
+                                                              60.5,
+                                                              16.5
+                                                            ],
+                                                            "key": "summary-title",
+                                                            "name": "Summary",
+                                                            "role": "label"
+                                                          },
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              1015.0,
+                                                              74.8,
+                                                              137.0,
+                                                              15.0
+                                                            ],
+                                                            "key": "summary-provenance",
+                                                            "name": "2 of 3 sources captured",
+                                                            "role": "label"
+                                                          }
+                                                        ],
+                                                        "key": "summary-header",
+                                                        "role": "group"
+                                                      },
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          665.0,
+                                                          100.5,
+                                                          487.0,
+                                                          110.0
+                                                        ],
+                                                        "children": [
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              665.0,
+                                                              102.0,
+                                                              12.0,
+                                                              12.0
+                                                            ],
+                                                            "name": "Loading",
+                                                            "role": "progress-indicator"
+                                                          },
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              685.0,
+                                                              100.5,
+                                                              144.0,
+                                                              15.0
+                                                            ],
+                                                            "key": "summary-status",
+                                                            "name": "Reading the discussion…",
+                                                            "role": "label"
+                                                          },
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              665.0,
+                                                              125.5,
+                                                              487.0,
+                                                              9.0
+                                                            ],
+                                                            "key": "skeleton-0",
+                                                            "role": "group"
+                                                          },
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              665.0,
+                                                              144.5,
+                                                              487.0,
+                                                              9.0
+                                                            ],
+                                                            "key": "skeleton-1",
+                                                            "role": "group"
+                                                          },
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              665.0,
+                                                              163.5,
+                                                              487.0,
+                                                              9.0
+                                                            ],
+                                                            "key": "skeleton-2",
+                                                            "role": "group"
+                                                          },
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              665.0,
+                                                              182.5,
+                                                              487.0,
+                                                              9.0
+                                                            ],
+                                                            "key": "skeleton-3",
+                                                            "role": "group"
+                                                          },
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              665.0,
+                                                              201.5,
+                                                              487.0,
+                                                              9.0
+                                                            ],
+                                                            "key": "skeleton-4",
+                                                            "role": "group"
+                                                          }
+                                                        ],
+                                                        "key": "summary-generating",
+                                                        "role": "group"
+                                                      }
+                                                    ],
+                                                    "key": "summary-card",
+                                                    "name": "Summary",
+                                                    "role": "region"
+                                                  },
+                                                  {
+                                                    "actions": [
+                                                      "scroll-into-view"
+                                                    ],
+                                                    "bounds": [
+                                                      651.0,
+                                                      234.5,
+                                                      515.0,
+                                                      415.0
+                                                    ],
+                                                    "children": [
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          651.0,
+                                                          234.5,
+                                                          515.0,
+                                                          27.0
+                                                        ],
+                                                        "children": [
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              653.0,
+                                                              240.8,
+                                                              61.5,
+                                                              14.5
+                                                            ],
+                                                            "name": "Discussion",
+                                                            "role": "label"
+                                                          },
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              722.5,
+                                                              240.5,
+                                                              125.0,
+                                                              15.0
+                                                            ],
+                                                            "key": "discussion-count",
+                                                            "name": "5 top-level comments",
+                                                            "role": "label"
+                                                          }
+                                                        ],
+                                                        "key": "discussion-header",
+                                                        "role": "group"
+                                                      },
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          651.0,
+                                                          263.5,
+                                                          515.0,
+                                                          85.5
+                                                        ],
+                                                        "children": [
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              661.0,
+                                                              271.5,
+                                                              495.0,
+                                                              16.5
+                                                            ],
+                                                            "children": [
+                                                              {
+                                                                "actions": [
+                                                                  "scroll-into-view"
+                                                                ],
+                                                                "bounds": [
+                                                                  661.0,
+                                                                  271.5,
+                                                                  47.5,
+                                                                  16.5
+                                                                ],
+                                                                "key": "comment-author-901",
+                                                                "name": "tptacek",
+                                                                "role": "label"
+                                                              },
+                                                              {
+                                                                "actions": [
+                                                                  "scroll-into-view"
+                                                                ],
+                                                                "bounds": [
+                                                                  716.5,
+                                                                  272.3,
+                                                                  68.5,
+                                                                  15.0
+                                                                ],
+                                                                "key": "comment-age-901",
+                                                                "name": "2 hours ago",
+                                                                "role": "label"
+                                                              },
+                                                              {
+                                                                "actions": [
+                                                                  "scroll-into-view"
+                                                                ],
+                                                                "bounds": [
+                                                                  1106.5,
+                                                                  272.3,
+                                                                  49.5,
+                                                                  15.0
+                                                                ],
+                                                                "key": "comment-replies-901",
+                                                                "name": "2 replies",
+                                                                "role": "label"
+                                                              }
+                                                            ],
+                                                            "key": "comment-who-901",
+                                                            "role": "group"
+                                                          },
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              661.0,
+                                                              292.0,
+                                                              495.0,
+                                                              49.0
+                                                            ],
+                                                            "key": "comment-text-901",
+                                                            "name": "The interesting part is what they left out. No windowing, no font stack, no config language — those all stay in the app. That is the whole reason this can be embedded.",
+                                                            "role": "label"
+                                                          }
+                                                        ],
+                                                        "key": "comment-901",
+                                                        "name": "Comment by tptacek",
+                                                        "role": "article"
+                                                      },
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          651.0,
+                                                          351.0,
+                                                          515.0,
+                                                          69.0
+                                                        ],
+                                                        "children": [
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              661.0,
+                                                              359.0,
+                                                              495.0,
+                                                              16.5
+                                                            ],
+                                                            "children": [
+                                                              {
+                                                                "actions": [
+                                                                  "scroll-into-view"
+                                                                ],
+                                                                "bounds": [
+                                                                  661.0,
+                                                                  359.0,
+                                                                  60.0,
+                                                                  16.5
+                                                                ],
+                                                                "key": "comment-author-902",
+                                                                "name": "kstrauser",
+                                                                "role": "label"
+                                                              },
+                                                              {
+                                                                "actions": [
+                                                                  "scroll-into-view"
+                                                                ],
+                                                                "bounds": [
+                                                                  729.0,
+                                                                  359.8,
+                                                                  59.5,
+                                                                  15.0
+                                                                ],
+                                                                "key": "comment-age-902",
+                                                                "name": "1 hour ago",
+                                                                "role": "label"
+                                                              }
+                                                            ],
+                                                            "key": "comment-who-902",
+                                                            "role": "group"
+                                                          },
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              661.0,
+                                                              379.5,
+                                                              495.0,
+                                                              32.5
+                                                            ],
+                                                            "key": "comment-text-902",
+                                                            "name": "I have wanted this for years. Every terminal library I have tried eventually grows its own opinion about how a window should look.",
+                                                            "role": "label"
+                                                          }
+                                                        ],
+                                                        "key": "comment-902",
+                                                        "name": "Comment by kstrauser",
+                                                        "role": "article"
+                                                      },
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          651.0,
+                                                          422.0,
+                                                          515.0,
+                                                          69.0
+                                                        ],
+                                                        "children": [
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              661.0,
+                                                              430.0,
+                                                              495.0,
+                                                              16.5
+                                                            ],
+                                                            "children": [
+                                                              {
+                                                                "actions": [
+                                                                  "scroll-into-view"
+                                                                ],
+                                                                "bounds": [
+                                                                  661.0,
+                                                                  430.0,
+                                                                  47.5,
+                                                                  16.5
+                                                                ],
+                                                                "key": "comment-author-903",
+                                                                "name": "jmillikin",
+                                                                "role": "label"
+                                                              },
+                                                              {
+                                                                "actions": [
+                                                                  "scroll-into-view"
+                                                                ],
+                                                                "bounds": [
+                                                                  716.5,
+                                                                  430.8,
+                                                                  59.5,
+                                                                  15.0
+                                                                ],
+                                                                "key": "comment-age-903",
+                                                                "name": "1 hour ago",
+                                                                "role": "label"
+                                                              },
+                                                              {
+                                                                "actions": [
+                                                                  "scroll-into-view"
+                                                                ],
+                                                                "bounds": [
+                                                                  1118.5,
+                                                                  430.8,
+                                                                  37.5,
+                                                                  15.0
+                                                                ],
+                                                                "key": "comment-replies-903",
+                                                                "name": "1 reply",
+                                                                "role": "label"
+                                                              }
+                                                            ],
+                                                            "key": "comment-who-903",
+                                                            "role": "group"
+                                                          },
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              661.0,
+                                                              450.5,
+                                                              495.0,
+                                                              32.5
+                                                            ],
+                                                            "key": "comment-text-903",
+                                                            "name": "A narrow ABI is great until you need one more callback. Then you version the struct and every embedder has to care.",
+                                                            "role": "label"
+                                                          }
+                                                        ],
+                                                        "key": "comment-903",
+                                                        "name": "Comment by jmillikin",
+                                                        "role": "article"
+                                                      },
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          651.0,
+                                                          493.0,
+                                                          515.0,
+                                                          85.5
+                                                        ],
+                                                        "children": [
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              661.0,
+                                                              501.0,
+                                                              495.0,
+                                                              16.5
+                                                            ],
+                                                            "children": [
+                                                              {
+                                                                "actions": [
+                                                                  "scroll-into-view"
+                                                                ],
+                                                                "bounds": [
+                                                                  661.0,
+                                                                  501.0,
+                                                                  49.5,
+                                                                  16.5
+                                                                ],
+                                                                "key": "comment-author-904",
+                                                                "name": "simonw",
+                                                                "role": "label"
+                                                              },
+                                                              {
+                                                                "actions": [
+                                                                  "scroll-into-view"
+                                                                ],
+                                                                "bounds": [
+                                                                  718.5,
+                                                                  501.8,
+                                                                  88.5,
+                                                                  15.0
+                                                                ],
+                                                                "key": "comment-age-904",
+                                                                "name": "58 minutes ago",
+                                                                "role": "label"
+                                                              }
+                                                            ],
+                                                            "key": "comment-who-904",
+                                                            "role": "group"
+                                                          },
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              661.0,
+                                                              521.5,
+                                                              495.0,
+                                                              49.0
+                                                            ],
+                                                            "key": "comment-text-904",
+                                                            "name": "Does the host get to choose the font, or does the library still own the cell grid? That is the line I keep tripping over when I try to imagine embedding this in a browser.",
+                                                            "role": "label"
+                                                          }
+                                                        ],
+                                                        "key": "comment-904",
+                                                        "name": "Comment by simonw",
+                                                        "role": "article"
+                                                      },
+                                                      {
+                                                        "actions": [
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          651.0,
+                                                          580.5,
+                                                          515.0,
+                                                          69.0
+                                                        ],
+                                                        "children": [
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              661.0,
+                                                              588.5,
+                                                              495.0,
+                                                              16.5
+                                                            ],
+                                                            "children": [
+                                                              {
+                                                                "actions": [
+                                                                  "scroll-into-view"
+                                                                ],
+                                                                "bounds": [
+                                                                  661.0,
+                                                                  588.5,
+                                                                  32.0,
+                                                                  16.5
+                                                                ],
+                                                                "key": "comment-author-905",
+                                                                "name": "dang",
+                                                                "role": "label"
+                                                              },
+                                                              {
+                                                                "actions": [
+                                                                  "scroll-into-view"
+                                                                ],
+                                                                "bounds": [
+                                                                  701.0,
+                                                                  589.3,
+                                                                  88.5,
+                                                                  15.0
+                                                                ],
+                                                                "key": "comment-age-905",
+                                                                "name": "52 minutes ago",
+                                                                "role": "label"
+                                                              }
+                                                            ],
+                                                            "key": "comment-who-905",
+                                                            "role": "group"
+                                                          },
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              661.0,
+                                                              609.0,
+                                                              495.0,
+                                                              32.5
+                                                            ],
+                                                            "key": "comment-text-905",
+                                                            "name": "Related from 2024: the original libghostty design notes. The section on input is the one worth reading first.",
+                                                            "role": "label"
+                                                          }
+                                                        ],
+                                                        "key": "comment-905",
+                                                        "name": "Comment by dang",
+                                                        "role": "article"
+                                                      }
+                                                    ],
+                                                    "key": "discussion",
+                                                    "role": "group"
+                                                  }
+                                                ],
+                                                "key": "inspector-content",
+                                                "role": "group"
+                                              }
+                                            ],
+                                            "key": "inspector",
+                                            "role": "scroll-view",
+                                            "scroll": [
+                                              0.0,
+                                              0.0,
+                                              0.0
+                                            ],
+                                            "states": [
+                                              "clips"
+                                            ]
+                                          }
+                                        ],
+                                        "key": "pane-body",
+                                        "role": "group"
+                                      }
+                                    ],
+                                    "key": "pane-content",
+                                    "role": "group"
+                                  },
+                                  {
+                                    "actions": [
+                                      "increment",
+                                      "decrement",
+                                      "set-value"
+                                    ],
+                                    "bounds": [
+                                      637.0,
+                                      48.0,
+                                      6.0,
+                                      712.0
+                                    ],
+                                    "key": "inspector-grip",
+                                    "name": "Resize inspector",
+                                    "range": [
+                                      543.0,
+                                      360.0,
+                                      640.0,
+                                      8.0
+                                    ],
+                                    "role": "splitter"
+                                  }
+                                ],
+                                "key": "inspector-pane",
+                                "name": "Inspector",
+                                "role": "region"
+                              }
+                            ],
+                            "key": "main-row",
+                            "role": "group"
+                          }
+                        ],
+                        "key": "main-column",
+                        "role": "group"
+                      }
+                    ],
+                    "key": "split",
+                    "role": "group"
+                  }
+                ],
+                "key": "shell",
+                "role": "group"
+              }
+            ],
+            "key": "window",
+            "role": "group"
+          }
+        ],
+        "key": "kit-root",
+        "role": "group"
+      }
+    ],
+    "name": "Hacker News",
+    "role": "window"
+  },
+  "anim_t": 1.0000000000000013,
+  "animating": true,
+  "dark_system": true,
+  "elements": [
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "kit-root",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root",
+      "rect": [
+        0.0,
+        0.0,
+        1180.0,
+        760.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#121314ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "window",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window",
+      "rect": [
+        0.0,
+        0.0,
+        1180.0,
+        760.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#121314ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "shell",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell",
+      "rect": [
+        0.0,
+        0.0,
+        1180.0,
+        760.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "split",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split",
+      "rect": [
+        0.0,
+        0.0,
+        1180.0,
+        760.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "main-column",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column",
+      "rect": [
+        0.0,
+        0.0,
+        1180.0,
+        760.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "toolbar",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar",
+      "rect": [
+        0.0,
+        0.0,
+        1180.0,
+        48.0
+      ],
+      "role": "toolbar",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "leading",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading",
+      "rect": [
+        75.0,
+        14.0,
+        513.0,
+        20.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-toolbar",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar",
+      "rect": [
+        75.0,
+        14.0,
+        513.0,
+        20.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "Esc",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/#0",
+      "rect": [
+        75.0,
+        17.0,
+        27.0,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/#0/key0",
+      "rect": [
+        75.0,
+        17.0,
+        27.0,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/#0/key0/#0",
+      "rect": [
+        79.0,
+        18.5,
+        19.0,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Esc"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-toolbar-title",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/story-toolbar-title",
+      "rect": [
+        112.0,
+        15.75,
+        88.5,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Libghostty 1.0"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-toolbar-meta",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/story-toolbar-meta",
+      "rect": [
+        210.5,
+        16.5,
+        228.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "mfiguiere  ·  771 points  ·  122 comments"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f48d2fff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-saved-dot",
+      "label": "saved",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/story-saved-dot",
+      "rect": [
+        448.5,
+        21.0,
+        6.0,
+        6.0
+      ],
+      "role": "status",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/#4",
+      "rect": [
+        464.5,
+        24.0,
+        0.0,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "summary-pill",
+      "label": "summary · fast",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/summary-pill",
+      "rect": [
+        474.5,
+        14.0,
+        113.5,
+        20.0
+      ],
+      "role": "status",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f48d2fff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/summary-pill/#0",
+      "rect": [
+        482.5,
+        21.0,
+        6.0,
+        6.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/summary-pill/#1",
+      "rect": [
+        494.5,
+        16.5,
+        85.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "summary · fast"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "spacer",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/spacer",
+      "rect": [
+        596.0,
+        24.0,
+        564.0,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "trailing",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/trailing",
+      "rect": [
+        1168.0,
+        24.0,
+        0.0,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "main-row",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row",
+      "rect": [
+        0.0,
+        48.0,
+        1180.0,
+        712.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#1c1d20ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "main-pane",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane",
+      "rect": [
+        8.0,
+        48.0,
+        629.0,
+        704.0
+      ],
+      "role": "main",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-main",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main",
+      "rect": [
+        8.0,
+        48.0,
+        629.0,
+        704.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "article-pane",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane",
+      "rect": [
+        8.0,
+        48.0,
+        629.0,
+        664.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "article-scroll",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll",
+      "rect": [
+        8.0,
+        48.0,
+        629.0,
+        664.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "article-content",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content",
+      "rect": [
+        8.0,
+        48.0,
+        629.0,
+        872.4
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#1c1d20ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "article-header",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header",
+      "rect": [
+        40.0,
+        68.0,
+        565.0,
+        78.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/#0",
+      "rect": [
+        40.0,
+        68.0,
+        565.0,
+        68.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "article-eyebrow",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/#0/article-eyebrow",
+      "rect": [
+        40.0,
+        68.0,
+        565.0,
+        14.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Article · example.com"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "article-title",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/#0/article-title",
+      "rect": [
+        40.0,
+        88.5,
+        565.0,
+        26.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Libghostty 1.0"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "article-meta",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/#0/article-meta",
+      "rect": [
+        40.0,
+        121.0,
+        565.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "mfiguiere  ·  771 points  ·  122 comments"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "article-body",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body",
+      "rect": [
+        40.0,
+        160.0,
+        565.0,
+        740.4
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0",
+      "rect": [
+        40.0,
+        160.0,
+        448.8,
+        740.4
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "b0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b0",
+      "rect": [
+        40.0,
+        160.0,
+        448.8,
+        67.2
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Today we are splitting Ghostty's core into a library. The app you run keeps its window, its fonts and its configuration; the terminal underneath becomes something another program can embed."
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "b1",
+      "level": 2,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b1",
+      "rect": [
+        40.0,
+        251.2,
+        448.8,
+        24.0
+      ],
+      "role": "heading",
+      "scale": 1.0,
+      "text": "The surface is deliberately small"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "b2",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b2",
+      "rect": [
+        40.0,
+        285.2,
+        448.8,
+        67.2
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "A host hands libghostty a native surface and a size, and gets back a grid of cells it can draw however it likes. Input arrives as an event queue, not as callbacks into the host's event loop."
+    },
+    {
+      "blur": 0.0,
+      "fill": "#121314ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "b3",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b3",
+      "rect": [
+        40.0,
+        364.41,
+        448.8,
+        224.0
+      ],
+      "role": "code",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b3/#0",
+      "rect": [
+        52.0,
+        376.41,
+        424.8,
+        200.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "pub const Surface = struct {\n    grid: *Grid,\n    size: Size,\n    input: *EventQueue,\n\n    pub fn resize(self: *Surface, size: Size) void {\n        self.size = size;\n        self.grid.reflow(size);\n    }\n};"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "b4",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b4",
+      "rect": [
+        40.0,
+        612.41,
+        448.8,
+        22.4
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "What does not change:"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "b5",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5",
+      "rect": [
+        40.0,
+        646.8,
+        448.8,
+        75.2
+      ],
+      "role": "list",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "i0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i0",
+      "rect": [
+        40.0,
+        646.8,
+        448.8,
+        22.4
+      ],
+      "role": "listitem",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i0/#0",
+      "rect": [
+        40.0,
+        646.8,
+        32.0,
+        22.4
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "•"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i0/#1",
+      "rect": [
+        72.0,
+        646.8,
+        416.8,
+        22.4
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "b0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i0/#1/b0",
+      "rect": [
+        72.0,
+        646.8,
+        416.8,
+        22.4
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "the parser, and its escape-sequence coverage"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "i1",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i1",
+      "rect": [
+        40.0,
+        673.2,
+        448.8,
+        22.4
+      ],
+      "role": "listitem",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i1/#0",
+      "rect": [
+        40.0,
+        673.2,
+        32.0,
+        22.4
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "•"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i1/#1",
+      "rect": [
+        72.0,
+        673.2,
+        416.8,
+        22.4
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "b0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i1/#1/b0",
+      "rect": [
+        72.0,
+        673.2,
+        416.8,
+        22.4
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "the renderer's cell model"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "i2",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i2",
+      "rect": [
+        40.0,
+        699.6,
+        448.8,
+        22.4
+      ],
+      "role": "listitem",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i2/#0",
+      "rect": [
+        40.0,
+        699.6,
+        32.0,
+        22.4
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "•"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i2/#1",
+      "rect": [
+        72.0,
+        699.6,
+        416.8,
+        22.4
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "b0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i2/#1/b0",
+      "rect": [
+        72.0,
+        699.6,
+        416.8,
+        22.4
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "the configuration language"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "b6",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b6",
+      "rect": [
+        40.0,
+        734.0,
+        448.8,
+        22.4
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "What does: everything that used to assume it owned a window."
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "b7",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b7",
+      "rect": [
+        40.0,
+        772.4,
+        448.8,
+        44.8
+      ],
+      "role": "blockquote",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b7/#0",
+      "rect": [
+        40.0,
+        772.4,
+        2.0,
+        44.8
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b7/#1",
+      "rect": [
+        42.0,
+        772.4,
+        446.8,
+        44.8
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "b0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b7/#1/b0",
+      "rect": [
+        54.0,
+        772.4,
+        434.8,
+        44.8
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "An event queue instead of callbacks is the whole design in one sentence."
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "b8",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b8",
+      "rect": [
+        40.0,
+        833.2,
+        448.8,
+        67.2
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "The ABI is versioned by struct size, so an embedder built against an older header keeps working until it asks for a field that did not exist yet."
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/#1",
+      "rect": [
+        8.0,
+        712.0,
+        629.0,
+        1.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "story-footer",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer",
+      "rect": [
+        8.0,
+        713.0,
+        629.0,
+        39.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#0",
+      "rect": [
+        32.0,
+        725.0,
+        59.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "Esc",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#0/#0",
+      "rect": [
+        32.0,
+        725.5,
+        27.0,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#0/#0/key0",
+      "rect": [
+        32.0,
+        725.5,
+        27.0,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#0/#0/key0/#0",
+      "rect": [
+        36.0,
+        727.0,
+        19.0,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Esc"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#0/#1",
+      "rect": [
+        65.0,
+        725.0,
+        26.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "feed"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1",
+      "rect": [
+        109.0,
+        725.0,
+        76.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "Tab",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1/#0",
+      "rect": [
+        109.0,
+        725.5,
+        27.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1/#0/key0",
+      "rect": [
+        109.0,
+        725.5,
+        27.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1/#0/key0/#0",
+      "rect": [
+        113.0,
+        727.0,
+        19.5,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Tab"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1/#1",
+      "rect": [
+        142.5,
+        725.0,
+        42.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "citation"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2",
+      "rect": [
+        203.0,
+        725.0,
+        75.5,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "S",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2/#0",
+      "rect": [
+        203.0,
+        725.5,
+        15.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2/#0/key0",
+      "rect": [
+        203.0,
+        725.5,
+        15.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2/#0/key0/#0",
+      "rect": [
+        207.0,
+        727.0,
+        7.5,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "S"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2/#1",
+      "rect": [
+        224.5,
+        725.0,
+        54.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "summary"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3",
+      "rect": [
+        296.5,
+        725.0,
+        63.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "r",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#0",
+      "rect": [
+        296.5,
+        725.5,
+        15.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#0/key0",
+      "rect": [
+        296.5,
+        725.5,
+        15.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#0/key0/#0",
+      "rect": [
+        300.5,
+        727.0,
+        7.5,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "R"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#1",
+      "rect": [
+        318.0,
+        725.0,
+        41.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "refresh"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#4",
+      "rect": [
+        377.5,
+        732.5,
+        235.5,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "inspector-pane",
+      "label": "Inspector",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane",
+      "rect": [
+        637.0,
+        48.0,
+        543.0,
+        712.0
+      ],
+      "role": "region",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "pane-content",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content",
+      "rect": [
+        637.0,
+        48.0,
+        543.0,
+        712.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "pane-body",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body",
+      "rect": [
+        637.0,
+        48.0,
+        543.0,
+        712.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "inspector",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector",
+      "rect": [
+        637.0,
+        48.0,
+        543.0,
+        712.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "inspector-content",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content",
+      "rect": [
+        637.0,
+        48.0,
+        543.0,
+        613.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#1c1d20ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "summary-card",
+      "label": "Summary",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card",
+      "rect": [
+        651.0,
+        60.0,
+        515.0,
+        164.5
+      ],
+      "role": "region",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "summary-header",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-header",
+      "rect": [
+        665.0,
+        74.0,
+        487.0,
+        16.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "summary-title",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-header/summary-title",
+      "rect": [
+        665.0,
+        74.0,
+        60.5,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Summary"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-header/#1",
+      "rect": [
+        733.5,
+        82.25,
+        273.5,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "summary-provenance",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-header/summary-provenance",
+      "rect": [
+        1015.0,
+        74.75,
+        137.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "2 of 3 sources captured"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "summary-generating",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating",
+      "rect": [
+        665.0,
+        100.5,
+        487.0,
+        110.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/#0",
+      "rect": [
+        665.0,
+        100.5,
+        487.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "Loading",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/#0/#0",
+      "rect": [
+        665.0,
+        102.0,
+        12.0,
+        12.0
+      ],
+      "role": "progressbar",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#a2a5aaff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "sq1",
+      "loopPhase": 0.14963503649635138,
+      "moving": true,
+      "opacity": 0.18700000643730164,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/#0/#0/sq1",
+      "rect": [
+        668.2,
+        102.0,
+        2.4,
+        2.4
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#a2a5aaff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "sq2",
+      "loopPhase": 0.5316091954022997,
+      "moving": true,
+      "opacity": 0.3479999899864197,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/#0/#0/sq2",
+      "rect": [
+        671.4,
+        102.0,
+        2.4,
+        2.4
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#a2a5aaff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "sq4",
+      "loopPhase": 0.5782312925170077,
+      "moving": true,
+      "opacity": 0.3400000035762787,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/#0/#0/sq4",
+      "rect": [
+        665.0,
+        105.2,
+        2.4,
+        2.4
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#a2a5aaff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "sq5",
+      "loopPhase": 0.02989130434782684,
+      "moving": true,
+      "opacity": 0.40400001406669617,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/#0/#0/sq5",
+      "rect": [
+        668.2,
+        105.2,
+        2.4,
+        2.4
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#a2a5aaff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "sq6",
+      "loopPhase": 0.6458333333333345,
+      "moving": true,
+      "opacity": 0.8939999938011169,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/#0/#0/sq6",
+      "rect": [
+        671.4,
+        105.2,
+        2.4,
+        2.4
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#a2a5aaff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "sq7",
+      "loopPhase": 0.0,
+      "opacity": 0.15000000596046448,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/#0/#0/sq7",
+      "rect": [
+        674.6,
+        105.2,
+        2.4,
+        2.4
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#a2a5aaff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "sq8",
+      "loopPhase": 0.3608247422680419,
+      "moving": true,
+      "opacity": 0.3179999887943268,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/#0/#0/sq8",
+      "rect": [
+        665.0,
+        108.4,
+        2.4,
+        2.4
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#a2a5aaff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "sq9",
+      "loopPhase": 0.0,
+      "opacity": 0.4000000059604645,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/#0/#0/sq9",
+      "rect": [
+        668.2,
+        108.4,
+        2.4,
+        2.4
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#a2a5aaff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "sq10",
+      "loopPhase": 0.37425149700598886,
+      "moving": true,
+      "opacity": 0.921999990940094,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/#0/#0/sq10",
+      "rect": [
+        671.4,
+        108.4,
+        2.4,
+        2.4
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#a2a5aaff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "sq11",
+      "loopPhase": 0.0,
+      "opacity": 0.15000000596046448,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/#0/#0/sq11",
+      "rect": [
+        674.6,
+        108.4,
+        2.4,
+        2.4
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#a2a5aaff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "sq13",
+      "loopPhase": 0.0,
+      "opacity": 0.15000000596046448,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/#0/#0/sq13",
+      "rect": [
+        668.2,
+        111.6,
+        2.4,
+        2.4
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#a2a5aaff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "sq14",
+      "loopPhase": 0.42035398230088616,
+      "moving": true,
+      "opacity": 0.3400000035762787,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/#0/#0/sq14",
+      "rect": [
+        671.4,
+        111.6,
+        2.4,
+        2.4
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "summary-status",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/#0/summary-status",
+      "rect": [
+        685.0,
+        100.5,
+        144.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Reading the discussion…"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "skeleton-0",
+      "loopPhase": null,
+      "opacity": 0.8500000238418579,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/skeleton-0",
+      "rect": [
+        665.0,
+        125.5,
+        487.0,
+        9.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "skeleton-1",
+      "loopPhase": null,
+      "opacity": 0.7799999713897705,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/skeleton-1",
+      "rect": [
+        665.0,
+        144.5,
+        487.0,
+        9.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "skeleton-2",
+      "loopPhase": null,
+      "opacity": 0.6600000262260437,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/skeleton-2",
+      "rect": [
+        665.0,
+        163.5,
+        487.0,
+        9.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "skeleton-3",
+      "loopPhase": null,
+      "opacity": 0.8199999928474426,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/skeleton-3",
+      "rect": [
+        665.0,
+        182.5,
+        487.0,
+        9.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "skeleton-4",
+      "loopPhase": null,
+      "opacity": 0.5899999737739563,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/summary-card/summary-generating/skeleton-4",
+      "rect": [
+        665.0,
+        201.5,
+        487.0,
+        9.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "discussion",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion",
+      "rect": [
+        651.0,
+        234.5,
+        515.0,
+        415.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "discussion-header",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/discussion-header",
+      "rect": [
+        651.0,
+        234.5,
+        515.0,
+        27.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/discussion-header/#0",
+      "rect": [
+        653.0,
+        240.75,
+        61.5,
+        14.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Discussion"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "discussion-count",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/discussion-header/discussion-count",
+      "rect": [
+        722.5,
+        240.5,
+        125.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "5 top-level comments"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-901",
+      "label": "Comment by tptacek",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-901",
+      "rect": [
+        651.0,
+        263.5,
+        515.0,
+        85.5
+      ],
+      "role": "article",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-who-901",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-901/comment-who-901",
+      "rect": [
+        661.0,
+        271.5,
+        495.0,
+        16.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-author-901",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-901/comment-who-901/comment-author-901",
+      "rect": [
+        661.0,
+        271.5,
+        47.5,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "tptacek"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-age-901",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-901/comment-who-901/comment-age-901",
+      "rect": [
+        716.5,
+        272.25,
+        68.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "2 hours ago"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-901/comment-who-901/#2",
+      "rect": [
+        793.0,
+        279.75,
+        305.5,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-replies-901",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-901/comment-who-901/comment-replies-901",
+      "rect": [
+        1106.5,
+        272.25,
+        49.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "2 replies"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-text-901",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-901/comment-text-901",
+      "rect": [
+        661.0,
+        292.0,
+        495.0,
+        49.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "The interesting part is what they left out. No windowing, no font stack, no config language — those all stay in the app. That is the whole reason this can be embedded."
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-902",
+      "label": "Comment by kstrauser",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-902",
+      "rect": [
+        651.0,
+        351.0,
+        515.0,
+        69.0
+      ],
+      "role": "article",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-who-902",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-902/comment-who-902",
+      "rect": [
+        661.0,
+        359.0,
+        495.0,
+        16.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-author-902",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-902/comment-who-902/comment-author-902",
+      "rect": [
+        661.0,
+        359.0,
+        60.0,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "kstrauser"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-age-902",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-902/comment-who-902/comment-age-902",
+      "rect": [
+        729.0,
+        359.75,
+        59.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "1 hour ago"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-902/comment-who-902/#2",
+      "rect": [
+        796.5,
+        367.25,
+        359.5,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-text-902",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-902/comment-text-902",
+      "rect": [
+        661.0,
+        379.5,
+        495.0,
+        32.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "I have wanted this for years. Every terminal library I have tried eventually grows its own opinion about how a window should look."
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-903",
+      "label": "Comment by jmillikin",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-903",
+      "rect": [
+        651.0,
+        422.0,
+        515.0,
+        69.0
+      ],
+      "role": "article",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-who-903",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-903/comment-who-903",
+      "rect": [
+        661.0,
+        430.0,
+        495.0,
+        16.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-author-903",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-903/comment-who-903/comment-author-903",
+      "rect": [
+        661.0,
+        430.0,
+        47.5,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "jmillikin"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-age-903",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-903/comment-who-903/comment-age-903",
+      "rect": [
+        716.5,
+        430.75,
+        59.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "1 hour ago"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-903/comment-who-903/#2",
+      "rect": [
+        784.0,
+        438.25,
+        326.5,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-replies-903",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-903/comment-who-903/comment-replies-903",
+      "rect": [
+        1118.5,
+        430.75,
+        37.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "1 reply"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-text-903",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-903/comment-text-903",
+      "rect": [
+        661.0,
+        450.5,
+        495.0,
+        32.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "A narrow ABI is great until you need one more callback. Then you version the struct and every embedder has to care."
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-904",
+      "label": "Comment by simonw",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-904",
+      "rect": [
+        651.0,
+        493.0,
+        515.0,
+        85.5
+      ],
+      "role": "article",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-who-904",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-904/comment-who-904",
+      "rect": [
+        661.0,
+        501.0,
+        495.0,
+        16.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-author-904",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-904/comment-who-904/comment-author-904",
+      "rect": [
+        661.0,
+        501.0,
+        49.5,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "simonw"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-age-904",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-904/comment-who-904/comment-age-904",
+      "rect": [
+        718.5,
+        501.75,
+        88.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "58 minutes ago"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-904/comment-who-904/#2",
+      "rect": [
+        815.0,
+        509.25,
+        341.0,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-text-904",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-904/comment-text-904",
+      "rect": [
+        661.0,
+        521.5,
+        495.0,
+        49.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Does the host get to choose the font, or does the library still own the cell grid? That is the line I keep tripping over when I try to imagine embedding this in a browser."
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-905",
+      "label": "Comment by dang",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-905",
+      "rect": [
+        651.0,
+        580.5,
+        515.0,
+        69.0
+      ],
+      "role": "article",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-who-905",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-905/comment-who-905",
+      "rect": [
+        661.0,
+        588.5,
+        495.0,
+        16.5
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-author-905",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-905/comment-who-905/comment-author-905",
+      "rect": [
+        661.0,
+        588.5,
+        32.0,
+        16.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "dang"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-age-905",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-905/comment-who-905/comment-age-905",
+      "rect": [
+        701.0,
+        589.25,
+        88.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "52 minutes ago"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-905/comment-who-905/#2",
+      "rect": [
+        797.5,
+        596.75,
+        358.5,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-text-905",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector/inspector-content/discussion/comment-905/comment-text-905",
+      "rect": [
+        661.0,
+        609.0,
+        495.0,
+        32.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Related from 2024: the original libghostty design notes. The section on input is the one worth reading first."
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "pane-open",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-open",
+      "rect": [
+        637.0,
+        48.0,
+        0.0,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "pane-open-main",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-open-main",
+      "rect": [
+        637.0,
+        48.0,
+        0.0,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "inspector-grip",
+      "label": "Resize inspector",
+      "loopPhase": null,
+      "opacity": 0.019999999552965164,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/inspector-grip",
+      "rect": [
+        637.0,
+        48.0,
+        6.0,
+        712.0
+      ],
+      "role": "separator",
+      "scale": 1.0
+    }
+  ],
+  "reduced_motion": false,
+  "scale": 2.0,
+  "t": 1.0,
+  "time_scale": 1.0,
+  "title": "Hacker News",
+  "viewport": [
+    1180.0,
+    760.0
+  ],
+  "warnings": []
+}

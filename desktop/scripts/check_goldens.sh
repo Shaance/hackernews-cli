@@ -59,20 +59,36 @@ SCENES=(
   "resize|resize|1600x900|scripts/resize.json|1"
 )
 
+# name | scene | size | script
+# The story split's three frozen states. They share the render/tree/pixel/motion loops with the
+# feed scenes but not the feed's fidelity loop: a story has no rank order and no page stepper.
+STORY_SCENES=(
+  "story|story|1180x760|scripts/story.json"
+  "citation|citation|1180x760|scripts/story.json"
+  "summary-generating|summary-generating|1180x760|scripts/story.json"
+)
+
+ALL=("${SCENES[@]}" "${STORY_SCENES[@]}")
+
+# A scene whose golden is an indeterminate-progress state may keep one loop running: the
+# summary card's spinner. Nothing else may still be moving, and the loop may not move anything
+# spatially.
+allows_loop() { [ "$1" = "summary-generating" ]; }
+
 render() { # name scene size script
   "$BIN" --scene "$2" --size "$3" --scale 2 --theme dark --script "$4" \
     --snap "$ACTUAL/$1.png" --tree "$ACTUAL/$1.json" --trace "$ACTUAL/$1.trace.jsonl" >/dev/null
 }
 
 step "render"
-for row in "${SCENES[@]}"; do
+for row in "${ALL[@]}"; do
   IFS='|' read -r name scene size script _ <<<"$row"
   render "$name" "$scene" "$size" "$script"
   pass "$name ($scene @ $size)"
 done
 
 step "trees (jq -S canonical diff must be empty)"
-for row in "${SCENES[@]}"; do
+for row in "${ALL[@]}"; do
   IFS='|' read -r name _ _ _ _ <<<"$row"
   jq -S . "$EXPECTED/$name.json" >"$ACTUAL/$name.expected.canon.json"
   jq -S . "$ACTUAL/$name.json" >"$ACTUAL/$name.actual.canon.json"
@@ -88,7 +104,7 @@ if [ "$TREES_ONLY" = 1 ]; then
   step "pixels (skipped: HN_TREES_ONLY=1)"
 else
   step "pixels (compare -metric AE -fuzz 2%, fail above 0.5%)"
-  for row in "${SCENES[@]}"; do
+  for row in "${ALL[@]}"; do
     IFS='|' read -r name _ _ _ _ <<<"$row"
     read -r w h <<<"$(identify -format '%w %h' "$EXPECTED/$name.png")"
     total=$((w * h))
@@ -109,22 +125,34 @@ else
 fi
 
 step "motion lint"
-for row in "${SCENES[@]}"; do
+for row in "${ALL[@]}"; do
   IFS='|' read -r name _ _ _ _ <<<"$row"
   trace="$ACTUAL/$name.trace.jsonl"
 
-  # Nothing may still be moving a second after launch.
-  moving=$(jq -s --argjson at "$AT_REST_MS" \
-    '[.[] | select(.quality.animating == true and .t >= $at)] | length' "$trace")
-  if [ "$moving" = 0 ]; then
-    pass "$name at rest (0 animating frames after ${AT_REST_MS}ms)"
+  # Nothing may still be moving a second after launch, except a scene's declared progress loop.
+  if allows_loop "$name"; then
+    moving=$(jq -s --argjson at "$AT_REST_MS" \
+      '[.[] | select(.quality.animating == true and .t >= $at)
+        | select((.quality.why // []) != ["loop"])] | length' "$trace")
+    if [ "$moving" = 0 ]; then
+      pass "$name at rest (only the progress loop after ${AT_REST_MS}ms)"
+    else
+      bad "$name at rest ($moving animating frames beyond the progress loop after ${AT_REST_MS}ms)"
+    fi
   else
-    bad "$name at rest ($moving animating frames after ${AT_REST_MS}ms)"
+    moving=$(jq -s --argjson at "$AT_REST_MS" \
+      '[.[] | select(.quality.animating == true and .t >= $at)] | length' "$trace")
+    if [ "$moving" = 0 ]; then
+      pass "$name at rest (0 animating frames after ${AT_REST_MS}ms)"
+    else
+      bad "$name at rest ($moving animating frames after ${AT_REST_MS}ms)"
+    fi
   fi
 
-  # Only intended tracks: `tk` is [id, prop, active]; active is 1 while the track moves.
+  # Only intended tracks: `tk` is [id, prop, active]; active is 1 while the track moves. A loop
+  # frame carries no `tk` at all, so the list is read as empty rather than as an error.
   spatial=$(jq -s --arg spatial "$SPATIAL" \
-    '[.[] | select(.quality.animating == true) | .tk[] | select(.[2] == 1)
+    '[.[] | select(.quality.animating == true) | (.tk // [])[] | select(.[2] == 1)
       | select((.[1] | ascii_downcase) as $p | ($spatial | split(",") | index($p)) != null)] | length' "$trace")
   if [ "$spatial" = 0 ]; then
     pass "$name tracks (no active spatial track)"
@@ -132,7 +160,7 @@ for row in "${SCENES[@]}"; do
     bad "$name tracks ($spatial active spatial tracks)"
   fi
 
-  props=$(jq -rs '[.[] | select(.quality.animating == true) | .tk[] | select(.[2] == 1) | .[1]] | unique | join(",")' "$trace")
+  props=$(jq -rs '[.[] | select(.quality.animating == true) | (.tk // [])[] | select(.[2] == 1) | .[1]] | unique | join(",")' "$trace")
   printf '        %s active props: [%s]\n' "$name" "$props"
 done
 
@@ -239,7 +267,7 @@ else
   bad "app did not report reduced motion"
 fi
 spatial=$(jq -s --arg spatial "$SPATIAL" \
-  '[.[] | select(.quality.animating == true) | .tk[] | select(.[2] == 1)
+  '[.[] | select(.quality.animating == true) | (.tk // [])[] | select(.[2] == 1)
     | select((.[1] | ascii_downcase) as $p | ($spatial | split(",") | index($p)) != null)] | length' \
   "$ACTUAL/reduced.trace.jsonl")
 if [ "$spatial" = 0 ]; then
@@ -269,6 +297,131 @@ if [ "$wide_cols" = 2 ] && [ "$narrow_cols" = 1 ]; then
   pass "resize reflow (2 columns at $wide_win, 1 at $narrow_win)"
 else
   bad "resize reflow ($wide_cols columns at $wide_win, $narrow_cols at $narrow_win)"
+fi
+
+step "story split (article left, summary pinned, discussion below)"
+# Read from the trees, not the pixels: a golden cannot ratify a summary card that scrolled away
+# with the discussion, a citation chip that is not a control, or a stepper left over from the
+# feed. The three scenes are the same split in three states.
+for name in story citation summary-generating; do
+  tree="$ACTUAL/$name.json"
+  q() { jq -r "$1" "$tree"; }
+
+  # The article is the main pane's content, at the 66ch measure DESIGN.md asks for.
+  title=$(q '[.elements[] | select((.key // "") == "article-title") | .text][0] // ""')
+  measure=$(q '[.elements[] | select((.key // "") | test("^b[0-9]+$")) | .rect[2]] | max // 0')
+  if [ "$title" = "Libghostty 1.0" ] && [ "$measure" = "448.8" ]; then
+    pass "$name article (title, 66ch measure ${measure}pt)"
+  else
+    bad "$name article (title '$title', measure $measure)"
+  fi
+
+  # The grip is the split's resize handle, and the feed's stepper is gone.
+  grip=$(q '[.elements[] | select((.key // "") == "inspector-grip") | .role][0] // ""')
+  stepper=$(q '[.elements[] | select((.key // "") == "page-stepper")] | length')
+  if [ "$grip" = "separator" ] && [ "$stepper" = 0 ]; then
+    pass "$name grip (separator), no page stepper"
+  else
+    bad "$name grip '$grip', $stepper page steppers"
+  fi
+done
+
+# The card and the discussion, in the two scenes that show them: the citation scene gives the
+# inspector to the source viewer instead.
+for name in story summary-generating; do
+  tree="$ACTUAL/$name.json"
+  q() { jq -r "$1" "$tree"; }
+
+  # The summary card is pinned 12 points into the inspector and above every comment: the
+  # discussion scrolls under it.
+  pinned=$(q '[.elements[] | select((.key // "") == "inspector-pane") | .rect[1]][0] as $top
+    | [.elements[] | select((.key // "") == "summary-card") | .rect[1]][0] as $card
+    | [.elements[] | select((.key // "") | test("^comment-[0-9]+$")) | .rect[1]] | min as $first
+    | "\($card == $top + 12)/\($card < $first)"')
+  if [ "$pinned" = "true/true" ]; then
+    pass "$name summary pinned above the discussion"
+  else
+    bad "$name summary pinned (card at top+12 / above first comment = '$pinned')"
+  fi
+
+  # The discussion is a flat list of top-level comments: no comment inside another.
+  flat=$(q '[.elements[] | select((.path // "") | test("comment-[0-9]+/.*comment-[0-9]+"))] | length')
+  count=$(q '[.elements[] | select((.key // "") == "discussion-count") | .text][0] // ""')
+  if [ "$flat" = 0 ] && [ "$count" = "5 top-level comments" ]; then
+    pass "$name discussion (flat, $count)"
+  else
+    bad "$name discussion (nested $flat, count '$count')"
+  fi
+done
+
+# The done state: numbered citation chips, one per cited source, each a control.
+chips=$(jq -r '[.elements[] | select((.key // "") | test("^cite-[0-9]+$")) | "\(.key):\(.role)"] | sort | join(",")' "$ACTUAL/story.json")
+if [ "$chips" = "cite-901:button,cite-902:button,cite-903:button,cite-904:button,cite-905:button" ]; then
+  pass "story citation chips (5, numbered, buttons)"
+else
+  bad "story citation chips (got '$chips')"
+fi
+provenance=$(jq -r '[.elements[] | select((.key // "") == "summary-provenance") | .text][0] // ""' "$ACTUAL/story.json")
+if [ "$provenance" = "3 of 3 sources" ]; then
+  pass "story summary provenance ($provenance)"
+else
+  bad "story summary provenance (got '$provenance')"
+fi
+
+# The citation scene: the source viewer takes the inspector and the article stays as context.
+viewer=$(jq -r '[.elements[] | select((.key // "") == "source-viewer") | .label][0] // ""' "$ACTUAL/citation.json")
+excerpt=$(jq '[.elements[] | select((.key // "") == "source-excerpt-text") | .text] | length' "$ACTUAL/citation.json")
+dimmed=$(jq '[.elements[] | select((.key // "") == "article-pane") | .opacity][0] // 1' "$ACTUAL/citation.json")
+if [ "$viewer" = "Citation 2" ] && [ "$excerpt" = 1 ] && [ "$dimmed" = "0.550000011920929" ]; then
+  pass "citation viewer ($viewer, excerpt shown, article dimmed to $dimmed)"
+else
+  bad "citation viewer (label '$viewer', $excerpt excerpts, article opacity $dimmed)"
+fi
+
+# Generating: skeleton rows and the capture count, and no chips until the summary lands.
+skeletons=$(jq '[.elements[] | select((.key // "") | test("^skeleton-[0-9]+$"))] | length' "$ACTUAL/summary-generating.json")
+chips=$(jq '[.elements[] | select((.key // "") | test("^cite-[0-9]+$"))] | length' "$ACTUAL/summary-generating.json")
+captured=$(jq -r '[.elements[] | select((.key // "") == "summary-provenance") | .text][0] // ""' "$ACTUAL/summary-generating.json")
+if [ "$skeletons" = 5 ] && [ "$chips" = 0 ] && [ "$captured" = "2 of 3 sources captured" ]; then
+  pass "summary generating (5 skeleton rows, '$captured', no chips)"
+else
+  bad "summary generating ($skeletons skeletons, $chips chips, '$captured')"
+fi
+
+step "split morph (Enter on a feed row opens the inspector from 0 width)"
+"$BIN" --scene feed --size 1180x760 --scale 2 --theme dark --script scripts/open-story.json \
+  --at mark:morph --tree "$ACTUAL/morph.json" >/dev/null
+"$BIN" --scene feed --size 1180x760 --scale 2 --theme dark --script scripts/open-story.json \
+  --at mark:open --tree "$ACTUAL/open.json" >/dev/null
+morph_w=$(jq '[.elements[] | select((.key // "") == "inspector-pane") | .rect[2]][0] // 0' "$ACTUAL/morph.json")
+open_w=$(jq '[.elements[] | select((.key // "") == "inspector-pane") | .rect[2]][0] // 0' "$ACTUAL/open.json")
+if awk -v m="$morph_w" -v o="$open_w" 'BEGIN { exit !(m > 0 && m < o) }'; then
+  pass "split morph (inspector ${morph_w}pt at mark:morph, ${open_w}pt at mark:open)"
+else
+  bad "split morph (inspector ${morph_w}pt at mark:morph, ${open_w}pt at mark:open)"
+fi
+# And what opened is the story split, not the feed behind a wide pane.
+opened=$(jq -r '[.elements[] | select((.key // "") | test("^(article-pane|summary-card|comment-901)$")) | .key] | sort | join(",")' "$ACTUAL/open.json")
+if [ "$opened" = "article-pane,comment-901,summary-card" ]; then
+  pass "Enter opens the split (article, summary card, discussion)"
+else
+  bad "Enter opens the split (got '$opened')"
+fi
+
+step "sticky summary (the discussion scrolls under the card)"
+# A shorter window, so the inspector's content overflows and the wheel has somewhere to go.
+for mark in top scrolled; do
+  "$BIN" --scene story --size 1180x560 --scale 2 --theme dark --script scripts/story-scroll.json \
+    --at "mark:$mark" --tree "$ACTUAL/sticky-$mark.json" >/dev/null
+done
+card_top=$(jq '[.elements[] | select((.key // "") == "summary-card") | .rect[1]][0] // -1' "$ACTUAL/sticky-top.json")
+card_after=$(jq '[.elements[] | select((.key // "") == "summary-card") | .rect[1]][0] // -2' "$ACTUAL/sticky-scrolled.json")
+comment_top=$(jq '[.elements[] | select((.key // "") == "comment-901") | .rect[1]][0] // -1' "$ACTUAL/sticky-top.json")
+comment_after=$(jq '[.elements[] | select((.key // "") == "comment-901") | .rect[1]][0] // -2' "$ACTUAL/sticky-scrolled.json")
+if [ "$card_top" = "$card_after" ] && awk -v a="$comment_top" -v b="$comment_after" 'BEGIN { exit !(b < a) }'; then
+  pass "sticky summary (card y=$card_top unchanged, comment-901 $comment_top -> $comment_after)"
+else
+  bad "sticky summary (card $card_top -> $card_after, comment-901 $comment_top -> $comment_after)"
 fi
 
 printf '\n'

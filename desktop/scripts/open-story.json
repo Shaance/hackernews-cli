@@ -1,0 +1,6 @@
+[
+  { "t": 0.05, "type": "key", "name": "j" },
+  { "t": 0.15, "type": "key", "name": "Enter" },
+  { "t": 0.2, "type": "mark", "name": "morph" },
+  { "t": 1.2, "type": "mark", "name": "open" }
+]

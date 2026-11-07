@@ -1,9 +1,13 @@
-//! The window: `SplitView` shell, the responsive feed, and the Saved view.
+//! The window: `SplitView` shell, the responsive feed, the Saved view, and the story split.
 //!
 //! The view is a pure function of [`App`]; the only thing it writes back is the grid it
 //! measured, because `view` takes `&S` and `poll` needs the number. Everything else — the
 //! ranked window, the page stepper, the selection — is `hn_lib::feed_state`'s arithmetic
 //! applied by [`FeedModel`].
+//!
+//! One window, one `SplitView`. Opening a story puts the article in the main pane and the
+//! summary card plus the discussion in the inspector, which springs open from 0 width on
+//! `MORPH`; `Esc` closes it and the feed is exactly where it was.
 
 use std::cell::Cell;
 use std::sync::Arc;
@@ -12,16 +16,22 @@ use std::time::Duration;
 use hn_lib::app::StoryType;
 use hn_lib::event::StoryAction;
 use hn_lib::feed_state;
+use hn_lib::reader::{self, Config};
 use hn_lib::HNCLIItem;
 use rune::tok::{self, radius, type_};
-use rune::{AppSpec, Color, Cx, El, KeyEvent, ScrollSpec, Tx, Waker, col, el, row, text};
-use rune_kit::{Keybind, Kit, SegmentedControl, SplitView, Toast, ToastRegion, Toolbar};
+use rune::{
+    AppSpec, Color, Cx, El, KeyEvent, ScrollSpec, Spring, Tx, Waker, col, el, row, text,
+};
+use rune_kit::shell::PaneMotion;
+use rune_kit::{Keybind, Kit, PaneState, SegmentedControl, SplitView, Toast, ToastRegion, Toolbar};
 
 use crate::bookmarks::SavedView;
-use crate::bridge::{Bridge, Request};
+use crate::bridge::{Bridge, Request, StoryRequest};
 use crate::feed::{FeedModel, Fill};
-use crate::keys;
+use crate::keys::{self, StoryKey};
 use crate::service::Source;
+use crate::story::{Story, SummaryState, STAGES};
+use crate::story_view;
 
 /// One feed row, in points. The measured row count is the viewport height over this.
 const ROW_HEIGHT: f32 = 56.0;
@@ -31,6 +41,11 @@ const BREAKPOINT: f32 = 1400.0;
 const DEFAULT_GRID: (usize, usize) = (11, 1);
 /// How long the save confirmation stays.
 const TOAST_SECONDS: f64 = 2.4;
+/// The inspector's width range: 46% of the 1180 pt default window, and enough either side for
+/// the summary card to stay readable.
+const INSPECTOR_WIDTH: f32 = 543.0;
+const INSPECTOR_MIN: f32 = 360.0;
+const INSPECTOR_MAX: f32 = 640.0;
 
 /// The transient save confirmation. `until` is on the frame clock, so `poll` expires it.
 struct Notice {
@@ -49,6 +64,12 @@ pub struct App {
     requested: Option<Fill>,
     /// The row under the pointer, for the hover actions.
     hover: Option<i32>,
+    /// The open story, when the split is showing one. `None` is the feed.
+    story: Option<Story>,
+    /// The inspector's width and open state. Opening a story opens it; `Esc` closes it.
+    inspector: PaneState,
+    /// The reader's summary settings, loaded once at launch and never logged.
+    config: Config,
     toast: Option<Notice>,
     /// `HN_REDUCED_MOTION=1`, the same override the terminal app honours.
     reduced: bool,
@@ -125,6 +146,54 @@ impl App {
         let (rows, cols) = self.measured.get().unwrap_or(DEFAULT_GRID);
         rows * cols
     }
+
+    /// Whether a summary can be asked for: the fake provider is a fixture, so a headless run
+    /// needs no key, and a live one needs the reader's own `Config::key`.
+    fn configured(&self) -> bool {
+        self.headless || !self.config.key().is_empty()
+    }
+
+    /// Open `story`: the split springs open and one aggregate request goes out.
+    fn open_story(&mut self, story: HNCLIItem) {
+        let configured = self.configured();
+        self.story = Some(Story::opening(story.clone(), configured));
+        self.inspector.set_open(true);
+        self.request_story(story);
+    }
+
+    /// The row the feed has selected, if it is a story that loaded.
+    fn open_selected(&mut self) {
+        let Some(story) = self.feed.stories.get(self.feed.selected).cloned() else {
+            return;
+        };
+        if self.feed.failed.contains(&story.id) {
+            return;
+        }
+        self.open_story(story);
+    }
+
+    /// One aggregate story open: the article, the discussion, the summary.
+    fn request_story(&mut self, story: HNCLIItem) {
+        let request = StoryRequest {
+            story,
+            config: self.config.clone(),
+        };
+        if self.headless {
+            let filled = self.bridge.story_now(self.source.as_ref(), request);
+            if let Some(open) = &mut self.story {
+                open.land(filled);
+            }
+        } else {
+            self.bridge.request_story(self.source.clone(), request);
+        }
+    }
+
+    /// `Esc` from the split: back to the feed, with the feed's request untouched.
+    fn close_story(&mut self) {
+        self.story = None;
+        self.inspector.set_open(false);
+        self.bridge.cancel_story();
+    }
 }
 
 fn init() -> App {
@@ -147,6 +216,16 @@ fn init() -> App {
     } else {
         SavedView::load()
     };
+    // The reader's own settings file, read once. A headless run uses the defaults so a golden
+    // never depends on the machine's `summary.json` or on an API key in the environment.
+    let config = if headless {
+        Config::default()
+    } else {
+        Config::path()
+            .ok()
+            .and_then(|path| reader::load_config(&path).ok())
+            .unwrap_or_default()
+    };
     App {
         feed: FeedModel::new(),
         saved,
@@ -155,6 +234,11 @@ fn init() -> App {
         measured: Cell::new(None),
         requested: None,
         hover: None,
+        story: None,
+        inspector: PaneState::new(INSPECTOR_WIDTH)
+            .range(INSPECTOR_MIN, INSPECTOR_MAX)
+            .collapsed(),
+        config,
         toast: None,
         reduced: std::env::var("HN_REDUCED_MOTION").is_ok_and(|value| value == "1"),
         headless,
@@ -171,6 +255,12 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
     let mut changed = false;
     if let Some(filled) = s.bridge.take() {
         changed |= s.feed.apply_fill(filled);
+    }
+    if let Some(filled) = s.bridge.take_story() {
+        // A landing for a story that is no longer open is dropped by `Story::land`.
+        if let Some(open) = &mut s.story {
+            changed |= open.land(filled);
+        }
     }
     // One request per invalidation: the measured grid is the only thing that moves it.
     if let Some(grid) = s.measured.get() {
@@ -196,6 +286,9 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
 }
 
 fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
+    if s.story.is_some() {
+        return on_story_key(s, ev);
+    }
     let cells = s.cells();
     let state = s.feed.state();
     let action = match keys::story_action(ev) {
@@ -221,15 +314,62 @@ fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             s.refresh();
             return true;
         }
-        // Story open, comments and help are later workstreams; the window has nothing for
-        // them yet, so it does not swallow the key.
-        StoryAction::OpenUrl | StoryAction::ViewComments | StoryAction::ToggleHelp => return false,
+        // `Enter`, `o` and `c` all open the story: the split is where the article and the
+        // discussion live, so there is no separate "open in browser" to choose between.
+        StoryAction::OpenUrl | StoryAction::ViewComments => {
+            s.open_selected();
+            return true;
+        }
+        // Help is WS-E; the window has nothing for it yet, so it does not swallow the key.
+        StoryAction::ToggleHelp => return false,
     };
     s.apply(action);
     if let Some(id) = s.feed.selected_id() {
         tx.scroll_into_view(format!("story-{id}"));
     }
     true
+}
+
+/// The story split's keys, from `src/reader/interaction.rs:7` through [`keys::story_key`].
+fn on_story_key(s: &mut App, ev: &KeyEvent) -> bool {
+    let key = keys::story_key(ev);
+    let configured = s.configured();
+    let Some(story) = s.story.as_mut() else {
+        return false;
+    };
+    match key {
+        StoryKey::None => false,
+        StoryKey::Back => {
+            // Esc leaves the source viewer first, then the story, as in the terminal reader.
+            if !story.close_source() {
+                s.close_story();
+            }
+            true
+        }
+        StoryKey::NextCitation => {
+            story.next_citation();
+            true
+        }
+        StoryKey::PrevCitation => {
+            story.prev_citation();
+            true
+        }
+        StoryKey::OpenSource => story.open_source(),
+        StoryKey::ToggleSummary => {
+            story.toggle_summary();
+            true
+        }
+        StoryKey::Refresh => {
+            let item = story.story.clone();
+            story.retry(configured);
+            s.request_story(item);
+            true
+        }
+        // The settings dialog is WS-E. The key is not swallowed, so it can land there.
+        StoryKey::Settings => false,
+        // The link chooser is WS-D.
+        StoryKey::Links => false,
+    }
 }
 
 fn view(s: &App, cx: &mut Cx<App>) -> El {
@@ -247,11 +387,15 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
         .layout_with("window", |rect| rect[2] >= BREAKPOINT)
         .unwrap_or(false);
     let cols = if wide { 2 } else { 1 };
-    let rows = cx
-        .layout_with("feed-list", |rect| (rect[3] / ROW_HEIGHT).floor().max(0.0) as usize)
-        .filter(|rows| *rows > 0)
-        .unwrap_or(DEFAULT_GRID.0);
-    s.measured.set(Some((rows, cols)));
+    // The feed's grid is only measurable while the feed is on screen: a story open must not
+    // overwrite it with the default and make `poll` re-request the wrong window.
+    if s.story.is_none() {
+        let rows = cx
+            .layout_with("feed-list", |rect| (rect[3] / ROW_HEIGHT).floor().max(0.0) as usize)
+            .filter(|rows| *rows > 0)
+            .unwrap_or(DEFAULT_GRID.0);
+        s.measured.set(Some((rows, cols)));
+    }
 
     let tabs = SegmentedControl::new(
         &["Top", "New", "Best", "Saved"],
@@ -279,9 +423,28 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
         );
     }
 
-    let shell = SplitView::new(feed_body(s, &k, t, accent, cols))
+    // One window, one `SplitView`: the feed is this window with the inspector collapsed, so the
+    // inspector's slot exists before a story opens and its width can spring out from 0.
+    let (main, toolbar, inspector) = match &s.story {
+        Some(story) => (
+            story_main(story, &k, t),
+            Toolbar::new().leading(story_view::story_toolbar(
+                story,
+                &k,
+                t,
+                accent,
+                s.config.profile.label(),
+                s.saved.contains(story.id()),
+            )),
+            story_view::inspector_pane(story, &k, t, accent),
+        ),
+        None => (feed_body(s, &k, t, accent, cols), toolbar, col()),
+    };
+    let shell = SplitView::new(main)
         .toolbar(toolbar)
+        .inspector(&s.inspector, |s: &mut App| &mut s.inspector, inspector)
         .titlebar_inset(cx.titlebar_inset())
+        .pane_motion(pane_motion())
         .reduced_motion(reduced)
         .build(&k);
 
@@ -299,6 +462,30 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
         );
     }
     rune_kit::root(base, overlays)
+}
+
+/// The split's motion: `MORPH`'s spring, scaled by the pane's width so a narrow window does not
+/// feel twitchy, with the tail fade DESIGN.md asks for.
+fn pane_motion() -> PaneMotion {
+    PaneMotion::new()
+        .spring(Spring::new(0.30, 0.16))
+        .scale_with_width(480.0, 0.15, 0.3)
+        .fade_tail(0.15)
+}
+
+/// The main pane while a story is open: the article, then the story's own footer.
+fn story_main(story: &Story, k: &Kit, t: tok::Theme) -> El {
+    col()
+        .key("story-main")
+        .w_full()
+        .h_full()
+        .child(
+            story_view::article_pane(story, k, t)
+                .grow(1.0)
+                .min_h(0.0),
+        )
+        .child(el().w_full().h(1.0).fill(t.separator))
+        .child(story_view::story_footer(story, k, t))
 }
 
 fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize) -> El {
@@ -614,6 +801,35 @@ fn scene_saved_corrupt(s: &mut App) {
 
 fn scene_resize(_s: &mut App) {}
 
+/// The story split, settled: the article, the summary card and the discussion.
+fn scene_story(s: &mut App) {
+    s.open_story(crate::fixtures::item(
+        crate::fixtures::STORY_INDEX,
+        crate::fixtures::STORY_ID,
+    ));
+}
+
+/// The citation source viewer: `Tab` twice selects the second citation, `Enter` reads it.
+fn scene_citation(s: &mut App) {
+    scene_story(s);
+    if let Some(story) = &mut s.story {
+        story.next_citation();
+        story.next_citation();
+        story.open_source();
+    }
+}
+
+/// Generating: the article and the discussion have landed, the summary has not.
+fn scene_summary_generating(s: &mut App) {
+    scene_story(s);
+    if let Some(story) = &mut s.story {
+        story.summary = SummaryState::Generating {
+            captured: 2,
+            of: STAGES,
+        };
+    }
+}
+
 pub fn spec() -> AppSpec<App> {
     AppSpec {
         scenes: &[
@@ -623,10 +839,59 @@ pub fn spec() -> AppSpec<App> {
             ("feed-saved-view", scene_saved_view),
             ("feed-saved-corrupt", scene_saved_corrupt),
             ("resize", scene_resize),
+            ("story", scene_story),
+            ("citation", scene_citation),
+            ("summary-generating", scene_summary_generating),
         ],
         setup: Some(setup),
         poll: Some(poll),
         on_key: Some(on_key),
         ..AppSpec::new("Hacker News", (1180.0, 760.0), init, view)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The inspector the window builds: 543 points, clamped to 360..=640, collapsed.
+    fn inspector() -> PaneState {
+        PaneState::new(INSPECTOR_WIDTH)
+            .range(INSPECTOR_MIN, INSPECTOR_MAX)
+            .collapsed()
+    }
+
+    #[test]
+    fn the_feed_is_the_same_window_with_the_inspector_collapsed() {
+        let mut pane = inspector();
+        assert!(!pane.is_open());
+        assert_eq!(pane.shown_width(), 0.0, "the split takes no width in the feed");
+        // Opening a story is what opens it, and the width it springs out to is the 54/46 split.
+        pane.set_open(true);
+        assert_eq!(pane.shown_width(), INSPECTOR_WIDTH);
+        // `Esc` collapses it again without losing the width the reader chose.
+        pane.set_open(false);
+        assert_eq!(pane.shown_width(), 0.0);
+        pane.set_open(true);
+        assert_eq!(pane.width(), INSPECTOR_WIDTH);
+    }
+
+    #[test]
+    fn the_grip_clamps_and_a_double_click_resets() {
+        let mut pane = inspector();
+        pane.set_open(true);
+        pane.drag_to(10_000.0);
+        assert_eq!(pane.width(), INSPECTOR_MAX, "dragged past the maximum");
+        pane.drag_to(400.0);
+        assert_eq!(pane.width(), 400.0);
+        // Below half the minimum it collapses, keeping the width it had, as AppKit's do.
+        pane.drag_to(INSPECTOR_MIN * 0.5 - 1.0);
+        assert!(!pane.is_open());
+        assert_eq!(pane.width(), 400.0);
+        // Dragging back out opens it again; double-clicking the grip returns it to 54/46.
+        pane.drag_to(420.0);
+        assert!(pane.is_open());
+        pane.reset_width();
+        assert_eq!(pane.width(), INSPECTOR_WIDTH);
     }
 }
