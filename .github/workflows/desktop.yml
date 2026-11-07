@@ -1,0 +1,143 @@
+name: Desktop
+
+# The desktop shell's acceptance gate (DESKTOP_IMPLEMENTATION_PLAN.md v4).
+#
+# Pixel equality is only claimed on macOS: Rune renders through Metal there, and the goldens in
+# desktop/verification/expected/ were generated on Metal. Linux (Mesa lavapipe) and Windows
+# assert the element trees instead, which is where the layout, the ranks, the stepper and the
+# focus flags actually live. Cross-platform pixel equality is not claimed.
+
+on:
+  push:
+    branches: ["main"]
+    paths: ["desktop/**", ".github/workflows/desktop.yml"]
+  pull_request:
+    branches: ["main"]
+    paths: ["desktop/**", ".github/workflows/desktop.yml"]
+
+env:
+  CARGO_TERM_COLOR: always
+  # Rune is a git dependency; a shallow clone of it is enough and much faster.
+  CARGO_NET_GIT_FETCH_WITH_CLI: "true"
+
+jobs:
+  macos-goldens:
+    name: macOS — build, test, PNG goldens
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      # desktop/rust-toolchain.toml pins 1.99.1; rustup on the runner honours it.
+      - name: Show toolchain
+        run: rustc --version && cargo --version
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            desktop/target
+          key: desktop-macos-${{ hashFiles('desktop/Cargo.lock') }}
+          restore-keys: desktop-macos-
+
+      - name: Install ImageMagick
+        run: brew install imagemagick
+
+      - name: Build
+        run: cargo build --locked
+
+      - name: Test
+        run: cargo test --locked
+
+      - name: Goldens, motion lint, fidelity
+        run: bash scripts/check_goldens.sh
+
+      - name: Upload diffs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-golden-diffs
+          path: desktop/verification/actual/
+          if-no-files-found: ignore
+
+  linux-trees:
+    name: Linux — build, test, tree assertions (Mesa lavapipe)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: rustc --version && cargo --version
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            desktop/target
+          key: desktop-linux-${{ hashFiles('desktop/Cargo.lock') }}
+          restore-keys: desktop-linux-
+
+      # Rune renders offscreen through wgpu. lavapipe is the software Vulkan driver, so the
+      # runner needs no GPU; the tree assertions do not depend on the pixels it produces.
+      - name: Install Mesa lavapipe and jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            mesa-vulkan-drivers libvulkan1 vulkan-tools jq
+
+      - name: Build
+        run: cargo build --locked
+
+      - name: Test
+        run: cargo test --locked
+
+      - name: Trees, motion lint, fidelity
+        env:
+          HN_TREES_ONLY: "1"
+          VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+        run: bash scripts/check_goldens.sh
+
+      - name: Upload trees on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-linux-trees
+          path: desktop/verification/actual/
+          if-no-files-found: ignore
+
+  windows-smoke:
+    name: Windows — smoke build
+    runs-on: windows-2022
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: rustc --version; cargo --version
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            desktop/target
+          key: desktop-windows-${{ hashFiles('desktop/Cargo.lock') }}
+          restore-keys: desktop-windows-
+
+      - name: Build
+        run: cargo build --locked
+
+      - name: Test
+        run: cargo test --locked
