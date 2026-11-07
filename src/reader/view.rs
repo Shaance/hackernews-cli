@@ -1,5 +1,5 @@
 use super::{config::Config, text::append, Progress, Reader, Reading};
-use hn_lib::app::App;
+use crate::app::App;
 use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::Modifier,
@@ -173,7 +173,7 @@ impl Reader {
                     .saturating_add(lines.len());
             }
             reading.prefix_height = lines.len();
-            hn_lib::ui::comments::render_reader_content(
+            crate::ui::comments::render_reader_content(
                 frame,
                 comments_area,
                 app,
@@ -240,7 +240,7 @@ impl Reader {
                 ))
             });
         frame.render_widget(
-            Paragraph::new(hn_lib::ui::widgets::hint_line(
+            Paragraph::new(crate::ui::widgets::hint_line(
                 theme, &hints, notice, area.width,
             ))
             .block(
@@ -275,10 +275,10 @@ impl Reader {
             }
         }
         if app.show_help {
-            hn_lib::ui::widgets::render_help(frame, theme, true, app.overlay_opened);
+            crate::ui::widgets::render_help(frame, theme, true, app.overlay_opened);
         }
         if app.show_links {
-            hn_lib::ui::links::render(frame, app);
+            crate::ui::links::render(frame, app);
         }
         self.render_settings(frame);
     }
@@ -483,7 +483,7 @@ impl Reading {
             return Line::styled(
                 format!(
                     "{} {state} · {}",
-                    hn_lib::ui::widgets::spinner_frame(tick),
+                    crate::ui::widgets::spinner_frame(tick),
                     profile.label()
                 ),
                 theme.dim,

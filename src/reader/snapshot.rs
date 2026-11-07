@@ -1,7 +1,7 @@
 use super::*;
 
 impl Reader {
-    pub fn load_snapshot(&mut self, snapshot: Arc<hn_lib::snapshot::Snapshot>) {
+    pub fn load_snapshot(&mut self, snapshot: Arc<crate::snapshot::Snapshot>) {
         // A snapshot session has no inference configuration, even on a configured laptop.
         self.config = Config {
             automatic: false,
@@ -47,7 +47,7 @@ impl Reader {
 }
 
 /// Reuse the native provider and prompt; visitor sessions never call this path.
-pub(crate) async fn prepare(snapshot: &mut hn_lib::snapshot::Snapshot) -> anyhow::Result<()> {
+pub async fn prepare(snapshot: &mut crate::snapshot::Snapshot) -> anyhow::Result<()> {
     let config = Config::load(&Config::path()?)?;
     anyhow::ensure!(
         !config.key().is_empty(),
@@ -61,7 +61,7 @@ pub(crate) async fn prepare(snapshot: &mut hn_lib::snapshot::Snapshot) -> anyhow
 }
 
 async fn prepare_with_network(
-    snapshot: &mut hn_lib::snapshot::Snapshot,
+    snapshot: &mut crate::snapshot::Snapshot,
     config: &Config,
     network: &network::Network,
 ) -> anyhow::Result<()> {

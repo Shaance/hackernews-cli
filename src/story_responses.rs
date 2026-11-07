@@ -1,8 +1,8 @@
 use super::*;
 use anyhow::anyhow;
 
-fn test_story(id: i32) -> hn_lib::HNCLIItem {
-    hn_lib::HNCLIItem {
+fn test_story(id: i32) -> crate::HNCLIItem {
+    crate::HNCLIItem {
         id,
         title: format!("Story {id}"),
         url: "http://example.com".to_string(),

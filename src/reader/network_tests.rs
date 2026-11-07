@@ -19,7 +19,7 @@ pub(crate) async fn serve(
     tokio::sync::mpsc::UnboundedReceiver<(String, Value)>,
     tokio::task::JoinHandle<()>,
 ) {
-    use hn_lib::hn_client::{HackerNewsClientConfig, HackerNewsClientImpl};
+    use crate::hn_client::{HackerNewsClientConfig, HackerNewsClientImpl};
     let (base, rx, task) = http_fixture::serve(move |path, value, headers| {
         std::future::ready(handler(&path, &value, &headers))
     })

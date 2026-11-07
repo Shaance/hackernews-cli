@@ -91,7 +91,7 @@ async fn coordinator_reopens_fresh_metadata_without_moving_comments_or_evidence(
     let mut app = comments_app();
     app.set_stories(vec![story(1)]);
     let (tx, _rx) = mpsc::unbounded_channel();
-    let service = hn_lib::HackerNewsCliServiceImpl::new();
+    let service = crate::HackerNewsCliServiceImpl::new();
     let mut bookmarks = None;
     for key in [KeyCode::Esc, KeyCode::Char('c'), KeyCode::PageDown] {
         assert!(crate::reader_actions::handle(
@@ -228,7 +228,7 @@ fn focused_citation_token_is_visible_after_wrapping_and_source_comparison() {
     }
 }
 
-fn buffer(p: &mut Reader, app: &mut hn_lib::app::App) -> ratatui::buffer::Buffer {
+fn buffer(p: &mut Reader, app: &mut crate::app::App) -> ratatui::buffer::Buffer {
     let mut terminal = Terminal::new(TestBackend::new(120, 40)).unwrap();
     // Terminal output omits continuation cells hidden by wide glyphs; inspect the frame.
     terminal
@@ -280,14 +280,14 @@ fn complete_section(p: &mut Reader, article: bool, text: &str) {
     });
 }
 
-async fn move_reader(p: &mut Reader, app: &mut hn_lib::app::App, key: KeyCode) {
+async fn move_reader(p: &mut Reader, app: &mut crate::app::App, key: KeyCode) {
     let (tx, _rx) = mpsc::unbounded_channel();
     crate::reader_actions::handle(
         p,
         app,
         key,
         tx,
-        hn_lib::HackerNewsCliServiceImpl::new(),
+        crate::HackerNewsCliServiceImpl::new(),
         &mut None,
     )
     .await
@@ -639,7 +639,7 @@ fn citation_focus_suppresses_comment_selection_until_comment_navigation() {
 #[test]
 fn reader_help_keys_match_handlers_and_use_accent() {
     use crossterm::event::KeyCode::{self, *};
-    use hn_lib::event::{handle_comments_key, CommentAction};
+    use crate::event::{handle_comments_key, CommentAction};
     let theme = Theme::TRUE_DARK;
     let entries: &[(&str, &[KeyCode])] = &[
         ("j/k/↑/↓", &[Char('j'), Char('k'), Up, Down]),
@@ -666,7 +666,7 @@ fn reader_help_keys_match_handlers_and_use_accent() {
     for width in [60, 100] {
         let mut terminal = Terminal::new(TestBackend::new(width, 40)).unwrap();
         let frame = terminal
-            .draw(|f| hn_lib::ui::widgets::render_help(f, theme, true, None))
+            .draw(|f| crate::ui::widgets::render_help(f, theme, true, None))
             .unwrap();
         for (label, keys) in entries {
             let cells = frame
@@ -705,7 +705,7 @@ fn motion_effects_stay_on_rgb_line_at_mid_duration() {
         _ => panic!("expected RGB, got {color:?}"),
     };
     for effect in ["backdrop", "save", "notice", "panel"] {
-        let mut app = hn_lib::app::App::with_theme(theme);
+        let mut app = crate::app::App::with_theme(theme);
         let mut terminal = Terminal::new(TestBackend::new(120, 40)).unwrap();
         let (cell, orange, grey) = match effect {
             // The save flash's fixed start is a pale orange; paint a grey endpoint.
@@ -748,7 +748,7 @@ fn motion_effects_stay_on_rgb_line_at_mid_duration() {
                     }
                     _ => {
                         f.buffer_mut().set_style(area, theme.accent);
-                        hn_lib::ui::widgets::render_help(
+                        crate::ui::widgets::render_help(
                             f,
                             theme,
                             false,
@@ -788,7 +788,7 @@ fn motion_notice_fade_is_320ms_quad_out() {
         Color::Rgb(r, g, b) => [f32::from(r), f32::from(g), f32::from(b)],
         _ => panic!("expected RGB, got {color:?}"),
     };
-    let mut app = hn_lib::app::App::with_theme(theme);
+    let mut app = crate::app::App::with_theme(theme);
     let mut p = ready();
     p.theme = theme;
     p.browser_notice = "Article opened".into();
@@ -879,9 +879,9 @@ fn motion_save_star_in_feed_and_reader_only_on_successful_save() {
             motion,
             ..Theme::TRUE_DARK
         };
-        let mut app = hn_lib::app::App::with_theme(theme);
+        let mut app = crate::app::App::with_theme(theme);
         app.set_stories(vec![story(1)]);
-        crate::toggle_bookmark(&mut app, Some(&path));
+        crate::tui::toggle_bookmark(&mut app, Some(&path));
         assert_eq!(app.save_flash.is_some(), motion);
         assert!(app.is_bookmarked(1));
         for ms in [0, 300] {
@@ -900,7 +900,7 @@ fn motion_save_star_in_feed_and_reader_only_on_successful_save() {
             };
             let mut terminal = Terminal::new(TestBackend::new(120, 40)).unwrap();
             let frame = terminal
-                .draw(|f| hn_lib::ui::stories::render(f, &mut app, 0))
+                .draw(|f| crate::ui::stories::render(f, &mut app, 0))
                 .unwrap();
             assert_eq!(
                 frame
@@ -916,10 +916,10 @@ fn motion_save_star_in_feed_and_reader_only_on_successful_save() {
             assert_eq!(buffer(&mut p, &mut app)[(2, 0)].fg, expected);
             assert_eq!(app.has_active_motion(Instant::now()), motion && ms == 0);
         }
-        crate::toggle_bookmark(&mut app, Some(&path));
+        crate::tui::toggle_bookmark(&mut app, Some(&path));
         assert!(!app.is_bookmarked(1));
         assert!(app.save_flash.is_none(), "unsaving must not flash");
-        crate::toggle_bookmark(&mut app, None);
+        crate::tui::toggle_bookmark(&mut app, None);
         assert!(!app.is_bookmarked(1));
         assert!(app.save_flash.is_none(), "failed saves must not flash");
     }
@@ -1182,7 +1182,7 @@ fn esc_in_source_view_keeps_the_pane_open() {
 fn esc_back_to_feed_in_snapshot_mode_reports_the_pane_closed() {
     let mut p = ready();
     p.snapshot = Some(Arc::new(
-        serde_json::from_str::<hn_lib::snapshot::Snapshot>(include_str!(
+        serde_json::from_str::<crate::snapshot::Snapshot>(include_str!(
             "../../../preview/fixtures/snapshot.json"
         ))
         .unwrap(),

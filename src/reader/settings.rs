@@ -3,7 +3,7 @@ use super::{
     Progress, Reader, Request,
 };
 use crossterm::event::KeyCode;
-use hn_lib::ui::widgets::render_modal;
+use crate::ui::widgets::render_modal;
 use ratatui::{
     style::Modifier,
     text::{Line, Span},
@@ -213,7 +213,7 @@ impl Reader {
 }
 
 impl Settings {
-    fn render(&self, frame: &mut Frame, theme: hn_lib::theme::Theme) {
+    fn render(&self, frame: &mut Frame, theme: crate::theme::Theme) {
         let s = self;
         render_modal(frame, theme, s.opened, "Summary settings", |width, rows| {
             let width = width.min(64);
@@ -289,7 +289,7 @@ impl Settings {
                     .map(|line| Line::styled(line.into_owned(), theme.dim)),
             );
             lines.push(Line::raw(""));
-            let mut hints = hn_lib::ui::widgets::hint_line(
+            let mut hints = crate::ui::widgets::hint_line(
                 theme,
                 &[
                     ("↑↓", "select"),
@@ -324,7 +324,7 @@ fn settings_modal_styles_focus_padding_and_scrim() {
         style::{Color, Modifier},
         Terminal,
     };
-    let theme = hn_lib::theme::Theme::TRUE_DARK;
+    let theme = crate::theme::Theme::TRUE_DARK;
     let settings = Settings {
         opened: None,
         keys: Default::default(),
@@ -397,7 +397,7 @@ fn settings_modal_styles_focus_padding_and_scrim() {
 #[test]
 fn small_settings_keeps_refresh_selected_and_visible() {
     use ratatui::{backend::TestBackend, Terminal};
-    let theme = hn_lib::theme::Theme::TRUE_DARK;
+    let theme = crate::theme::Theme::TRUE_DARK;
     let settings = Settings {
         opened: None,
         keys: Default::default(),

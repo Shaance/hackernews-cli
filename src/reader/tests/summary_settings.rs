@@ -381,7 +381,7 @@ async fn comment_refresh_is_free_and_explicit_summary_retry_only_retries_failure
                     .await
                     .unwrap()
                     .unwrap();
-                crate::handle_app_message(&mut app, msg);
+                crate::tui::handle_app_message(&mut app, msg);
                 assert_eq!(app.comments[0].text, "Fresh readable comment");
                 assert!(p.jobs.is_empty());
                 let mut count = 0;
@@ -445,7 +445,7 @@ async fn comment_refresh_is_free_and_explicit_summary_retry_only_retries_failure
 
 #[tokio::test]
 async fn refresh_fetches_expanded_branches_and_keeps_the_whole_tree_on_item_failure() {
-    use hn_lib::app::CommentState;
+    use crate::app::CommentState;
     for fail_id in [0, 10, 11] {
         let (network, mut requests, server) = network::tests::serve(move |path, _, _| {
             let id: i32 = path
@@ -496,7 +496,7 @@ async fn refresh_fetches_expanded_branches_and_keeps_the_whole_tree_on_item_fail
             .await
             .unwrap()
             .unwrap();
-        crate::handle_app_message(&mut app, msg);
+        crate::tui::handle_app_message(&mut app, msg);
         assert!(!app.is_loading());
         if fail_id == 0 {
             assert_eq!(app.visible_comment_count(), 4);

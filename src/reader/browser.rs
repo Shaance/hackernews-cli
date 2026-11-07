@@ -1,6 +1,6 @@
 //! Local experiment with terminal-browser v0.13.4; not a provider integration.
 use anyhow::{anyhow, bail, Context, Result};
-use hn_lib::{url_open::safe_story_url, HNCLIItem};
+use crate::{url_open::safe_story_url, HNCLIItem};
 use serde_json::{json, Value};
 use std::{process::Stdio, time::Duration};
 use tokio::{

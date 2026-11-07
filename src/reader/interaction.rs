@@ -1,6 +1,6 @@
 use super::{browser, Duration, Instant, Reader, Reading, Request};
 use crossterm::event::KeyCode;
-use hn_lib::HNCLIItem;
+use crate::HNCLIItem;
 
 impl Reader {
     // False delegates to the existing discussion tree controls.
