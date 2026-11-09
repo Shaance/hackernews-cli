@@ -17,3 +17,4 @@ pub mod service;
 pub mod settings;
 pub mod story;
 pub mod story_view;
+pub mod webview;

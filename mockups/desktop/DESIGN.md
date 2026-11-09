@@ -15,8 +15,8 @@ a summary that streams in place, and a feed that uses the width it has.
 ┌ titlebar (native, inset via cx.titlebar_inset()) ────────────────┐
 │ toolbar: feed tabs only — Top · New · Best · Saved               │
 ├───────────────────────────────┬──────────────────────────────────┤
-│ article pane (Markdown)       │ inspector: summary + discussion  │
-│ 66ch measure, sticky title    │ 9pt drag grip between panes      │
+│ article pane (live page)      │ inspector: summary + discussion  │
+│ WKWebView child, Rune header  │ 9pt drag grip between panes      │
 └───────────────────────────────┴──────────────────────────────────┘
 │ footer: contextual key hints (Keybind) · page stepper ‹ 1 ›      │
 └──────────────────────────────────────────────────────────────────┘
@@ -36,11 +36,63 @@ opening a story widens it. Wide windows lay the feed out in two columns, filled 
 
 One window, one `SplitView`, no companion process — the Ghostty pane becomes a real pane.
 
+## The article pane is the live page
+
+The pane on the left is the story's **real page**, rendered by the system web engine in a child
+view pinned to the pane's rect — not a reflow of extracted text. The reader gets the page the
+author published: its own typography, images, code blocks, tables, and anything interactive.
+
+```
+article pane
+├── Rune header   eyebrow · title · byline · "open original ↗"   (always Rune's)
+└── live region   the story's page, in a WKWebView child view
+```
+
+The header stays Rune's for a mechanical reason: the child view is a subview of the window's
+content view, so it draws above everything Rune paints. Anything the reader must still be able
+to press — the title, the byline, `open original ↗` — has to sit outside the child's rect. The
+child is pinned to the region below the header and follows it through `on_layout`, so a window
+resize, a grip drag or `⌘\` moves the page with the pane.
+
+**The readability capture still runs, and is still the point.** Opening a story fetches and
+extracts the article exactly as before. That capture is what the summary card and its citations
+read — the model never sees the page, it sees the extracted text, and a citation's excerpt is a
+span of that text. The capture is a backend, not a surface: it is never drawn while the live
+page is up.
+
+**Fallback.** When no child view can exist, the pane is the extracted Markdown at the 66ch
+measure, under a banner that says so:
+
+```
+live page unavailable — showing extracted text
+```
+
+That is the state in three cases, and the banner never appears otherwise:
+
+| Case | Why |
+| --- | --- |
+| Headless (`--snap`, `--tree`, `--script`) | A `WKWebView` needs an `NSWindow`; a headless run renders offscreen. The scene trees are therefore deterministic: they always take this branch. |
+| Not macOS | `wry` is a macOS-only dependency here; there is no child host to build. |
+| The child view failed to build | The banner carries the platform's own message beside it. |
+
+Summaries and citations work in every one of those states, because they read the capture rather
+than the pane. `O` and `open original ↗` are unchanged in all of them: they hand the URL to the
+system browser through `hn_lib::url_open`, which is a different action from what the pane shows.
+
+Two consequences worth stating, because they are the cost of a native child view:
+
+- **The page owns its own keyboard while it has focus.** Clicking into the page gives the
+  `WKWebView` first responder, and Rune's `on_key` no longer sees those keys. Clicking any Rune
+  chrome — the toolbar, the header, the inspector — takes focus back.
+- **The child is hidden while a dialog is open.** The settings dialog and the help sheet are
+  Rune's, and a webview over them would bury the controls. Hiding is `setHidden`, not a teardown,
+  so the page keeps its scroll position and session.
+
 ## Screens
 
 | | Screen | What it is |
 | --- | --- | --- |
-| 01 | Story split (hero) | Article left, discussion right, summary pinned at the top of the inspector. `Markdown` at a 66ch measure, syntax-coloured code, figure placeholders, a TOC that tracks scroll. Drag the grip to resize; double-click resets to 54/46; below the minimum the inspector collapses. `Esc` returns to the feed, `⌘\` collapses the split. |
+| 01 | Story split (hero) | The story's live page on the left, discussion right, summary pinned at the top of the inspector. The page is a `WKWebView` child view under a Rune header (eyebrow, title, byline, `open original ↗`); the extracted Markdown at a 66ch measure is the fallback, under a banner. Drag the grip to resize; double-click resets to 54/46; below the minimum the inspector collapses. `Esc` returns to the feed, `⌘\` collapses the split. See *The article pane is the live page*. |
 | 02 | Feed, one column | `SegmentedControl` for Top/New/Best/Saved — the toolbar holds nothing else. Rows carry rank, title, points/author/comments, a saved dot beside the rank, and hover-revealed save / open / browser on the right edge. Selection is a card fill plus an amber edge, not reverse video. |
 | 03 | Feed, two columns | The same list at ≥1400pt: two columns, **column-major** — the left column fills first, then the right. One shared scroll, a hairline divider, and enough pages fetched to fill the visible grid. See *Responsive feed*. |
 | 04 | Summary states | *Generating* (skeleton rows that grow and fade in as tokens arrive, with "2 of 3 sources captured"), *done* (numbered citations, `Tab` to select, `Enter` to read), *failed* (provider error + Retry, the old summary still readable underneath), *citation source* (the excerpt sent to the model, the extra captured text, the article dimmed to 0.55). |
@@ -286,7 +338,7 @@ still image, not an entrance.
 | Desktop | Terminal constraint it removes |
 | --- | --- |
 | A real split, not a Ghostty companion | macOS + Ghostty only, one tab owned by `hn` |
-| Article with images, code blocks, TOC | extracted text reflowed into the grid |
+| The story's real page in the pane | extracted text reflowed into the grid |
 | Comment depth as a trail + fold target | two spaces per level, no fold target |
 | Hover as a third input | every action needed a key or a mode |
 | Summaries that arrive (streaming, retry card) | a spinner line, then a block of text |
@@ -322,7 +374,8 @@ scroll; `j`/`k` still move one story at a time; summaries still cite comments by
 | **Motion trace for CI** | `--trace out.jsonl`, `--trace-all` | `crates/rune/src/tooling/args.rs:175,177,278,280` |
 | Footer key hints | `Keybind` | `crates/rune-kit/src/keybind.rs:15` |
 | Right-click menu, popover | `Menu`, `context_menu`, `absolute(left, top)` | `crates/rune-kit/src/menu.rs`, `crates/rune/src/el/layout.rs:257` |
-| Article body, citations | `Markdown`, `.selectable()`, `.highlights()` | `crates/rune-kit/src/markdown.rs:175,314,229` |
+| Article body, citations (the fallback pane) | `Markdown`, `.selectable()`, `.highlights()` | `crates/rune-kit/src/markdown.rs:175,314,229` |
+| **Live article pane** | `WindowHandle::with_raw_handle`, `El::on_layout`, wry `build_as_child`, `set_bounds`, `set_visible`, `load_url` | `crates/rune/src/window/handle.rs:133`, `el/layout_watch.rs:33`, `wry-0.57.1/src/lib.rs:1571,2264,2269,2101` |
 | Generating + streaming rows | `Spinner`, `Loader`, `Progress`, `growth`, `streaming` | `crates/rune-kit/src/feedback.rs:11,71,111`, `crates/rune/src/el/growth.rs:9,15` |
 | Settings / help sheets | `Dialog` | `crates/rune-kit/src/dialog.rs:5` |
 | Theme, amber accent | `tok::theme(dark)`, `tok::accent(i,dark)` | `crates/rune/src/tok.rs:166,210` |
@@ -344,7 +397,7 @@ Reuse `hn_lib` unchanged; the desktop app is a second front end over the same co
 | --- | --- | --- |
 | Shell + feed | 2 | `SplitView` with the inspector collapsed, `SegmentedControl` tabs, rows from `hn_client.rs:15` `HackerNewsItem`. Paging and `j`/`k`/`g`/`G` port from `src/app.rs`; the saved dot reads `bookmarks.rs:21` `load`. |
 | Two-column feed | 1 | `equal_columns(2)` above 1400pt, `c * rows + r` index mapping, `pages_needed()` on resize, `scroll_into_view` resolving row → column. Pure layout; no new state. |
-| Story split | 3 | Article from `snapshot.rs:8` `Snapshot` / `:63` `CapturedArticle` into `Markdown`; comment tree into `Tree`; drag grip + `PaneState` persistence. |
+| Story split | 3 | The story's live page in a `WKWebView` child view pinned to the pane's rect (`WindowHandle::with_raw_handle` + `El::on_layout`), with the extracted Markdown as the fallback; comment tree into `Tree`; drag grip + `PaneState` persistence. |
 | Comments | 3 | `TreeModel` over the comment tree, the sticky trail, `MAX_DEPTH` + continue-thread re-root, focus mode. The cap and the trail are the two that need real use to tune. |
 | Summary panel | 3 | The job lifecycle in `src/reader/jobs.rs` and prompts in `src/reader/summary_prompts.rs` are already provider-agnostic; swap the TUI's repaint for `growth`/`streaming` rows. Citation chips map to `src/reader/sources.rs`. |
 | Settings + help | 1 | `src/reader/config.rs:94` already owns `summary.json`; the form is a `Dialog` over the same `Config`. |
