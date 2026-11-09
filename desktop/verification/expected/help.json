@@ -92,7 +92,7 @@
                               230.0,
                               132.5,
                               346.0,
-                              446.0
+                              467.0
                             ],
                             "children": [
                               {
@@ -100,7 +100,7 @@
                                   230.0,
                                   132.5,
                                   346.0,
-                                  350.5
+                                  371.5
                                 ],
                                 "children": [
                                   {
@@ -444,12 +444,12 @@
                                     "children": [
                                       {
                                         "bounds": [
-                                          309.0,
+                                          327.5,
                                           363.5,
-                                          73.0,
+                                          54.5,
                                           14.0
                                         ],
-                                        "name": "Enter o O",
+                                        "name": "Enter o",
                                         "role": "group"
                                       },
                                       {
@@ -481,21 +481,21 @@
                                           16.5,
                                           14.0
                                         ],
-                                        "name": "c",
+                                        "name": "O",
                                         "role": "group"
                                       },
                                       {
                                         "bounds": [
                                           392.0,
                                           384.0,
-                                          117.5,
+                                          95.0,
                                           15.0
                                         ],
-                                        "name": "Open the discussion",
+                                        "name": "Open in browser",
                                         "role": "label"
                                       }
                                     ],
-                                    "key": "help-row-open-the-discussion",
+                                    "key": "help-row-open-in-browser",
                                     "role": "group"
                                   },
                                   {
@@ -508,26 +508,26 @@
                                     "children": [
                                       {
                                         "bounds": [
-                                          366.5,
+                                          365.5,
                                           405.5,
-                                          15.5,
+                                          16.5,
                                           14.0
                                         ],
-                                        "name": "r",
+                                        "name": "c",
                                         "role": "group"
                                       },
                                       {
                                         "bounds": [
                                           392.0,
                                           405.0,
-                                          95.0,
+                                          117.5,
                                           15.0
                                         ],
-                                        "name": "Refresh the feed",
+                                        "name": "Open the discussion",
                                         "role": "label"
                                       }
                                     ],
-                                    "key": "help-row-refresh-the-feed",
+                                    "key": "help-row-open-the-discussion",
                                     "role": "group"
                                   },
                                   {
@@ -545,13 +545,45 @@
                                           15.5,
                                           14.0
                                         ],
-                                        "name": "s",
+                                        "name": "r",
                                         "role": "group"
                                       },
                                       {
                                         "bounds": [
                                           392.0,
                                           426.0,
+                                          95.0,
+                                          15.0
+                                        ],
+                                        "name": "Refresh the feed",
+                                        "role": "label"
+                                      }
+                                    ],
+                                    "key": "help-row-refresh-the-feed",
+                                    "role": "group"
+                                  },
+                                  {
+                                    "bounds": [
+                                      230.0,
+                                      447.0,
+                                      346.0,
+                                      15.0
+                                    ],
+                                    "children": [
+                                      {
+                                        "bounds": [
+                                          366.5,
+                                          447.5,
+                                          15.5,
+                                          14.0
+                                        ],
+                                        "name": "s",
+                                        "role": "group"
+                                      },
+                                      {
+                                        "bounds": [
+                                          392.0,
+                                          447.0,
                                           88.0,
                                           15.0
                                         ],
@@ -565,7 +597,7 @@
                                   {
                                     "bounds": [
                                       230.0,
-                                      447.0,
+                                      468.0,
                                       346.0,
                                       15.0
                                     ],
@@ -573,7 +605,7 @@
                                       {
                                         "bounds": [
                                           368.0,
-                                          447.5,
+                                          468.5,
                                           14.0,
                                           14.0
                                         ],
@@ -583,7 +615,7 @@
                                       {
                                         "bounds": [
                                           392.0,
-                                          447.0,
+                                          468.0,
                                           112.5,
                                           15.0
                                         ],
@@ -597,7 +629,7 @@
                                   {
                                     "bounds": [
                                       230.0,
-                                      468.0,
+                                      489.0,
                                       346.0,
                                       15.0
                                     ],
@@ -605,7 +637,7 @@
                                       {
                                         "bounds": [
                                           365.5,
-                                          468.5,
+                                          489.5,
                                           16.5,
                                           14.0
                                         ],
@@ -615,7 +647,7 @@
                                       {
                                         "bounds": [
                                           392.0,
-                                          468.0,
+                                          489.0,
                                           24.0,
                                           15.0
                                         ],
@@ -633,7 +665,7 @@
                               {
                                 "bounds": [
                                   230.0,
-                                  501.0,
+                                  522.0,
                                   346.0,
                                   77.5
                                 ],
@@ -641,45 +673,13 @@
                                   {
                                     "bounds": [
                                       230.0,
-                                      501.0,
+                                      522.0,
                                       346.0,
                                       14.5
                                     ],
                                     "key": "help-title-summary",
                                     "name": "Summary",
                                     "role": "label"
-                                  },
-                                  {
-                                    "bounds": [
-                                      230.0,
-                                      521.5,
-                                      346.0,
-                                      15.0
-                                    ],
-                                    "children": [
-                                      {
-                                        "bounds": [
-                                          366.5,
-                                          522.0,
-                                          15.5,
-                                          14.0
-                                        ],
-                                        "name": "S",
-                                        "role": "group"
-                                      },
-                                      {
-                                        "bounds": [
-                                          392.0,
-                                          521.5,
-                                          153.5,
-                                          15.0
-                                        ],
-                                        "name": "Show or hide the summary",
-                                        "role": "label"
-                                      }
-                                    ],
-                                    "key": "help-row-show-or-hide-the-summary",
-                                    "role": "group"
                                   },
                                   {
                                     "bounds": [
@@ -696,13 +696,45 @@
                                           15.5,
                                           14.0
                                         ],
-                                        "name": "r",
+                                        "name": "S",
                                         "role": "group"
                                       },
                                       {
                                         "bounds": [
                                           392.0,
                                           542.5,
+                                          153.5,
+                                          15.0
+                                        ],
+                                        "name": "Show or hide the summary",
+                                        "role": "label"
+                                      }
+                                    ],
+                                    "key": "help-row-show-or-hide-the-summary",
+                                    "role": "group"
+                                  },
+                                  {
+                                    "bounds": [
+                                      230.0,
+                                      563.5,
+                                      346.0,
+                                      15.0
+                                    ],
+                                    "children": [
+                                      {
+                                        "bounds": [
+                                          366.5,
+                                          564.0,
+                                          15.5,
+                                          14.0
+                                        ],
+                                        "name": "r",
+                                        "role": "group"
+                                      },
+                                      {
+                                        "bounds": [
+                                          392.0,
+                                          563.5,
                                           144.5,
                                           15.0
                                         ],
@@ -716,7 +748,7 @@
                                   {
                                     "bounds": [
                                       230.0,
-                                      563.5,
+                                      584.5,
                                       346.0,
                                       15.0
                                     ],
@@ -724,7 +756,7 @@
                                       {
                                         "bounds": [
                                           363.5,
-                                          564.0,
+                                          585.0,
                                           18.5,
                                           14.0
                                         ],
@@ -734,7 +766,7 @@
                                       {
                                         "bounds": [
                                           392.0,
-                                          563.5,
+                                          584.5,
                                           104.0,
                                           15.0
                                         ],
@@ -5015,7 +5047,7 @@
         230.0,
         132.5,
         346.0,
-        446.0
+        467.0
       ],
       "role": "group",
       "scale": 1.0
@@ -5035,7 +5067,7 @@
         230.0,
         132.5,
         346.0,
-        350.5
+        371.5
       ],
       "role": "group",
       "scale": 1.0
@@ -6605,14 +6637,14 @@
       "focusable": false,
       "focused": false,
       "inert": false,
-      "label": "Enter o O",
+      "label": "Enter o",
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-the-story/#0/#0",
       "rect": [
-        309.0,
+        327.5,
         363.5,
-        73.0,
+        54.5,
         14.0
       ],
       "role": "group",
@@ -6630,7 +6662,7 @@
       "opacity": 1.0,
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-the-story/#0/#0/key0",
       "rect": [
-        309.0,
+        327.5,
         363.5,
         36.0,
         14.0
@@ -6650,7 +6682,7 @@
       "opacity": 1.0,
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-the-story/#0/#0/key0/#0",
       "rect": [
-        313.0,
+        331.5,
         365.0,
         28.0,
         11.0
@@ -6671,47 +6703,6 @@
       "opacity": 1.0,
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-the-story/#0/#0/key1",
       "rect": [
-        347.0,
-        363.5,
-        16.5,
-        14.0
-      ],
-      "role": "group",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-the-story/#0/#0/key1/#0",
-      "rect": [
-        351.0,
-        365.0,
-        8.5,
-        11.0
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "O"
-    },
-    {
-      "blur": 0.0,
-      "fill": "#ffffff16",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "key": "key2",
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-the-story/#0/#0/key2",
-      "rect": [
         365.5,
         363.5,
         16.5,
@@ -6730,7 +6721,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-the-story/#0/#0/key2/#0",
+      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-the-story/#0/#0/key1/#0",
       "rect": [
         369.5,
         365.0,
@@ -6769,10 +6760,10 @@
       "focusable": false,
       "focused": false,
       "inert": false,
-      "key": "help-row-open-the-discussion",
+      "key": "help-row-open-in-browser",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-the-discussion",
+      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-in-browser",
       "rect": [
         230.0,
         384.0,
@@ -6791,7 +6782,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-the-discussion/#0",
+      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-in-browser/#0",
       "rect": [
         230.0,
         384.5,
@@ -6808,10 +6799,10 @@
       "focusable": false,
       "focused": false,
       "inert": false,
-      "label": "c",
+      "label": "O",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-the-discussion/#0/#0",
+      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-in-browser/#0/#0",
       "rect": [
         365.5,
         384.5,
@@ -6831,7 +6822,7 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-the-discussion/#0/#0/key0",
+      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-in-browser/#0/#0/key0",
       "rect": [
         365.5,
         384.5,
@@ -6851,10 +6842,131 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-the-discussion/#0/#0/key0/#0",
+      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-in-browser/#0/#0/key0/#0",
       "rect": [
         369.5,
         386.0,
+        8.5,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "O"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-in-browser/#1",
+      "rect": [
+        392.0,
+        384.0,
+        95.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Open in browser"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "help-row-open-the-discussion",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-the-discussion",
+      "rect": [
+        230.0,
+        405.0,
+        346.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-the-discussion/#0",
+      "rect": [
+        230.0,
+        405.5,
+        152.0,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "label": "c",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-the-discussion/#0/#0",
+      "rect": [
+        365.5,
+        405.5,
+        16.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-the-discussion/#0/#0/key0",
+      "rect": [
+        365.5,
+        405.5,
+        16.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-the-discussion/#0/#0/key0/#0",
+      "rect": [
+        369.5,
+        407.0,
         8.5,
         11.0
       ],
@@ -6875,7 +6987,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-open-the-discussion/#1",
       "rect": [
         392.0,
-        384.0,
+        405.0,
         117.5,
         15.0
       ],
@@ -6896,7 +7008,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-refresh-the-feed",
       "rect": [
         230.0,
-        405.0,
+        426.0,
         346.0,
         15.0
       ],
@@ -6915,7 +7027,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-refresh-the-feed/#0",
       "rect": [
         230.0,
-        405.5,
+        426.5,
         152.0,
         14.0
       ],
@@ -6935,7 +7047,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-refresh-the-feed/#0/#0",
       "rect": [
         366.5,
-        405.5,
+        426.5,
         15.5,
         14.0
       ],
@@ -6955,7 +7067,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-refresh-the-feed/#0/#0/key0",
       "rect": [
         366.5,
-        405.5,
+        426.5,
         15.5,
         14.0
       ],
@@ -6975,7 +7087,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-refresh-the-feed/#0/#0/key0/#0",
       "rect": [
         370.5,
-        407.0,
+        428.0,
         7.5,
         11.0
       ],
@@ -6996,7 +7108,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-refresh-the-feed/#1",
       "rect": [
         392.0,
-        405.0,
+        426.0,
         95.0,
         15.0
       ],
@@ -7017,7 +7129,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-save-or-unsave",
       "rect": [
         230.0,
-        426.0,
+        447.0,
         346.0,
         15.0
       ],
@@ -7036,7 +7148,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-save-or-unsave/#0",
       "rect": [
         230.0,
-        426.5,
+        447.5,
         152.0,
         14.0
       ],
@@ -7056,7 +7168,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-save-or-unsave/#0/#0",
       "rect": [
         366.5,
-        426.5,
+        447.5,
         15.5,
         14.0
       ],
@@ -7076,7 +7188,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-save-or-unsave/#0/#0/key0",
       "rect": [
         366.5,
-        426.5,
+        447.5,
         15.5,
         14.0
       ],
@@ -7096,7 +7208,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-save-or-unsave/#0/#0/key0/#0",
       "rect": [
         370.5,
-        428.0,
+        449.0,
         7.5,
         11.0
       ],
@@ -7117,7 +7229,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-save-or-unsave/#1",
       "rect": [
         392.0,
-        426.0,
+        447.0,
         88.0,
         15.0
       ],
@@ -7138,7 +7250,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-keyboard-shortcuts",
       "rect": [
         230.0,
-        447.0,
+        468.0,
         346.0,
         15.0
       ],
@@ -7157,7 +7269,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-keyboard-shortcuts/#0",
       "rect": [
         230.0,
-        447.5,
+        468.5,
         152.0,
         14.0
       ],
@@ -7177,7 +7289,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-keyboard-shortcuts/#0/#0",
       "rect": [
         368.0,
-        447.5,
+        468.5,
         14.0,
         14.0
       ],
@@ -7197,7 +7309,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-keyboard-shortcuts/#0/#0/key0",
       "rect": [
         368.0,
-        447.5,
+        468.5,
         14.0,
         14.0
       ],
@@ -7217,7 +7329,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-keyboard-shortcuts/#0/#0/key0/#0",
       "rect": [
         372.0,
-        449.0,
+        470.0,
         6.0,
         11.0
       ],
@@ -7238,7 +7350,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-keyboard-shortcuts/#1",
       "rect": [
         392.0,
-        447.0,
+        468.0,
         112.5,
         15.0
       ],
@@ -7259,7 +7371,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-quit",
       "rect": [
         230.0,
-        468.0,
+        489.0,
         346.0,
         15.0
       ],
@@ -7278,7 +7390,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-quit/#0",
       "rect": [
         230.0,
-        468.5,
+        489.5,
         152.0,
         14.0
       ],
@@ -7298,7 +7410,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-quit/#0/#0",
       "rect": [
         365.5,
-        468.5,
+        489.5,
         16.5,
         14.0
       ],
@@ -7318,7 +7430,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-quit/#0/#0/key0",
       "rect": [
         365.5,
-        468.5,
+        489.5,
         16.5,
         14.0
       ],
@@ -7338,7 +7450,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-quit/#0/#0/key0/#0",
       "rect": [
         369.5,
-        470.0,
+        491.0,
         8.5,
         11.0
       ],
@@ -7359,7 +7471,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-feed/help-row-quit/#1",
       "rect": [
         392.0,
-        468.0,
+        489.0,
         24.0,
         15.0
       ],
@@ -7380,7 +7492,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary",
       "rect": [
         230.0,
-        501.0,
+        522.0,
         346.0,
         77.5
       ],
@@ -7401,7 +7513,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary/help-title-summary",
       "rect": [
         230.0,
-        501.0,
+        522.0,
         346.0,
         14.5
       ],
@@ -7422,7 +7534,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary/help-row-show-or-hide-the-summary",
       "rect": [
         230.0,
-        521.5,
+        542.5,
         346.0,
         15.0
       ],
@@ -7441,7 +7553,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary/help-row-show-or-hide-the-summary/#0",
       "rect": [
         230.0,
-        522.0,
+        543.0,
         152.0,
         14.0
       ],
@@ -7461,7 +7573,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary/help-row-show-or-hide-the-summary/#0/#0",
       "rect": [
         366.5,
-        522.0,
+        543.0,
         15.5,
         14.0
       ],
@@ -7481,7 +7593,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary/help-row-show-or-hide-the-summary/#0/#0/key0",
       "rect": [
         366.5,
-        522.0,
+        543.0,
         15.5,
         14.0
       ],
@@ -7501,7 +7613,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary/help-row-show-or-hide-the-summary/#0/#0/key0/#0",
       "rect": [
         370.5,
-        523.5,
+        544.5,
         7.5,
         11.0
       ],
@@ -7522,7 +7634,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary/help-row-show-or-hide-the-summary/#1",
       "rect": [
         392.0,
-        521.5,
+        542.5,
         153.5,
         15.0
       ],
@@ -7543,7 +7655,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary/help-row-regenerate-the-summary",
       "rect": [
         230.0,
-        542.5,
+        563.5,
         346.0,
         15.0
       ],
@@ -7562,7 +7674,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary/help-row-regenerate-the-summary/#0",
       "rect": [
         230.0,
-        543.0,
+        564.0,
         152.0,
         14.0
       ],
@@ -7582,7 +7694,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary/help-row-regenerate-the-summary/#0/#0",
       "rect": [
         366.5,
-        543.0,
+        564.0,
         15.5,
         14.0
       ],
@@ -7602,7 +7714,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary/help-row-regenerate-the-summary/#0/#0/key0",
       "rect": [
         366.5,
-        543.0,
+        564.0,
         15.5,
         14.0
       ],
@@ -7622,7 +7734,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary/help-row-regenerate-the-summary/#0/#0/key0/#0",
       "rect": [
         370.5,
-        544.5,
+        565.5,
         7.5,
         11.0
       ],
@@ -7643,7 +7755,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary/help-row-regenerate-the-summary/#1",
       "rect": [
         392.0,
-        542.5,
+        563.5,
         144.5,
         15.0
       ],
@@ -7664,7 +7776,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary/help-row-summary-settings",
       "rect": [
         230.0,
-        563.5,
+        584.5,
         346.0,
         15.0
       ],
@@ -7683,7 +7795,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary/help-row-summary-settings/#0",
       "rect": [
         230.0,
-        564.0,
+        585.0,
         152.0,
         14.0
       ],
@@ -7703,7 +7815,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary/help-row-summary-settings/#0/#0",
       "rect": [
         363.5,
-        564.0,
+        585.0,
         18.5,
         14.0
       ],
@@ -7723,7 +7835,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary/help-row-summary-settings/#0/#0/key0",
       "rect": [
         363.5,
-        564.0,
+        585.0,
         18.5,
         14.0
       ],
@@ -7743,7 +7855,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary/help-row-summary-settings/#0/#0/key0/#0",
       "rect": [
         367.5,
-        565.5,
+        586.5,
         10.5,
         11.0
       ],
@@ -7764,7 +7876,7 @@
       "path": "kit-root/help-layer/help-dialog/body/help-columns/help-column-0/help-group-summary/help-row-summary-settings/#1",
       "rect": [
         392.0,
-        563.5,
+        584.5,
         104.0,
         15.0
       ],

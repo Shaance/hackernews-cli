@@ -67,6 +67,20 @@ pub fn story_action(ev: &KeyEvent) -> StoryAction {
     }
 }
 
+/// `O` (capital, no modifiers): open the real page in the system browser.
+///
+/// The TUI's own table maps `Enter`/`o`/`O` all to `StoryAction::OpenUrl`
+/// (`src/event.rs:27`) and distinguishes `O` afterwards (`src/reader_actions.rs:42,74`);
+/// the window does the same: this is checked before [`story_action`], so `O` never
+/// opens the extracted article split.
+pub fn is_open_external(ev: &KeyEvent) -> bool {
+    let m = ev.mods;
+    if m.cmd || m.ctrl || m.alt || m.logo {
+        return false;
+    }
+    matches!(&ev.key, Key::Text(t) if t == "O")
+}
+
 /// What a key means while a story is open.
 ///
 /// The terminal app splits these across `Reader::key` (`src/reader/interaction.rs:7`) and
@@ -216,6 +230,10 @@ pub enum HelpAction {
     Feed(StoryAction),
     Story(StoryKey),
     Window(WindowKey),
+    /// `O` (capital): open the real page in the system browser. Not a `StoryAction` —
+    /// the TUI's table maps `O` to `OpenUrl` like `Enter`/`o`, and the window
+    /// intercepts it before that table (`reader_actions.rs:42,74` does the same).
+    External,
     /// The sheet's own dismissal. `Esc` is the runtime's (the dialog's `on_close`), and `?` is
     /// the feed's `ToggleHelp`, which the sheet reads as "close me".
     Close,
@@ -298,9 +316,14 @@ pub const HELP: &[HelpGroup] = &[
                 action: HelpAction::Feed(StoryAction::SetType(StoryType::Saved)),
             },
             HelpRow {
-                keys: &["Enter", "o", "O"],
+                keys: &["Enter", "o"],
                 label: "Open the story",
                 action: HelpAction::Feed(StoryAction::OpenUrl),
+            },
+            HelpRow {
+                keys: &["O"],
+                label: "Open in browser",
+                action: HelpAction::External,
             },
             HelpRow {
                 keys: &["c"],
@@ -592,6 +615,26 @@ mod tests {
     }
 
     #[test]
+    fn capital_o_is_open_external_not_open_story() {
+        let plain = |key: Key| KeyEvent {
+            key,
+            mods: Mods::default(),
+        };
+        // `O` is intercepted before the TUI table (which maps it to OpenUrl like Enter/o).
+        assert!(is_open_external(&plain(Key::Text("O".into()))));
+        assert!(!is_open_external(&plain(Key::Text("o".into()))));
+        assert!(!is_open_external(&plain(Key::Enter)));
+        let cmd_o = KeyEvent {
+            key: Key::Text("O".into()),
+            mods: Mods {
+                cmd: true,
+                ..Mods::default()
+            },
+        };
+        assert!(!is_open_external(&cmd_o));
+    }
+
+    #[test]
     fn case_is_preserved_and_chords_are_not_bindings() {
         let plain = |key: Key| KeyEvent {
             key,
@@ -763,6 +806,13 @@ mod tests {
             HelpAction::Feed(_) => HelpAction::Feed(story_action(ev)),
             HelpAction::Story(_) => HelpAction::Story(story_key(ev)),
             HelpAction::Window(_) => HelpAction::Window(window_key(ev)),
+            HelpAction::External => {
+                if is_open_external(ev) {
+                    HelpAction::External
+                } else {
+                    HelpAction::Close
+                }
+            }
             HelpAction::Close => HelpAction::Close,
         }
     }
@@ -777,6 +827,7 @@ mod tests {
                     | ("Discussion", HelpAction::Story(_))
                     | ("Summary", HelpAction::Story(_))
                     | ("Window", HelpAction::Window(_))
+                    | ("Feed", HelpAction::External)
                     | ("Window", HelpAction::Close) => row.action.clone(),
                     (title, action) => panic!("{title} group holds {action:?}"),
                 };

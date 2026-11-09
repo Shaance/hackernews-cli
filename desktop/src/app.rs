@@ -115,6 +115,9 @@ pub struct App {
     /// Headless runs use the fake service and an in-memory Saved store, so a golden never
     /// depends on the network or on the machine's `saved.json`.
     headless: bool,
+    /// Set by `O` or the article header's "open original" button; drained in `poll`,
+    /// which opens the real page in the system browser (no-op when headless).
+    pub(crate) pending_external: bool,
 }
 
 impl App {
@@ -229,6 +232,28 @@ impl App {
             return;
         };
         self.open_id(id);
+    }
+
+    /// Open the current story's real page in the system browser with
+    /// [`hn_lib::url_open::open_story_url`] — the same safe path the TUI uses
+    /// (http/https only, falls back to the HN item page). No-op in headless runs.
+    fn open_current_external(&mut self) {
+        if self.headless {
+            return;
+        }
+        let item = self
+            .story
+            .as_ref()
+            .map(|open| open.story.clone())
+            .or_else(|| {
+                let id = self.feed.selected_id()?;
+                self.feed.stories.iter().find(|s| s.id == id).cloned()
+            });
+        if let Some(story) = item {
+            if let Err(err) = hn_lib::url_open::open_story_url(&story.url, story.id) {
+                self.feed.status.error = Some(err.to_string());
+            }
+        }
     }
 
     /// Open `id`, wherever the press came from: the row's hover action, or `Enter` on the
@@ -449,6 +474,7 @@ fn init() -> App {
         layout_saved_at: 0.0,
         window_size: Cell::new(None),
         restored: false,
+        pending_external: false,
         toast: None,
         reduced: std::env::var("HN_REDUCED_MOTION").is_ok_and(|value| value == "1"),
         headless,
@@ -491,6 +517,11 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
     if let Some(id) = s.story.as_mut().and_then(|open| open.pending_reveal.take()) {
         tx.scroll_into_view_in("discussion-scroll", format!("comment-{id}"));
         changed = true;
+    }
+    // `O` / "open original": the real page, in the system browser, via the TUI's safe
+    // opener (scheme-checked, HN item-page fallback). Headless runs never open anything.
+    if std::mem::take(&mut s.pending_external) {
+        s.open_current_external();
     }
     // One request per invalidation: the measured grid is the only thing that moves it. A
     // resize pages against the ranking on screen, so the ranks do not move under the reader.
@@ -579,6 +610,12 @@ fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             return true;
         }
         return false;
+    }
+    // `O` (capital) always opens the real page in the system browser — the TUI's
+    // `reader_actions.rs:42,74` distinction — never the extracted article split.
+    if keys::is_open_external(ev) {
+        s.pending_external = true;
+        return true;
     }
     if s.story.is_some() {
         return on_story_key(s, ev, tx);
@@ -1498,6 +1535,7 @@ mod tests {
             help: false,
             layout: Layout::default(),
             layout_path: None,
+            pending_external: false,
             layout_written: Layout::default(),
             layout_saved_at: 0.0,
             window_size: Cell::new(None),

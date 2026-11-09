@@ -104,6 +104,22 @@ fn article_header(s: &Story, k: &Kit, t: tok::Theme) -> El {
                     .color(t.text_secondary),
                 ),
         )
+        // The extracted article is a reading surface; the real page is one press away.
+        // `O` does the same from the keyboard.
+        .child(
+            row()
+                .key("article-open-original")
+                .px(10.0)
+                .py(4.0)
+                .radius(radius::SM)
+                .fill(t.control_off)
+                .on_press(|s: &mut App| s.pending_external = true)
+                .child(
+                    text("open original \u{2197}")
+                        .font(type_::LABEL)
+                        .color(t.text_secondary),
+                ),
+        )
 }
 
 fn article_body(s: &Story, k: &Kit, t: tok::Theme) -> El {

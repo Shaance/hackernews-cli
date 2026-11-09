@@ -239,7 +239,7 @@
                                                         "bounds": [
                                                           40.0,
                                                           68.0,
-                                                          565.0,
+                                                          445.5,
                                                           14.5
                                                         ],
                                                         "key": "article-eyebrow",
@@ -253,7 +253,7 @@
                                                         "bounds": [
                                                           40.0,
                                                           88.5,
-                                                          565.0,
+                                                          445.5,
                                                           26.5
                                                         ],
                                                         "key": "article-title",
@@ -267,12 +267,42 @@
                                                         "bounds": [
                                                           40.0,
                                                           121.0,
-                                                          565.0,
+                                                          445.5,
                                                           15.0
                                                         ],
                                                         "key": "article-meta",
                                                         "name": "mfiguiere  ·  771 points  ·  122 comments",
                                                         "role": "label"
+                                                      },
+                                                      {
+                                                        "actions": [
+                                                          "click",
+                                                          "scroll-into-view"
+                                                        ],
+                                                        "bounds": [
+                                                          497.5,
+                                                          68.0,
+                                                          107.5,
+                                                          68.0
+                                                        ],
+                                                        "children": [
+                                                          {
+                                                            "actions": [
+                                                              "scroll-into-view"
+                                                            ],
+                                                            "bounds": [
+                                                              507.5,
+                                                              72.0,
+                                                              87.5,
+                                                              60.0
+                                                            ],
+                                                            "name": "open original ↗",
+                                                            "role": "label"
+                                                          }
+                                                        ],
+                                                        "key": "article-open-original",
+                                                        "name": "open original ↗",
+                                                        "role": "button"
                                                       }
                                                     ],
                                                     "key": "article-header",
@@ -2820,7 +2850,7 @@
       "rect": [
         40.0,
         68.0,
-        565.0,
+        445.5,
         68.0
       ],
       "role": "group",
@@ -2841,7 +2871,7 @@
       "rect": [
         40.0,
         68.0,
-        565.0,
+        445.5,
         14.5
       ],
       "role": "text",
@@ -2863,7 +2893,7 @@
       "rect": [
         40.0,
         88.5,
-        565.0,
+        445.5,
         26.5
       ],
       "role": "text",
@@ -2885,12 +2915,53 @@
       "rect": [
         40.0,
         121.0,
-        565.0,
+        445.5,
         15.0
       ],
       "role": "text",
       "scale": 1.0,
       "text": "mfiguiere  ·  771 points  ·  122 comments"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "article-open-original",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/article-open-original",
+      "rect": [
+        497.5,
+        68.0,
+        107.5,
+        68.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/article-open-original/#0",
+      "rect": [
+        507.5,
+        72.0,
+        87.5,
+        60.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "open original ↗"
     },
     {
       "blur": 0.0,
