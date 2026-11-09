@@ -1,0 +1,8 @@
+rune: first frame took 1166 ms (setup 780 ms, init 0 ms, first view 5 ms, window and GPU 381 ms); the slowest is setup in `main` before `run`: start slow work from `on_ready`. (debug builds only; RUNE_PERF_WARN=0 silences)
+SPIKE at=5.0 action=Resize(1280.0, 900.0)
+SPIKE at=9.0 action=Toggle
+SPIKE at=12.0 action=Toggle
+SPIKE at=15.0 action=Resize(760.0, 560.0)
+SPIKE at=18.0 action=Remote
+SPIKE load_remote url=https://news.ycombinator.com/item?id=1
+SPIKE load_remote ok

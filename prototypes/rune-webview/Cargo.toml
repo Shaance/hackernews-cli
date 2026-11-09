@@ -1,0 +1,25 @@
+[package]
+name = "rune-webview"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Spike: host a wry/WKWebView child view inside a Rune window on macOS"
+
+# Its own workspace root, so this crate never joins the `hn` package at the repo root and
+# never touches the root Cargo.toml or Cargo.lock.
+[workspace]
+
+[dependencies]
+# Rune is pre-release: it is only consumable as a git dependency pinned to a `dev` rev.
+rune = { git = "https://github.com/anomalyco/rune", rev = "d751f07106eac47bdd4e33756dee71e1f593c9e2" }
+rune-kit = { git = "https://github.com/anomalyco/rune", rev = "d751f07106eac47bdd4e33756dee71e1f593c9e2" }
+
+# wry is macOS-only here: the spike proves the WKWebView path. Keeping it under a target
+# section means `cargo metadata` resolves on Linux/Windows without pulling webkit2gtk or
+# WebView2 build requirements, and the binary there just prints and exits.
+[target.'cfg(target_os = "macos")'.dependencies]
+wry = "0.57"
+
+# Rune's own workspace does the same: debug info for wgpu/winit/parley is dead weight.
+[profile.dev.package."*"]
+debug = false
