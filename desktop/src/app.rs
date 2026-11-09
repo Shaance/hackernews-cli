@@ -8,10 +8,15 @@
 //! One window, one `SplitView`. Opening a story puts the article in the main pane and the
 //! summary card plus the discussion in the inspector, which springs open from 0 width on
 //! `MORPH`; `Esc` closes it and the feed is exactly where it was.
+//!
+//! The article pane is the story's **live page**: a `WKWebView` child view pinned to the pane's
+//! rect (see [`crate::webview`]). The readability capture still runs in the background — it is
+//! what the summary card and its citations read — but it is never drawn unless the child view
+//! cannot exist, which is the fallback branch [`Pane::Extracted`] draws.
 
 use std::cell::Cell;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
 use hn_lib::app::StoryType;
@@ -21,7 +26,8 @@ use hn_lib::reader::{self, Config};
 use hn_lib::HNCLIItem;
 use rune::tok::{self, radius, type_};
 use rune::{
-    AppSpec, Color, Cx, El, KeyEvent, ScrollSpec, Spring, Tx, Waker, col, el, row, text,
+    AppSpec, Color, Cx, El, KeyEvent, ScrollSpec, Spring, Tx, Waker, WindowHandle, col, el, row,
+    text,
 };
 use rune_kit::shell::PaneMotion;
 use rune_kit::{Keybind, Kit, PaneState, SegmentedControl, SplitView, Toast, ToastRegion, Toolbar};
@@ -35,7 +41,8 @@ use crate::layout::Layout;
 use crate::service::Source;
 use crate::settings::Settings;
 use crate::story::{Story, SummaryState, STAGES};
-use crate::story_view;
+use crate::story_view::{self, Pane};
+use crate::webview;
 
 /// One feed row, in points. The measured row count is the viewport height over this.
 const ROW_HEIGHT: f32 = 56.0;
@@ -72,6 +79,25 @@ enum Ranking {
     Fresh,
     Keep,
 }
+
+/// The live article pane's child view.
+///
+/// The pane is the story's real page by default. This is the one thing that can take it away:
+/// a child view that could not be built. Everything else — headless, non-macOS — is decided by
+/// [`App::live_capable`] before a child is ever asked for.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum Live {
+    /// No child view yet: nothing has asked for one.
+    Idle,
+    /// A child exists and is showing `url`.
+    Ready { url: String },
+    /// Creation or navigation failed. The pane falls back to the extracted text and says why.
+    Failed(String),
+}
+
+/// `--open-story <id>`: the story to open once the feed holds it. `AppSpec::init` is a plain
+/// `fn() -> App`, so the command line reaches the state through this instead of a capture.
+static OPEN_STORY: OnceLock<Option<i32>> = OnceLock::new();
 
 pub struct App {
     feed: FeedModel,
@@ -118,6 +144,18 @@ pub struct App {
     /// Set by `O` or the article header's "open original" button; drained in `poll`,
     /// which opens the real page in the system browser (no-op when headless).
     pub(crate) pending_external: bool,
+    /// The window handle Rune lent in `on_window`, for building the live pane's child view.
+    /// `None` before the window exists, and always `None` in a headless run.
+    native_window: Option<WindowHandle>,
+    /// The live pane's child view: whether it exists, and what it is showing.
+    live: Live,
+    /// The rect the article pane's live region last reported, in window points. The child is
+    /// pinned to it.
+    live_bounds: Option<[f32; 4]>,
+    /// Whether the child is currently shown, so `poll` only calls `set_visible` on a change.
+    live_shown: bool,
+    /// `--open-story <id>`, until the feed holds that story and it opens.
+    open_story: Option<i32>,
 }
 
 impl App {
@@ -295,6 +333,115 @@ impl App {
         self.story = None;
         self.inspector.set_open(false);
         self.bridge.cancel_story();
+    }
+
+    /// Whether this run can host a live page at all: macOS, with a real window.
+    ///
+    /// A `WKWebView` needs an `NSWindow`, and a headless run has none — `--snap` and `--tree`
+    /// render offscreen. So headless always takes the fallback branch, which is what makes the
+    /// scene trees deterministic: the same arguments produce the same tree on every machine,
+    /// with no child view to depend on.
+    fn live_capable(&self) -> bool {
+        cfg!(target_os = "macos") && !self.headless
+    }
+
+    /// Whether the article pane is the live page rather than the extracted text.
+    fn live_mode(&self) -> bool {
+        self.live_capable() && !matches!(self.live, Live::Failed(_))
+    }
+
+    /// What the article pane draws: the live page, or the extracted text and why it is there.
+    fn pane(&self) -> Pane<'_> {
+        if self.live_mode() {
+            Pane::Live
+        } else {
+            Pane::Extracted {
+                reason: match &self.live {
+                    Live::Failed(error) => Some(error.as_str()),
+                    _ => None,
+                },
+            }
+        }
+    }
+
+    /// The article pane's live region reported its rect: pin the child to it.
+    ///
+    /// Called from `on_layout`, which runs on the UI thread — the only thread a `WKWebView` may
+    /// be resized on.
+    pub(crate) fn live_rect(&mut self, rect: [f32; 4]) {
+        self.live_bounds = Some(rect);
+        if self.live_shown {
+            webview::set_bounds(rect);
+        }
+    }
+
+    /// Keep the child view in step with the split: build it once the window handle and the
+    /// pane's rect both exist, load the open story's URL, and show it only while the pane is
+    /// actually on screen.
+    ///
+    /// The child is a subview of the window's content view, so it draws above everything Rune
+    /// paints. That is why it is hidden while a dialog is open: the settings dialog and the
+    /// keyboard sheet are Rune's, and a webview over them would bury the controls.
+    fn sync_live(&mut self) -> bool {
+        if !self.live_mode() {
+            return self.hide_live();
+        }
+        let Some(story) = self.story.as_ref() else {
+            return self.hide_live();
+        };
+        // The same scheme-checked URL the terminal reader opens, with the HN item page as the
+        // fallback for a story that has no usable link.
+        let url = hn_lib::url_open::safe_story_url(&story.story.url, story.story.id);
+        let mut changed = false;
+        if matches!(self.live, Live::Idle) {
+            let (Some(window), Some(bounds)) = (self.native_window.as_ref(), self.live_bounds)
+            else {
+                // The window or the pane's rect has not landed yet; the next frame has both.
+                return false;
+            };
+            if let Err(error) = webview::create(window, bounds) {
+                self.live = Live::Failed(error);
+                return true;
+            }
+            self.live = Live::Ready {
+                url: String::new(),
+            };
+            changed = true;
+        }
+        let mut failure = None;
+        if let Live::Ready { url: shown } = &mut self.live {
+            if *shown != url {
+                match webview::load_url(&url) {
+                    Ok(()) => {
+                        *shown = url;
+                        changed = true;
+                    }
+                    Err(error) => failure = Some(error),
+                }
+            }
+        }
+        if let Some(error) = failure {
+            self.live = Live::Failed(error);
+            return true;
+        }
+        let want = self.settings.is_none() && !self.help;
+        if self.live_shown != want {
+            webview::set_visible(want);
+            self.live_shown = want;
+            changed = true;
+        }
+        changed
+    }
+
+    /// Take the child off screen, keeping the page: `set_visible` is `WKWebView.setHidden`, so
+    /// scroll position and session survive the feed coming back.
+    fn hide_live(&mut self) -> bool {
+        if !self.live_shown {
+            return false;
+        }
+        webview::set_visible(false);
+        self.live_shown = false;
+        true
     }
 
     /// The open story, for the views' press handlers: a press on a comment row, a trail segment
@@ -475,6 +622,11 @@ fn init() -> App {
         window_size: Cell::new(None),
         restored: false,
         pending_external: false,
+        native_window: None,
+        live: Live::Idle,
+        live_bounds: None,
+        live_shown: false,
+        open_story: OPEN_STORY.get().copied().flatten(),
         toast: None,
         reduced: std::env::var("HN_REDUCED_MOTION").is_ok_and(|value| value == "1"),
         headless,
@@ -523,6 +675,22 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
     if std::mem::take(&mut s.pending_external) {
         s.open_current_external();
     }
+    // `--open-story <id>`: open the story once the feed holds it. It waits for the first fill
+    // rather than opening something else, and says so if the id is not on this page.
+    if let Some(id) = s.open_story.take() {
+        if s.feed.stories.iter().any(|story| story.id == id) {
+            s.open_id(id);
+            changed = true;
+        } else if s.feed.status.loading || s.feed.stories.is_empty() {
+            s.open_story = Some(id);
+        } else {
+            s.feed.status.error = Some(format!("--open-story {id}: not on this page"));
+            changed = true;
+        }
+    }
+    // The live article pane: build the child view, load the open story's page, and keep it in
+    // step with the split. A no-op in a headless run, where the pane is the extracted text.
+    changed |= s.sync_live();
     // One request per invalidation: the measured grid is the only thing that moves it. A
     // resize pages against the ranking on screen, so the ranks do not move under the reader.
     if let Some(grid) = s.measured.get() {
@@ -930,7 +1098,7 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
     let mut overlays = Vec::new();
     let (main, toolbar, inspector) = match &s.story {
         Some(story) => (
-            story_main(story, &k, t),
+            story_main(story, &k, t, s.pane()),
             Toolbar::new().leading(story_view::story_toolbar(
                 story,
                 &k,
@@ -983,16 +1151,12 @@ fn pane_motion() -> PaneMotion {
 }
 
 /// The main pane while a story is open: the article, then the story's own footer.
-fn story_main(story: &Story, k: &Kit, t: tok::Theme) -> El {
+fn story_main(story: &Story, k: &Kit, t: tok::Theme, pane: Pane<'_>) -> El {
     col()
         .key("story-main")
         .w_full()
         .h_full()
-        .child(
-            story_view::article_pane(story, k, t)
-                .grow(1.0)
-                .min_h(0.0),
-        )
+        .child(story_view::article_pane(story, k, t, pane).grow(1.0).min_h(0.0))
         .child(el().w_full().h(1.0).fill(t.separator))
         .child(story_view::story_footer(k, t))
 }
@@ -1481,6 +1645,55 @@ fn scene_help(s: &mut App) {
     s.help = true;
 }
 
+/// Run the window.
+///
+/// `on_window` is where the live pane's child view gets its platform handle: Rune lends it for
+/// the duration of the callback, and `AppHandle::update` carries it to the UI thread's state,
+/// where `poll` builds the child once the pane has a rect too. A recreated window invalidates
+/// the old child, so it is dropped here and rebuilt by the next `poll`.
+///
+/// Two launch flags exist for the GUI proof in `scripts/verify-live.sh`, because this machine
+/// denies osascript assistive access and nothing outside the process can press a key or raise
+/// its window:
+///
+/// - `--open-story <id>` opens that story once the feed holds it.
+/// - `--on-top` keeps the window above other apps, so a fullscreen capture is of this window.
+pub fn run() {
+    let argv: Vec<String> = std::env::args().skip(1).collect();
+    let _ = OPEN_STORY.set(flag_value(&argv, "--open-story").and_then(|id| id.parse().ok()));
+    let on_top = argv.iter().any(|arg| arg == "--on-top");
+    let mut app = rune::App::new(spec());
+    if on_top {
+        app = app.window_options(rune::WindowOptions {
+            always_on_top: true,
+            ..Default::default()
+        });
+    }
+    let handle = app.handle();
+    app.on_window(move |window| {
+        webview::close();
+        let window = window.clone();
+        handle.update(move |s: &mut App, _| {
+            s.native_window = Some(window);
+            s.live = Live::Idle;
+            s.live_shown = false;
+        });
+    })
+    .on_close(close)
+    .run();
+}
+
+/// The value of `--flag value`, if the flag is there.
+fn flag_value(argv: &[String], flag: &str) -> Option<String> {
+    let index = argv.iter().position(|arg| arg == flag)?;
+    argv.get(index + 1).cloned()
+}
+
+/// The window is going away: drop the child view on the thread that made it.
+fn close(_s: &mut App, _tx: &mut Tx) {
+    webview::close();
+}
+
 pub fn spec() -> AppSpec<App> {
     AppSpec {
         scenes: &[
@@ -1536,6 +1749,11 @@ mod tests {
             layout: Layout::default(),
             layout_path: None,
             pending_external: false,
+            native_window: None,
+            live: Live::Idle,
+            live_bounds: None,
+            live_shown: false,
+            open_story: None,
             layout_written: Layout::default(),
             layout_saved_at: 0.0,
             window_size: Cell::new(None),

@@ -2,11 +2,62 @@
 
 The native window over `hn_lib`: the same feed, discussion and summary the terminal app shows,
 drawn with Rune instead of a terminal. One window, one `SplitView`; opening a story puts the
-article in the main pane and the summary card plus the discussion in the inspector.
+story's **live page** in the main pane and the summary card plus the discussion in the inspector.
 
 `mockups/desktop/DESIGN.md` is the design of record — window anatomy, the motion spec, the
 screens, and the testing strategy. `DESKTOP_IMPLEMENTATION_PLAN.md` at the repo root is the plan
 this crate was built to.
+
+## The article pane is the live page
+
+Opening a story hosts a `WKWebView` child view over the article pane and loads the story's URL —
+the same scheme-checked URL the terminal app opens (`hn_lib::url_open::safe_story_url`, with the
+HN item page as the fallback for a story with no usable link). The page is the real one: its own
+typography, images, code blocks, and anything interactive.
+
+```
+article pane
+├── Rune header   eyebrow · title · byline · "open original ↗"
+└── live region   the story's page, in a WKWebView child view
+```
+
+The header stays Rune's because the child view is a subview of the window's content view and
+draws above everything Rune paints: anything the reader must still be able to press has to sit
+outside its rect. The child is pinned to the region below the header and follows it through
+`El::on_layout`, so a window resize, a grip drag or `⌘\` moves the page with the pane. It is
+hidden — `setHidden`, not torn down — while the settings dialog or the help sheet is open, and
+while the feed is showing.
+
+**The readability capture still runs, and is still the point.** Opening a story fetches and
+extracts the article exactly as before; that capture is what the summary card and its citations
+read. The model never sees the page, it sees the extracted text, and a citation's excerpt is a
+span of that text. The capture is a backend, not a surface.
+
+**Fallback.** When no child view can exist, the pane is the extracted Markdown at the 66ch
+measure, under a banner that says so:
+
+```
+live page unavailable — showing extracted text
+```
+
+| Case | Why |
+| --- | --- |
+| Headless (`--snap`, `--tree`, `--script`) | A `WKWebView` needs an `NSWindow`; a headless run renders offscreen. The scene trees are deterministic because they always take this branch. |
+| Not macOS | `wry` is a macOS-only dependency here; there is no child host to build. |
+| The child view failed to build | The banner carries the platform's own message beside it. |
+
+Summaries and citations work in all three, because they read the capture rather than the pane.
+`O` and `open original ↗` are unchanged in all three: they hand the URL to the system browser.
+
+Two consequences of a native child view, both worth knowing before you use it:
+
+- **The page owns its own keyboard while it has focus.** Clicking into the page gives the
+  `WKWebView` first responder and Rune's `on_key` no longer sees those keys. Clicking any Rune
+  chrome — the toolbar, the header, the inspector — takes focus back.
+- **A window resized while another app is in front keeps stale bounds** until the next layout.
+  Rune only relayouts a resize when the window is painting
+  (`crates/rune/src/window/lifecycle.rs:225`), and the child follows `on_layout`. This is the
+  spike's finding, unchanged.
 
 ## Run it
 
@@ -17,6 +68,14 @@ cargo install --path desktop                            # `hn-desktop` on PATH
 
 The crate is its own workspace root with its own `rust-toolchain.toml` (1.99.1, which Rune
 needs; the repo root pins 1.88 for the TUI). `--locked` works: `desktop/Cargo.lock` is committed.
+
+Two launch flags exist for the GUI proof below, because this machine denies osascript assistive
+access and nothing outside the process can press a key or raise its window:
+
+| Flag | What it does |
+|---|---|
+| `--open-story <id>` | opens that story once the feed holds it (and says so if the id is not on the page) |
+| `--on-top` | keeps the window above other apps, so a fullscreen capture is of this window |
 
 Keys are the terminal app's, unchanged: `j`/`k` move, `1`–`4` switch tabs, `Enter` opens a story,
 `c` opens the discussion, `s` saves, `?` shows the keyboard sheet, `M` (or `⌘,`) opens the summary
@@ -61,6 +120,11 @@ cargo run -- --scene feed --size 1180x760 --scale 2 --theme dark \
 `--tree` is the interesting one: it carries every element's rect, role, label, focus flags and
 accessibility node, which is what the gate reads instead of the pixels.
 
+A headless run has no `NSWindow`, so the article pane always takes its fallback branch there: the
+`story`, `comments`, `thread`, `citation` and `summary-generating` scenes draw the extracted text
+under the `article-fallback` banner, never a live page. That is deliberate — it is what makes
+those trees deterministic — and it is why the live pane needs the GUI proof below.
+
 ```sh
 bash desktop/scripts/check_goldens.sh          # the gate
 HN_SKIP_BUILD=1 bash desktop/scripts/check_goldens.sh   # reuse target/debug
@@ -82,6 +146,29 @@ does nothing fails the gate.
 
 `cargo test` covers the parts a golden cannot: the key map against the routing tables, the
 settings round-trip through a temp `XDG_CONFIG_HOME`, the layout file, and the feed's arithmetic.
+
+## The GUI proof
+
+A golden cannot show the live page: headless always takes the fallback branch, because a
+`WKWebView` needs an `NSWindow`. So the pane's real state is proved by a screenshot of a real
+window.
+
+```sh
+bash desktop/scripts/verify-live.sh            # the top story on HN right now
+bash desktop/scripts/verify-live.sh 50426582   # a specific story
+```
+
+It launches the window with `--open-story <id> --on-top`, waits for the page, captures the whole
+screen and crops to the window frame from `scripts/window-frame.swift`, then asserts with
+`scripts/crop.py --pane` that the article pane holds a rendered page rather than the app's own
+background. The result is `verification/live-article-pane.png`; the run's log is
+`verification/live-run.log`.
+
+`screencapture -l <CGWindowID>` returns an empty buffer for a Metal-backed window in this
+environment, which is why the capture is fullscreen-then-crop. The run is hermetic: it points
+`XDG_CONFIG_HOME`, `XDG_DATA_HOME` and `XDG_STATE_HOME` at a temp directory, so it never reads the
+reader's summary key (and so never calls a provider), never writes their saved list, and never
+overwrites their remembered window size.
 
 ## Packaging
 
@@ -130,6 +217,14 @@ number therefore does not claim.
   the gate runs on Linux with `HN_TREES_ONLY=1`, but the window itself has only been driven on
   macOS. Linux needs the usual X11/Wayland and font packages a GPU window implies; nothing here
   has been tested against them.
+- **The live pane is macOS-only.** `wry` sits under `[target.'cfg(target_os = "macos")'.dependencies]`,
+  so a Linux or Windows build resolves and runs without webkit2gtk or WebView2 — and its article
+  pane is the extracted-text fallback. Wiring the other two backends is wry's own work, unspiked
+  here. On Linux, `wry` would also pull webkit2gtk, which is a large dependency for a crate that
+  had none.
+- **The live pane's keyboard belongs to the page while it has focus**, and a window resized while
+  occluded keeps stale child bounds until the next layout. Both are in *The article pane is the
+  live page* above.
 - **No notarization, no signing, no installer.** See Packaging above.
 - **No VoiceOver pass has been run.** The accessibility tree is asserted headlessly (roles,
   labels, focus flags, focus order); how it *sounds* has not been checked by a human. The

@@ -198,6 +198,32 @@
                                         ],
                                         "children": [
                                           {
+                                            "bounds": [
+                                              8.0,
+                                              48.0,
+                                              629.0,
+                                              31.0
+                                            ],
+                                            "children": [
+                                              {
+                                                "bounds": [
+                                                  40.0,
+                                                  56.0,
+                                                  269.5,
+                                                  15.0
+                                                ],
+                                                "name": "live page unavailable — showing extracted text",
+                                                "role": "label"
+                                              }
+                                            ],
+                                            "key": "article-fallback",
+                                            "name": "live page unavailable — showing extracted text",
+                                            "role": "status",
+                                            "states": [
+                                              "live-polite"
+                                            ]
+                                          },
+                                          {
                                             "actions": [
                                               "scroll-up",
                                               "scroll-down",
@@ -205,9 +231,9 @@
                                             ],
                                             "bounds": [
                                               8.0,
-                                              48.0,
+                                              79.0,
                                               629.0,
-                                              664.0
+                                              633.0
                                             ],
                                             "children": [
                                               {
@@ -216,7 +242,7 @@
                                                 ],
                                                 "bounds": [
                                                   8.0,
-                                                  48.0,
+                                                  79.0,
                                                   629.0,
                                                   872.0
                                                 ],
@@ -227,7 +253,7 @@
                                                     ],
                                                     "bounds": [
                                                       40.0,
-                                                      68.0,
+                                                      99.0,
                                                       565.0,
                                                       77.6
                                                     ],
@@ -238,7 +264,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          68.0,
+                                                          99.0,
                                                           445.5,
                                                           14.4
                                                         ],
@@ -252,7 +278,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          88.4,
+                                                          119.4,
                                                           445.5,
                                                           26.3
                                                         ],
@@ -266,7 +292,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          120.6,
+                                                          151.6,
                                                           445.5,
                                                           15.0
                                                         ],
@@ -281,7 +307,7 @@
                                                         ],
                                                         "bounds": [
                                                           497.5,
-                                                          68.0,
+                                                          99.0,
                                                           107.5,
                                                           67.6
                                                         ],
@@ -292,7 +318,7 @@
                                                             ],
                                                             "bounds": [
                                                               507.5,
-                                                              72.0,
+                                                              103.0,
                                                               87.5,
                                                               59.6
                                                             ],
@@ -314,7 +340,7 @@
                                                     ],
                                                     "bounds": [
                                                       40.0,
-                                                      159.6,
+                                                      190.6,
                                                       565.0,
                                                       740.4
                                                     ],
@@ -325,7 +351,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          159.6,
+                                                          190.6,
                                                           448.8,
                                                           67.2
                                                         ],
@@ -339,7 +365,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          250.8,
+                                                          281.8,
                                                           448.8,
                                                           24.0
                                                         ],
@@ -354,7 +380,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          284.8,
+                                                          315.8,
                                                           448.8,
                                                           67.2
                                                         ],
@@ -368,7 +394,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          364.0,
+                                                          395.0,
                                                           448.8,
                                                           224.0
                                                         ],
@@ -379,7 +405,7 @@
                                                             ],
                                                             "bounds": [
                                                               52.0,
-                                                              376.0,
+                                                              407.0,
                                                               424.8,
                                                               200.0
                                                             ],
@@ -396,7 +422,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          612.0,
+                                                          643.0,
                                                           448.8,
                                                           22.4
                                                         ],
@@ -410,7 +436,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          646.4,
+                                                          677.4,
                                                           448.8,
                                                           75.2
                                                         ],
@@ -421,7 +447,7 @@
                                                             ],
                                                             "bounds": [
                                                               40.0,
-                                                              646.4,
+                                                              677.4,
                                                               448.8,
                                                               22.4
                                                             ],
@@ -432,7 +458,7 @@
                                                                 ],
                                                                 "bounds": [
                                                                   72.0,
-                                                                  646.4,
+                                                                  677.4,
                                                                   416.8,
                                                                   22.4
                                                                 ],
@@ -452,7 +478,7 @@
                                                             ],
                                                             "bounds": [
                                                               40.0,
-                                                              672.8,
+                                                              703.8,
                                                               448.8,
                                                               22.4
                                                             ],
@@ -463,7 +489,7 @@
                                                                 ],
                                                                 "bounds": [
                                                                   72.0,
-                                                                  672.8,
+                                                                  703.8,
                                                                   416.8,
                                                                   22.4
                                                                 ],
@@ -483,7 +509,7 @@
                                                             ],
                                                             "bounds": [
                                                               40.0,
-                                                              699.2,
+                                                              730.2,
                                                               448.8,
                                                               22.4
                                                             ],
@@ -494,7 +520,7 @@
                                                                 ],
                                                                 "bounds": [
                                                                   72.0,
-                                                                  699.2,
+                                                                  730.2,
                                                                   416.8,
                                                                   22.4
                                                                 ],
@@ -519,7 +545,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          733.6,
+                                                          764.6,
                                                           448.8,
                                                           22.4
                                                         ],
@@ -533,7 +559,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          772.0,
+                                                          803.0,
                                                           448.8,
                                                           44.8
                                                         ],
@@ -544,7 +570,7 @@
                                                             ],
                                                             "bounds": [
                                                               54.0,
-                                                              772.0,
+                                                              803.0,
                                                               434.8,
                                                               44.8
                                                             ],
@@ -562,7 +588,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          832.8,
+                                                          863.8,
                                                           448.8,
                                                           67.2
                                                         ],
@@ -584,7 +610,7 @@
                                             "scroll": [
                                               0.0,
                                               0.0,
-                                              208.0
+                                              239.0
                                             ],
                                             "states": [
                                               "clips"
@@ -2712,6 +2738,47 @@
     },
     {
       "blur": 0.0,
+      "fill": "#1c1d20ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "article-fallback",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-fallback",
+      "rect": [
+        8.0,
+        48.0,
+        629.0,
+        31.0
+      ],
+      "role": "status",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-fallback/#0",
+      "rect": [
+        40.0,
+        56.0,
+        269.5,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "live page unavailable — showing extracted text"
+    },
+    {
+      "blur": 0.0,
       "fill": "#00000000",
       "focusVisible": false,
       "focusable": false,
@@ -2723,9 +2790,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll",
       "rect": [
         8.0,
-        48.0,
+        79.0,
         629.0,
-        664.0
+        633.0
       ],
       "role": "group",
       "scale": 1.0
@@ -2743,7 +2810,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content",
       "rect": [
         8.0,
-        48.0,
+        79.0,
         629.0,
         872.02
       ],
@@ -2763,7 +2830,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header",
       "rect": [
         40.0,
-        68.0,
+        99.0,
         565.0,
         77.63
       ],
@@ -2782,7 +2849,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/#0",
       "rect": [
         40.0,
-        68.0,
+        99.0,
         445.5,
         67.63
       ],
@@ -2803,7 +2870,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/#0/article-eyebrow",
       "rect": [
         40.0,
-        68.0,
+        99.0,
         445.5,
         14.38
       ],
@@ -2825,7 +2892,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/#0/article-title",
       "rect": [
         40.0,
-        88.38,
+        119.38,
         445.5,
         26.25
       ],
@@ -2847,7 +2914,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/#0/article-meta",
       "rect": [
         40.0,
-        120.63,
+        151.63,
         445.5,
         15.0
       ],
@@ -2868,7 +2935,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/article-open-original",
       "rect": [
         497.5,
-        68.0,
+        99.0,
         107.5,
         67.63
       ],
@@ -2888,7 +2955,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/article-open-original/#0",
       "rect": [
         507.5,
-        72.0,
+        103.0,
         87.5,
         59.63
       ],
@@ -2909,7 +2976,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body",
       "rect": [
         40.0,
-        159.63,
+        190.63,
         565.0,
         740.4
       ],
@@ -2928,7 +2995,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0",
       "rect": [
         40.0,
-        159.63,
+        190.63,
         448.8,
         740.4
       ],
@@ -2949,7 +3016,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b0",
       "rect": [
         40.0,
-        159.63,
+        190.63,
         448.8,
         67.2
       ],
@@ -2972,7 +3039,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b1",
       "rect": [
         40.0,
-        250.83,
+        281.83,
         448.8,
         24.0
       ],
@@ -2994,7 +3061,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b2",
       "rect": [
         40.0,
-        284.83,
+        315.83,
         448.8,
         67.2
       ],
@@ -3015,7 +3082,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b3",
       "rect": [
         40.0,
-        364.03,
+        395.03,
         448.8,
         224.0
       ],
@@ -3035,7 +3102,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b3/#0",
       "rect": [
         52.0,
-        376.03,
+        407.03,
         424.8,
         200.0
       ],
@@ -3057,7 +3124,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b4",
       "rect": [
         40.0,
-        612.03,
+        643.03,
         448.8,
         22.4
       ],
@@ -3078,7 +3145,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5",
       "rect": [
         40.0,
-        646.43,
+        677.43,
         448.8,
         75.2
       ],
@@ -3098,7 +3165,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i0",
       "rect": [
         40.0,
-        646.43,
+        677.43,
         448.8,
         22.4
       ],
@@ -3118,7 +3185,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i0/#0",
       "rect": [
         40.0,
-        646.43,
+        677.43,
         32.0,
         22.4
       ],
@@ -3138,7 +3205,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i0/#1",
       "rect": [
         72.0,
-        646.43,
+        677.43,
         416.8,
         22.4
       ],
@@ -3159,7 +3226,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i0/#1/b0",
       "rect": [
         72.0,
-        646.43,
+        677.43,
         416.8,
         22.4
       ],
@@ -3180,7 +3247,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i1",
       "rect": [
         40.0,
-        672.83,
+        703.83,
         448.8,
         22.4
       ],
@@ -3200,7 +3267,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i1/#0",
       "rect": [
         40.0,
-        672.83,
+        703.83,
         32.0,
         22.4
       ],
@@ -3220,7 +3287,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i1/#1",
       "rect": [
         72.0,
-        672.83,
+        703.83,
         416.8,
         22.4
       ],
@@ -3241,7 +3308,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i1/#1/b0",
       "rect": [
         72.0,
-        672.83,
+        703.83,
         416.8,
         22.4
       ],
@@ -3262,7 +3329,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i2",
       "rect": [
         40.0,
-        699.23,
+        730.23,
         448.8,
         22.4
       ],
@@ -3282,7 +3349,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i2/#0",
       "rect": [
         40.0,
-        699.23,
+        730.23,
         32.0,
         22.4
       ],
@@ -3302,7 +3369,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i2/#1",
       "rect": [
         72.0,
-        699.23,
+        730.23,
         416.8,
         22.4
       ],
@@ -3323,7 +3390,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i2/#1/b0",
       "rect": [
         72.0,
-        699.23,
+        730.23,
         416.8,
         22.4
       ],
@@ -3345,7 +3412,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b6",
       "rect": [
         40.0,
-        733.63,
+        764.63,
         448.8,
         22.4
       ],
@@ -3366,7 +3433,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b7",
       "rect": [
         40.0,
-        772.02,
+        803.02,
         448.8,
         44.8
       ],
@@ -3385,7 +3452,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b7/#0",
       "rect": [
         40.0,
-        772.02,
+        803.02,
         2.0,
         44.8
       ],
@@ -3404,7 +3471,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b7/#1",
       "rect": [
         42.0,
-        772.02,
+        803.02,
         446.8,
         44.8
       ],
@@ -3425,7 +3492,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b7/#1/b0",
       "rect": [
         54.0,
-        772.02,
+        803.02,
         434.8,
         44.8
       ],
@@ -3447,7 +3514,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b8",
       "rect": [
         40.0,
-        832.82,
+        863.82,
         448.8,
         67.2
       ],

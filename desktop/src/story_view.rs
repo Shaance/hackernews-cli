@@ -35,21 +35,38 @@ const ARTICLE_DIMMED: f32 = 0.55;
 /// The article's headline. `type_::TITLE` is a row title; a headline is a step above it.
 const HEADLINE: TextStyle = TextStyle::new(21.0, 600.0);
 
-/// The article pane: a sticky title over the Markdown body, at the reading measure.
-pub fn article_pane(s: &Story, k: &Kit, t: tok::Theme) -> El {
-    let mut pane = col().key("article-pane").w_full().h_full();
+/// The fallback banner's text. The pane is the live page; this is what the reader sees when a
+/// child view cannot exist (headless, non-macOS) or could not be built.
+pub const FALLBACK_BANNER: &str = "live page unavailable \u{2014} showing extracted text";
+
+/// What the article pane draws.
+///
+/// The live page is the default: the pane is a placeholder whose rect the child view is pinned
+/// to, and the page itself is drawn by the web engine, not by Rune. The extracted Markdown is
+/// the fallback, and it says so — a silent swap would leave the reader unsure whether they are
+/// looking at the page or at a capture of it.
+pub enum Pane<'a> {
+    /// The story's real page, in a child view over the pane's rect.
+    Live,
+    /// The extracted text, with a banner saying why the live page is not there. `reason` is the
+    /// child view's own failure, when there was one.
+    Extracted { reason: Option<&'a str> },
+}
+
+/// The article pane: a sticky title over the body, at the reading measure.
+///
+/// In [`Pane::Live`] the body is the child view's region, so the pane is the header plus an
+/// empty element that reports its rect through `on_layout`. The header stays Rune's, which is
+/// what keeps "open original ↗" clickable: the child draws above everything Rune paints, so
+/// anything the reader must still be able to press has to sit outside its rect.
+pub fn article_pane<'a>(s: &Story, k: &Kit, t: tok::Theme, pane: Pane<'a>) -> El {
+    let mut outer = col().key("article-pane").w_full().h_full();
     if s.source.is_some() {
         // The source viewer takes the inspector; the article stays as context, dimmed.
-        pane = pane.opacity(ARTICLE_DIMMED);
+        outer = outer.opacity(ARTICLE_DIMMED);
     }
-    pane.child(
-        col()
-            .key("article-scroll")
-            .w_full()
-            .grow(1.0)
-            .min_h(0.0)
-            .scroll(ScrollSpec { stick_bottom: false })
-            .scroll_edge_fade(20.0)
+    match pane {
+        Pane::Live => outer
             .child(
                 col()
                     .key("article-content")
@@ -57,12 +74,71 @@ pub fn article_pane(s: &Story, k: &Kit, t: tok::Theme) -> El {
                     .px(32.0)
                     .py(20.0)
                     .gap(14.0)
-                    // The title holds to the top of the pane while the body scrolls under it,
-                    // so the story you are reading is always named.
-                    .child(article_header(s, k, t).sticky_top(0.0))
-                    .child(article_body(s, k, t)),
+                    .child(article_header(s, k, t)),
+            )
+            .child(
+                el()
+                    .key("article-live")
+                    .w_full()
+                    .grow(1.0)
+                    .min_h(0.0)
+                    .min_w(0.0)
+                    .fill(t.bg)
+                    .on_layout(|s: &mut App, rect| s.live_rect(rect)),
             ),
-    )
+        Pane::Extracted { reason } => outer
+            .child(fallback_banner(reason, t))
+            .child(
+                col()
+                    .key("article-scroll")
+                    .w_full()
+                    .grow(1.0)
+                    .min_h(0.0)
+                    .scroll(ScrollSpec { stick_bottom: false })
+                    .scroll_edge_fade(20.0)
+                    .child(
+                        col()
+                            .key("article-content")
+                            .w_full()
+                            .px(32.0)
+                            .py(20.0)
+                            .gap(14.0)
+                            // The title holds to the top of the pane while the body scrolls
+                            // under it, so the story you are reading is always named.
+                            .child(article_header(s, k, t).sticky_top(0.0))
+                            .child(article_body(s, k, t)),
+                    ),
+            ),
+    }
+}
+
+/// Why the pane is the extracted text and not the page. It is a state, not an error: headless
+/// runs and non-macOS builds have no child view to host, and the reader is told which they got.
+fn fallback_banner(reason: Option<&str>, t: tok::Theme) -> El {
+    let mut banner = row()
+        .key("article-fallback")
+        .role("status")
+        .w_full()
+        .px(32.0)
+        .py(8.0)
+        .gap(10.0)
+        .center_y()
+        .fill(t.card)
+        .child(
+            text(FALLBACK_BANNER)
+                .font(type_::LABEL)
+                .color(t.text_secondary),
+        );
+    if let Some(reason) = reason {
+        banner = banner.child(
+            text(reason.to_string())
+                .key("article-fallback-reason")
+                .font(type_::LABEL)
+                .color(t.text_secondary)
+                .truncate_middle(),
+        );
+    }
+    banner
 }
 
 fn article_header(s: &Story, k: &Kit, t: tok::Theme) -> El {

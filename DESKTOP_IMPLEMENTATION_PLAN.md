@@ -12,6 +12,36 @@ milestone, Linux/Windows verification, manual VoiceOver pass, rune pin rebases.
 Inputs: `mockups/desktop/DESIGN.md`, `mockups/desktop/index.html`, `prototypes/rune-hn/`,
 `prototypes/rune-mocks/`.
 
+## Post-v4 change: the article pane is the live page
+
+The plan above was written to a premise that has since been overruled: the article pane was to be
+the extracted Markdown. It is now the story's **live page**, a `WKWebView` child view pinned to
+the pane's rect, using the pattern `prototypes/rune-webview` proved at this pin
+(`WindowHandle::with_raw_handle` + wry `build_as_child` + `El::on_layout`-driven `set_bounds`).
+
+What that changes, and what it does not:
+
+- **The readability capture stays.** It is what the summary card and its citations read; the
+  model still sees extracted text, never the page. It is a backend now, not a surface.
+- **The pane's fallback is the old design.** Headless, non-macOS, or a child view that failed to
+  build: the extracted Markdown at the 66ch measure, under a banner reading "live page
+  unavailable — showing extracted text". Summaries and citations work in every one of those
+  states.
+- **Headless always takes the fallback.** A `WKWebView` needs an `NSWindow` and a headless run
+  renders offscreen, so `--snap` / `--tree` / `--script` never build a child. That is what keeps
+  the scene trees deterministic; the five story-family goldens were regenerated for the banner
+  (one new `article-fallback` element, everything else identical).
+- **`O` and "open original ↗" are unchanged.** They hand the URL to the system browser through
+  `hn_lib::url_open`; that is a different action from what the pane shows.
+- **New dependency:** `wry = "0.57"` under `[target.'cfg(target_os = "macos")'.dependencies]`, so
+  `cargo metadata` still resolves on Linux and Windows without webkit2gtk or WebView2.
+- **New GUI proof:** `desktop/scripts/verify-live.sh` launches the window, opens a real HN story
+  with `--open-story <id>`, and captures it to `desktop/verification/live-article-pane.png`,
+  asserting the pane holds a rendered page rather than the app's own background.
+
+The acceptance gate is unchanged: resolver PASS, root `cargo test --locked`, desktop
+`cargo build --locked && cargo test --locked`, `check_goldens.sh` PASS.
+
 ## Goal
 
 Native desktop frontend for `hn` on Rune (macOS first, then Linux/Windows), TUI unchanged, both
@@ -170,7 +200,11 @@ no bundle id/Info.plist, Gatekeeper; rune's `scripts/mac-app` stages/signs; nota
 later milestone) · supply chain (git dep → commit Cargo.lock) · size (debug 92–98 MB prototypes,
 worse with hn_lib linked; measure release in E) · security/privacy (reuse `url_open`; redact API keys
 from trees/diagnostics; Rune MIT compatible with hn's MIT) · a11y (headless AccessKit assertions;
-VoiceOver/feel = manual pass in WS-E) · Linux/Windows deps verified on macOS only.
+VoiceOver/feel = manual pass in WS-E) · Linux/Windows deps verified on macOS only · live article
+pane (a native child view: `wry` pulls webkit2gtk on Linux, which is a large dependency for a crate
+that had none; the child follows `on_layout`, so a window resized while occluded keeps stale bounds
+until the next layout — `crates/rune/src/window/lifecycle.rs:225`; and the page takes keyboard focus
+when clicked, so Rune's shortcuts stop reaching the app until a Rune element is clicked).
 
 ## Review log
 
