@@ -123,7 +123,7 @@ number therefore does not claim.
 
 ## Known limitations
 
-- **Rune is pinned to a pre-release commit** (`53c7f60`), not a published crate. Building needs
+- **Rune is pinned to a pre-release commit** (`d751f07`), not a published crate. Building needs
   network access to `github.com/anomalyco/rune`, and an upstream change can break this crate
   without a version bump to warn us.
 - **macOS is the only platform with a verified window.** The headless path is cross-platform and

@@ -28,7 +28,7 @@ Non-goals: no TUI behavior/UX changes; no web target; no publishing; executors n
   1.99.1, so local green does NOT prove 1.88 compat — CI does), committed `desktop/Cargo.lock`,
   `desktop/.gitignore` (`/target`).
 - Path dep on root package; binds only to the frozen public API below.
-- Deps: `rune` AND `rune-kit`, both git-pinned at rev `53c7f60f51ce12bd5da53145d9d86ce1552324e4`;
+- Deps: `rune` AND `rune-kit`, both git-pinned at rev `d751f07106eac47bdd4e33756dee71e1f593c9e2`;
   `[profile.dev.package."*"] debug = false`.
 - Root `cargo build` / `cargo test --locked` stay green and never compile Rune.
 

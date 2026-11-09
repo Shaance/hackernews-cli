@@ -54,10 +54,10 @@ Rune is pre-release and not on crates.io. It is consumed as a git dependency pin
 `dev` is fast-forward-only and never rewritten, so a rev pin is stable.
 
 ```toml
-rune = { git = "https://github.com/anomalyco/rune", rev = "53c7f60f51ce12bd5da53145d9d86ce1552324e4" }
+rune = { git = "https://github.com/anomalyco/rune", rev = "d751f07106eac47bdd4e33756dee71e1f593c9e2" }
 ```
 
-That rev is what this prototype pins (branch `dev`, 2026-11-07). Rune's workspace uses edition 2024,
+That rev is what this prototype pins (branch `dev`, 2026-11-09). Rune's workspace uses edition 2024,
 resolver 3 and toolchain **1.99.1**; the repo root pins 1.88 for `hn`, so this crate carries its own
 `rust-toolchain.toml`. It also declares an empty `[workspace]` so Cargo never folds it into the root
 package.

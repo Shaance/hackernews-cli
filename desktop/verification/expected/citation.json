@@ -84,9 +84,9 @@
                                       {
                                         "bounds": [
                                           112.0,
-                                          15.8,
+                                          15.9,
                                           88.5,
-                                          16.5
+                                          16.3
                                         ],
                                         "key": "story-toolbar-title",
                                         "name": "Libghostty 1.0",
@@ -218,7 +218,7 @@
                                                   8.0,
                                                   48.0,
                                                   629.0,
-                                                  872.4
+                                                  872.0
                                                 ],
                                                 "children": [
                                                   {
@@ -229,7 +229,7 @@
                                                       40.0,
                                                       68.0,
                                                       565.0,
-                                                      78.0
+                                                      77.6
                                                     ],
                                                     "children": [
                                                       {
@@ -240,7 +240,7 @@
                                                           40.0,
                                                           68.0,
                                                           445.5,
-                                                          14.5
+                                                          14.4
                                                         ],
                                                         "key": "article-eyebrow",
                                                         "name": "Article · example.com",
@@ -252,9 +252,9 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          88.5,
+                                                          88.4,
                                                           445.5,
-                                                          26.5
+                                                          26.3
                                                         ],
                                                         "key": "article-title",
                                                         "name": "Libghostty 1.0",
@@ -266,7 +266,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          121.0,
+                                                          120.6,
                                                           445.5,
                                                           15.0
                                                         ],
@@ -283,7 +283,7 @@
                                                           497.5,
                                                           68.0,
                                                           107.5,
-                                                          68.0
+                                                          67.6
                                                         ],
                                                         "children": [
                                                           {
@@ -294,7 +294,7 @@
                                                               507.5,
                                                               72.0,
                                                               87.5,
-                                                              60.0
+                                                              59.6
                                                             ],
                                                             "name": "open original ↗",
                                                             "role": "label"
@@ -314,7 +314,7 @@
                                                     ],
                                                     "bounds": [
                                                       40.0,
-                                                      160.0,
+                                                      159.6,
                                                       565.0,
                                                       740.4
                                                     ],
@@ -325,7 +325,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          160.0,
+                                                          159.6,
                                                           448.8,
                                                           67.2
                                                         ],
@@ -339,7 +339,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          251.2,
+                                                          250.8,
                                                           448.8,
                                                           24.0
                                                         ],
@@ -354,7 +354,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          285.2,
+                                                          284.8,
                                                           448.8,
                                                           67.2
                                                         ],
@@ -368,7 +368,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          364.4,
+                                                          364.0,
                                                           448.8,
                                                           224.0
                                                         ],
@@ -379,7 +379,7 @@
                                                             ],
                                                             "bounds": [
                                                               52.0,
-                                                              376.4,
+                                                              376.0,
                                                               424.8,
                                                               200.0
                                                             ],
@@ -396,7 +396,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          612.4,
+                                                          612.0,
                                                           448.8,
                                                           22.4
                                                         ],
@@ -410,7 +410,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          646.8,
+                                                          646.4,
                                                           448.8,
                                                           75.2
                                                         ],
@@ -421,7 +421,7 @@
                                                             ],
                                                             "bounds": [
                                                               40.0,
-                                                              646.8,
+                                                              646.4,
                                                               448.8,
                                                               22.4
                                                             ],
@@ -432,7 +432,7 @@
                                                                 ],
                                                                 "bounds": [
                                                                   72.0,
-                                                                  646.8,
+                                                                  646.4,
                                                                   416.8,
                                                                   22.4
                                                                 ],
@@ -452,7 +452,7 @@
                                                             ],
                                                             "bounds": [
                                                               40.0,
-                                                              673.2,
+                                                              672.8,
                                                               448.8,
                                                               22.4
                                                             ],
@@ -463,7 +463,7 @@
                                                                 ],
                                                                 "bounds": [
                                                                   72.0,
-                                                                  673.2,
+                                                                  672.8,
                                                                   416.8,
                                                                   22.4
                                                                 ],
@@ -483,7 +483,7 @@
                                                             ],
                                                             "bounds": [
                                                               40.0,
-                                                              699.6,
+                                                              699.2,
                                                               448.8,
                                                               22.4
                                                             ],
@@ -494,7 +494,7 @@
                                                                 ],
                                                                 "bounds": [
                                                                   72.0,
-                                                                  699.6,
+                                                                  699.2,
                                                                   416.8,
                                                                   22.4
                                                                 ],
@@ -519,7 +519,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          734.0,
+                                                          733.6,
                                                           448.8,
                                                           22.4
                                                         ],
@@ -533,7 +533,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          772.4,
+                                                          772.0,
                                                           448.8,
                                                           44.8
                                                         ],
@@ -544,7 +544,7 @@
                                                             ],
                                                             "bounds": [
                                                               54.0,
-                                                              772.4,
+                                                              772.0,
                                                               434.8,
                                                               44.8
                                                             ],
@@ -562,7 +562,7 @@
                                                         ],
                                                         "bounds": [
                                                           40.0,
-                                                          833.2,
+                                                          832.8,
                                                           448.8,
                                                           67.2
                                                         ],
@@ -584,7 +584,7 @@
                                             "scroll": [
                                               0.0,
                                               0.0,
-                                              208.4
+                                              208.0
                                             ],
                                             "states": [
                                               "clips"
@@ -799,7 +799,7 @@
                                                   637.0,
                                                   48.0,
                                                   543.0,
-                                                  150.0
+                                                  149.9
                                                 ],
                                                 "children": [
                                                   {
@@ -819,9 +819,9 @@
                                                         ],
                                                         "bounds": [
                                                           651.0,
-                                                          60.8,
+                                                          60.9,
                                                           83.5,
-                                                          16.5
+                                                          16.3
                                                         ],
                                                         "key": "source-title",
                                                         "name": "Source 2 of 5",
@@ -881,7 +881,7 @@
                                                       651.0,
                                                       113.0,
                                                       515.0,
-                                                      73.0
+                                                      72.9
                                                     ],
                                                     "children": [
                                                       {
@@ -892,7 +892,7 @@
                                                           661.0,
                                                           123.0,
                                                           495.0,
-                                                          14.5
+                                                          14.4
                                                         ],
                                                         "name": "Sent to the model",
                                                         "role": "label"
@@ -903,7 +903,7 @@
                                                         ],
                                                         "bounds": [
                                                           661.0,
-                                                          143.5,
+                                                          143.4,
                                                           495.0,
                                                           32.5
                                                         ],
@@ -925,7 +925,7 @@
                                                 ],
                                                 "bounds": [
                                                   637.0,
-                                                  198.0,
+                                                  197.9,
                                                   543.0,
                                                   15.0
                                                 ],
@@ -936,7 +936,7 @@
                                                     ],
                                                     "bounds": [
                                                       637.0,
-                                                      198.5,
+                                                      198.4,
                                                       27.0,
                                                       14.0
                                                     ],
@@ -949,7 +949,7 @@
                                                     ],
                                                     "bounds": [
                                                       670.0,
-                                                      198.0,
+                                                      197.9,
                                                       129.0,
                                                       15.0
                                                     ],
@@ -1275,9 +1275,9 @@
       "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/story-toolbar-title",
       "rect": [
         112.0,
-        15.75,
+        15.88,
         88.5,
-        16.5
+        16.25
       ],
       "role": "text",
       "scale": 1.0,
@@ -1561,7 +1561,7 @@
         8.0,
         48.0,
         629.0,
-        872.4
+        872.02
       ],
       "role": "group",
       "scale": 1.0
@@ -1581,7 +1581,7 @@
         40.0,
         68.0,
         565.0,
-        78.0
+        77.63
       ],
       "role": "group",
       "scale": 1.0
@@ -1600,7 +1600,7 @@
         40.0,
         68.0,
         445.5,
-        68.0
+        67.63
       ],
       "role": "group",
       "scale": 1.0
@@ -1621,7 +1621,7 @@
         40.0,
         68.0,
         445.5,
-        14.5
+        14.38
       ],
       "role": "text",
       "scale": 1.0,
@@ -1641,9 +1641,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/#0/article-title",
       "rect": [
         40.0,
-        88.5,
+        88.38,
         445.5,
-        26.5
+        26.25
       ],
       "role": "text",
       "scale": 1.0,
@@ -1663,7 +1663,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/#0/article-meta",
       "rect": [
         40.0,
-        121.0,
+        120.63,
         445.5,
         15.0
       ],
@@ -1686,7 +1686,7 @@
         497.5,
         68.0,
         107.5,
-        68.0
+        67.63
       ],
       "role": "button",
       "scale": 1.0
@@ -1706,7 +1706,7 @@
         507.5,
         72.0,
         87.5,
-        60.0
+        59.63
       ],
       "role": "text",
       "scale": 1.0,
@@ -1725,7 +1725,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body",
       "rect": [
         40.0,
-        160.0,
+        159.63,
         565.0,
         740.4
       ],
@@ -1744,7 +1744,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0",
       "rect": [
         40.0,
-        160.0,
+        159.63,
         448.8,
         740.4
       ],
@@ -1765,7 +1765,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b0",
       "rect": [
         40.0,
-        160.0,
+        159.63,
         448.8,
         67.2
       ],
@@ -1788,7 +1788,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b1",
       "rect": [
         40.0,
-        251.2,
+        250.83,
         448.8,
         24.0
       ],
@@ -1810,7 +1810,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b2",
       "rect": [
         40.0,
-        285.2,
+        284.83,
         448.8,
         67.2
       ],
@@ -1831,7 +1831,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b3",
       "rect": [
         40.0,
-        364.41,
+        364.03,
         448.8,
         224.0
       ],
@@ -1851,7 +1851,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b3/#0",
       "rect": [
         52.0,
-        376.41,
+        376.03,
         424.8,
         200.0
       ],
@@ -1873,7 +1873,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b4",
       "rect": [
         40.0,
-        612.41,
+        612.03,
         448.8,
         22.4
       ],
@@ -1894,7 +1894,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5",
       "rect": [
         40.0,
-        646.8,
+        646.43,
         448.8,
         75.2
       ],
@@ -1914,7 +1914,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i0",
       "rect": [
         40.0,
-        646.8,
+        646.43,
         448.8,
         22.4
       ],
@@ -1934,7 +1934,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i0/#0",
       "rect": [
         40.0,
-        646.8,
+        646.43,
         32.0,
         22.4
       ],
@@ -1954,7 +1954,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i0/#1",
       "rect": [
         72.0,
-        646.8,
+        646.43,
         416.8,
         22.4
       ],
@@ -1975,7 +1975,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i0/#1/b0",
       "rect": [
         72.0,
-        646.8,
+        646.43,
         416.8,
         22.4
       ],
@@ -1996,7 +1996,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i1",
       "rect": [
         40.0,
-        673.2,
+        672.83,
         448.8,
         22.4
       ],
@@ -2016,7 +2016,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i1/#0",
       "rect": [
         40.0,
-        673.2,
+        672.83,
         32.0,
         22.4
       ],
@@ -2036,7 +2036,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i1/#1",
       "rect": [
         72.0,
-        673.2,
+        672.83,
         416.8,
         22.4
       ],
@@ -2057,7 +2057,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i1/#1/b0",
       "rect": [
         72.0,
-        673.2,
+        672.83,
         416.8,
         22.4
       ],
@@ -2078,7 +2078,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i2",
       "rect": [
         40.0,
-        699.6,
+        699.23,
         448.8,
         22.4
       ],
@@ -2098,7 +2098,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i2/#0",
       "rect": [
         40.0,
-        699.6,
+        699.23,
         32.0,
         22.4
       ],
@@ -2118,7 +2118,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i2/#1",
       "rect": [
         72.0,
-        699.6,
+        699.23,
         416.8,
         22.4
       ],
@@ -2139,7 +2139,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i2/#1/b0",
       "rect": [
         72.0,
-        699.6,
+        699.23,
         416.8,
         22.4
       ],
@@ -2161,7 +2161,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b6",
       "rect": [
         40.0,
-        734.0,
+        733.63,
         448.8,
         22.4
       ],
@@ -2182,7 +2182,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b7",
       "rect": [
         40.0,
-        772.4,
+        772.02,
         448.8,
         44.8
       ],
@@ -2201,7 +2201,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b7/#0",
       "rect": [
         40.0,
-        772.4,
+        772.02,
         2.0,
         44.8
       ],
@@ -2220,7 +2220,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b7/#1",
       "rect": [
         42.0,
-        772.4,
+        772.02,
         446.8,
         44.8
       ],
@@ -2241,7 +2241,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b7/#1/b0",
       "rect": [
         54.0,
-        772.4,
+        772.02,
         434.8,
         44.8
       ],
@@ -2263,7 +2263,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b8",
       "rect": [
         40.0,
-        833.2,
+        832.82,
         448.8,
         67.2
       ],
@@ -3174,7 +3174,7 @@
         637.0,
         48.0,
         543.0,
-        150.0
+        149.88
       ],
       "role": "group",
       "scale": 1.0
@@ -3213,9 +3213,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-content/source-header/source-title",
       "rect": [
         651.0,
-        60.75,
+        60.88,
         83.5,
-        16.5
+        16.25
       ],
       "role": "text",
       "scale": 1.0,
@@ -3318,7 +3318,7 @@
         651.0,
         113.0,
         515.0,
-        73.0
+        72.88
       ],
       "role": "group",
       "scale": 1.0
@@ -3338,7 +3338,7 @@
         661.0,
         123.0,
         495.0,
-        14.5
+        14.38
       ],
       "role": "text",
       "scale": 1.0,
@@ -3358,7 +3358,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-content/source-excerpt/source-excerpt-text",
       "rect": [
         661.0,
-        143.5,
+        143.38,
         495.0,
         32.5
       ],
@@ -3379,7 +3379,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-hint",
       "rect": [
         637.0,
-        198.0,
+        197.88,
         543.0,
         15.0
       ],
@@ -3399,7 +3399,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-hint/#0",
       "rect": [
         637.0,
-        198.5,
+        198.38,
         27.0,
         14.0
       ],
@@ -3419,7 +3419,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-hint/#0/key0",
       "rect": [
         637.0,
-        198.5,
+        198.38,
         27.0,
         14.0
       ],
@@ -3439,7 +3439,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-hint/#0/key0/#0",
       "rect": [
         641.0,
-        200.0,
+        199.88,
         19.0,
         11.0
       ],
@@ -3460,7 +3460,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-hint/#1",
       "rect": [
         670.0,
-        198.0,
+        197.88,
         129.0,
         15.0
       ],
