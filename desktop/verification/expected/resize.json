@@ -260,9 +260,9 @@
                                                 ],
                                                 "bounds": [
                                                   80.0,
-                                                  58.3,
+                                                  58.4,
                                                   1000.0,
-                                                  16.5
+                                                  16.3
                                                 ],
                                                 "key": "title-1",
                                                 "name": "Tesla to wind down Cybertruck production",
@@ -274,7 +274,7 @@
                                                 ],
                                                 "bounds": [
                                                   80.0,
-                                                  78.8,
+                                                  78.6,
                                                   1000.0,
                                                   15.0
                                                 ],
@@ -354,9 +354,9 @@
                                                 ],
                                                 "bounds": [
                                                   64.0,
-                                                  116.3,
+                                                  116.4,
                                                   1016.0,
-                                                  16.5
+                                                  16.3
                                                 ],
                                                 "key": "title-2",
                                                 "name": "Libghostty 1.0",
@@ -368,7 +368,7 @@
                                                 ],
                                                 "bounds": [
                                                   64.0,
-                                                  136.8,
+                                                  136.6,
                                                   1016.0,
                                                   15.0
                                                 ],
@@ -428,9 +428,9 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  174.3,
+                                                  174.4,
                                                   1028.0,
-                                                  16.5
+                                                  16.3
                                                 ],
                                                 "key": "title-3",
                                                 "name": "A Jev that can ask Opus for help gives Opus accuracy at 4x lower cost",
@@ -442,7 +442,7 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  194.8,
+                                                  194.6,
                                                   1028.0,
                                                   15.0
                                                 ],
@@ -502,9 +502,9 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  232.3,
+                                                  232.4,
                                                   1028.0,
-                                                  16.5
+                                                  16.3
                                                 ],
                                                 "key": "title-4",
                                                 "name": "US FAA says it will phase out floppy disks from air traffic control by 2028",
@@ -516,7 +516,7 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  252.8,
+                                                  252.6,
                                                   1028.0,
                                                   15.0
                                                 ],
@@ -576,9 +576,9 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  290.3,
+                                                  290.4,
                                                   1028.0,
-                                                  16.5
+                                                  16.3
                                                 ],
                                                 "key": "title-5",
                                                 "name": "Gemini Omni 1.2 Flash",
@@ -590,7 +590,7 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  310.8,
+                                                  310.6,
                                                   1028.0,
                                                   15.0
                                                 ],
@@ -667,9 +667,9 @@
                                                 ],
                                                 "bounds": [
                                                   64.0,
-                                                  348.3,
+                                                  348.4,
                                                   1016.0,
-                                                  16.5
+                                                  16.3
                                                 ],
                                                 "key": "title-6",
                                                 "name": "Firecracker VM Escape: PwnEscape Part 2",
@@ -681,7 +681,7 @@
                                                 ],
                                                 "bounds": [
                                                   64.0,
-                                                  368.8,
+                                                  368.6,
                                                   1016.0,
                                                   15.0
                                                 ],
@@ -741,9 +741,9 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  406.3,
+                                                  406.4,
                                                   1028.0,
-                                                  16.5
+                                                  16.3
                                                 ],
                                                 "key": "title-7",
                                                 "name": "First steps in bare-metal programming using UEFI",
@@ -755,7 +755,7 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  426.8,
+                                                  426.6,
                                                   1028.0,
                                                   15.0
                                                 ],
@@ -815,9 +815,9 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  464.3,
+                                                  464.4,
                                                   1028.0,
-                                                  16.5
+                                                  16.3
                                                 ],
                                                 "key": "title-8",
                                                 "name": "Every Mac comes with an (undocumented) family member classifier",
@@ -829,7 +829,7 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  484.8,
+                                                  484.6,
                                                   1028.0,
                                                   15.0
                                                 ],
@@ -889,9 +889,9 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  522.3,
+                                                  522.4,
                                                   1028.0,
-                                                  16.5
+                                                  16.3
                                                 ],
                                                 "key": "title-9",
                                                 "name": "Upload Your RAM",
@@ -903,7 +903,7 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  542.8,
+                                                  542.6,
                                                   1028.0,
                                                   15.0
                                                 ],
@@ -963,9 +963,9 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  580.3,
+                                                  580.4,
                                                   1028.0,
-                                                  16.5
+                                                  16.3
                                                 ],
                                                 "key": "title-10",
                                                 "name": "Devvm.dev: One VM for every project",
@@ -977,7 +977,7 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  600.8,
+                                                  600.6,
                                                   1028.0,
                                                   15.0
                                                 ],
@@ -1054,9 +1054,9 @@
                                                 ],
                                                 "bounds": [
                                                   64.0,
-                                                  638.3,
+                                                  638.4,
                                                   1016.0,
-                                                  16.5
+                                                  16.3
                                                 ],
                                                 "key": "title-11",
                                                 "name": "GitHub's new Git storage architecture",
@@ -1068,7 +1068,7 @@
                                                 ],
                                                 "bounds": [
                                                   64.0,
-                                                  658.8,
+                                                  658.6,
                                                   1016.0,
                                                   15.0
                                                 ],
@@ -1128,9 +1128,9 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  696.3,
+                                                  696.4,
                                                   1028.0,
-                                                  16.5
+                                                  16.3
                                                 ],
                                                 "key": "title-12",
                                                 "name": "RealPage rent-pricing case wraps with nearly $360M to renters",
@@ -1142,7 +1142,7 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  716.8,
+                                                  716.6,
                                                   1028.0,
                                                   15.0
                                                 ],
@@ -1202,9 +1202,9 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  754.3,
+                                                  754.4,
                                                   1028.0,
-                                                  16.5
+                                                  16.3
                                                 ],
                                                 "key": "title-13",
                                                 "name": "Need for Speed Underground 2 online in the browser",
@@ -1216,7 +1216,7 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  774.8,
+                                                  774.6,
                                                   1028.0,
                                                   15.0
                                                 ],
@@ -1276,9 +1276,9 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  812.3,
+                                                  812.4,
                                                   1028.0,
-                                                  16.5
+                                                  16.3
                                                 ],
                                                 "key": "title-14",
                                                 "name": "Restaurant Delivery Payment-Skimming Campaign",
@@ -1290,7 +1290,7 @@
                                                 ],
                                                 "bounds": [
                                                   52.0,
-                                                  832.8,
+                                                  832.6,
                                                   1028.0,
                                                   15.0
                                                 ],
@@ -2135,9 +2135,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-0/story-1/#2",
       "rect": [
         80.0,
-        58.25,
+        58.38,
         1000.0,
-        35.5
+        35.25
       ],
       "role": "group",
       "scale": 1.0
@@ -2156,9 +2156,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-0/story-1/#2/title-1",
       "rect": [
         80.0,
-        58.25,
+        58.38,
         1000.0,
-        16.5
+        16.25
       ],
       "role": "text",
       "scale": 1.0,
@@ -2177,7 +2177,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-0/story-1/#2/#1",
       "rect": [
         80.0,
-        78.75,
+        78.63,
         1000.0,
         15.0
       ],
@@ -2319,9 +2319,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-1/story-2/#1",
       "rect": [
         64.0,
-        116.25,
+        116.38,
         1016.0,
-        35.5
+        35.25
       ],
       "role": "group",
       "scale": 1.0
@@ -2340,9 +2340,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-1/story-2/#1/title-2",
       "rect": [
         64.0,
-        116.25,
+        116.38,
         1016.0,
-        16.5
+        16.25
       ],
       "role": "text",
       "scale": 1.0,
@@ -2361,7 +2361,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-1/story-2/#1/#1",
       "rect": [
         64.0,
-        136.75,
+        136.63,
         1016.0,
         15.0
       ],
@@ -2482,9 +2482,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-2/story-3/#1",
       "rect": [
         52.0,
-        174.25,
+        174.38,
         1028.0,
-        35.5
+        35.25
       ],
       "role": "group",
       "scale": 1.0
@@ -2503,9 +2503,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-2/story-3/#1/title-3",
       "rect": [
         52.0,
-        174.25,
+        174.38,
         1028.0,
-        16.5
+        16.25
       ],
       "role": "text",
       "scale": 1.0,
@@ -2524,7 +2524,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-2/story-3/#1/#1",
       "rect": [
         52.0,
-        194.75,
+        194.63,
         1028.0,
         15.0
       ],
@@ -2645,9 +2645,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-3/story-4/#1",
       "rect": [
         52.0,
-        232.25,
+        232.38,
         1028.0,
-        35.5
+        35.25
       ],
       "role": "group",
       "scale": 1.0
@@ -2666,9 +2666,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-3/story-4/#1/title-4",
       "rect": [
         52.0,
-        232.25,
+        232.38,
         1028.0,
-        16.5
+        16.25
       ],
       "role": "text",
       "scale": 1.0,
@@ -2687,7 +2687,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-3/story-4/#1/#1",
       "rect": [
         52.0,
-        252.75,
+        252.63,
         1028.0,
         15.0
       ],
@@ -2808,9 +2808,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-4/story-5/#1",
       "rect": [
         52.0,
-        290.25,
+        290.38,
         1028.0,
-        35.5
+        35.25
       ],
       "role": "group",
       "scale": 1.0
@@ -2829,9 +2829,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-4/story-5/#1/title-5",
       "rect": [
         52.0,
-        290.25,
+        290.38,
         1028.0,
-        16.5
+        16.25
       ],
       "role": "text",
       "scale": 1.0,
@@ -2850,7 +2850,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-4/story-5/#1/#1",
       "rect": [
         52.0,
-        310.75,
+        310.63,
         1028.0,
         15.0
       ],
@@ -2992,9 +2992,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-5/story-6/#1",
       "rect": [
         64.0,
-        348.25,
+        348.38,
         1016.0,
-        35.5
+        35.25
       ],
       "role": "group",
       "scale": 1.0
@@ -3013,9 +3013,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-5/story-6/#1/title-6",
       "rect": [
         64.0,
-        348.25,
+        348.38,
         1016.0,
-        16.5
+        16.25
       ],
       "role": "text",
       "scale": 1.0,
@@ -3034,7 +3034,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-5/story-6/#1/#1",
       "rect": [
         64.0,
-        368.75,
+        368.63,
         1016.0,
         15.0
       ],
@@ -3155,9 +3155,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-6/story-7/#1",
       "rect": [
         52.0,
-        406.25,
+        406.38,
         1028.0,
-        35.5
+        35.25
       ],
       "role": "group",
       "scale": 1.0
@@ -3176,9 +3176,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-6/story-7/#1/title-7",
       "rect": [
         52.0,
-        406.25,
+        406.38,
         1028.0,
-        16.5
+        16.25
       ],
       "role": "text",
       "scale": 1.0,
@@ -3197,7 +3197,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-6/story-7/#1/#1",
       "rect": [
         52.0,
-        426.75,
+        426.63,
         1028.0,
         15.0
       ],
@@ -3318,9 +3318,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-7/story-8/#1",
       "rect": [
         52.0,
-        464.25,
+        464.38,
         1028.0,
-        35.5
+        35.25
       ],
       "role": "group",
       "scale": 1.0
@@ -3339,9 +3339,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-7/story-8/#1/title-8",
       "rect": [
         52.0,
-        464.25,
+        464.38,
         1028.0,
-        16.5
+        16.25
       ],
       "role": "text",
       "scale": 1.0,
@@ -3360,7 +3360,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-7/story-8/#1/#1",
       "rect": [
         52.0,
-        484.75,
+        484.63,
         1028.0,
         15.0
       ],
@@ -3481,9 +3481,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-8/story-9/#1",
       "rect": [
         52.0,
-        522.25,
+        522.38,
         1028.0,
-        35.5
+        35.25
       ],
       "role": "group",
       "scale": 1.0
@@ -3502,9 +3502,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-8/story-9/#1/title-9",
       "rect": [
         52.0,
-        522.25,
+        522.38,
         1028.0,
-        16.5
+        16.25
       ],
       "role": "text",
       "scale": 1.0,
@@ -3523,7 +3523,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-8/story-9/#1/#1",
       "rect": [
         52.0,
-        542.75,
+        542.63,
         1028.0,
         15.0
       ],
@@ -3644,9 +3644,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-9/story-10/#1",
       "rect": [
         52.0,
-        580.25,
+        580.38,
         1028.0,
-        35.5
+        35.25
       ],
       "role": "group",
       "scale": 1.0
@@ -3665,9 +3665,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-9/story-10/#1/title-10",
       "rect": [
         52.0,
-        580.25,
+        580.38,
         1028.0,
-        16.5
+        16.25
       ],
       "role": "text",
       "scale": 1.0,
@@ -3686,7 +3686,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-9/story-10/#1/#1",
       "rect": [
         52.0,
-        600.75,
+        600.63,
         1028.0,
         15.0
       ],
@@ -3828,9 +3828,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-10/story-11/#1",
       "rect": [
         64.0,
-        638.25,
+        638.38,
         1016.0,
-        35.5
+        35.25
       ],
       "role": "group",
       "scale": 1.0
@@ -3849,9 +3849,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-10/story-11/#1/title-11",
       "rect": [
         64.0,
-        638.25,
+        638.38,
         1016.0,
-        16.5
+        16.25
       ],
       "role": "text",
       "scale": 1.0,
@@ -3870,7 +3870,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-10/story-11/#1/#1",
       "rect": [
         64.0,
-        658.75,
+        658.63,
         1016.0,
         15.0
       ],
@@ -3991,9 +3991,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-11/story-12/#1",
       "rect": [
         52.0,
-        696.25,
+        696.38,
         1028.0,
-        35.5
+        35.25
       ],
       "role": "group",
       "scale": 1.0
@@ -4012,9 +4012,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-11/story-12/#1/title-12",
       "rect": [
         52.0,
-        696.25,
+        696.38,
         1028.0,
-        16.5
+        16.25
       ],
       "role": "text",
       "scale": 1.0,
@@ -4033,7 +4033,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-11/story-12/#1/#1",
       "rect": [
         52.0,
-        716.75,
+        716.63,
         1028.0,
         15.0
       ],
@@ -4154,9 +4154,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-12/story-13/#1",
       "rect": [
         52.0,
-        754.25,
+        754.38,
         1028.0,
-        35.5
+        35.25
       ],
       "role": "group",
       "scale": 1.0
@@ -4175,9 +4175,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-12/story-13/#1/title-13",
       "rect": [
         52.0,
-        754.25,
+        754.38,
         1028.0,
-        16.5
+        16.25
       ],
       "role": "text",
       "scale": 1.0,
@@ -4196,7 +4196,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-12/story-13/#1/#1",
       "rect": [
         52.0,
-        774.75,
+        774.63,
         1028.0,
         15.0
       ],
@@ -4317,9 +4317,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-13/story-14/#1",
       "rect": [
         52.0,
-        812.25,
+        812.38,
         1028.0,
-        35.5
+        35.25
       ],
       "role": "group",
       "scale": 1.0
@@ -4338,9 +4338,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-13/story-14/#1/title-14",
       "rect": [
         52.0,
-        812.25,
+        812.38,
         1028.0,
-        16.5
+        16.25
       ],
       "role": "text",
       "scale": 1.0,
@@ -4359,7 +4359,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-13/story-14/#1/#1",
       "rect": [
         52.0,
-        832.75,
+        832.63,
         1028.0,
         15.0
       ],

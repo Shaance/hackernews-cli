@@ -1,7 +1,7 @@
 # hn, as a native window
 
 Experience spec for a desktop `hn` built on [Rune](https://github.com/anomalyco/rune) at rev
-`53c7f60f51ce12bd5da53145d9d86ce1552324e4` (branch `dev`). Companion artifacts:
+`d751f07106eac47bdd4e33756dee71e1f593c9e2` (branch `dev`). Companion artifacts:
 `mockups/desktop/index.html` (the screens, side by side) and `prototypes/rune-mocks/`
 (seven of those screens rendered by Rune itself, not by CSS).
 
