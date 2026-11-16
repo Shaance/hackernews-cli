@@ -57,6 +57,11 @@ live page unavailable — showing extracted text
 Summaries and citations work in all three, because they read the capture rather than the pane.
 `O` and `Open in browser ↗` are unchanged in all three: they hand the URL to the system browser.
 
+Article extraction and the root discussion load independently. Comments become readable as
+soon as they arrive, while the summary continues from that discussion capture. A later summary
+result preserves the comment tree, expanded replies, and article already on screen. Opening
+another story or retrying supersedes the earlier work.
+
 Two consequences of a native child view, both worth knowing before you use it:
 
 - **The page owns its own keyboard while it has focus.** Clicking into the page gives the

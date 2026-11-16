@@ -34,7 +34,7 @@ use rune_kit::shell::PaneMotion;
 use rune_kit::{Keybind, Kit, PaneState, SegmentedControl, SplitView, Toast, ToastRegion, Toolbar};
 
 use crate::bookmarks::SavedView;
-use crate::bridge::{Bridge, Request, StoryRequest};
+use crate::bridge::{Bridge, Request, StoryRequest, StoryUpdate};
 use crate::feed::{FeedModel, Fill, Filled};
 use crate::help;
 use crate::keys::{self, StoryKey, WindowKey};
@@ -314,7 +314,7 @@ impl App {
         self.headless || !self.config.key().is_empty()
     }
 
-    /// Open `story`: the split springs open and one aggregate request goes out.
+    /// Open `story`: the split springs open and its independent captures start.
     fn open_story(&mut self, story: HNCLIItem) {
         self.hide_live();
         if !matches!(self.live,
@@ -385,7 +385,7 @@ impl App {
         self.open_story(story);
     }
 
-    /// One aggregate story open: the article, the discussion, the summary.
+    /// Start the article and discussion captures; summary follows the discussion.
     fn request_story(&mut self, story: HNCLIItem) {
         let request = StoryRequest {
             story,
@@ -738,11 +738,13 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
         changed |= landed;
         if landed { feed_arrived = s.accept_arrival(); }
     }
-    if let Some(filled) = s.bridge.take_story() {
-        // A landing for a story that is no longer open is dropped by `Story::land`.
+    while let Some(update) = s.bridge.take_story() {
+        let summary_finished = matches!(&update,
+            StoryUpdate::Summary { .. } | StoryUpdate::Discussion { comments: Err(_), .. });
+        // A landing for a story that is no longer open is dropped by `Story::land_update`.
         let landed = s.story.as_mut().map(|open| {
-            let landed = open.land(filled);
-            (landed, landed.then(|| open.summary_notice()).flatten())
+            let landed = open.land_update(update);
+            (landed, (landed && summary_finished).then(|| open.summary_notice()).flatten())
         });
         if let Some((landed, notice)) = landed {
             changed |= landed;
@@ -1925,6 +1927,200 @@ mod tests {
             },
             &mut Tx::default(),
         );
+    }
+
+    fn poll_until(s: &mut App, ready: impl Fn(&App) -> bool) {
+        let deadline = std::time::Instant::now() + Duration::from_secs(3);
+        while !ready(s) {
+            poll(s, 0.0, &mut Tx::default());
+            assert!(std::time::Instant::now() < deadline, "story phase did not arrive");
+            std::thread::yield_now();
+        }
+    }
+
+    #[test]
+    fn ready_comments_are_not_blocked_by_two_superseded_stories() {
+        use std::collections::HashMap;
+        use std::sync::Mutex;
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use tokio::sync::oneshot;
+
+        let (article_one_tx, article_one_rx) = oneshot::channel::<()>();
+        let (article_two_tx, article_two_rx) = oneshot::channel::<()>();
+        let (summary_one_tx, summary_one_rx) = oneshot::channel::<()>();
+        let (summary_two_tx, summary_two_rx) = oneshot::channel::<()>();
+        let article_gates = Mutex::new(HashMap::from([(1, article_one_rx), (2, article_two_rx)]));
+        let summary_gates = Mutex::new(HashMap::from([(1, summary_one_rx), (2, summary_two_rx)]));
+        let articles_started = Arc::new(AtomicUsize::new(0));
+        let summaries_started = Arc::new(AtomicUsize::new(0));
+        let article_starts = articles_started.clone();
+        let summary_starts = summaries_started.clone();
+        let mut fake = crate::service::FakeService::fixture();
+        fake.article = Arc::new(move |id| {
+            let gate = article_gates.lock().unwrap().remove(&id);
+            if gate.is_some() { article_starts.fetch_or(1 << (id - 1), Ordering::SeqCst); }
+            Box::pin(async move {
+                if let Some(gate) = gate { let _ = gate.await; }
+                Ok((crate::fixtures::ARTICLE.to_string(), false))
+            })
+        });
+        fake.summary = Arc::new(move |id| {
+            let gate = summary_gates.lock().unwrap().remove(&id);
+            if gate.is_some() { summary_starts.fetch_or(1 << (id - 1), Ordering::SeqCst); }
+            Box::pin(async move {
+                if let Some(gate) = gate { let _ = gate.await; }
+                Ok(crate::fixtures::summary())
+            })
+        });
+        let mut s = app(false, SavedView::in_memory());
+        s.source = Arc::new(Source::Fake(fake));
+        s.config.api_key = "fixture".into();
+        for id in [1, 2] {
+            s.open_story(crate::fixtures::item((id - 1) as usize, id));
+            let mask = (1 << id) - 1;
+            poll_until(&mut s, |s| s.story.as_ref().unwrap().discussion == Some(Ok(()))
+                && articles_started.load(Ordering::SeqCst) & mask == mask
+                && summaries_started.load(Ordering::SeqCst) & mask == mask);
+        }
+
+        // Both old articles and both old summaries are held while story 3 starts.
+        s.open_story(crate::fixtures::item(2, 3));
+        let deadline = std::time::Instant::now() + Duration::from_secs(2);
+        while s.story.as_ref().unwrap().discussion.is_none() && std::time::Instant::now() < deadline {
+            poll(&mut s, 0.0, &mut Tx::default());
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        let roots_arrived_while_old_work_was_held = s.story.as_ref().unwrap().discussion == Some(Ok(()));
+        // Release one stale result and show that the third discussion itself succeeds.
+        assert!(summary_one_tx.send(()).is_ok());
+        poll_until(&mut s, |s| s.story.as_ref().unwrap().discussion == Some(Ok(())));
+        assert_eq!(s.story.as_ref().unwrap().id(), 3);
+        let _ = article_one_tx.send(());
+        let _ = article_two_tx.send(());
+        let _ = summary_two_tx.send(());
+        s.bridge.cancel();
+        assert!(roots_arrived_while_old_work_was_held,
+            "ready comments waited for a superseded article or summary to release a Latest worker");
+    }
+
+    #[test]
+    fn story_phases_show_comments_while_work_is_pending_and_reject_stale_results() {
+        use crate::bridge::SummaryError;
+        use crate::story::ArticleState;
+        use std::collections::VecDeque;
+        use std::sync::{Mutex, mpsc};
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use tokio::sync::oneshot;
+
+        let (article_tx, article_rx) = oneshot::channel();
+        let article_rx = Arc::new(Mutex::new(Some(article_rx)));
+        let (other_article_tx, other_article_rx) = oneshot::channel();
+        let other_article_rx = Arc::new(Mutex::new(Some(other_article_rx)));
+        let (failure_tx, failure_rx) = oneshot::channel();
+        let (old_retry_tx, old_retry_rx) = oneshot::channel();
+        let (old_story_tx, old_story_rx) = oneshot::channel();
+        let summary_gates = Arc::new(Mutex::new(VecDeque::from([
+            Some(failure_rx), Some(old_retry_rx), None, Some(old_story_rx), None,
+        ])));
+        let summary_started = Arc::new(AtomicUsize::new(0));
+        let started = summary_started.clone();
+        let (finished_tx, finished_rx) = mpsc::channel();
+        let mut fake = crate::service::FakeService::fixture();
+        fake.article = Arc::new(move |story_id| {
+            let gate = if story_id == 2 { other_article_rx.lock().unwrap().take() }
+                else { article_rx.lock().unwrap().take() };
+            Box::pin(async move {
+                match gate {
+                    Some(gate) => gate.await.expect("article gate released"),
+                    None => Ok((crate::fixtures::ARTICLE.to_string(), false)),
+                }
+            })
+        });
+        fake.summary = Arc::new(move |story_id| {
+            let gate = summary_gates.lock().unwrap().pop_front().expect("expected summary request");
+            started.fetch_add(1, Ordering::SeqCst);
+            let finished = finished_tx.clone();
+            Box::pin(async move {
+                match gate {
+                    Some(gate) => {
+                        let result = gate.await.expect("summary gate released");
+                        finished.send(story_id).unwrap();
+                        result
+                    }
+                    None => {
+                        let mut result = crate::fixtures::summary();
+                        result.overview = format!("current summary {story_id}");
+                        Ok(result)
+                    }
+                }
+            })
+        });
+        let mut s = app(false, SavedView::in_memory());
+        s.source = Arc::new(Source::Fake(fake));
+        s.config.api_key = "fixture".into();
+        s.open_story(crate::fixtures::item(0, 1));
+        poll_until(&mut s, |s| {
+            s.story.as_ref().is_some_and(|story| story.discussion.as_ref().is_some_and(Result::is_ok))
+                && summary_started.load(Ordering::SeqCst) == 1
+        });
+        let story = s.story.as_ref().unwrap();
+        assert_eq!(story.article, ArticleState::Loading);
+        assert!(matches!(story.summary, SummaryState::Generating { captured: 1, .. }));
+        assert!(story.thread.node(901).is_some(), "roots arrive before article and summary");
+
+        // Mount the actual inspector while both gated requests are still pending.
+        s.live = Live::Failed { story_id: 1, error: "fixture".into() };
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.frame(0.4);
+        assert!(rt.elements().iter().any(|e| e.key.as_deref() == Some("comment-901")));
+        rt.update(|s, _| s.activate_comment(901));
+        poll_until(&mut rt.state, |s| s.story.as_ref().unwrap().thread.children_of(901).len() == 2);
+
+        assert!(article_tx.send(Ok(("extracted article".to_string(), false))).is_ok());
+        poll_until(&mut rt.state, |s| matches!(s.story.as_ref().unwrap().article, ArticleState::Ready { .. }));
+        assert!(matches!(rt.state.story.as_ref().unwrap().summary, SummaryState::Generating { captured: 2, .. }));
+        assert!(failure_tx.send(Err(SummaryError::new("provider failed", false))).is_ok());
+        poll_until(&mut rt.state, |s| s.story.as_ref().unwrap().summary.is_failed());
+        let story = rt.state.story.as_ref().unwrap();
+        assert!(matches!(&story.article, ArticleState::Ready { text, .. } if text == "extracted article"));
+        assert_eq!(story.thread.children_of(901).len(), 2, "summary failure keeps loaded replies");
+
+        // Two retries for the same story: the earlier provider finishes after the newer one.
+        rt.state.retry_summary();
+        poll_until(&mut rt.state, |_| summary_started.load(Ordering::SeqCst) == 2);
+        rt.state.retry_summary();
+        poll_until(&mut rt.state, |s| matches!(&s.story.as_ref().unwrap().summary,
+            SummaryState::Done(summary) if summary.overview == "current summary 1"));
+        assert!(old_retry_tx.send(Err(SummaryError::new("obsolete failure", true))).is_ok());
+        assert_eq!(finished_rx.recv_timeout(Duration::from_secs(3)).unwrap(), 1); // first failure
+        assert_eq!(finished_rx.recv_timeout(Duration::from_secs(3)).unwrap(), 1); // old retry
+        std::thread::sleep(Duration::from_millis(20));
+        poll(&mut rt.state, 0.0, &mut Tx::default());
+        assert!(matches!(&rt.state.story.as_ref().unwrap().summary,
+            SummaryState::Done(summary) if summary.overview == "current summary 1"));
+
+        // A different story also wins over the older story's pending provider result.
+        rt.state.open_story(crate::fixtures::item(0, 1));
+        poll_until(&mut rt.state, |_| summary_started.load(Ordering::SeqCst) == 4);
+        rt.state.open_story(crate::fixtures::item(1, 2));
+        poll_until(&mut rt.state, |s| matches!(&s.story.as_ref().unwrap().summary,
+            SummaryState::Done(summary) if summary.overview == "current summary 2"));
+        assert!(matches!(rt.state.story.as_ref().unwrap().article, ArticleState::Loading));
+        assert!(matches!(&rt.state.story.as_ref().unwrap().summary,
+            SummaryState::Done(summary) if summary.captured == 2));
+        assert!(other_article_tx.send(Ok(("second article".to_string(), false))).is_ok());
+        poll_until(&mut rt.state, |s| matches!(&s.story.as_ref().unwrap().summary,
+            SummaryState::Done(summary) if summary.captured == 3));
+        let mut stale = crate::fixtures::summary();
+        stale.overview = "obsolete story".into();
+        assert!(old_story_tx.send(Ok(stale)).is_ok());
+        assert_eq!(finished_rx.recv_timeout(Duration::from_secs(3)).unwrap(), 1);
+        std::thread::sleep(Duration::from_millis(20));
+        poll(&mut rt.state, 0.0, &mut Tx::default());
+        let story = rt.state.story.as_ref().unwrap();
+        assert_eq!(story.id(), 2);
+        assert!(matches!(&story.summary, SummaryState::Done(summary) if summary.overview == "current summary 2"));
+        assert!(story.thread.node(901).is_some());
     }
 
     #[test]

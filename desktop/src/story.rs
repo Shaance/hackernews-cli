@@ -13,7 +13,7 @@
 use hn_lib::reader::{Discussion, Source as CapturedSource};
 use hn_lib::HNCLIItem;
 
-use crate::bridge::StoryFilled;
+use crate::bridge::{StoryFilled, StoryUpdate, SummaryError};
 use crate::comments::Thread;
 
 /// How many capture stages one story open runs: the article, the discussion, the summary.
@@ -48,9 +48,7 @@ pub struct Summary {
 pub enum SummaryState {
     /// No API key configured: the card says what to do instead of pretending to work.
     Unconfigured,
-    /// Skeleton rows. The reader boundary returns a whole `Discussion` at once, so the app
-    /// lands here with `captured` at 0 and leaves for `Done`/`Failed` in one step; the count is
-    /// the state a streaming boundary would advance.
+    /// Skeleton rows while the article and discussion captures and then summary are pending.
     Generating { captured: usize, of: usize },
     Done(Summary),
     /// A provider failure. The previous summary stays readable underneath, as DESIGN.md asks.
@@ -185,24 +183,57 @@ impl Story {
         self.story.id
     }
 
-    /// Take the aggregate request's answer. A landing for another story is dropped, so a
-    /// superseded request can never paint over the story the reader is looking at.
+    /// Take the synchronous aggregate answer through the same updates as a live story open.
     pub fn land(&mut self, filled: StoryFilled) -> bool {
         if filled.story_id != self.story.id {
             return false;
         }
-        self.article = match filled.article {
-            Ok((text, partial)) => ArticleState::Ready { text, partial },
-            Err(message) => ArticleState::Failed(message),
-        };
-        self.pending_reply = None;
-        self.discussion = Some(match filled.comments {
-            Ok(comments) => { self.thread = Thread::from_comments(&comments); Ok(()) },
-            Err(message) => Err(message),
-        });
-        self.sources = filled.sources;
+        let story_id = filled.story_id;
+        self.land_update(StoryUpdate::Article { story_id, article: filled.article });
+        self.land_update(StoryUpdate::Discussion { story_id, comments: filled.comments, sources: filled.sources });
+        self.land_update(StoryUpdate::Summary { story_id, summary: filled.summary });
+        true
+    }
+
+    /// Each phase changes only its own surface. A late summary must not replace the article,
+    /// the comment tree, or a reply the reader has opened since the discussion arrived.
+    pub fn land_update(&mut self, update: StoryUpdate) -> bool {
+        match update {
+            StoryUpdate::Article { story_id, article } if story_id == self.id() => {
+                self.article = match article {
+                    Ok((text, partial)) => ArticleState::Ready { text, partial },
+                    Err(message) => ArticleState::Failed(message),
+                };
+            }
+            StoryUpdate::Discussion { story_id, comments, sources } if story_id == self.id() => {
+                self.pending_reply = None;
+                self.discussion = Some(match comments {
+                    Ok(comments) => { self.thread = Thread::from_comments(&comments); Ok(()) },
+                    Err(message) => {
+                        self.land_summary(Err(SummaryError::new(format!("Discussion unavailable: {message}"), false)));
+                        Err(message)
+                    }
+                });
+                self.sources = sources;
+            }
+            StoryUpdate::Summary { story_id, summary } if story_id == self.id() => {
+                self.land_summary(summary);
+            }
+            _ => return false,
+        }
+        let captures = usize::from(matches!(self.article, ArticleState::Ready { .. }))
+            + usize::from(matches!(self.discussion, Some(Ok(()))));
+        match &mut self.summary {
+            SummaryState::Generating { captured, .. } => *captured = captures,
+            SummaryState::Done(summary) => summary.captured = captures + 1,
+            _ => {}
+        }
+        true
+    }
+
+    fn land_summary(&mut self, summary: Result<Discussion, SummaryError>) {
         let previous = self.summary.readable().cloned().map(Box::new);
-        self.summary = match filled.summary {
+        self.summary = match summary {
             Ok(discussion) => SummaryState::Done(summary_of(discussion)),
             Err(error) => SummaryState::Failed {
                 message: error.message,
@@ -212,7 +243,6 @@ impl Story {
         };
         // A citation index past the new bullet list would select nothing.
         self.citation = self.citation.min(self.citations().len().saturating_sub(1));
-        true
     }
 
     pub fn request_replies(&mut self, parent_id: i32, retry: bool) -> Option<crate::bridge::ReplyRequest> {

@@ -1,22 +1,22 @@
-//! The async bridge: one aggregate request at a time, driven off the UI thread.
+//! The async bridge: latest-wins requests driven off the UI thread.
 //!
 //! The desktop owns a tokio runtime. `AppSpec::setup` spawns the first fill; the
 //! [`Latest`] worker closure drives the request to completion on that runtime, and `poll`
-//! takes the answer. Cancellation is `Latest` generations only: a newer request supersedes
-//! an older one, and a stale answer never lands.
+//! takes the answer. Story phases use Tokio tasks; replacing a handle detaches its work.
 //!
-//! Two kinds of request, each with its own `Latest` so opening a story never cancels the feed
-//! and a page turn never cancels a story:
+//! Independent owners keep feed, article, discussion/summary and replies separate:
 //!
 //! - [`Request`] — one aggregate fill of the feed's visible window.
-//! - [`StoryRequest`] — one aggregate story open: the article capture, the discussion, and the
-//!   summary job, in that order, on one worker.
+//! - [`StoryRequest`] — article and discussion start independently; the discussion capture
+//!   starts the summary when it lands.
 //!
 //! Headless runs and tests use [`Bridge::fill_now`] and [`Bridge::story_now`], which run the
 //! same requests on the same runtime but block, so a scene is deterministic and needs no frame
 //! budget.
 
+use std::future::Future;
 use std::sync::Arc;
+use std::task::{Context, Poll, Wake, Waker as TaskWaker};
 
 use anyhow::Result;
 use hn_lib::app::Comment;
@@ -24,6 +24,7 @@ use hn_lib::reader::{Config, Discussion, Source as CapturedSource};
 use hn_lib::HNCLIItem;
 use rune::{Latest, Waker};
 use tokio::runtime::{Handle, Runtime};
+use tokio::task::JoinHandle;
 
 use crate::feed::{Fill, Filled};
 use crate::service::Source;
@@ -50,8 +51,25 @@ pub struct Bridge {
     runtime: Runtime,
     handle: Handle,
     latest: Latest<Filled>,
-    story: Latest<StoryFilled>,
+    article: Option<JoinHandle<StoryUpdate>>,
+    story: Option<JoinHandle<StoryPhase>>,
+    waker: Option<TaskWaker>,
     replies: Latest<ReplyFilled>,
+}
+
+struct StoryWaker(Waker);
+
+impl Wake for StoryWaker {
+    fn wake(self: Arc<Self>) { (self.0)(); }
+    fn wake_by_ref(self: &Arc<Self>) { (self.0)(); }
+}
+
+fn take_task<T>(task: &mut Option<JoinHandle<T>>, waker: Option<&TaskWaker>) -> Option<T> {
+    let mut context = Context::from_waker(waker.unwrap_or(TaskWaker::noop()));
+    match std::pin::Pin::new(task.as_mut()?).poll(&mut context) {
+        Poll::Pending => None,
+        Poll::Ready(result) => { *task = None; result.ok() }
+    }
 }
 
 /// One story open: the item to read, and the summary settings to read it with.
@@ -63,11 +81,9 @@ pub struct StoryRequest {
     pub config: Config,
 }
 
-/// The aggregate answer to one story open.
+/// The aggregate answer used for synchronous, deterministic story opens.
 ///
-/// The three stages run in order on one worker, so the card's "N of 3 sources captured" counts
-/// something real. A failed article is a `String`; a failed summary is a [`SummaryError`],
-/// because the card acts on the one classification the reader boundary exposes.
+/// A failed article is a `String`; the card uses [`SummaryError`] to classify a failed summary.
 pub struct StoryFilled {
     pub story_id: i32,
     pub article: Result<(String, bool), String>,
@@ -75,6 +91,23 @@ pub struct StoryFilled {
     pub comments: Result<Vec<Comment>, String>,
     pub sources: Vec<CapturedSource>,
     pub summary: Result<Discussion, SummaryError>,
+}
+
+/// A result that can be shown without waiting for the other story work.
+pub enum StoryUpdate {
+    Article { story_id: i32, article: Result<(String, bool), String> },
+    Discussion { story_id: i32, comments: Result<Vec<Comment>, String>, sources: Vec<CapturedSource> },
+    Summary { story_id: i32, summary: Result<Discussion, SummaryError> },
+}
+
+enum StoryPhase {
+    Captured {
+        source: Arc<Source>,
+        request: StoryRequest,
+        comments: Result<Vec<Comment>, String>,
+        sources: Vec<CapturedSource>,
+    },
+    Summary { story_id: i32, summary: Result<Discussion, SummaryError> },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -122,16 +155,22 @@ impl Bridge {
             runtime,
             handle,
             latest: Latest::default(),
-            story: Latest::default(),
+            article: None,
+            story: None,
+            waker: None,
             replies: Latest::default(),
         })
     }
 
     /// Attach the waker `AppSpec::setup` hands over, so a landed answer runs `poll`.
-    pub fn set_waker(&self, waker: Waker) {
+    pub fn set_waker(&mut self, waker: Waker) {
         self.latest.set_waker(waker.clone());
-        self.story.set_waker(waker.clone());
-        self.replies.set_waker(waker);
+        self.replies.set_waker(waker.clone());
+        let task_waker = TaskWaker::from(Arc::new(StoryWaker(waker)));
+        self.waker = Some(task_waker.clone());
+        if self.article.is_some() || self.story.is_some() {
+            task_waker.wake_by_ref();
+        }
     }
 
     /// Ask for `request`, superseding any earlier one. The work runs on the runtime from a
@@ -143,14 +182,23 @@ impl Bridge {
         });
     }
 
-    /// Ask for one story open, superseding any earlier one. A second open cancels the first
-    /// story's answer, which is what "Latest-only" means here.
-    pub fn request_story(&self, source: Arc<Source>, request: StoryRequest) {
+    /// Ask for one story open, superseding both parts of any earlier open or retry.
+    pub fn request_story(&mut self, source: Arc<Source>, request: StoryRequest) {
         self.replies.cancel();
-        let handle = self.handle.clone();
-        self.story.request(request, move |request| {
-            handle.block_on(run_story(source.as_ref(), request))
-        });
+        let story = request.story.clone();
+        let article_source = source.clone();
+        self.article = Some(self.handle.spawn(async move {
+            let story_id = story.id;
+            let article = article_source.article(&story).await;
+            StoryUpdate::Article { story_id, article }
+        }));
+        self.story = Some(self.handle.spawn(async move {
+            let comments = source.thread(request.story.id).await.map_err(|e| e.to_string());
+            let sources = comments.as_ref().map(|comments| source.capture(comments)).unwrap_or_default();
+            StoryPhase::Captured { source, request, comments, sources }
+        }));
+        // Input dispatch may run after the frame's poll; schedule one to register these tasks.
+        if let Some(waker) = &self.waker { waker.wake_by_ref(); }
     }
 
     /// The same request, run to completion on this thread. Headless scenes and tests use it so
@@ -160,8 +208,8 @@ impl Bridge {
     }
 
     /// The story open, run to completion on this thread.
-    pub fn story_now(&self, source: &Source, request: StoryRequest) -> StoryFilled {
-        self.replies.cancel();
+    pub fn story_now(&mut self, source: &Source, request: StoryRequest) -> StoryFilled {
+        self.cancel_story();
         self.runtime.block_on(run_story(source, request))
     }
 
@@ -181,9 +229,26 @@ impl Bridge {
         self.latest.take()
     }
 
-    /// The newest story answer, once.
-    pub fn take_story(&self) -> Option<StoryFilled> {
-        self.story.take()
+    /// Take a ready story result. Once the discussion lands, start its summary using the
+    /// same owner; article extraction never holds up the discussion.
+    pub fn take_story(&mut self) -> Option<StoryUpdate> {
+        if let Some(article) = take_task(&mut self.article, self.waker.as_ref()) {
+            return Some(article);
+        }
+        match take_task(&mut self.story, self.waker.as_ref())? {
+            StoryPhase::Captured { source, request, comments, sources } => {
+                let story_id = request.story.id;
+                if comments.is_ok() {
+                    let captured = sources.clone();
+                    self.story = Some(self.handle.spawn(async move {
+                        let summary = source.summary(&request.config, &request.story, &captured).await;
+                        StoryPhase::Summary { story_id, summary }
+                    }));
+                }
+                Some(StoryUpdate::Discussion { story_id, comments, sources })
+            }
+            StoryPhase::Summary { story_id, summary } => Some(StoryUpdate::Summary { story_id, summary }),
+        }
     }
 
     /// Whether a request is still in flight.
@@ -193,12 +258,14 @@ impl Bridge {
 
     /// Whether a story open is still in flight.
     pub fn is_story_pending(&self) -> bool {
-        self.story.is_pending()
+        self.article.as_ref().is_some_and(|task| !task.is_finished())
+            || self.story.as_ref().is_some_and(|task| !task.is_finished())
     }
 
     /// Drop the story open and any answer not yet taken, leaving the feed's request alone.
-    pub fn cancel_story(&self) {
-        self.story.cancel();
+    pub fn cancel_story(&mut self) {
+        self.article = None;
+        self.story = None;
         self.replies.cancel();
     }
 
@@ -208,10 +275,9 @@ impl Bridge {
     }
 
     /// Drop every request and any answer not yet taken.
-    pub fn cancel(&self) {
+    pub fn cancel(&mut self) {
         self.latest.cancel();
-        self.story.cancel();
-        self.replies.cancel();
+        self.cancel_story();
     }
 }
 
@@ -251,23 +317,24 @@ async fn run(source: &Source, request: Request) -> Filled {
     }
 }
 
-/// The one story-open shape: article, then discussion, then the summary over that discussion.
+/// The synchronous story-open shape, for deterministic headless scenes.
 ///
-/// The order is the card's provenance: the article and the discussion are the two captures the
-/// summary is written from, so a summary is never requested over a discussion that failed to
-/// load. A failed article does not stop the discussion — the reader can still read the thread.
+/// Summary capture requires the discussion, but neither it nor the discussion depends on the
+/// article extractor. A failed article does not stop the discussion.
 ///
 /// The discussion is fetched as a tree, because the inspector draws one; the summary is written
 /// from the top-level comments only, which is the capture the card's coverage line describes.
 async fn run_story(source: &Source, request: StoryRequest) -> StoryFilled {
     let story_id = request.story.id;
-    let article = source.article(&request.story).await;
-    let comments = source.thread(story_id).await.map_err(|e| e.to_string());
-    let sources = comments.as_ref().map(|comments| source.capture(comments)).unwrap_or_default();
-    let summary = match &comments {
-        Ok(_) => source.summary(&request.config, &request.story, &sources).await,
-        Err(message) => Err(SummaryError::new(format!("Discussion unavailable: {message}"), false)),
-    };
+    let (article, (comments, sources, summary)) = tokio::join!(source.article(&request.story), async {
+        let comments = source.thread(story_id).await.map_err(|e| e.to_string());
+        let sources = comments.as_ref().map(|comments| source.capture(comments)).unwrap_or_default();
+        let summary = match &comments {
+            Ok(_) => source.summary(&request.config, &request.story, &sources).await,
+            Err(message) => Err(SummaryError::new(format!("Discussion unavailable: {message}"), false)),
+        };
+        (comments, sources, summary)
+    });
     StoryFilled {
         story_id,
         article,
@@ -383,7 +450,7 @@ mod tests {
 
     #[test]
     fn a_cancelled_request_never_lands() {
-        let bridge = Bridge::new().unwrap();
+        let mut bridge = Bridge::new().unwrap();
         let source = Arc::new(Source::fake());
         bridge.request(source, Request::new(fill(StoryType::Top, 0, 11), None));
         bridge.cancel();
@@ -410,20 +477,56 @@ mod tests {
         }
     }
 
-    /// Poll for a landed story open, the way `App::poll` would.
-    fn wait_for_story(bridge: &Bridge) -> StoryFilled {
+    /// Poll for the three story surfaces, the way `App::poll` would.
+    fn wait_for_story(bridge: &mut Bridge) -> Vec<StoryUpdate> {
+        let mut updates = Vec::new();
         for _ in 0..600 {
-            if let Some(filled) = bridge.take_story() {
-                return filled;
+            while let Some(update) = bridge.take_story() {
+                updates.push(update);
+            }
+            if updates.len() == 3 {
+                return updates;
             }
             std::thread::sleep(Duration::from_millis(5));
         }
-        panic!("no story landed");
+        panic!("not all story updates landed");
+    }
+
+    fn update_id(update: &StoryUpdate) -> i32 {
+        match update {
+            StoryUpdate::Article { story_id, .. }
+            | StoryUpdate::Discussion { story_id, .. }
+            | StoryUpdate::Summary { story_id, .. } => *story_id,
+        }
+    }
+
+    #[test]
+    fn story_tasks_wake_to_register_and_again_when_ready() {
+        let mut bridge = Bridge::new().unwrap();
+        let (wake, wakes) = std::sync::mpsc::channel();
+        bridge.set_waker(Arc::new(move || { let _ = wake.send(()); }));
+        let gate = Arc::new(tokio::sync::Semaphore::new(0));
+        let article_gate = gate.clone();
+        let mut fake = crate::service::FakeService::fixture().with_delay(Duration::from_secs(5));
+        fake.article = Arc::new(move |_| {
+            let gate = article_gate.clone();
+            Box::pin(async move {
+                gate.acquire().await.unwrap().forget();
+                Ok(("ready".to_string(), false))
+            })
+        });
+        bridge.request_story(Arc::new(Source::Fake(fake)), story_request(0, 1));
+        wakes.recv_timeout(Duration::from_secs(2)).expect("request schedules registration poll");
+        assert!(bridge.take_story().is_none());
+        gate.add_permits(1);
+        wakes.recv_timeout(Duration::from_secs(2)).expect("completed task wakes the UI");
+        assert!(matches!(bridge.take_story(), Some(StoryUpdate::Article { story_id: 1, .. })));
+        bridge.cancel_story();
     }
 
     #[test]
     fn a_story_open_fills_the_article_the_discussion_and_the_summary() {
-        let bridge = Bridge::new().unwrap();
+        let mut bridge = Bridge::new().unwrap();
         let source = Source::fake();
         let filled = bridge.story_now(
             &source,
@@ -459,21 +562,21 @@ mod tests {
     }
 
     #[test]
-    fn a_story_answer_lands_once() {
-        let bridge = Bridge::new().unwrap();
+    fn each_story_surface_lands_once() {
+        let mut bridge = Bridge::new().unwrap();
         let source = Arc::new(Source::fake());
         bridge.request_story(
             source,
             story_request(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID),
         );
-        let landed = wait_for_story(&bridge);
-        assert_eq!(landed.story_id, crate::fixtures::STORY_ID);
-        assert!(bridge.take_story().is_none(), "an answer lands once");
+        let landed = wait_for_story(&mut bridge);
+        assert!(landed.iter().all(|update| update_id(update) == crate::fixtures::STORY_ID));
+        assert!(bridge.take_story().is_none(), "each answer lands once");
     }
 
     #[test]
     fn a_cancelled_story_open_never_lands() {
-        let bridge = Bridge::new().unwrap();
+        let mut bridge = Bridge::new().unwrap();
         let source = Arc::new(Source::fake());
         bridge.request_story(
             source,
@@ -487,28 +590,28 @@ mod tests {
 
     #[test]
     fn a_second_story_open_supersedes_the_first() {
-        let bridge = Bridge::new().unwrap();
+        let mut bridge = Bridge::new().unwrap();
         let source = Arc::new(Source::fake());
         // Two opens in a row: only the newest lands, so `Esc` then `Enter` on another row
         // never paints the story you left.
         bridge.request_story(source.clone(), story_request(0, 1));
         bridge.request_story(source, story_request(crate::fixtures::STORY_INDEX, 2));
-        let landed = wait_for_story(&bridge);
-        assert_eq!(landed.story_id, 2);
+        let landed = wait_for_story(&mut bridge);
+        assert!(landed.iter().all(|update| update_id(update) == 2));
         assert!(bridge.take_story().is_none());
     }
 
     #[test]
     fn a_story_open_leaves_the_feed_request_alone() {
-        let bridge = Bridge::new().unwrap();
+        let mut bridge = Bridge::new().unwrap();
         let source = Arc::new(Source::fake());
         bridge.request(source.clone(), Request::new(fill(StoryType::Top, 0, 11), None));
         bridge.request_story(
             source,
             story_request(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID),
         );
-        // Each kind has its own `Latest`, so opening a story never cancels the feed's page.
+        // Each kind has its own owner, so opening a story never cancels the feed's page.
         assert_eq!(wait_for(&bridge).items.len(), 11);
-        assert_eq!(wait_for_story(&bridge).story_id, crate::fixtures::STORY_ID);
+        assert!(wait_for_story(&mut bridge).iter().all(|update| update_id(update) == crate::fixtures::STORY_ID));
     }
 }

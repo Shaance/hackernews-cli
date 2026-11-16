@@ -14,7 +14,9 @@
 //! composes the live service.
 
 use std::collections::{HashMap, HashSet};
-use std::sync::Mutex;
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use anyhow::Result;
@@ -93,7 +95,7 @@ impl Source {
             Source::Live { network, .. } => reader::sources::article(&network.client, story)
                 .await
                 .map_err(|failure| failure.message),
-            Source::Fake(_) => Ok((fixtures::ARTICLE.to_string(), false)),
+            Source::Fake(fake) => (fake.article)(story.id).await,
         }
     }
 
@@ -172,10 +174,16 @@ impl Source {
                         SummaryError::new(failure.message, auth)
                     })
             }
-            Source::Fake(fake) => { *fake.summary_requests.lock().unwrap() += 1; Ok(fixtures::summary()) },
+            Source::Fake(fake) => {
+                *fake.summary_requests.lock().unwrap() += 1;
+                (fake.summary)(story.id).await
+            },
         }
     }
 }
+
+type FakeArticle = dyn Fn(i32) -> Pin<Box<dyn Future<Output = std::result::Result<(String, bool), String>> + Send>> + Send + Sync;
+type FakeSummary = dyn Fn(i32) -> Pin<Box<dyn Future<Output = std::result::Result<Discussion, SummaryError>> + Send>> + Send + Sync;
 
 /// A deterministic `HackerNewsCliService`: fixed rankings, fixed items, optional failures and
 /// an optional delay so a test can observe a request in flight.
@@ -190,6 +198,8 @@ pub struct FakeService {
     pub failing_comments: Mutex<HashSet<i32>>,
     pub comment_requests: Mutex<Vec<Vec<i32>>>,
     pub summary_requests: Mutex<usize>,
+    pub(crate) article: Arc<FakeArticle>,
+    pub(crate) summary: Arc<FakeSummary>,
 }
 
 impl FakeService {
@@ -221,6 +231,8 @@ impl FakeService {
             failing_comments: Mutex::new(HashSet::new()),
             comment_requests: Mutex::new(Vec::new()),
             summary_requests: Mutex::new(0),
+            article: Arc::new(|_| Box::pin(async { Ok((fixtures::ARTICLE.to_string(), false)) })),
+            summary: Arc::new(|_| Box::pin(async { Ok(fixtures::summary()) })),
         }
     }
 
@@ -237,6 +249,8 @@ impl FakeService {
             failing_comments: Mutex::new(HashSet::new()),
             comment_requests: Mutex::new(Vec::new()),
             summary_requests: Mutex::new(0),
+            article: Arc::new(|_| Box::pin(async { Ok((fixtures::ARTICLE.to_string(), false)) })),
+            summary: Arc::new(|_| Box::pin(async { Ok(fixtures::summary()) })),
         }
     }
 
