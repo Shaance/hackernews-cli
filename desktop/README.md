@@ -1,5 +1,7 @@
 # hn-desktop
 
+> **Highly experimental:** This desktop app is an unfinished work in progress and does not represent the final version. Its design, features, and behavior may change substantially. Expect bugs and incomplete functionality; it is not ready for production use.
+
 The native window over `hn_lib`: the same feed, discussion and summary the terminal app shows,
 drawn with Rune instead of a terminal. One window, one `SplitView`; opening a story puts the
 story's **live page** in the main pane and the summary card plus the discussion in the inspector.

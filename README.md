@@ -4,6 +4,8 @@ Read [Hacker News](https://news.ycombinator.com/) stories and comment threads in
 
 On macOS with Ghostty, you can open the original article in a companion browser pane beside the discussion. Other setups open it in your default browser.
 
+> **Highly experimental desktop app:** The [Rune desktop app](desktop/README.md) is an unfinished work in progress and does not represent the final version. Its design, features, and behavior may change substantially; expect bugs and incomplete functionality.
+
 ![Opening a story with its summary, focusing a citation, reading the cited comment, then opening the article in a Ghostty browser pane beside it](docs/screenshots/demo.gif)
 
 ## Run it

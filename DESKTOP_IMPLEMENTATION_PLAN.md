@@ -1,5 +1,7 @@
 # Desktop implementation plan — `hn-desktop` on Rune
 
+> **Highly experimental:** The desktop app is unfinished and does not represent the final version. Its design, features, and behavior may change substantially. “FINAL” below refers only to the reviewed v4 implementation plan, and completed workstreams do not imply a finished or production-ready app.
+
 Status: v4 — FINAL after 3 review rounds (Codex + DeepSeek in parallel each round; round-3 verdicts:
 Codex NO-GO→fixed here, DeepSeek GO-WITH-CHANGES→fixed here — see "Review log"). ALL WORKSTREAMS
 LANDED on main: WS-A seams (a05dbd8), WS-A2 reader lift (e79f779), icu pin fix (f4950e1),
