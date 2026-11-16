@@ -12,7 +12,7 @@ use std::path::PathBuf;
 
 use hn_lib::reader::{self, Config, Profile, Provider};
 use rune::tok::{self, type_};
-use rune::{Color, El, TextEdit, col, el, row, text};
+use rune::{Color, El, ScrollSpec, TextEdit, col, el, row, text};
 use rune_kit::{Button, ButtonVariant, Dialog, Kit, RadioGroup, RadioItem, SegmentedControl, Switch, TextInput};
 
 /// The dialog's draft state, and the path `Apply` writes.
@@ -194,7 +194,7 @@ impl Settings {
         .build(k);
 
         let mut body = col()
-            .key("settings-body")
+            .key("settings-fields")
             .w_full()
             .gap(16.0)
             .child(providers)
@@ -212,7 +212,8 @@ impl Settings {
                     .child(
                         text("Masked. Delete clears it; the environment is the fallback.")
                             .font(type_::LABEL)
-                            .color(t.text_secondary),
+                            .color(t.text_secondary)
+                            .wrap(),
                     ),
             )
             .child(
@@ -224,7 +225,8 @@ impl Settings {
                     .child(
                         text("Off stops new automatic requests. Submitted work can finish.")
                             .font(type_::LABEL)
-                            .color(t.text_secondary),
+                            .color(t.text_secondary)
+                            .wrap(),
                     ),
             )
             .child(
@@ -242,13 +244,16 @@ impl Settings {
                                 text(self.model())
                                     .key("settings-model")
                                     .font(type_::MONO_CAPTION)
-                                    .color(t.text_secondary),
+                                    .color(t.text_secondary)
+                                    .wrap_anywhere()
+                                    .shrink(),
                             ),
                     )
                     .child(
                         text("Fast is a quick overview; Thorough reads more of the discussion.")
                             .font(type_::LABEL)
-                            .color(t.text_secondary),
+                            .color(t.text_secondary)
+                            .wrap(),
                     ),
             );
         if self.reenter {
@@ -257,7 +262,8 @@ impl Settings {
                     .key("settings-reenter")
                     .role("alert")
                     .font(type_::LABEL)
-                    .color(accent),
+                    .color(accent)
+                    .wrap(),
             );
         }
         if let Some(error) = &self.error {
@@ -267,10 +273,10 @@ impl Settings {
                     .role("alert")
                     .font(type_::LABEL)
                     .color(accent)
-                    .wrap(),
+                    .wrap_anywhere(),
             );
         }
-        body = body.child(
+        let actions =
             row()
                 .key("settings-actions")
                 .w_full()
@@ -294,15 +300,30 @@ impl Settings {
                         .variant(ButtonVariant::Submit)
                         .on_press(|s: &mut crate::app::App| s.apply_settings(false))
                         .build(k),
-                ),
-        );
+                );
+
+        let mut viewport = col()
+            .key("settings-scroll")
+            .w_full()
+            .shrink()
+            .min_h(0.0)
+            .scroll(ScrollSpec { stick_bottom: false })
+            .scroll_edge_fade(10.0)
+            .scroll_margin(10.0)
+            .child(body);
+        if let Some([_, height]) = rune::memo::layout_size("window") {
+            let header = rune::memo::layout_size("settings-dialog/header").map_or(50.0, |[_, h]| h);
+            let actions = rune::memo::layout_size("settings-actions").map_or(24.0, |[_, h]| h);
+            // The layer has 16 points on each edge; the body has a 16-point gap and bottom inset.
+            viewport = viewport.max_h((height - 32.0 - header - actions - 32.0).max(0.0));
+        }
 
         Dialog::new("settings", "Summary settings")
             .open(open)
             .width(460.0)
             .fit()
             .on_close(|s: &mut crate::app::App| s.close_settings())
-            .child(body)
+            .child(col().key("settings-body").w_full().px(16.0).pb(16.0).gap(16.0).child(viewport).child(actions))
             .build(k, layer);
     }
 }

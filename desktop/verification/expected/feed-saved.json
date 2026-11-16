@@ -438,9 +438,22 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      68.0,
+                                                      60.0,
+                                                      189.0,
+                                                      6.0,
+                                                      6.0
+                                                    ],
+                                                    "key": "saved-dot-3",
+                                                    "role": "group"
+                                                  },
+                                                  {
+                                                    "actions": [
+                                                      "scroll-into-view"
+                                                    ],
+                                                    "bounds": [
+                                                      80.0,
                                                       174.4,
-                                                      1092.0,
+                                                      1080.0,
                                                       16.3
                                                     ],
                                                     "key": "title-3",
@@ -452,9 +465,9 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      68.0,
+                                                      80.0,
                                                       194.6,
-                                                      1092.0,
+                                                      1080.0,
                                                       15.0
                                                     ],
                                                     "name": "513 points  ·  by theanomaly  ·  122 comments",
@@ -512,9 +525,22 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      68.0,
+                                                      60.0,
+                                                      247.0,
+                                                      6.0,
+                                                      6.0
+                                                    ],
+                                                    "key": "saved-dot-4",
+                                                    "role": "group"
+                                                  },
+                                                  {
+                                                    "actions": [
+                                                      "scroll-into-view"
+                                                    ],
+                                                    "bounds": [
+                                                      80.0,
                                                       232.4,
-                                                      1092.0,
+                                                      1080.0,
                                                       16.3
                                                     ],
                                                     "key": "title-4",
@@ -526,9 +552,9 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      68.0,
+                                                      80.0,
                                                       252.6,
-                                                      1092.0,
+                                                      1080.0,
                                                       15.0
                                                     ],
                                                     "name": "356 points  ·  by ChrisArchitect  ·  289 comments",
@@ -586,9 +612,22 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      68.0,
+                                                      60.0,
+                                                      305.0,
+                                                      6.0,
+                                                      6.0
+                                                    ],
+                                                    "key": "saved-dot-5",
+                                                    "role": "group"
+                                                  },
+                                                  {
+                                                    "actions": [
+                                                      "scroll-into-view"
+                                                    ],
+                                                    "bounds": [
+                                                      80.0,
                                                       290.4,
-                                                      1092.0,
+                                                      1080.0,
                                                       16.3
                                                     ],
                                                     "key": "title-5",
@@ -600,9 +639,9 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      68.0,
+                                                      80.0,
                                                       310.6,
-                                                      1092.0,
+                                                      1080.0,
                                                       15.0
                                                     ],
                                                     "name": "347 points  ·  by thisisauserid  ·  234 comments",
@@ -751,9 +790,22 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      68.0,
+                                                      60.0,
+                                                      421.0,
+                                                      6.0,
+                                                      6.0
+                                                    ],
+                                                    "key": "saved-dot-7",
+                                                    "role": "group"
+                                                  },
+                                                  {
+                                                    "actions": [
+                                                      "scroll-into-view"
+                                                    ],
+                                                    "bounds": [
+                                                      80.0,
                                                       406.4,
-                                                      1092.0,
+                                                      1080.0,
                                                       16.3
                                                     ],
                                                     "key": "title-7",
@@ -765,9 +817,9 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      68.0,
+                                                      80.0,
                                                       426.6,
-                                                      1092.0,
+                                                      1080.0,
                                                       15.0
                                                     ],
                                                     "name": "233 points  ·  by LaSombra  ·  46 comments",
@@ -825,9 +877,22 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      68.0,
+                                                      60.0,
+                                                      479.0,
+                                                      6.0,
+                                                      6.0
+                                                    ],
+                                                    "key": "saved-dot-8",
+                                                    "role": "group"
+                                                  },
+                                                  {
+                                                    "actions": [
+                                                      "scroll-into-view"
+                                                    ],
+                                                    "bounds": [
+                                                      80.0,
                                                       464.4,
-                                                      1092.0,
+                                                      1080.0,
                                                       16.3
                                                     ],
                                                     "key": "title-8",
@@ -839,9 +904,9 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      68.0,
+                                                      80.0,
                                                       484.6,
-                                                      1092.0,
+                                                      1080.0,
                                                       15.0
                                                     ],
                                                     "name": "219 points  ·  by infwhispers  ·  106 comments",
@@ -899,9 +964,22 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      68.0,
+                                                      60.0,
+                                                      537.0,
+                                                      6.0,
+                                                      6.0
+                                                    ],
+                                                    "key": "saved-dot-9",
+                                                    "role": "group"
+                                                  },
+                                                  {
+                                                    "actions": [
+                                                      "scroll-into-view"
+                                                    ],
+                                                    "bounds": [
+                                                      80.0,
                                                       522.4,
-                                                      1092.0,
+                                                      1080.0,
                                                       16.3
                                                     ],
                                                     "key": "title-9",
@@ -913,9 +991,9 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      68.0,
+                                                      80.0,
                                                       542.6,
-                                                      1092.0,
+                                                      1080.0,
                                                       15.0
                                                     ],
                                                     "name": "180 points  ·  by susanthenerd  ·  129 comments",
@@ -973,9 +1051,22 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      68.0,
+                                                      60.0,
+                                                      595.0,
+                                                      6.0,
+                                                      6.0
+                                                    ],
+                                                    "key": "saved-dot-10",
+                                                    "role": "group"
+                                                  },
+                                                  {
+                                                    "actions": [
+                                                      "scroll-into-view"
+                                                    ],
+                                                    "bounds": [
+                                                      80.0,
                                                       580.4,
-                                                      1092.0,
+                                                      1080.0,
                                                       16.3
                                                     ],
                                                     "key": "title-10",
@@ -987,9 +1078,9 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      68.0,
+                                                      80.0,
                                                       600.6,
-                                                      1092.0,
+                                                      1080.0,
                                                       15.0
                                                     ],
                                                     "name": "169 points  ·  by luispa  ·  64 comments",
@@ -1113,177 +1204,189 @@
                                   },
                                   {
                                     "bounds": [
-                                      32.0,
-                                      724.0,
-                                      31.9,
-                                      14.0
-                                    ],
-                                    "name": "j k",
-                                    "role": "group"
-                                  },
-                                  {
-                                    "bounds": [
-                                      69.9,
-                                      723.5,
-                                      31.4,
-                                      15.0
-                                    ],
-                                    "name": "move",
-                                    "role": "label"
-                                  },
-                                  {
-                                    "bounds": [
-                                      119.3,
-                                      724.0,
-                                      39.0,
-                                      14.0
-                                    ],
-                                    "name": "← →",
-                                    "role": "group"
-                                  },
-                                  {
-                                    "bounds": [
-                                      164.3,
-                                      723.5,
-                                      82.0,
-                                      15.0
-                                    ],
-                                    "name": "column / page",
-                                    "role": "label"
-                                  },
-                                  {
-                                    "bounds": [
-                                      264.3,
-                                      724.0,
-                                      15.1,
-                                      14.0
-                                    ],
-                                    "name": "s",
-                                    "role": "group"
-                                  },
-                                  {
-                                    "bounds": [
-                                      285.4,
-                                      723.5,
-                                      26.8,
-                                      15.0
-                                    ],
-                                    "name": "save",
-                                    "role": "label"
-                                  },
-                                  {
-                                    "bounds": [
-                                      330.2,
-                                      724.0,
-                                      33.4,
-                                      14.0
-                                    ],
-                                    "name": "n p",
-                                    "role": "group"
-                                  },
-                                  {
-                                    "bounds": [
-                                      369.6,
-                                      723.5,
-                                      28.8,
-                                      15.0
-                                    ],
-                                    "name": "page",
-                                    "role": "label"
-                                  },
-                                  {
-                                    "bounds": [
-                                      416.4,
-                                      724.0,
-                                      31.2,
-                                      14.0
-                                    ],
-                                    "name": "1 4",
-                                    "role": "group"
-                                  },
-                                  {
-                                    "bounds": [
-                                      453.6,
-                                      723.5,
-                                      24.8,
-                                      15.0
-                                    ],
-                                    "name": "tabs",
-                                    "role": "label"
-                                  },
-                                  {
-                                    "bounds": [
-                                      1088.0,
-                                      722.0,
-                                      60.0,
-                                      18.0
+                                      8.0,
+                                      710.0,
+                                      1164.0,
+                                      42.0
                                     ],
                                     "children": [
                                       {
-                                        "actions": [
-                                          "click",
-                                          "focus"
-                                        ],
                                         "bounds": [
-                                          1088.0,
-                                          722.0,
-                                          18.0,
-                                          18.0
+                                          32.0,
+                                          724.0,
+                                          31.9,
+                                          14.0
                                         ],
-                                        "children": [
-                                          {
-                                            "bounds": [
-                                              1094.6,
-                                              723.5,
-                                              4.8,
-                                              15.0
-                                            ],
-                                            "name": "‹",
-                                            "role": "label"
-                                          }
-                                        ],
-                                        "name": "Previous page",
-                                        "role": "button"
+                                        "name": "j k",
+                                        "role": "group"
                                       },
                                       {
                                         "bounds": [
-                                          1115.5,
+                                          69.9,
                                           723.5,
-                                          5.0,
+                                          31.4,
                                           15.0
                                         ],
-                                        "name": "1",
+                                        "name": "move",
                                         "role": "label"
                                       },
                                       {
-                                        "actions": [
-                                          "click",
-                                          "focus"
-                                        ],
                                         "bounds": [
-                                          1130.0,
+                                          119.3,
+                                          724.0,
+                                          39.0,
+                                          14.0
+                                        ],
+                                        "name": "← →",
+                                        "role": "group"
+                                      },
+                                      {
+                                        "bounds": [
+                                          164.3,
+                                          723.5,
+                                          82.0,
+                                          15.0
+                                        ],
+                                        "name": "column / page",
+                                        "role": "label"
+                                      },
+                                      {
+                                        "bounds": [
+                                          264.3,
+                                          724.0,
+                                          15.1,
+                                          14.0
+                                        ],
+                                        "name": "s",
+                                        "role": "group"
+                                      },
+                                      {
+                                        "bounds": [
+                                          285.4,
+                                          723.5,
+                                          26.8,
+                                          15.0
+                                        ],
+                                        "name": "save",
+                                        "role": "label"
+                                      },
+                                      {
+                                        "bounds": [
+                                          330.2,
+                                          724.0,
+                                          33.4,
+                                          14.0
+                                        ],
+                                        "name": "n p",
+                                        "role": "group"
+                                      },
+                                      {
+                                        "bounds": [
+                                          369.6,
+                                          723.5,
+                                          28.8,
+                                          15.0
+                                        ],
+                                        "name": "page",
+                                        "role": "label"
+                                      },
+                                      {
+                                        "bounds": [
+                                          416.4,
+                                          724.0,
+                                          31.2,
+                                          14.0
+                                        ],
+                                        "name": "1 4",
+                                        "role": "group"
+                                      },
+                                      {
+                                        "bounds": [
+                                          453.6,
+                                          723.5,
+                                          24.8,
+                                          15.0
+                                        ],
+                                        "name": "tabs",
+                                        "role": "label"
+                                      },
+                                      {
+                                        "bounds": [
+                                          1088.0,
                                           722.0,
-                                          18.0,
+                                          60.0,
                                           18.0
                                         ],
                                         "children": [
                                           {
+                                            "actions": [
+                                              "click",
+                                              "focus"
+                                            ],
                                             "bounds": [
-                                              1136.6,
+                                              1088.0,
+                                              722.0,
+                                              18.0,
+                                              18.0
+                                            ],
+                                            "children": [
+                                              {
+                                                "bounds": [
+                                                  1094.6,
+                                                  723.5,
+                                                  4.8,
+                                                  15.0
+                                                ],
+                                                "name": "‹",
+                                                "role": "label"
+                                              }
+                                            ],
+                                            "name": "Previous page",
+                                            "role": "button"
+                                          },
+                                          {
+                                            "bounds": [
+                                              1115.5,
                                               723.5,
-                                              4.8,
+                                              5.0,
                                               15.0
                                             ],
-                                            "name": "›",
+                                            "name": "1",
                                             "role": "label"
+                                          },
+                                          {
+                                            "actions": [
+                                              "click",
+                                              "focus"
+                                            ],
+                                            "bounds": [
+                                              1130.0,
+                                              722.0,
+                                              18.0,
+                                              18.0
+                                            ],
+                                            "children": [
+                                              {
+                                                "bounds": [
+                                                  1136.6,
+                                                  723.5,
+                                                  4.8,
+                                                  15.0
+                                                ],
+                                                "name": "›",
+                                                "role": "label"
+                                              }
+                                            ],
+                                            "name": "Next page",
+                                            "role": "button"
                                           }
                                         ],
-                                        "name": "Next page",
-                                        "role": "button"
+                                        "key": "page-stepper",
+                                        "name": "Page 1",
+                                        "role": "group"
                                       }
                                     ],
-                                    "key": "page-stepper",
-                                    "name": "Page 1",
+                                    "key": "feed-footer",
                                     "role": "group"
                                   }
                                 ],
@@ -2345,7 +2448,7 @@
       "rect": [
         36.0,
         184.5,
-        18.0,
+        30.0,
         15.0
       ],
       "role": "group",
@@ -2399,13 +2502,33 @@
       "focusable": false,
       "focused": false,
       "inert": false,
+      "key": "saved-dot-3",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#1/saved-dot-3",
+      "rect": [
+        60.0,
+        189.0,
+        6.0,
+        6.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#2",
       "rect": [
-        68.0,
+        80.0,
         174.38,
-        1092.0,
+        1080.0,
         35.25
       ],
       "role": "group",
@@ -2424,9 +2547,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#2/title-3",
       "rect": [
-        68.0,
+        80.0,
         174.38,
-        1092.0,
+        1080.0,
         16.25
       ],
       "role": "text",
@@ -2445,9 +2568,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#2/#1",
       "rect": [
-        68.0,
+        80.0,
         194.63,
-        1092.0,
+        1080.0,
         15.0
       ],
       "role": "text",
@@ -2527,7 +2650,7 @@
       "rect": [
         36.0,
         242.5,
-        18.0,
+        30.0,
         15.0
       ],
       "role": "group",
@@ -2581,13 +2704,33 @@
       "focusable": false,
       "focused": false,
       "inert": false,
+      "key": "saved-dot-4",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#1/saved-dot-4",
+      "rect": [
+        60.0,
+        247.0,
+        6.0,
+        6.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#2",
       "rect": [
-        68.0,
+        80.0,
         232.38,
-        1092.0,
+        1080.0,
         35.25
       ],
       "role": "group",
@@ -2606,9 +2749,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#2/title-4",
       "rect": [
-        68.0,
+        80.0,
         232.38,
-        1092.0,
+        1080.0,
         16.25
       ],
       "role": "text",
@@ -2627,9 +2770,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#2/#1",
       "rect": [
-        68.0,
+        80.0,
         252.63,
-        1092.0,
+        1080.0,
         15.0
       ],
       "role": "text",
@@ -2709,7 +2852,7 @@
       "rect": [
         36.0,
         300.5,
-        18.0,
+        30.0,
         15.0
       ],
       "role": "group",
@@ -2763,13 +2906,33 @@
       "focusable": false,
       "focused": false,
       "inert": false,
+      "key": "saved-dot-5",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#1/saved-dot-5",
+      "rect": [
+        60.0,
+        305.0,
+        6.0,
+        6.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#2",
       "rect": [
-        68.0,
+        80.0,
         290.38,
-        1092.0,
+        1080.0,
         35.25
       ],
       "role": "group",
@@ -2788,9 +2951,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#2/title-5",
       "rect": [
-        68.0,
+        80.0,
         290.38,
-        1092.0,
+        1080.0,
         16.25
       ],
       "role": "text",
@@ -2809,9 +2972,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#2/#1",
       "rect": [
-        68.0,
+        80.0,
         310.63,
-        1092.0,
+        1080.0,
         15.0
       ],
       "role": "text",
@@ -3094,7 +3257,7 @@
       "rect": [
         36.0,
         416.5,
-        18.0,
+        30.0,
         15.0
       ],
       "role": "group",
@@ -3148,13 +3311,33 @@
       "focusable": false,
       "focused": false,
       "inert": false,
+      "key": "saved-dot-7",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#1/saved-dot-7",
+      "rect": [
+        60.0,
+        421.0,
+        6.0,
+        6.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#2",
       "rect": [
-        68.0,
+        80.0,
         406.38,
-        1092.0,
+        1080.0,
         35.25
       ],
       "role": "group",
@@ -3173,9 +3356,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#2/title-7",
       "rect": [
-        68.0,
+        80.0,
         406.38,
-        1092.0,
+        1080.0,
         16.25
       ],
       "role": "text",
@@ -3194,9 +3377,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#2/#1",
       "rect": [
-        68.0,
+        80.0,
         426.63,
-        1092.0,
+        1080.0,
         15.0
       ],
       "role": "text",
@@ -3276,7 +3459,7 @@
       "rect": [
         36.0,
         474.5,
-        18.0,
+        30.0,
         15.0
       ],
       "role": "group",
@@ -3330,13 +3513,33 @@
       "focusable": false,
       "focused": false,
       "inert": false,
+      "key": "saved-dot-8",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#1/saved-dot-8",
+      "rect": [
+        60.0,
+        479.0,
+        6.0,
+        6.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#2",
       "rect": [
-        68.0,
+        80.0,
         464.38,
-        1092.0,
+        1080.0,
         35.25
       ],
       "role": "group",
@@ -3355,9 +3558,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#2/title-8",
       "rect": [
-        68.0,
+        80.0,
         464.38,
-        1092.0,
+        1080.0,
         16.25
       ],
       "role": "text",
@@ -3376,9 +3579,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#2/#1",
       "rect": [
-        68.0,
+        80.0,
         484.63,
-        1092.0,
+        1080.0,
         15.0
       ],
       "role": "text",
@@ -3458,7 +3661,7 @@
       "rect": [
         36.0,
         532.5,
-        18.0,
+        30.0,
         15.0
       ],
       "role": "group",
@@ -3512,13 +3715,33 @@
       "focusable": false,
       "focused": false,
       "inert": false,
+      "key": "saved-dot-9",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#1/saved-dot-9",
+      "rect": [
+        60.0,
+        537.0,
+        6.0,
+        6.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#2",
       "rect": [
-        68.0,
+        80.0,
         522.38,
-        1092.0,
+        1080.0,
         35.25
       ],
       "role": "group",
@@ -3537,9 +3760,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#2/title-9",
       "rect": [
-        68.0,
+        80.0,
         522.38,
-        1092.0,
+        1080.0,
         16.25
       ],
       "role": "text",
@@ -3558,9 +3781,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#2/#1",
       "rect": [
-        68.0,
+        80.0,
         542.63,
-        1092.0,
+        1080.0,
         15.0
       ],
       "role": "text",
@@ -3640,7 +3863,7 @@
       "rect": [
         36.0,
         590.5,
-        18.0,
+        30.0,
         15.0
       ],
       "role": "group",
@@ -3694,13 +3917,33 @@
       "focusable": false,
       "focused": false,
       "inert": false,
+      "key": "saved-dot-10",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#1/saved-dot-10",
+      "rect": [
+        60.0,
+        595.0,
+        6.0,
+        6.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#2",
       "rect": [
-        68.0,
+        80.0,
         580.38,
-        1092.0,
+        1080.0,
         35.25
       ],
       "role": "group",
@@ -3719,9 +3962,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#2/title-10",
       "rect": [
-        68.0,
+        80.0,
         580.38,
-        1092.0,
+        1080.0,
         16.25
       ],
       "role": "text",
@@ -3740,9 +3983,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#2/#1",
       "rect": [
-        68.0,
+        80.0,
         600.63,
-        1092.0,
+        1080.0,
         15.0
       ],
       "role": "text",
@@ -3978,9 +4221,10 @@
       "focusable": false,
       "focused": false,
       "inert": false,
+      "key": "feed-footer",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer",
       "rect": [
         8.0,
         710.0,
@@ -3999,7 +4243,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#0",
       "rect": [
         32.0,
         723.5,
@@ -4019,7 +4263,7 @@
       "label": "j k",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#0/#0",
       "rect": [
         32.0,
         724.0,
@@ -4039,7 +4283,7 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#0/#0/key0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#0/#0/key0",
       "rect": [
         32.0,
         724.0,
@@ -4059,7 +4303,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#0/#0/key0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#0/#0/key0/#0",
       "rect": [
         36.0,
         725.5,
@@ -4080,7 +4324,7 @@
       "key": "key1",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#0/#0/key1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#0/#0/key1",
       "rect": [
         48.33,
         724.0,
@@ -4100,7 +4344,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#0/#0/key1/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#0/#0/key1/#0",
       "rect": [
         52.33,
         725.5,
@@ -4121,7 +4365,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#0/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#0/#1",
       "rect": [
         69.89,
         723.5,
@@ -4141,7 +4385,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#1",
       "rect": [
         119.29,
         723.5,
@@ -4161,7 +4405,7 @@
       "label": "← →",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#1/#0",
       "rect": [
         119.29,
         724.0,
@@ -4181,7 +4425,7 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1/#0/key0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#1/#0/key0",
       "rect": [
         119.29,
         724.0,
@@ -4201,7 +4445,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1/#0/key0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#1/#0/key0/#0",
       "rect": [
         123.29,
         725.5,
@@ -4222,7 +4466,7 @@
       "key": "key1",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1/#0/key1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#1/#0/key1",
       "rect": [
         139.79,
         724.0,
@@ -4242,7 +4486,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1/#0/key1/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#1/#0/key1/#0",
       "rect": [
         143.79,
         725.5,
@@ -4263,7 +4507,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#1/#1",
       "rect": [
         164.29,
         723.5,
@@ -4283,7 +4527,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#2",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#2",
       "rect": [
         264.25,
         723.5,
@@ -4303,7 +4547,7 @@
       "label": "s",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#2/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#2/#0",
       "rect": [
         264.25,
         724.0,
@@ -4323,7 +4567,7 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#2/#0/key0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#2/#0/key0",
       "rect": [
         264.25,
         724.0,
@@ -4343,7 +4587,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#2/#0/key0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#2/#0/key0/#0",
       "rect": [
         268.25,
         725.5,
@@ -4364,7 +4608,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#2/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#2/#1",
       "rect": [
         285.36,
         723.5,
@@ -4384,7 +4628,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#3",
       "rect": [
         330.17,
         723.5,
@@ -4404,7 +4648,7 @@
       "label": "n p",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#3/#0",
       "rect": [
         330.17,
         724.0,
@@ -4424,7 +4668,7 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3/#0/key0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#3/#0/key0",
       "rect": [
         330.17,
         724.0,
@@ -4444,7 +4688,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3/#0/key0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#3/#0/key0/#0",
       "rect": [
         334.17,
         725.5,
@@ -4465,7 +4709,7 @@
       "key": "key1",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3/#0/key1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#3/#0/key1",
       "rect": [
         348.49,
         724.0,
@@ -4485,7 +4729,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3/#0/key1/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#3/#0/key1/#0",
       "rect": [
         352.49,
         725.5,
@@ -4506,7 +4750,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#3/#1",
       "rect": [
         369.55,
         723.5,
@@ -4526,7 +4770,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#4",
       "rect": [
         416.39,
         723.5,
@@ -4546,7 +4790,7 @@
       "label": "1 4",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#4/#0",
       "rect": [
         416.39,
         724.0,
@@ -4566,7 +4810,7 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4/#0/key0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#4/#0/key0",
       "rect": [
         416.39,
         724.0,
@@ -4586,7 +4830,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4/#0/key0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#4/#0/key0/#0",
       "rect": [
         421.11,
         725.5,
@@ -4607,7 +4851,7 @@
       "key": "key1",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4/#0/key1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#4/#0/key1",
       "rect": [
         432.39,
         724.0,
@@ -4627,7 +4871,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4/#0/key1/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#4/#0/key1/#0",
       "rect": [
         436.39,
         725.5,
@@ -4648,7 +4892,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#4/#1",
       "rect": [
         453.61,
         723.5,
@@ -4668,7 +4912,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#5",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#5",
       "rect": [
         496.45,
         731.0,
@@ -4689,7 +4933,7 @@
       "label": "Page 1",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/page-stepper",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/page-stepper",
       "rect": [
         1088.0,
         722.0,
@@ -4709,7 +4953,7 @@
       "label": "Previous page",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/page-stepper/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/page-stepper/#0",
       "rect": [
         1088.0,
         722.0,
@@ -4729,7 +4973,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/page-stepper/#0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/page-stepper/#0/#0",
       "rect": [
         1094.6,
         723.5,
@@ -4749,7 +4993,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/page-stepper/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/page-stepper/#1",
       "rect": [
         1108.0,
         723.5,
@@ -4769,7 +5013,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/page-stepper/#1/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/page-stepper/#1/#0",
       "rect": [
         1115.51,
         723.5,
@@ -4790,7 +5034,7 @@
       "label": "Next page",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/page-stepper/#2",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/page-stepper/#2",
       "rect": [
         1130.0,
         722.0,
@@ -4810,7 +5054,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/page-stepper/#2/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/page-stepper/#2/#0",
       "rect": [
         1136.6,
         723.5,

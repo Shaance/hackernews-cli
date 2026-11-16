@@ -402,7 +402,7 @@ impl App {
     }
 
     /// `Esc` from the split: back to the feed, with the feed's request untouched.
-    fn close_story(&mut self) {
+    pub(crate) fn close_story(&mut self) {
         self.hide_live();
         self.story = None;
         self.inspector.set_open(false);
@@ -530,8 +530,10 @@ impl App {
             return;
         }
         let unloaded = story.thread.has_children(id) && story.thread.children_of(id).is_empty();
+        let retry = unloaded && story.thread.reply_batch(id, false).is_empty()
+            && !story.thread.reply_batch(id, true).is_empty();
         if unloaded { story.thread.unfold(); } else { story.thread.activate(); }
-        if unloaded { self.load_replies(id, false); }
+        if unloaded { self.load_replies(id, retry); }
     }
 
     /// The settings dialog's draft, for its own press handlers.
@@ -808,6 +810,7 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
     if s.feed.status.loading {
         let since = *s.loading_since.get_or_insert(now);
         if s.feed.timed_out(now - since, LOAD_TIMEOUT) {
+            s.bridge.cancel_feed();
             s.loading_since = None;
             s.pending_arrival = None;
             s.arrival = Arrival::None;
@@ -1048,6 +1051,7 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
         }
     }
     let root = story.thread.root();
+    let had_trail = story.thread.cursor().and_then(|id| story.thread.parent_of(id)).is_some();
     match key {
         StoryKey::None => false,
         StoryKey::Back => {
@@ -1073,8 +1077,13 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
                 return true;
             }
             let id = story.thread.cursor();
+            let can_activate = id.is_some_and(|id| story.thread.has_children(id));
             if let Some(id) = id { s.activate_comment(id); }
-            if let Some(story) = s.story.as_mut() { thread_moved(story, root, tx); }
+            if can_activate {
+                if let Some(story) = s.story.as_mut() { thread_moved(story, root, had_trail, tx); }
+            } else {
+                tx.live_only();
+            }
             true
         }
         StoryKey::ToggleSummary => {
@@ -1095,51 +1104,31 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             s.toggle_saved_id(id);
             true
         }
-        StoryKey::NextComment => {
-            story.thread.next();
-            thread_moved(story, root, tx);
-            true
-        }
-        StoryKey::PrevComment => {
-            story.thread.prev();
-            thread_moved(story, root, tx);
-            true
-        }
-        StoryKey::NextSibling => {
-            story.thread.next_sibling();
-            thread_moved(story, root, tx);
-            true
-        }
-        StoryKey::PrevSibling => {
-            story.thread.prev_sibling();
-            thread_moved(story, root, tx);
-            true
-        }
-        StoryKey::Parent => {
-            story.thread.to_parent();
-            thread_moved(story, root, tx);
-            true
-        }
-        StoryKey::Fold => {
-            story.thread.fold();
-            thread_moved(story, root, tx);
+        StoryKey::NextComment | StoryKey::PrevComment | StoryKey::NextSibling | StoryKey::PrevSibling
+        | StoryKey::Parent | StoryKey::Fold | StoryKey::FirstComment | StoryKey::LastComment
+        | StoryKey::PopTrail => {
+            let changed = match key {
+                StoryKey::NextComment => story.thread.next(),
+                StoryKey::PrevComment => story.thread.prev(),
+                StoryKey::NextSibling => story.thread.next_sibling(),
+                StoryKey::PrevSibling => story.thread.prev_sibling(),
+                StoryKey::Parent => story.thread.to_parent(),
+                StoryKey::Fold => story.thread.fold(),
+                StoryKey::FirstComment => story.thread.first(),
+                StoryKey::LastComment => story.thread.last(),
+                StoryKey::PopTrail => story.thread.pop_trail(),
+                _ => unreachable!(),
+            };
+            if changed { thread_moved(story, root, had_trail, tx); } else { tx.live_only(); }
             true
         }
         StoryKey::Unfold => {
             let id = story.thread.cursor();
-            story.thread.unfold();
-            thread_moved(story, root, tx);
-            if let Some(id) = id { s.load_replies(id, false); }
-            true
-        }
-        StoryKey::FirstComment => {
-            story.thread.first();
-            thread_moved(story, root, tx);
-            true
-        }
-        StoryKey::LastComment => {
-            story.thread.last();
-            thread_moved(story, root, tx);
+            let retry = id.is_some_and(|id| story.thread.children_of(id).is_empty()
+                && story.thread.reply_batch(id, false).is_empty()
+                && !story.thread.reply_batch(id, true).is_empty());
+            if story.thread.unfold() { thread_moved(story, root, had_trail, tx); }
+            if let Some(id) = id { s.load_replies(id, retry); }
             true
         }
         StoryKey::NextScreen => {
@@ -1154,11 +1143,6 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             story.thread.toggle_focus();
             true
         }
-        StoryKey::PopTrail => {
-            story.thread.pop_trail();
-            thread_moved(story, root, tx);
-            true
-        }
     }
 }
 
@@ -1167,8 +1151,9 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
 /// A transition that re-roots the tree glides the viewport to the new root on `GLIDE` — the
 /// rows crossfade in place, so the offset is the only thing that travels. Anything else just
 /// reveals the row the cursor landed on.
-fn thread_moved(story: &mut Story, before: Option<i32>, tx: &mut Tx) {
+fn thread_moved(story: &mut Story, before: Option<i32>, had_trail: bool, tx: &mut Tx) {
     if story.thread.root() != before {
+        story.pending_reveal = None;
         tx.scroll_to("discussion-scroll", 0.0, 0.0);
     } else if let Some(id) = story.thread.cursor() {
         tx.scroll_into_view_in("discussion-scroll", format!("comment-{id}"));
@@ -1176,7 +1161,8 @@ fn thread_moved(story: &mut Story, before: Option<i32>, tx: &mut Tx) {
         // aborts the reveal asked for that commit: the row lands where the trail's removal
         // left it. With no ancestors left there is no trail, so ask again next frame, when
         // the layout no longer holds one.
-        story.pending_reveal = (story.thread.trail().len() == 1).then_some(id);
+        let no_trail = story.thread.parent_of(id).is_none();
+        story.pending_reveal = ((had_trail || story.pending_reveal.is_some()) && no_trail).then_some(id);
     }
 }
 
@@ -1248,14 +1234,12 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
         Some(story) => (
             story_main(story, &k, t, s.pane()),
             Toolbar::new().leading(story_view::story_toolbar(
-                story,
                 &k,
                 t,
                 accent,
-                s.config.profile.label(),
                 s.saved.contains(story.id()),
             )),
-            story_view::inspector_pane(story, &k, t, accent, &mut overlays),
+            story_view::inspector_pane(story, &k, t, accent, &mut overlays, reduced),
         ),
         None => (feed_body(s, &k, t, accent, cols, reduced), toolbar, col()),
     };
@@ -1448,8 +1432,13 @@ fn story_row(s: &App, i: usize, t: tok::Theme, accent: Color, reduced: bool) -> 
                 .color(if selected { accent } else { t.text_secondary }),
         ),
     );
-    if saved && !in_saved_view {
-        lead = lead.child(saved_dot(format!("saved-dot-{id}"), accent));
+    if !in_saved_view {
+        let key = format!("saved-dot-{id}");
+        lead = lead.child(if saved {
+            saved_dot(key, accent)
+        } else {
+            el().key(key).size(6.0, 6.0)
+        });
     }
     r = r.child(lead).child(
         col()
@@ -1536,6 +1525,7 @@ fn act(label: &str, color: Color, t: tok::Theme, on_press: impl Fn(&mut App) + '
 
 fn footer(s: &App, k: &Kit, t: tok::Theme, accent: Color) -> El {
     let mut f = row()
+        .key("feed-footer")
         .motion(Spring::NONE)
         .instant_changes()
         // Match the 18 pt page controls plus vertical padding while a label replaces them.
@@ -1560,7 +1550,7 @@ fn footer(s: &App, k: &Kit, t: tok::Theme, accent: Color) -> El {
         .child(hint(k, t, &["n", "p"], "page"))
         .child(hint(k, t, &["1", "4"], "tabs"))
         .child(el().grow(1.0));
-    if s.feed.exhausted(s.cells()) {
+    if !s.feed.status.loading && s.feed.exhausted(s.cells()) {
         f = f.child(
             text("No more stories")
                 .font(type_::LABEL)
@@ -1569,6 +1559,14 @@ fn footer(s: &App, k: &Kit, t: tok::Theme, accent: Color) -> El {
     }
     if s.feed.status.loading && s.feed.stories.is_empty() && s.feed.status.error.is_none() {
         f = f.child(text(loading_label(s.feed.tab)).font(type_::LABEL).color(t.text_secondary).a11y_hidden());
+    } else if s.feed.status.loading && !s.feed.stories.is_empty() {
+        let label = if s.requested.is_some_and(|(_, ranking)| ranking == Ranking::Fresh) {
+            "Refreshing…"
+        } else {
+            "Loading page…"
+        };
+        f = f.child(row().role("status").label(label).busy(true)
+            .child(text(label).font(type_::LABEL).color(t.text_secondary).a11y_hidden()));
     } else if s.feed.tab != StoryType::Saved {
         f = f.child(stepper(s.feed.stepper(), t, accent));
     }
@@ -2380,6 +2378,65 @@ mod tests {
     }
 
     #[test]
+    fn retained_feed_rows_show_one_busy_status_until_settled_or_timed_out() {
+        let mut s = app(true, SavedView::in_memory());
+        s.measured.set(Some((11, 1)));
+        s.request((11, 1), Ranking::Fresh);
+        s.source = Arc::new(Source::Fake(crate::service::FakeService::fixture()
+            .with_delay(Duration::from_millis(200))));
+        s.headless = false;
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.frame(0.0);
+        let before = rt.elements();
+        let footer = before.iter().find(|e| e.key.as_deref() == Some("feed-footer")).unwrap().rect;
+        let first = before.iter().find(|e| e.key.as_deref() == Some("story-1")).unwrap().rect;
+        rt.update(|s, _| s.refresh());
+        rt.frame(0.0);
+        let pending = rt.elements();
+        assert_eq!(pending.iter().find(|e| e.key.as_deref() == Some("feed-footer")).unwrap().rect, footer);
+        assert_eq!(pending.iter().find(|e| e.key.as_deref() == Some("story-1")).unwrap().rect, first);
+        assert!(pending.iter().any(|e| e.label.as_deref() == Some("Refreshing…")));
+        assert_eq!(rt.accessibility_tree().nodes.iter().filter(|(_, node)| node.is_busy()).count(), 1);
+        press(&mut rt.state, rune::Key::Text("n".into()));
+        assert_eq!(rt.state.feed.display_cursor, 0, "repeated paging is refused during refresh");
+        poll(&mut rt.state, 0.0, &mut Tx::default());
+        poll(&mut rt.state, LOAD_TIMEOUT, &mut Tx::default());
+        assert!(!rt.state.bridge.is_pending(), "timeout cancels the obsolete response");
+        assert!(rt.state.feed.status.error.is_some());
+        rt.update(|_, tx| tx.instant());
+        rt.frame(0.0);
+        assert!(!rt.accessibility_tree().nodes.iter().any(|(_, node)| node.is_busy()));
+
+        // A failed refresh settles with the same held rows and no busy status.
+        let failing = crate::service::FakeService::fixture();
+        failing.fail_ranking(StoryType::Top);
+        rt.state.source = Arc::new(Source::Fake(failing));
+        rt.state.refresh();
+        poll_until(&mut rt.state, |s| !s.feed.status.loading);
+        assert!(rt.state.feed.status.error.is_some());
+        assert_eq!(rt.state.feed.stories[0].id, 1);
+
+        rt.state.source = Arc::new(Source::Fake(crate::service::FakeService::fixture()
+            .with_delay(Duration::from_millis(50))));
+        rt.state.refresh();
+        poll_until(&mut rt.state, |s| !s.feed.status.loading);
+        assert!(rt.state.feed.status.error.is_none());
+        press(&mut rt.state, rune::Key::Text("n".into()));
+        rt.update(|_, tx| tx.instant());
+        rt.frame(0.0);
+        assert!(rt.elements().iter().any(|e| e.label.as_deref() == Some("Loading page…")));
+        assert_eq!(rt.accessibility_tree().nodes.iter().filter(|(_, node)| node.is_busy()).count(), 1);
+        assert_eq!(rt.state.feed.stories[0].id, 1);
+        poll_until(&mut rt.state, |s| !s.feed.status.loading);
+        assert_eq!(rt.state.feed.stories[0].id, 12);
+        press(&mut rt.state, rune::Key::Text("p".into()));
+        assert!(!rt.state.feed.status.loading, "cached return settles before a frame can show busy");
+        rt.update(|_, tx| tx.instant());
+        rt.frame(0.0);
+        assert!(!rt.accessibility_tree().nodes.iter().any(|(_, node)| node.is_busy()));
+    }
+
+    #[test]
     fn system_reduced_motion_lands_saved_tab_and_returns_keys_to_the_feed() {
         let mut s = app(true, SavedView::in_memory());
         s.request((11, 1), Ranking::Fresh);
@@ -2759,23 +2816,99 @@ mod tests {
             .collapsed()
     }
 
+    fn long_discussion() -> App {
+        let mut s = app(true, SavedView::in_memory());
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        let template = crate::fixtures::comments().remove(0);
+        *fake.comments.lock().unwrap() = (10000..10244).map(|id| {
+            let mut c = template.clone(); c.id = id; c.child_ids.clear();
+            c.text = format!("Comment {id}: {}", "A mixed height paragraph. ".repeat(if id % 3 == 0 { 18 } else { 2 })); c
+        }).collect();
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        s
+    }
+
+    #[test]
+    fn unavailable_reply_group_retries_from_pointer_and_keyboard() {
+        for activation in [None, Some(rune::Key::Enter), Some(rune::Key::Right)] {
+            let mut s = app(true, SavedView::in_memory());
+            let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+            let mut parent = crate::fixtures::comments().remove(0);
+            parent.deleted = true;
+            parent.child_ids = vec![9010];
+            let child = crate::fixtures::thread().into_iter().find(|c| c.id == 9010).unwrap();
+            *fake.comments.lock().unwrap() = vec![parent, child];
+            s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+            s.story.as_mut().unwrap().thread.merge_replies(901, &[9010], Err("Offline".into()));
+            let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+            rt.on_key = Some(on_key);
+            rt.frame(0.0);
+            let elements = rt.elements();
+            let control = elements.iter().find(|e| e.key.as_deref() == Some("comment-group-901")).unwrap();
+            assert_eq!(control.label.as_deref(), Some("Retry replies: 1 reply"));
+            assert!(!elements.iter().any(|e| e.key.as_deref() == Some("comment-load-901-true")));
+            if let Some(key) = activation {
+                route(&mut rt, key);
+            } else {
+                let [x, y, w, h] = control.rect;
+                rt.pointer_down(x + w / 2.0, y + h / 2.0);
+                rt.pointer_up(x + w / 2.0, y + h / 2.0);
+                rt.frame(0.3);
+            }
+            let story = rt.state.story.as_ref().unwrap();
+            assert_eq!(story.thread.children_of(901), &[9010]);
+            assert!(story.thread.reply_batch(901, true).is_empty());
+        }
+    }
+
+    #[test]
+    fn discussion_retries_reveal_only_when_a_trail_disappears() {
+        let mut s = app(true, SavedView::in_memory());
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        press(&mut s, rune::Key::Text("j".into()));
+        assert_eq!(s.story.as_ref().unwrap().thread.cursor(), Some(902));
+        assert_eq!(s.story.as_ref().unwrap().pending_reveal, None, "root-to-root needs no retry");
+        press(&mut s, rune::Key::Text("k".into()));
+        s.activate_comment(901);
+        press(&mut s, rune::Key::Text("j".into()));
+        assert_eq!(s.story.as_ref().unwrap().thread.cursor(), Some(9010));
+        press(&mut s, rune::Key::Text("u".into()));
+        assert_eq!(s.story.as_ref().unwrap().pending_reveal, Some(901), "removing the trail needs a retry");
+        press(&mut s, rune::Key::Text("j".into()));
+        assert_eq!(s.story.as_ref().unwrap().pending_reveal, None, "restoring the trail cancels the retry");
+        press(&mut s, rune::Key::Text("u".into()));
+        // A second key before the next poll must reveal the new root, not the old one.
+        press(&mut s, rune::Key::Text("]".into()));
+        assert_eq!(s.story.as_ref().unwrap().pending_reveal, Some(902));
+        assert!(poll(&mut s, 0.0, &mut Tx::default()));
+        assert_eq!(s.story.as_ref().unwrap().pending_reveal, None);
+        press(&mut s, rune::Key::Enter);
+        assert_eq!(s.story.as_ref().unwrap().pending_reveal, None, "Enter on a leaf is a no-op");
+    }
+
+    #[test]
+    fn discussion_boundary_key_does_not_pull_the_reader_back() {
+        let mut rt = rune::Runtime::new(long_discussion(), view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.poll = Some(poll);
+        rt.frame(0.0);
+        rt.update(|_, tx| tx.scroll_to_y("discussion-scroll", 1000.0));
+        for _ in 0..40 { rt.frame(1.0 / 60.0); }
+        let y = |rt: &rune::Runtime<App>| rt.elements().iter()
+            .find(|e| e.key.as_deref() == Some("discussion-header")).unwrap().rect[1];
+        let before = y(&rt);
+        assert!(before < 0.0, "the reader scrolled away from the first comment");
+        route(&mut rt, rune::Key::Text("k".into()));
+        for _ in 0..20 { rt.frame(1.0 / 60.0); }
+        assert!((y(&rt) - before).abs() < 0.5, "a boundary key must not reveal the unchanged cursor");
+    }
+
     #[test]
     #[ignore = "Explicit Metal-backed long-discussion mounting and reveal verification"]
     fn render_long_discussion_workflows() {
-        fn long() -> App {
-            let mut s = app(true, SavedView::in_memory());
-            let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
-            let template = crate::fixtures::comments().remove(0);
-            *fake.comments.lock().unwrap() = (10000..10244).map(|id| {
-                let mut c = template.clone(); c.id = id; c.child_ids.clear();
-                c.text = format!("Comment {id}: {}", "A mixed height paragraph. ".repeat(if id % 3 == 0 { 18 } else { 2 })); c
-            }).collect();
-            s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
-            s
-        }
         let out = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("target/ux-motion/comments");
         std::fs::create_dir_all(&out).unwrap();
-        fn reduced() -> App { let mut s = long(); s.reduced = true; s }
+        fn reduced() -> App { let mut s = long_discussion(); s.reduced = true; s }
         for (name, script_text, selected) in [("top", "[]", 10000), ("bottom", r#"[{"t":0.2,"type":"key","name":"G"}]"#, 10243),
             ("resize-reduced", r#"[{"t":0.1,"type":"resize","dw":400,"dh":140,"dur":0.1},{"t":0.3,"type":"key","name":"G"}]"#, 10243)] {
             let script = out.join(format!("{name}-script.json"));
@@ -2786,7 +2919,7 @@ mod tests {
                 "--script".into(), script.display().to_string(), "--at".into(), "0.8".into(),
                 "--snap".into(), stem.with_extension("png").display().to_string(),
                 "--tree".into(), stem.with_extension("json").display().to_string()]);
-            let mut spec = AppSpec::new("Hacker News", (1180.0,760.0), if name == "resize-reduced" { reduced } else { long }, view);
+            let mut spec = AppSpec::new("Hacker News", (1180.0,760.0), if name == "resize-reduced" { reduced } else { long_discussion }, view);
             spec.on_key = Some(on_key);
             rune::tooling::headless(rune::App::new(spec), args);
             let tree: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(stem.with_extension("json")).unwrap()).unwrap();
@@ -2797,6 +2930,53 @@ mod tests {
             let absent = if selected == 10000 { 10243 } else { 10000 };
             assert!(!elements.iter().any(|e| e["key"] == format!("comment-text-{absent}")), "offscreen text is not mounted");
         }
+    }
+
+    #[test]
+    #[ignore = "Explicit Metal-backed continuous discussion scroll profile"]
+    fn render_continuous_discussion_scroll() {
+        use std::io::BufRead;
+
+        let out = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("target/ux-motion/comments");
+        std::fs::create_dir_all(&out).unwrap();
+        let script = out.join("continuous-scroll-script.json");
+        std::fs::write(&script, r#"[
+            {"t":0.5,"type":"scroll","key":"discussion-scroll","dy":-1800,"dur":1.4},
+            {"t":2.3,"type":"scroll","key":"discussion-scroll","dy":3000,"dur":1.4},
+            {"t":4.1,"type":"scroll","key":"discussion-scroll","dy":-1800,"dur":1.4},
+            {"t":5.9,"type":"scroll","key":"discussion-scroll","dy":3000,"dur":1.4}
+        ]"#).unwrap();
+        let stem = out.join("continuous-scroll");
+        let trace = stem.with_extension("trace.jsonl");
+        let args = rune::tooling::Args::parse_from(vec!["comments-scroll".into(),
+            "--size".into(), "1180x760".into(), "--theme".into(), "dark".into(),
+            "--script".into(), script.display().to_string(), "--at".into(), "7.8".into(),
+            "--snap".into(), stem.with_extension("png").display().to_string(),
+            "--tree".into(), stem.with_extension("json").display().to_string(),
+            "--trace".into(), trace.display().to_string()]);
+        let mut spec = AppSpec::new("Hacker News", (1180.0, 760.0), long_discussion, view);
+        spec.on_key = Some(on_key);
+        rune::tooling::headless(rune::App::new(spec), args);
+
+        let mut discussion = None;
+        let mut reached = [false; 4];
+        for line in std::io::BufReader::new(std::fs::File::open(trace).unwrap()).lines() {
+            let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+            for meta in frame["m"].as_array().into_iter().flatten() {
+                if meta["nm"].as_str().is_some_and(|name| name.ends_with("/discussion-scroll/discussion")) {
+                    discussion = meta["id"].as_u64();
+                }
+            }
+            for offset in frame["sc"].as_array().into_iter().flatten() {
+                if offset[0].as_u64() != discussion || discussion.is_none() { continue; }
+                let (Some(t), Some(y)) = (frame["t"].as_f64(), offset[2].as_f64()) else { continue; };
+                if (500.0..=2000.0).contains(&t) && y > 1000.0 { reached[0] = true; }
+                if (2300.0..=3800.0).contains(&t) && y < 2.0 { reached[1] = true; }
+                if (4100.0..=5600.0).contains(&t) && y > 1000.0 { reached[2] = true; }
+                if (5900.0..=7400.0).contains(&t) && y < 2.0 { reached[3] = true; }
+            }
+        }
+        assert_eq!(reached, [true; 4], "both cold and warm swipes must move down and back up");
     }
 
     #[test]

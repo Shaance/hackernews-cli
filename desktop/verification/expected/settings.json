@@ -26,15 +26,15 @@
               {
                 "bounds": [
                   360.0,
-                  197.5,
+                  189.5,
                   460.0,
-                  365.0
+                  381.0
                 ],
                 "children": [
                   {
                     "bounds": [
                       360.0,
-                      197.5,
+                      189.5,
                       460.0,
                       50.0
                     ],
@@ -42,7 +42,7 @@
                       {
                         "bounds": [
                           376.0,
-                          213.5,
+                          205.5,
                           410.0,
                           16.0
                         ],
@@ -56,7 +56,7 @@
                         ],
                         "bounds": [
                           786.0,
-                          211.5,
+                          203.5,
                           20.0,
                           20.0
                         ],
@@ -71,282 +71,364 @@
                   {
                     "bounds": [
                       360.0,
-                      247.5,
+                      239.5,
                       460.0,
-                      315.0
+                      331.0
                     ],
                     "children": [
                       {
                         "bounds": [
                           360.0,
-                          247.5,
+                          239.5,
                           460.0,
-                          315.0
+                          331.0
                         ],
                         "children": [
                           {
+                            "actions": [
+                              "scroll-up",
+                              "scroll-down",
+                              "set-scroll-offset"
+                            ],
                             "bounds": [
-                              360.0,
-                              247.5,
-                              460.0,
-                              71.0
-                            ],
-                            "children": [
-                              {
-                                "bounds": [
-                                  360.0,
-                                  266.5,
-                                  460.0,
-                                  52.0
-                                ],
-                                "children": [
-                                  {
-                                    "actions": [
-                                      "click",
-                                      "focus"
-                                    ],
-                                    "bounds": [
-                                      360.0,
-                                      266.5,
-                                      460.0,
-                                      20.0
-                                    ],
-                                    "key": "item0",
-                                    "name": "OpenRouter",
-                                    "position": 1,
-                                    "role": "radio-button",
-                                    "states": [
-                                      "checked"
-                                    ]
-                                  },
-                                  {
-                                    "actions": [
-                                      "click",
-                                      "focus"
-                                    ],
-                                    "bounds": [
-                                      360.0,
-                                      298.5,
-                                      460.0,
-                                      20.0
-                                    ],
-                                    "key": "item1",
-                                    "name": "Anthropic",
-                                    "position": 2,
-                                    "role": "radio-button",
-                                    "states": [
-                                      "unchecked"
-                                    ]
-                                  }
-                                ],
-                                "key": "items",
-                                "role": "group",
-                                "setSize": 2
-                              }
-                            ],
-                            "name": "Provider",
-                            "role": "radio-group"
-                          },
-                          {
-                            "bounds": [
-                              360.0,
-                              334.5,
-                              460.0,
-                              70.0
-                            ],
-                            "children": [
-                              {
-                                "bounds": [
-                                  360.0,
-                                  334.5,
-                                  460.0,
-                                  15.0
-                                ],
-                                "name": "OpenRouter key",
-                                "role": "label"
-                              },
-                              {
-                                "bounds": [
-                                  360.0,
-                                  355.5,
-                                  452.0,
-                                  28.0
-                                ],
-                                "children": [
-                                  {
-                                    "actions": [
-                                      "click",
-                                      "focus",
-                                      "set-value",
-                                      "replace-selected-text",
-                                      "set-text-selection"
-                                    ],
-                                    "bounds": [
-                                      368.0,
-                                      361.5,
-                                      444.0,
-                                      16.0
-                                    ],
-                                    "key": "input",
-                                    "name": "OpenRouter key",
-                                    "placeholder": "paste a key",
-                                    "role": "password-input",
-                                    "selection": [
-                                      1,
-                                      26,
-                                      1,
-                                      26
-                                    ],
-                                    "states": [
-                                      "focused"
-                                    ]
-                                  }
-                                ],
-                                "key": "value",
-                                "role": "group"
-                              },
-                              {
-                                "bounds": [
-                                  360.0,
-                                  389.5,
-                                  460.0,
-                                  15.0
-                                ],
-                                "name": "Masked. Delete clears it; the environment is the fallback.",
-                                "role": "label"
-                              }
-                            ],
-                            "key": "settings-key",
-                            "role": "group"
-                          },
-                          {
-                            "bounds": [
-                              360.0,
-                              420.5,
-                              460.0,
-                              37.0
+                              376.0,
+                              239.5,
+                              428.0,
+                              275.0
                             ],
                             "children": [
                               {
                                 "actions": [
-                                  "click",
-                                  "focus"
+                                  "scroll-into-view"
                                 ],
                                 "bounds": [
-                                  360.0,
-                                  420.5,
-                                  460.0,
-                                  16.0
-                                ],
-                                "name": "Automatic summaries",
-                                "role": "switch",
-                                "states": [
-                                  "checked"
-                                ]
-                              },
-                              {
-                                "bounds": [
-                                  360.0,
-                                  442.5,
-                                  460.0,
-                                  15.0
-                                ],
-                                "name": "Off stops new automatic requests. Submitted work can finish.",
-                                "role": "label"
-                              }
-                            ],
-                            "key": "settings-automatic",
-                            "role": "group"
-                          },
-                          {
-                            "bounds": [
-                              360.0,
-                              473.5,
-                              460.0,
-                              49.0
-                            ],
-                            "children": [
-                              {
-                                "bounds": [
-                                  360.0,
-                                  473.5,
-                                  167.4,
-                                  28.0
+                                  376.0,
+                                  239.5,
+                                  428.0,
+                                  275.0
                                 ],
                                 "children": [
                                   {
                                     "actions": [
-                                      "click",
-                                      "focus"
+                                      "scroll-into-view"
                                     ],
                                     "bounds": [
-                                      360.0,
-                                      473.5,
-                                      83.7,
-                                      28.0
+                                      376.0,
+                                      239.5,
+                                      428.0,
+                                      71.0
                                     ],
-                                    "key": "segment0",
-                                    "name": "Fast",
-                                    "position": 1,
-                                    "role": "radio-button",
-                                    "states": [
-                                      "checked"
-                                    ]
+                                    "children": [
+                                      {
+                                        "actions": [
+                                          "scroll-into-view"
+                                        ],
+                                        "bounds": [
+                                          376.0,
+                                          258.5,
+                                          428.0,
+                                          52.0
+                                        ],
+                                        "children": [
+                                          {
+                                            "actions": [
+                                              "click",
+                                              "focus",
+                                              "scroll-into-view"
+                                            ],
+                                            "bounds": [
+                                              376.0,
+                                              258.5,
+                                              428.0,
+                                              20.0
+                                            ],
+                                            "key": "item0",
+                                            "name": "OpenRouter",
+                                            "position": 1,
+                                            "role": "radio-button",
+                                            "states": [
+                                              "checked"
+                                            ]
+                                          },
+                                          {
+                                            "actions": [
+                                              "click",
+                                              "focus",
+                                              "scroll-into-view"
+                                            ],
+                                            "bounds": [
+                                              376.0,
+                                              290.5,
+                                              428.0,
+                                              20.0
+                                            ],
+                                            "key": "item1",
+                                            "name": "Anthropic",
+                                            "position": 2,
+                                            "role": "radio-button",
+                                            "states": [
+                                              "unchecked"
+                                            ]
+                                          }
+                                        ],
+                                        "key": "items",
+                                        "role": "group",
+                                        "setSize": 2
+                                      }
+                                    ],
+                                    "name": "Provider",
+                                    "role": "radio-group"
                                   },
                                   {
                                     "actions": [
-                                      "click",
-                                      "focus"
+                                      "scroll-into-view"
                                     ],
                                     "bounds": [
-                                      443.7,
-                                      473.5,
-                                      83.7,
-                                      28.0
+                                      376.0,
+                                      326.5,
+                                      428.0,
+                                      70.0
                                     ],
-                                    "key": "segment1",
-                                    "name": "Thorough",
-                                    "position": 2,
-                                    "role": "radio-button",
-                                    "states": [
-                                      "unchecked"
-                                    ]
+                                    "children": [
+                                      {
+                                        "actions": [
+                                          "scroll-into-view"
+                                        ],
+                                        "bounds": [
+                                          376.0,
+                                          326.5,
+                                          428.0,
+                                          15.0
+                                        ],
+                                        "name": "OpenRouter key",
+                                        "role": "label"
+                                      },
+                                      {
+                                        "actions": [
+                                          "scroll-into-view"
+                                        ],
+                                        "bounds": [
+                                          376.0,
+                                          347.5,
+                                          420.0,
+                                          28.0
+                                        ],
+                                        "children": [
+                                          {
+                                            "actions": [
+                                              "click",
+                                              "focus",
+                                              "set-value",
+                                              "replace-selected-text",
+                                              "set-text-selection",
+                                              "scroll-into-view"
+                                            ],
+                                            "bounds": [
+                                              384.0,
+                                              353.5,
+                                              412.0,
+                                              16.0
+                                            ],
+                                            "key": "input",
+                                            "name": "OpenRouter key",
+                                            "placeholder": "paste a key",
+                                            "role": "password-input",
+                                            "selection": [
+                                              1,
+                                              26,
+                                              1,
+                                              26
+                                            ],
+                                            "states": [
+                                              "focused"
+                                            ]
+                                          }
+                                        ],
+                                        "key": "value",
+                                        "role": "group"
+                                      },
+                                      {
+                                        "actions": [
+                                          "scroll-into-view"
+                                        ],
+                                        "bounds": [
+                                          376.0,
+                                          381.5,
+                                          428.0,
+                                          15.0
+                                        ],
+                                        "name": "Masked. Delete clears it; the environment is the fallback.",
+                                        "role": "label"
+                                      }
+                                    ],
+                                    "key": "settings-key",
+                                    "role": "group"
+                                  },
+                                  {
+                                    "actions": [
+                                      "scroll-into-view"
+                                    ],
+                                    "bounds": [
+                                      376.0,
+                                      412.5,
+                                      428.0,
+                                      37.0
+                                    ],
+                                    "children": [
+                                      {
+                                        "actions": [
+                                          "click",
+                                          "focus",
+                                          "scroll-into-view"
+                                        ],
+                                        "bounds": [
+                                          376.0,
+                                          412.5,
+                                          428.0,
+                                          16.0
+                                        ],
+                                        "name": "Automatic summaries",
+                                        "role": "switch",
+                                        "states": [
+                                          "checked"
+                                        ]
+                                      },
+                                      {
+                                        "actions": [
+                                          "scroll-into-view"
+                                        ],
+                                        "bounds": [
+                                          376.0,
+                                          434.5,
+                                          428.0,
+                                          15.0
+                                        ],
+                                        "name": "Off stops new automatic requests. Submitted work can finish.",
+                                        "role": "label"
+                                      }
+                                    ],
+                                    "key": "settings-automatic",
+                                    "role": "group"
+                                  },
+                                  {
+                                    "actions": [
+                                      "scroll-into-view"
+                                    ],
+                                    "bounds": [
+                                      376.0,
+                                      465.5,
+                                      428.0,
+                                      49.0
+                                    ],
+                                    "children": [
+                                      {
+                                        "actions": [
+                                          "scroll-into-view"
+                                        ],
+                                        "bounds": [
+                                          376.0,
+                                          465.5,
+                                          167.4,
+                                          28.0
+                                        ],
+                                        "children": [
+                                          {
+                                            "actions": [
+                                              "click",
+                                              "focus",
+                                              "scroll-into-view"
+                                            ],
+                                            "bounds": [
+                                              376.0,
+                                              465.5,
+                                              83.7,
+                                              28.0
+                                            ],
+                                            "key": "segment0",
+                                            "name": "Fast",
+                                            "position": 1,
+                                            "role": "radio-button",
+                                            "states": [
+                                              "checked"
+                                            ]
+                                          },
+                                          {
+                                            "actions": [
+                                              "click",
+                                              "focus",
+                                              "scroll-into-view"
+                                            ],
+                                            "bounds": [
+                                              459.7,
+                                              465.5,
+                                              83.7,
+                                              28.0
+                                            ],
+                                            "key": "segment1",
+                                            "name": "Thorough",
+                                            "position": 2,
+                                            "role": "radio-button",
+                                            "states": [
+                                              "unchecked"
+                                            ]
+                                          }
+                                        ],
+                                        "name": "Profile",
+                                        "role": "radio-group",
+                                        "setSize": 2
+                                      },
+                                      {
+                                        "actions": [
+                                          "scroll-into-view"
+                                        ],
+                                        "bounds": [
+                                          553.4,
+                                          472.0,
+                                          156.6,
+                                          15.0
+                                        ],
+                                        "key": "settings-model",
+                                        "name": "anthropic/claude-haiku-5.5",
+                                        "role": "label"
+                                      },
+                                      {
+                                        "actions": [
+                                          "scroll-into-view"
+                                        ],
+                                        "bounds": [
+                                          376.0,
+                                          499.5,
+                                          428.0,
+                                          15.0
+                                        ],
+                                        "name": "Fast is a quick overview; Thorough reads more of the discussion.",
+                                        "role": "label"
+                                      }
+                                    ],
+                                    "key": "settings-profile",
+                                    "role": "group"
                                   }
                                 ],
-                                "name": "Profile",
-                                "role": "radio-group",
-                                "setSize": 2
-                              },
-                              {
-                                "bounds": [
-                                  537.4,
-                                  480.0,
-                                  156.6,
-                                  15.0
-                                ],
-                                "key": "settings-model",
-                                "name": "anthropic/claude-haiku-5.5",
-                                "role": "label"
-                              },
-                              {
-                                "bounds": [
-                                  360.0,
-                                  507.5,
-                                  460.0,
-                                  15.0
-                                ],
-                                "name": "Fast is a quick overview; Thorough reads more of the discussion.",
-                                "role": "label"
+                                "key": "settings-fields",
+                                "role": "group"
                               }
                             ],
-                            "key": "settings-profile",
-                            "role": "group"
+                            "key": "settings-scroll",
+                            "role": "scroll-view",
+                            "scroll": [
+                              0.0,
+                              0.0,
+                              0.0
+                            ],
+                            "states": [
+                              "clips"
+                            ]
                           },
                           {
                             "bounds": [
-                              360.0,
-                              538.5,
-                              460.0,
+                              376.0,
+                              530.5,
+                              428.0,
                               24.0
                             ],
                             "children": [
@@ -356,8 +438,8 @@
                                   "focus"
                                 ],
                                 "bounds": [
-                                  360.0,
-                                  538.5,
+                                  376.0,
+                                  530.5,
                                   198.6,
                                   24.0
                                 ],
@@ -370,8 +452,8 @@
                                   "focus"
                                 ],
                                 "bounds": [
-                                  684.7,
-                                  538.5,
+                                  668.7,
+                                  530.5,
                                   67.2,
                                   24.0
                                 ],
@@ -384,8 +466,8 @@
                                   "focus"
                                 ],
                                 "bounds": [
-                                  759.9,
-                                  538.5,
+                                  743.9,
+                                  530.5,
                                   60.1,
                                   24.0
                                 ],
@@ -1412,7 +1494,7 @@
       "rect": [
         36.0,
         184.5,
-        18.0,
+        30.0,
         15.0
       ],
       "role": "group",
@@ -1466,13 +1548,33 @@
       "focusable": false,
       "focused": false,
       "inert": true,
+      "key": "saved-dot-3",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#1/saved-dot-3",
+      "rect": [
+        60.0,
+        189.0,
+        6.0,
+        6.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#2",
       "rect": [
-        68.0,
+        80.0,
         174.38,
-        1092.0,
+        1080.0,
         35.25
       ],
       "role": "group",
@@ -1491,9 +1593,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#2/title-3",
       "rect": [
-        68.0,
+        80.0,
         174.38,
-        1092.0,
+        1080.0,
         16.25
       ],
       "role": "text",
@@ -1512,9 +1614,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#2/#1",
       "rect": [
-        68.0,
+        80.0,
         194.63,
-        1092.0,
+        1080.0,
         15.0
       ],
       "role": "text",
@@ -1594,7 +1696,7 @@
       "rect": [
         36.0,
         242.5,
-        18.0,
+        30.0,
         15.0
       ],
       "role": "group",
@@ -1648,13 +1750,33 @@
       "focusable": false,
       "focused": false,
       "inert": true,
+      "key": "saved-dot-4",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#1/saved-dot-4",
+      "rect": [
+        60.0,
+        247.0,
+        6.0,
+        6.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#2",
       "rect": [
-        68.0,
+        80.0,
         232.38,
-        1092.0,
+        1080.0,
         35.25
       ],
       "role": "group",
@@ -1673,9 +1795,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#2/title-4",
       "rect": [
-        68.0,
+        80.0,
         232.38,
-        1092.0,
+        1080.0,
         16.25
       ],
       "role": "text",
@@ -1694,9 +1816,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#2/#1",
       "rect": [
-        68.0,
+        80.0,
         252.63,
-        1092.0,
+        1080.0,
         15.0
       ],
       "role": "text",
@@ -1776,7 +1898,7 @@
       "rect": [
         36.0,
         300.5,
-        18.0,
+        30.0,
         15.0
       ],
       "role": "group",
@@ -1830,13 +1952,33 @@
       "focusable": false,
       "focused": false,
       "inert": true,
+      "key": "saved-dot-5",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#1/saved-dot-5",
+      "rect": [
+        60.0,
+        305.0,
+        6.0,
+        6.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#2",
       "rect": [
-        68.0,
+        80.0,
         290.38,
-        1092.0,
+        1080.0,
         35.25
       ],
       "role": "group",
@@ -1855,9 +1997,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#2/title-5",
       "rect": [
-        68.0,
+        80.0,
         290.38,
-        1092.0,
+        1080.0,
         16.25
       ],
       "role": "text",
@@ -1876,9 +2018,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#2/#1",
       "rect": [
-        68.0,
+        80.0,
         310.63,
-        1092.0,
+        1080.0,
         15.0
       ],
       "role": "text",
@@ -2161,7 +2303,7 @@
       "rect": [
         36.0,
         416.5,
-        18.0,
+        30.0,
         15.0
       ],
       "role": "group",
@@ -2215,13 +2357,33 @@
       "focusable": false,
       "focused": false,
       "inert": true,
+      "key": "saved-dot-7",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#1/saved-dot-7",
+      "rect": [
+        60.0,
+        421.0,
+        6.0,
+        6.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#2",
       "rect": [
-        68.0,
+        80.0,
         406.38,
-        1092.0,
+        1080.0,
         35.25
       ],
       "role": "group",
@@ -2240,9 +2402,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#2/title-7",
       "rect": [
-        68.0,
+        80.0,
         406.38,
-        1092.0,
+        1080.0,
         16.25
       ],
       "role": "text",
@@ -2261,9 +2423,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#2/#1",
       "rect": [
-        68.0,
+        80.0,
         426.63,
-        1092.0,
+        1080.0,
         15.0
       ],
       "role": "text",
@@ -2343,7 +2505,7 @@
       "rect": [
         36.0,
         474.5,
-        18.0,
+        30.0,
         15.0
       ],
       "role": "group",
@@ -2397,13 +2559,33 @@
       "focusable": false,
       "focused": false,
       "inert": true,
+      "key": "saved-dot-8",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#1/saved-dot-8",
+      "rect": [
+        60.0,
+        479.0,
+        6.0,
+        6.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#2",
       "rect": [
-        68.0,
+        80.0,
         464.38,
-        1092.0,
+        1080.0,
         35.25
       ],
       "role": "group",
@@ -2422,9 +2604,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#2/title-8",
       "rect": [
-        68.0,
+        80.0,
         464.38,
-        1092.0,
+        1080.0,
         16.25
       ],
       "role": "text",
@@ -2443,9 +2625,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#2/#1",
       "rect": [
-        68.0,
+        80.0,
         484.63,
-        1092.0,
+        1080.0,
         15.0
       ],
       "role": "text",
@@ -2525,7 +2707,7 @@
       "rect": [
         36.0,
         532.5,
-        18.0,
+        30.0,
         15.0
       ],
       "role": "group",
@@ -2579,13 +2761,33 @@
       "focusable": false,
       "focused": false,
       "inert": true,
+      "key": "saved-dot-9",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#1/saved-dot-9",
+      "rect": [
+        60.0,
+        537.0,
+        6.0,
+        6.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#2",
       "rect": [
-        68.0,
+        80.0,
         522.38,
-        1092.0,
+        1080.0,
         35.25
       ],
       "role": "group",
@@ -2604,9 +2806,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#2/title-9",
       "rect": [
-        68.0,
+        80.0,
         522.38,
-        1092.0,
+        1080.0,
         16.25
       ],
       "role": "text",
@@ -2625,9 +2827,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#2/#1",
       "rect": [
-        68.0,
+        80.0,
         542.63,
-        1092.0,
+        1080.0,
         15.0
       ],
       "role": "text",
@@ -2707,7 +2909,7 @@
       "rect": [
         36.0,
         590.5,
-        18.0,
+        30.0,
         15.0
       ],
       "role": "group",
@@ -2761,13 +2963,33 @@
       "focusable": false,
       "focused": false,
       "inert": true,
+      "key": "saved-dot-10",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#1/saved-dot-10",
+      "rect": [
+        60.0,
+        595.0,
+        6.0,
+        6.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#2",
       "rect": [
-        68.0,
+        80.0,
         580.38,
-        1092.0,
+        1080.0,
         35.25
       ],
       "role": "group",
@@ -2786,9 +3008,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#2/title-10",
       "rect": [
-        68.0,
+        80.0,
         580.38,
-        1092.0,
+        1080.0,
         16.25
       ],
       "role": "text",
@@ -2807,9 +3029,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#2/#1",
       "rect": [
-        68.0,
+        80.0,
         600.63,
-        1092.0,
+        1080.0,
         15.0
       ],
       "role": "text",
@@ -3045,9 +3267,10 @@
       "focusable": false,
       "focused": false,
       "inert": true,
+      "key": "feed-footer",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer",
       "rect": [
         8.0,
         710.0,
@@ -3066,7 +3289,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#0",
       "rect": [
         32.0,
         723.5,
@@ -3086,7 +3309,7 @@
       "label": "j k",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#0/#0",
       "rect": [
         32.0,
         724.0,
@@ -3106,7 +3329,7 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#0/#0/key0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#0/#0/key0",
       "rect": [
         32.0,
         724.0,
@@ -3126,7 +3349,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#0/#0/key0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#0/#0/key0/#0",
       "rect": [
         36.0,
         725.5,
@@ -3147,7 +3370,7 @@
       "key": "key1",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#0/#0/key1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#0/#0/key1",
       "rect": [
         48.33,
         724.0,
@@ -3167,7 +3390,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#0/#0/key1/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#0/#0/key1/#0",
       "rect": [
         52.33,
         725.5,
@@ -3188,7 +3411,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#0/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#0/#1",
       "rect": [
         69.89,
         723.5,
@@ -3208,7 +3431,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#1",
       "rect": [
         119.29,
         723.5,
@@ -3228,7 +3451,7 @@
       "label": "← →",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#1/#0",
       "rect": [
         119.29,
         724.0,
@@ -3248,7 +3471,7 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1/#0/key0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#1/#0/key0",
       "rect": [
         119.29,
         724.0,
@@ -3268,7 +3491,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1/#0/key0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#1/#0/key0/#0",
       "rect": [
         123.29,
         725.5,
@@ -3289,7 +3512,7 @@
       "key": "key1",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1/#0/key1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#1/#0/key1",
       "rect": [
         139.79,
         724.0,
@@ -3309,7 +3532,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1/#0/key1/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#1/#0/key1/#0",
       "rect": [
         143.79,
         725.5,
@@ -3330,7 +3553,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#1/#1",
       "rect": [
         164.29,
         723.5,
@@ -3350,7 +3573,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#2",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#2",
       "rect": [
         264.25,
         723.5,
@@ -3370,7 +3593,7 @@
       "label": "s",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#2/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#2/#0",
       "rect": [
         264.25,
         724.0,
@@ -3390,7 +3613,7 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#2/#0/key0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#2/#0/key0",
       "rect": [
         264.25,
         724.0,
@@ -3410,7 +3633,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#2/#0/key0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#2/#0/key0/#0",
       "rect": [
         268.25,
         725.5,
@@ -3431,7 +3654,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#2/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#2/#1",
       "rect": [
         285.36,
         723.5,
@@ -3451,7 +3674,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#3",
       "rect": [
         330.17,
         723.5,
@@ -3471,7 +3694,7 @@
       "label": "n p",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#3/#0",
       "rect": [
         330.17,
         724.0,
@@ -3491,7 +3714,7 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3/#0/key0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#3/#0/key0",
       "rect": [
         330.17,
         724.0,
@@ -3511,7 +3734,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3/#0/key0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#3/#0/key0/#0",
       "rect": [
         334.17,
         725.5,
@@ -3532,7 +3755,7 @@
       "key": "key1",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3/#0/key1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#3/#0/key1",
       "rect": [
         348.49,
         724.0,
@@ -3552,7 +3775,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3/#0/key1/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#3/#0/key1/#0",
       "rect": [
         352.49,
         725.5,
@@ -3573,7 +3796,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#3/#1",
       "rect": [
         369.55,
         723.5,
@@ -3593,7 +3816,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#4",
       "rect": [
         416.39,
         723.5,
@@ -3613,7 +3836,7 @@
       "label": "1 4",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#4/#0",
       "rect": [
         416.39,
         724.0,
@@ -3633,7 +3856,7 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4/#0/key0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#4/#0/key0",
       "rect": [
         416.39,
         724.0,
@@ -3653,7 +3876,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4/#0/key0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#4/#0/key0/#0",
       "rect": [
         421.11,
         725.5,
@@ -3674,7 +3897,7 @@
       "key": "key1",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4/#0/key1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#4/#0/key1",
       "rect": [
         432.39,
         724.0,
@@ -3694,7 +3917,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4/#0/key1/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#4/#0/key1/#0",
       "rect": [
         436.39,
         725.5,
@@ -3715,7 +3938,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#4/#1",
       "rect": [
         453.61,
         723.5,
@@ -3735,7 +3958,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#5",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/#5",
       "rect": [
         496.45,
         731.0,
@@ -3756,7 +3979,7 @@
       "label": "Page 1",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/page-stepper",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/page-stepper",
       "rect": [
         1088.0,
         722.0,
@@ -3776,7 +3999,7 @@
       "label": "Previous page",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/page-stepper/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/page-stepper/#0",
       "rect": [
         1088.0,
         722.0,
@@ -3796,7 +4019,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/page-stepper/#0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/page-stepper/#0/#0",
       "rect": [
         1094.6,
         723.5,
@@ -3816,7 +4039,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/page-stepper/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/page-stepper/#1",
       "rect": [
         1108.0,
         723.5,
@@ -3836,7 +4059,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/page-stepper/#1/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/page-stepper/#1/#0",
       "rect": [
         1115.51,
         723.5,
@@ -3857,7 +4080,7 @@
       "label": "Next page",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/page-stepper/#2",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/page-stepper/#2",
       "rect": [
         1130.0,
         722.0,
@@ -3877,7 +4100,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/page-stepper/#2/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-footer/page-stepper/#2/#0",
       "rect": [
         1136.6,
         723.5,
@@ -4022,9 +4245,9 @@
       "path": "kit-root/settings-layer/settings-dialog",
       "rect": [
         360.0,
-        197.5,
+        189.5,
         460.0,
-        365.0
+        381.0
       ],
       "role": "dialog",
       "scale": 1.0
@@ -4042,7 +4265,7 @@
       "path": "kit-root/settings-layer/settings-dialog/header",
       "rect": [
         360.0,
-        197.5,
+        189.5,
         460.0,
         50.0
       ],
@@ -4061,7 +4284,7 @@
       "path": "kit-root/settings-layer/settings-dialog/header/#0",
       "rect": [
         376.0,
-        213.5,
+        205.5,
         410.0,
         16.0
       ],
@@ -4081,7 +4304,7 @@
       "path": "kit-root/settings-layer/settings-dialog/header/#0/#0",
       "rect": [
         376.0,
-        213.5,
+        205.5,
         410.0,
         16.0
       ],
@@ -4103,7 +4326,7 @@
       "path": "kit-root/settings-layer/settings-dialog/header/close",
       "rect": [
         786.0,
-        211.5,
+        203.5,
         20.0,
         20.0
       ],
@@ -4124,7 +4347,7 @@
       "path": "kit-root/settings-layer/settings-dialog/header/close/icon",
       "rect": [
         788.0,
-        213.5,
+        205.5,
         16.0,
         16.0
       ],
@@ -4144,9 +4367,9 @@
       "path": "kit-root/settings-layer/settings-dialog/body",
       "rect": [
         360.0,
-        247.5,
+        239.5,
         460.0,
-        315.0
+        331.0
       ],
       "role": "group",
       "scale": 1.0
@@ -4164,9 +4387,49 @@
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body",
       "rect": [
         360.0,
-        247.5,
+        239.5,
         460.0,
-        315.0
+        331.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "settings-scroll",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll",
+      "rect": [
+        376.0,
+        239.5,
+        428.0,
+        275.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "settings-fields",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields",
+      "rect": [
+        376.0,
+        239.5,
+        428.0,
+        275.0
       ],
       "role": "group",
       "scale": 1.0
@@ -4181,11 +4444,11 @@
       "label": "Provider",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/#0",
       "rect": [
-        360.0,
-        247.5,
-        460.0,
+        376.0,
+        239.5,
+        428.0,
         71.0
       ],
       "role": "radiogroup",
@@ -4202,11 +4465,11 @@
       "key": "label",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/label",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/#0/label",
       "rect": [
-        360.0,
-        247.5,
-        460.0,
+        376.0,
+        239.5,
+        428.0,
         11.0
       ],
       "role": "text",
@@ -4223,11 +4486,11 @@
       "key": "items",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/items",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/#0/items",
       "rect": [
-        360.0,
-        266.5,
-        460.0,
+        376.0,
+        258.5,
+        428.0,
         52.0
       ],
       "role": "group",
@@ -4245,11 +4508,11 @@
       "label": "OpenRouter",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/items/item0",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/#0/items/item0",
       "rect": [
-        360.0,
-        266.5,
-        460.0,
+        376.0,
+        258.5,
+        428.0,
         20.0
       ],
       "role": "radio",
@@ -4265,10 +4528,10 @@
       "key": "stack",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/items/item0/stack",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/#0/items/item0/stack",
       "rect": [
-        360.0,
-        266.5,
+        376.0,
+        258.5,
         16.0,
         20.0
       ],
@@ -4285,10 +4548,10 @@
       "key": "control",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/items/item0/stack/control",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/#0/items/item0/stack/control",
       "rect": [
-        360.0,
-        268.5,
+        376.0,
+        260.5,
         16.0,
         16.0
       ],
@@ -4305,10 +4568,10 @@
       "key": "dot",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/items/item0/stack/control/dot",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/#0/items/item0/stack/control/dot",
       "rect": [
-        365.0,
-        273.5,
+        381.0,
+        265.5,
         6.0,
         6.0
       ],
@@ -4325,10 +4588,10 @@
       "key": "text",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/items/item0/text",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/#0/items/item0/text",
       "rect": [
-        384.0,
-        266.5,
+        400.0,
+        258.5,
         73.42,
         20.0
       ],
@@ -4346,10 +4609,10 @@
       "key": "label",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/items/item0/text/label",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/#0/items/item0/text/label",
       "rect": [
-        384.0,
-        266.5,
+        400.0,
+        258.5,
         73.42,
         20.0
       ],
@@ -4368,11 +4631,11 @@
       "label": "Anthropic",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/items/item1",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/#0/items/item1",
       "rect": [
-        360.0,
-        298.5,
-        460.0,
+        376.0,
+        290.5,
+        428.0,
         20.0
       ],
       "role": "radio",
@@ -4388,10 +4651,10 @@
       "key": "stack",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/items/item1/stack",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/#0/items/item1/stack",
       "rect": [
-        360.0,
-        298.5,
+        376.0,
+        290.5,
         16.0,
         20.0
       ],
@@ -4408,10 +4671,10 @@
       "key": "control",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/items/item1/stack/control",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/#0/items/item1/stack/control",
       "rect": [
-        360.0,
-        300.5,
+        376.0,
+        292.5,
         16.0,
         16.0
       ],
@@ -4428,10 +4691,10 @@
       "key": "text",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/items/item1/text",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/#0/items/item1/text",
       "rect": [
-        384.0,
-        298.5,
+        400.0,
+        290.5,
         59.6,
         20.0
       ],
@@ -4449,10 +4712,10 @@
       "key": "label",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/items/item1/text/label",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/#0/items/item1/text/label",
       "rect": [
-        384.0,
-        298.5,
+        400.0,
+        290.5,
         59.6,
         20.0
       ],
@@ -4470,11 +4733,11 @@
       "key": "settings-key",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-key",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key",
       "rect": [
-        360.0,
-        334.5,
-        460.0,
+        376.0,
+        326.5,
+        428.0,
         70.0
       ],
       "role": "group",
@@ -4490,11 +4753,11 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-key/#0",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key/#0",
       "rect": [
-        360.0,
-        334.5,
-        460.0,
+        376.0,
+        326.5,
+        428.0,
         15.0
       ],
       "role": "text",
@@ -4510,11 +4773,11 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-key/#1",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key/#1",
       "rect": [
-        360.0,
-        355.5,
-        460.0,
+        376.0,
+        347.5,
+        428.0,
         28.0
       ],
       "role": "textbox",
@@ -4530,11 +4793,11 @@
       "key": "value",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-key/#1/value",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key/#1/value",
       "rect": [
-        360.0,
-        355.5,
-        452.0,
+        376.0,
+        347.5,
+        420.0,
         28.0
       ],
       "role": "group",
@@ -4549,10 +4812,10 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-key/#1/value/#0",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key/#1/value/#0",
       "rect": [
-        360.0,
-        369.5,
+        376.0,
+        361.5,
         2.0,
         0.0
       ],
@@ -4562,8 +4825,8 @@
     {
       "blur": 0.0,
       "caret": [
-        558.13,
-        361.5,
+        574.13,
+        353.5,
         1.5,
         16.0
       ],
@@ -4577,11 +4840,11 @@
       "label": "OpenRouter key",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-key/#1/value/input",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key/#1/value/input",
       "rect": [
-        368.0,
-        361.5,
-        444.0,
+        384.0,
+        353.5,
+        412.0,
         16.0
       ],
       "role": "textbox",
@@ -4598,11 +4861,11 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-key/#2",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key/#2",
       "rect": [
-        360.0,
-        389.5,
-        460.0,
+        376.0,
+        381.5,
+        428.0,
         15.0
       ],
       "role": "text",
@@ -4619,11 +4882,11 @@
       "key": "settings-automatic",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-automatic",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-automatic",
       "rect": [
-        360.0,
-        420.5,
-        460.0,
+        376.0,
+        412.5,
+        428.0,
         37.0
       ],
       "role": "group",
@@ -4639,11 +4902,11 @@
       "label": "Automatic summaries",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-automatic/#0",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-automatic/#0",
       "rect": [
-        360.0,
-        420.5,
-        460.0,
+        376.0,
+        412.5,
+        428.0,
         16.0
       ],
       "role": "switch",
@@ -4660,10 +4923,10 @@
       "key": "label",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-automatic/#0/label",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-automatic/#0/label",
       "rect": [
-        360.0,
-        420.5,
+        376.0,
+        412.5,
         112.53,
         16.0
       ],
@@ -4681,10 +4944,10 @@
       "key": "control",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-automatic/#0/control",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-automatic/#0/control",
       "rect": [
-        480.53,
-        420.5,
+        496.53,
+        412.5,
         36.0,
         16.0
       ],
@@ -4701,10 +4964,10 @@
       "key": "thumb",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-automatic/#0/control/thumb",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-automatic/#0/control/thumb",
       "rect": [
-        494.53,
-        421.5,
+        510.53,
+        413.5,
         21.0,
         14.0
       ],
@@ -4721,11 +4984,11 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-automatic/#1",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-automatic/#1",
       "rect": [
-        360.0,
-        442.5,
-        460.0,
+        376.0,
+        434.5,
+        428.0,
         15.0
       ],
       "role": "text",
@@ -4742,11 +5005,11 @@
       "key": "settings-profile",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-profile",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile",
       "rect": [
-        360.0,
-        473.5,
-        460.0,
+        376.0,
+        465.5,
+        428.0,
         49.0
       ],
       "role": "group",
@@ -4761,11 +5024,11 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-profile/#0",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile/#0",
       "rect": [
-        360.0,
-        473.5,
-        460.0,
+        376.0,
+        465.5,
+        428.0,
         28.0
       ],
       "role": "group",
@@ -4781,10 +5044,10 @@
       "label": "Profile",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-profile/#0/#0",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile/#0/#0",
       "rect": [
-        360.0,
-        473.5,
+        376.0,
+        465.5,
         167.39,
         28.0
       ],
@@ -4801,10 +5064,10 @@
       "key": "indicator",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-profile/#0/#0/indicator",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile/#0/#0/indicator",
       "rect": [
-        360.0,
-        473.5,
+        376.0,
+        465.5,
         83.7,
         28.0
       ],
@@ -4823,10 +5086,10 @@
       "label": "Fast",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-profile/#0/#0/segment0",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile/#0/#0/segment0",
       "rect": [
-        360.0,
-        473.5,
+        376.0,
+        465.5,
         83.7,
         28.0
       ],
@@ -4844,10 +5107,10 @@
       "key": "label",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-profile/#0/#0/segment0/label",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile/#0/#0/segment0/label",
       "rect": [
-        388.96,
-        481.0,
+        404.96,
+        473.0,
         25.77,
         13.0
       ],
@@ -4866,10 +5129,10 @@
       "label": "Thorough",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-profile/#0/#0/segment1",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile/#0/#0/segment1",
       "rect": [
-        443.7,
-        473.5,
+        459.7,
+        465.5,
         83.7,
         28.0
       ],
@@ -4887,10 +5150,10 @@
       "key": "label",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-profile/#0/#0/segment1/label",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile/#0/#0/segment1/label",
       "rect": [
-        455.7,
-        481.0,
+        471.7,
+        473.0,
         59.7,
         13.0
       ],
@@ -4909,10 +5172,10 @@
       "key": "settings-model",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-profile/#0/settings-model",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile/#0/settings-model",
       "rect": [
-        537.39,
-        480.0,
+        553.39,
+        472.0,
         156.55,
         15.0
       ],
@@ -4930,11 +5193,11 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-profile/#1",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile/#1",
       "rect": [
-        360.0,
-        507.5,
-        460.0,
+        376.0,
+        499.5,
+        428.0,
         15.0
       ],
       "role": "text",
@@ -4953,9 +5216,9 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions",
       "rect": [
-        360.0,
-        538.5,
-        460.0,
+        376.0,
+        530.5,
+        428.0,
         24.0
       ],
       "role": "group",
@@ -4973,8 +5236,8 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#0",
       "rect": [
-        360.0,
-        538.5,
+        376.0,
+        530.5,
         198.55,
         24.0
       ],
@@ -4994,8 +5257,8 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#0/label",
       "rect": [
-        372.0,
-        540.5,
+        388.0,
+        532.5,
         174.55,
         20.0
       ],
@@ -5014,9 +5277,9 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#1",
       "rect": [
-        566.55,
-        550.5,
-        110.16,
+        582.55,
+        542.5,
+        78.16,
         0.0
       ],
       "role": "group",
@@ -5034,8 +5297,8 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#2",
       "rect": [
-        684.71,
-        538.5,
+        668.71,
+        530.5,
         67.16,
         24.0
       ],
@@ -5055,8 +5318,8 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#2/label",
       "rect": [
-        696.71,
-        540.5,
+        680.71,
+        532.5,
         43.16,
         20.0
       ],
@@ -5076,8 +5339,8 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#3",
       "rect": [
-        759.87,
-        538.5,
+        743.87,
+        530.5,
         60.13,
         24.0
       ],
@@ -5097,8 +5360,8 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#3/label",
       "rect": [
-        771.87,
-        540.5,
+        755.87,
+        532.5,
         36.13,
         20.0
       ],

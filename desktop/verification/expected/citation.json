@@ -58,22 +58,37 @@
                               {
                                 "bounds": [
                                   75.0,
-                                  14.0,
-                                  512.3,
-                                  20.0
+                                  12.0,
+                                  194.1,
+                                  24.0
                                 ],
                                 "children": [
                                   {
                                     "bounds": [
                                       75.0,
-                                      14.0,
-                                      512.3,
-                                      20.0
+                                      12.0,
+                                      194.1,
+                                      24.0
                                     ],
                                     "children": [
                                       {
+                                        "actions": [
+                                          "click",
+                                          "focus"
+                                        ],
                                         "bounds": [
                                           75.0,
+                                          12.0,
+                                          101.7,
+                                          24.0
+                                        ],
+                                        "key": "story-back",
+                                        "name": "Back to feed",
+                                        "role": "button"
+                                      },
+                                      {
+                                        "bounds": [
+                                          182.7,
                                           17.0,
                                           26.9,
                                           14.0
@@ -83,61 +98,25 @@
                                       },
                                       {
                                         "bounds": [
-                                          111.9,
-                                          15.9,
-                                          88.2,
-                                          16.3
-                                        ],
-                                        "key": "story-toolbar-title",
-                                        "name": "Libghostty 1.0",
-                                        "role": "label"
-                                      },
-                                      {
-                                        "bounds": [
-                                          210.1,
+                                          221.6,
                                           16.5,
-                                          228.0,
+                                          47.5,
                                           15.0
-                                        ],
-                                        "key": "story-toolbar-meta",
-                                        "name": "mfiguiere  ·  771 points  ·  122 comments",
-                                        "role": "label"
-                                      },
-                                      {
-                                        "bounds": [
-                                          448.1,
-                                          21.0,
-                                          6.0,
-                                          6.0
-                                        ],
-                                        "key": "story-saved-dot",
-                                        "name": "saved",
-                                        "role": "status",
-                                        "states": [
-                                          "live-polite"
-                                        ]
-                                      },
-                                      {
-                                        "bounds": [
-                                          474.1,
-                                          14.0,
-                                          113.3,
-                                          20.0
                                         ],
                                         "children": [
                                           {
                                             "bounds": [
-                                              494.1,
-                                              16.5,
-                                              85.3,
-                                              15.0
+                                              221.6,
+                                              21.0,
+                                              6.0,
+                                              6.0
                                             ],
-                                            "name": "summary · fast",
-                                            "role": "label"
+                                            "key": "story-saved-dot",
+                                            "role": "group"
                                           }
                                         ],
-                                        "key": "summary-pill",
-                                        "name": "summary · fast",
+                                        "key": "story-saved",
+                                        "name": "Saved",
                                         "role": "status",
                                         "states": [
                                           "live-polite"
@@ -202,13 +181,74 @@
                                               8.0,
                                               48.0,
                                               629.0,
+                                              82.3
+                                            ],
+                                            "children": [
+                                              {
+                                                "bounds": [
+                                                  36.0,
+                                                  62.0,
+                                                  573.0,
+                                                  68.3
+                                                ],
+                                                "children": [
+                                                  {
+                                                    "bounds": [
+                                                      36.0,
+                                                      62.0,
+                                                      573.0,
+                                                      26.3
+                                                    ],
+                                                    "key": "article-title",
+                                                    "name": "Libghostty 1.0",
+                                                    "role": "label"
+                                                  },
+                                                  {
+                                                    "bounds": [
+                                                      36.0,
+                                                      96.3,
+                                                      421.0,
+                                                      15.0
+                                                    ],
+                                                    "key": "article-meta",
+                                                    "name": "mfiguiere  ·  771 points  ·  122 comments  ·  example.com",
+                                                    "role": "label"
+                                                  },
+                                                  {
+                                                    "actions": [
+                                                      "click",
+                                                      "focus"
+                                                    ],
+                                                    "bounds": [
+                                                      469.0,
+                                                      96.3,
+                                                      140.0,
+                                                      24.0
+                                                    ],
+                                                    "key": "article-open-original",
+                                                    "name": "Open in browser",
+                                                    "role": "button"
+                                                  }
+                                                ],
+                                                "key": "article-header",
+                                                "role": "group"
+                                              }
+                                            ],
+                                            "key": "article-content",
+                                            "role": "group"
+                                          },
+                                          {
+                                            "bounds": [
+                                              8.0,
+                                              130.3,
+                                              629.0,
                                               31.0
                                             ],
                                             "children": [
                                               {
                                                 "bounds": [
-                                                  40.0,
-                                                  56.0,
+                                                  36.0,
+                                                  138.3,
                                                   269.5,
                                                   15.0
                                                 ],
@@ -231,9 +271,9 @@
                                             ],
                                             "bounds": [
                                               8.0,
-                                              79.0,
+                                              161.3,
                                               629.0,
-                                              633.0
+                                              550.8
                                             ],
                                             "children": [
                                               {
@@ -242,9 +282,9 @@
                                                 ],
                                                 "bounds": [
                                                   8.0,
-                                                  79.0,
+                                                  161.3,
                                                   629.0,
-                                                  873.0
+                                                  769.4
                                                 ],
                                                 "children": [
                                                   {
@@ -252,96 +292,9 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      40.0,
-                                                      99.0,
-                                                      565.0,
-                                                      77.6
-                                                    ],
-                                                    "children": [
-                                                      {
-                                                        "actions": [
-                                                          "scroll-into-view"
-                                                        ],
-                                                        "bounds": [
-                                                          40.0,
-                                                          99.0,
-                                                          426.0,
-                                                          14.4
-                                                        ],
-                                                        "key": "article-eyebrow",
-                                                        "name": "Article · example.com",
-                                                        "role": "label"
-                                                      },
-                                                      {
-                                                        "actions": [
-                                                          "scroll-into-view"
-                                                        ],
-                                                        "bounds": [
-                                                          40.0,
-                                                          119.4,
-                                                          426.0,
-                                                          26.3
-                                                        ],
-                                                        "key": "article-title",
-                                                        "name": "Libghostty 1.0",
-                                                        "role": "label"
-                                                      },
-                                                      {
-                                                        "actions": [
-                                                          "scroll-into-view"
-                                                        ],
-                                                        "bounds": [
-                                                          40.0,
-                                                          151.6,
-                                                          426.0,
-                                                          15.0
-                                                        ],
-                                                        "key": "article-meta",
-                                                        "name": "mfiguiere  ·  771 points  ·  122 comments",
-                                                        "role": "label"
-                                                      },
-                                                      {
-                                                        "actions": [
-                                                          "click",
-                                                          "scroll-into-view"
-                                                        ],
-                                                        "bounds": [
-                                                          478.0,
-                                                          99.0,
-                                                          127.0,
-                                                          67.6
-                                                        ],
-                                                        "children": [
-                                                          {
-                                                            "actions": [
-                                                              "scroll-into-view"
-                                                            ],
-                                                            "bounds": [
-                                                              488.0,
-                                                              103.0,
-                                                              107.0,
-                                                              59.6
-                                                            ],
-                                                            "name": "Open in browser ↗",
-                                                            "role": "label"
-                                                          }
-                                                        ],
-                                                        "key": "article-open-original",
-                                                        "name": "Open in browser",
-                                                        "role": "button"
-                                                      }
-                                                    ],
-                                                    "key": "article-header",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      40.0,
-                                                      190.6,
-                                                      565.0,
+                                                      36.0,
+                                                      175.3,
+                                                      573.0,
                                                       741.4
                                                     ],
                                                     "children": [
@@ -350,8 +303,8 @@
                                                           "scroll-into-view"
                                                         ],
                                                         "bounds": [
-                                                          40.0,
-                                                          190.6,
+                                                          36.0,
+                                                          175.3,
                                                           448.8,
                                                           67.2
                                                         ],
@@ -364,8 +317,8 @@
                                                           "scroll-into-view"
                                                         ],
                                                         "bounds": [
-                                                          40.0,
-                                                          281.8,
+                                                          36.0,
+                                                          266.5,
                                                           448.8,
                                                           24.0
                                                         ],
@@ -379,8 +332,8 @@
                                                           "scroll-into-view"
                                                         ],
                                                         "bounds": [
-                                                          40.0,
-                                                          315.8,
+                                                          36.0,
+                                                          300.5,
                                                           448.8,
                                                           67.2
                                                         ],
@@ -393,8 +346,8 @@
                                                           "scroll-into-view"
                                                         ],
                                                         "bounds": [
-                                                          40.0,
-                                                          395.0,
+                                                          36.0,
+                                                          379.7,
                                                           448.8,
                                                           225.0
                                                         ],
@@ -404,8 +357,8 @@
                                                               "scroll-into-view"
                                                             ],
                                                             "bounds": [
-                                                              52.5,
-                                                              407.5,
+                                                              48.5,
+                                                              392.2,
                                                               423.8,
                                                               200.0
                                                             ],
@@ -421,8 +374,8 @@
                                                           "scroll-into-view"
                                                         ],
                                                         "bounds": [
-                                                          40.0,
-                                                          644.0,
+                                                          36.0,
+                                                          628.7,
                                                           448.8,
                                                           22.4
                                                         ],
@@ -435,8 +388,8 @@
                                                           "scroll-into-view"
                                                         ],
                                                         "bounds": [
-                                                          40.0,
-                                                          678.4,
+                                                          36.0,
+                                                          663.1,
                                                           448.8,
                                                           75.2
                                                         ],
@@ -446,8 +399,8 @@
                                                               "scroll-into-view"
                                                             ],
                                                             "bounds": [
-                                                              40.0,
-                                                              678.4,
+                                                              36.0,
+                                                              663.1,
                                                               448.8,
                                                               22.4
                                                             ],
@@ -457,8 +410,8 @@
                                                                   "scroll-into-view"
                                                                 ],
                                                                 "bounds": [
-                                                                  72.0,
-                                                                  678.4,
+                                                                  68.0,
+                                                                  663.1,
                                                                   416.8,
                                                                   22.4
                                                                 ],
@@ -477,8 +430,8 @@
                                                               "scroll-into-view"
                                                             ],
                                                             "bounds": [
-                                                              40.0,
-                                                              704.8,
+                                                              36.0,
+                                                              689.5,
                                                               448.8,
                                                               22.4
                                                             ],
@@ -488,8 +441,8 @@
                                                                   "scroll-into-view"
                                                                 ],
                                                                 "bounds": [
-                                                                  72.0,
-                                                                  704.8,
+                                                                  68.0,
+                                                                  689.5,
                                                                   416.8,
                                                                   22.4
                                                                 ],
@@ -508,8 +461,8 @@
                                                               "scroll-into-view"
                                                             ],
                                                             "bounds": [
-                                                              40.0,
-                                                              731.2,
+                                                              36.0,
+                                                              715.8,
                                                               448.8,
                                                               22.4
                                                             ],
@@ -519,8 +472,8 @@
                                                                   "scroll-into-view"
                                                                 ],
                                                                 "bounds": [
-                                                                  72.0,
-                                                                  731.2,
+                                                                  68.0,
+                                                                  715.8,
                                                                   416.8,
                                                                   22.4
                                                                 ],
@@ -544,8 +497,8 @@
                                                           "scroll-into-view"
                                                         ],
                                                         "bounds": [
-                                                          40.0,
-                                                          765.6,
+                                                          36.0,
+                                                          750.3,
                                                           448.8,
                                                           22.4
                                                         ],
@@ -558,8 +511,8 @@
                                                           "scroll-into-view"
                                                         ],
                                                         "bounds": [
-                                                          40.0,
-                                                          804.0,
+                                                          36.0,
+                                                          788.7,
                                                           448.8,
                                                           44.8
                                                         ],
@@ -569,8 +522,8 @@
                                                               "scroll-into-view"
                                                             ],
                                                             "bounds": [
-                                                              54.0,
-                                                              804.0,
+                                                              50.0,
+                                                              788.7,
                                                               434.8,
                                                               44.8
                                                             ],
@@ -587,8 +540,8 @@
                                                           "scroll-into-view"
                                                         ],
                                                         "bounds": [
-                                                          40.0,
-                                                          864.8,
+                                                          36.0,
+                                                          849.4,
                                                           448.8,
                                                           67.2
                                                         ],
@@ -601,7 +554,7 @@
                                                     "role": "group"
                                                   }
                                                 ],
-                                                "key": "article-content",
+                                                "key": "article-body-content",
                                                 "role": "group"
                                               }
                                             ],
@@ -610,7 +563,7 @@
                                             "scroll": [
                                               0.0,
                                               0.0,
-                                              240.0
+                                              218.6
                                             ],
                                             "states": [
                                               "clips"
@@ -632,26 +585,6 @@
                                             "bounds": [
                                               32.0,
                                               725.5,
-                                              26.9,
-                                              14.0
-                                            ],
-                                            "name": "Esc",
-                                            "role": "group"
-                                          },
-                                          {
-                                            "bounds": [
-                                              64.9,
-                                              725.0,
-                                              25.8,
-                                              15.0
-                                            ],
-                                            "name": "feed",
-                                            "role": "label"
-                                          },
-                                          {
-                                            "bounds": [
-                                              108.7,
-                                              725.5,
                                               31.9,
                                               14.0
                                             ],
@@ -660,7 +593,7 @@
                                           },
                                           {
                                             "bounds": [
-                                              146.6,
+                                              69.9,
                                               725.0,
                                               31.4,
                                               15.0
@@ -670,7 +603,7 @@
                                           },
                                           {
                                             "bounds": [
-                                              195.9,
+                                              119.3,
                                               725.5,
                                               14.5,
                                               14.0
@@ -680,7 +613,7 @@
                                           },
                                           {
                                             "bounds": [
-                                              216.4,
+                                              139.8,
                                               725.0,
                                               32.1,
                                               15.0
@@ -690,7 +623,7 @@
                                           },
                                           {
                                             "bounds": [
-                                              266.5,
+                                              189.9,
                                               725.5,
                                               14.2,
                                               14.0
@@ -700,7 +633,7 @@
                                           },
                                           {
                                             "bounds": [
-                                              286.8,
+                                              210.1,
                                               725.0,
                                               26.4,
                                               15.0
@@ -710,7 +643,7 @@
                                           },
                                           {
                                             "bounds": [
-                                              331.2,
+                                              254.5,
                                               725.5,
                                               27.4,
                                               14.0
@@ -720,7 +653,7 @@
                                           },
                                           {
                                             "bounds": [
-                                              364.6,
+                                              287.9,
                                               725.0,
                                               42.5,
                                               15.0
@@ -730,7 +663,7 @@
                                           },
                                           {
                                             "bounds": [
-                                              425.1,
+                                              348.4,
                                               725.5,
                                               15.1,
                                               14.0
@@ -740,7 +673,7 @@
                                           },
                                           {
                                             "bounds": [
-                                              446.2,
+                                              369.5,
                                               725.0,
                                               53.6,
                                               15.0
@@ -750,7 +683,7 @@
                                           },
                                           {
                                             "bounds": [
-                                              517.8,
+                                              441.1,
                                               725.5,
                                               15.1,
                                               14.0
@@ -760,7 +693,7 @@
                                           },
                                           {
                                             "bounds": [
-                                              538.9,
+                                              462.2,
                                               725.0,
                                               41.2,
                                               15.0
@@ -825,7 +758,7 @@
                                                   637.0,
                                                   48.0,
                                                   543.0,
-                                                  149.9
+                                                  151.9
                                                 ],
                                                 "children": [
                                                   {
@@ -833,9 +766,9 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      651.0,
-                                                      60.0,
-                                                      515.0,
+                                                      665.0,
+                                                      62.0,
+                                                      487.0,
                                                       18.0
                                                     ],
                                                     "children": [
@@ -844,8 +777,8 @@
                                                           "scroll-into-view"
                                                         ],
                                                         "bounds": [
-                                                          651.0,
-                                                          60.9,
+                                                          665.0,
+                                                          62.9,
                                                           83.3,
                                                           16.3
                                                         ],
@@ -858,8 +791,8 @@
                                                           "scroll-into-view"
                                                         ],
                                                         "bounds": [
-                                                          1098.9,
-                                                          60.0,
+                                                          1084.9,
+                                                          62.0,
                                                           67.1,
                                                           18.0
                                                         ],
@@ -869,8 +802,8 @@
                                                               "scroll-into-view"
                                                             ],
                                                             "bounds": [
-                                                              1105.9,
-                                                              61.5,
+                                                              1091.9,
+                                                              63.5,
                                                               53.1,
                                                               15.0
                                                             ],
@@ -890,9 +823,9 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      651.0,
-                                                      88.0,
-                                                      515.0,
+                                                      665.0,
+                                                      90.0,
+                                                      487.0,
                                                       15.0
                                                     ],
                                                     "key": "source-who",
@@ -904,9 +837,9 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      651.0,
-                                                      113.0,
-                                                      515.0,
+                                                      665.0,
+                                                      115.0,
+                                                      487.0,
                                                       72.9
                                                     ],
                                                     "children": [
@@ -915,9 +848,9 @@
                                                           "scroll-into-view"
                                                         ],
                                                         "bounds": [
-                                                          661.0,
-                                                          123.0,
-                                                          495.0,
+                                                          675.0,
+                                                          125.0,
+                                                          467.0,
                                                           14.4
                                                         ],
                                                         "name": "Sent to the model",
@@ -928,9 +861,9 @@
                                                           "scroll-into-view"
                                                         ],
                                                         "bounds": [
-                                                          661.0,
-                                                          143.4,
-                                                          495.0,
+                                                          675.0,
+                                                          145.4,
+                                                          467.0,
                                                           32.5
                                                         ],
                                                         "key": "source-excerpt-text",
@@ -951,7 +884,7 @@
                                                 ],
                                                 "bounds": [
                                                   637.0,
-                                                  197.9,
+                                                  199.9,
                                                   543.0,
                                                   15.0
                                                 ],
@@ -962,7 +895,7 @@
                                                     ],
                                                     "bounds": [
                                                       637.0,
-                                                      198.4,
+                                                      200.4,
                                                       26.9,
                                                       14.0
                                                     ],
@@ -975,7 +908,7 @@
                                                     ],
                                                     "bounds": [
                                                       669.9,
-                                                      197.9,
+                                                      199.9,
                                                       128.6,
                                                       15.0
                                                     ],
@@ -1211,9 +1144,9 @@
       "path": "kit-root/window/shell/split/main-column/toolbar/leading",
       "rect": [
         75.0,
-        14.0,
-        512.34,
-        20.0
+        12.0,
+        194.09,
+        24.0
       ],
       "role": "group",
       "scale": 1.0
@@ -1231,12 +1164,55 @@
       "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar",
       "rect": [
         75.0,
-        14.0,
-        512.34,
-        20.0
+        12.0,
+        194.09,
+        24.0
       ],
       "role": "group",
       "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": true,
+      "focused": false,
+      "inert": false,
+      "key": "story-back",
+      "label": "Back to feed",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/story-back",
+      "rect": [
+        75.0,
+        12.0,
+        101.66,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/story-back/label",
+      "rect": [
+        87.0,
+        14.0,
+        77.66,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Back to feed"
     },
     {
       "blur": 0.0,
@@ -1248,9 +1224,9 @@
       "label": "Esc",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/#0",
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/#1",
       "rect": [
-        75.0,
+        182.66,
         17.0,
         26.91,
         14.0
@@ -1268,9 +1244,9 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/#0/key0",
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/#1/key0",
       "rect": [
-        75.0,
+        182.66,
         17.0,
         26.91,
         14.0
@@ -1288,9 +1264,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/#0/key0/#0",
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/#1/key0/#0",
       "rect": [
-        79.0,
+        186.66,
         18.5,
         18.91,
         11.0
@@ -1301,47 +1277,24 @@
     },
     {
       "blur": 0.0,
-      "color": "#eff0f2ff",
       "fill": "#00000000",
       "focusVisible": false,
       "focusable": false,
       "focused": false,
       "inert": false,
-      "key": "story-toolbar-title",
+      "key": "story-saved",
+      "label": "Saved",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/story-toolbar-title",
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/story-saved",
       "rect": [
-        111.91,
-        15.88,
-        88.16,
-        16.25
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "Libghostty 1.0"
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "key": "story-toolbar-meta",
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/story-toolbar-meta",
-      "rect": [
-        210.07,
+        221.57,
         16.5,
-        227.98,
+        47.52,
         15.0
       ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "mfiguiere  ·  771 points  ·  122 comments"
+      "role": "status",
+      "scale": 1.0
     },
     {
       "blur": 0.0,
@@ -1351,71 +1304,11 @@
       "focused": false,
       "inert": false,
       "key": "story-saved-dot",
-      "label": "saved",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/story-saved-dot",
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/story-saved/story-saved-dot",
       "rect": [
-        448.05,
-        21.0,
-        6.0,
-        6.0
-      ],
-      "role": "status",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/#4",
-      "rect": [
-        464.05,
-        24.0,
-        0.0,
-        0.0
-      ],
-      "role": "group",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "fill": "#ffffff16",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "key": "summary-pill",
-      "label": "summary · fast",
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/summary-pill",
-      "rect": [
-        474.05,
-        14.0,
-        113.29,
-        20.0
-      ],
-      "role": "status",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "fill": "#f48d2fff",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/summary-pill/#0",
-      "rect": [
-        482.05,
+        221.57,
         21.0,
         6.0,
         6.0
@@ -1433,16 +1326,16 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/summary-pill/#1",
+      "path": "kit-root/window/shell/split/main-column/toolbar/leading/story-toolbar/story-saved/#1",
       "rect": [
-        494.05,
+        233.57,
         16.5,
-        85.29,
+        35.52,
         15.0
       ],
       "role": "text",
       "scale": 1.0,
-      "text": "summary · fast"
+      "text": "Saved"
     },
     {
       "blur": 0.0,
@@ -1456,9 +1349,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/toolbar/spacer",
       "rect": [
-        595.34,
+        277.09,
         24.0,
-        564.66,
+        882.91,
         0.0
       ],
       "role": "group",
@@ -1566,6 +1459,151 @@
     },
     {
       "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "article-content",
+      "loopPhase": null,
+      "opacity": 0.550000011920929,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-content",
+      "rect": [
+        8.0,
+        48.0,
+        629.0,
+        82.25
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#1c1d20ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "article-header",
+      "loopPhase": null,
+      "opacity": 0.550000011920929,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-content/article-header",
+      "rect": [
+        36.0,
+        62.0,
+        573.0,
+        68.25
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "article-title",
+      "loopPhase": null,
+      "opacity": 0.550000011920929,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-content/article-header/article-title",
+      "rect": [
+        36.0,
+        62.0,
+        573.0,
+        26.25
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Libghostty 1.0"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 0.550000011920929,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-content/article-header/#1",
+      "rect": [
+        36.0,
+        96.25,
+        573.0,
+        24.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "article-meta",
+      "loopPhase": null,
+      "opacity": 0.550000011920929,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-content/article-header/#1/article-meta",
+      "rect": [
+        36.0,
+        96.25,
+        421.04,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "mfiguiere  ·  771 points  ·  122 comments  ·  example.com"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#1c1d20ff",
+      "focusVisible": false,
+      "focusable": true,
+      "focused": false,
+      "inert": false,
+      "key": "article-open-original",
+      "label": "Open in browser",
+      "loopPhase": null,
+      "opacity": 0.550000011920929,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-content/article-header/#1/article-open-original",
+      "rect": [
+        469.04,
+        96.25,
+        139.96,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 0.550000011920929,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-content/article-header/#1/article-open-original/#0",
+      "rect": [
+        481.04,
+        98.25,
+        115.96,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Open in browser ↗"
+    },
+    {
+      "blur": 0.0,
       "fill": "#1c1d20ff",
       "focusVisible": false,
       "focusable": false,
@@ -1577,7 +1615,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-fallback",
       "rect": [
         8.0,
-        48.0,
+        130.25,
         629.0,
         31.0
       ],
@@ -1596,8 +1634,8 @@
       "opacity": 0.550000011920929,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-fallback/#0",
       "rect": [
-        40.0,
-        56.0,
+        36.0,
+        138.25,
         269.48,
         15.0
       ],
@@ -1618,9 +1656,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll",
       "rect": [
         8.0,
-        79.0,
+        161.25,
         629.0,
-        633.0
+        550.75
       ],
       "role": "group",
       "scale": 1.0
@@ -1632,165 +1670,18 @@
       "focusable": false,
       "focused": false,
       "inert": false,
-      "key": "article-content",
+      "key": "article-body-content",
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content",
       "rect": [
         8.0,
-        79.0,
+        161.25,
         629.0,
-        873.02
+        769.4
       ],
       "role": "group",
       "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "fill": "#1c1d20ff",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "key": "article-header",
-      "loopPhase": null,
-      "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header",
-      "rect": [
-        40.0,
-        99.0,
-        565.0,
-        77.63
-      ],
-      "role": "group",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/#0",
-      "rect": [
-        40.0,
-        99.0,
-        425.96,
-        67.63
-      ],
-      "role": "group",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "key": "article-eyebrow",
-      "loopPhase": null,
-      "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/#0/article-eyebrow",
-      "rect": [
-        40.0,
-        99.0,
-        425.96,
-        14.38
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "Article · example.com"
-    },
-    {
-      "blur": 0.0,
-      "color": "#eff0f2ff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "key": "article-title",
-      "loopPhase": null,
-      "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/#0/article-title",
-      "rect": [
-        40.0,
-        119.38,
-        425.96,
-        26.25
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "Libghostty 1.0"
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "key": "article-meta",
-      "loopPhase": null,
-      "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/#0/article-meta",
-      "rect": [
-        40.0,
-        151.63,
-        425.96,
-        15.0
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "mfiguiere  ·  771 points  ·  122 comments"
-    },
-    {
-      "blur": 0.0,
-      "fill": "#ffffff16",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "key": "article-open-original",
-      "label": "Open in browser",
-      "loopPhase": null,
-      "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/article-open-original",
-      "rect": [
-        477.96,
-        99.0,
-        127.04,
-        67.63
-      ],
-      "role": "button",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-header/article-open-original/#0",
-      "rect": [
-        487.96,
-        103.0,
-        107.04,
-        59.63
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "Open in browser ↗"
     },
     {
       "blur": 0.0,
@@ -1802,11 +1693,11 @@
       "key": "article-body",
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body",
       "rect": [
-        40.0,
-        190.63,
-        565.0,
+        36.0,
+        175.25,
+        573.0,
         741.4
       ],
       "role": "group",
@@ -1821,10 +1712,10 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0",
       "rect": [
-        40.0,
-        190.63,
+        36.0,
+        175.25,
         448.8,
         741.4
       ],
@@ -1842,10 +1733,10 @@
       "key": "b0",
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b0",
       "rect": [
-        40.0,
-        190.63,
+        36.0,
+        175.25,
         448.8,
         67.2
       ],
@@ -1865,10 +1756,10 @@
       "level": 2,
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b1",
       "rect": [
-        40.0,
-        281.83,
+        36.0,
+        266.45,
         448.8,
         24.0
       ],
@@ -1887,10 +1778,10 @@
       "key": "b2",
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b2",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b2",
       "rect": [
-        40.0,
-        315.83,
+        36.0,
+        300.45,
         448.8,
         67.2
       ],
@@ -1908,10 +1799,10 @@
       "key": "b3",
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b3",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b3",
       "rect": [
-        40.0,
-        395.03,
+        36.0,
+        379.66,
         448.8,
         225.0
       ],
@@ -1928,10 +1819,10 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b3/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b3/#0",
       "rect": [
-        52.5,
-        407.53,
+        48.5,
+        392.16,
         423.8,
         200.0
       ],
@@ -1950,10 +1841,10 @@
       "key": "b4",
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b4",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b4",
       "rect": [
-        40.0,
-        644.03,
+        36.0,
+        628.66,
         448.8,
         22.4
       ],
@@ -1971,10 +1862,10 @@
       "key": "b5",
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b5",
       "rect": [
-        40.0,
-        678.43,
+        36.0,
+        663.05,
         448.8,
         75.2
       ],
@@ -1991,10 +1882,10 @@
       "key": "i0",
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b5/i0",
       "rect": [
-        40.0,
-        678.43,
+        36.0,
+        663.05,
         448.8,
         22.4
       ],
@@ -2011,10 +1902,10 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b5/i0/#0",
       "rect": [
-        40.0,
-        678.43,
+        36.0,
+        663.05,
         32.0,
         22.4
       ],
@@ -2031,10 +1922,10 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i0/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b5/i0/#1",
       "rect": [
-        72.0,
-        678.43,
+        68.0,
+        663.05,
         416.8,
         22.4
       ],
@@ -2052,10 +1943,10 @@
       "key": "b0",
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i0/#1/b0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b5/i0/#1/b0",
       "rect": [
-        72.0,
-        678.43,
+        68.0,
+        663.05,
         416.8,
         22.4
       ],
@@ -2073,10 +1964,10 @@
       "key": "i1",
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b5/i1",
       "rect": [
-        40.0,
-        704.83,
+        36.0,
+        689.45,
         448.8,
         22.4
       ],
@@ -2093,10 +1984,10 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i1/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b5/i1/#0",
       "rect": [
-        40.0,
-        704.83,
+        36.0,
+        689.45,
         32.0,
         22.4
       ],
@@ -2113,10 +2004,10 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i1/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b5/i1/#1",
       "rect": [
-        72.0,
-        704.83,
+        68.0,
+        689.45,
         416.8,
         22.4
       ],
@@ -2134,10 +2025,10 @@
       "key": "b0",
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i1/#1/b0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b5/i1/#1/b0",
       "rect": [
-        72.0,
-        704.83,
+        68.0,
+        689.45,
         416.8,
         22.4
       ],
@@ -2155,10 +2046,10 @@
       "key": "i2",
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i2",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b5/i2",
       "rect": [
-        40.0,
-        731.23,
+        36.0,
+        715.85,
         448.8,
         22.4
       ],
@@ -2175,10 +2066,10 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i2/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b5/i2/#0",
       "rect": [
-        40.0,
-        731.23,
+        36.0,
+        715.85,
         32.0,
         22.4
       ],
@@ -2195,10 +2086,10 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i2/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b5/i2/#1",
       "rect": [
-        72.0,
-        731.23,
+        68.0,
+        715.85,
         416.8,
         22.4
       ],
@@ -2216,10 +2107,10 @@
       "key": "b0",
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b5/i2/#1/b0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b5/i2/#1/b0",
       "rect": [
-        72.0,
-        731.23,
+        68.0,
+        715.85,
         416.8,
         22.4
       ],
@@ -2238,10 +2129,10 @@
       "key": "b6",
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b6",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b6",
       "rect": [
-        40.0,
-        765.63,
+        36.0,
+        750.25,
         448.8,
         22.4
       ],
@@ -2259,10 +2150,10 @@
       "key": "b7",
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b7",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b7",
       "rect": [
-        40.0,
-        804.02,
+        36.0,
+        788.65,
         448.8,
         44.8
       ],
@@ -2278,10 +2169,10 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b7/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b7/#0",
       "rect": [
-        40.0,
-        804.02,
+        36.0,
+        788.65,
         2.0,
         44.8
       ],
@@ -2297,10 +2188,10 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b7/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b7/#1",
       "rect": [
-        42.0,
-        804.02,
+        38.0,
+        788.65,
         446.8,
         44.8
       ],
@@ -2318,10 +2209,10 @@
       "key": "b0",
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b7/#1/b0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b7/#1/b0",
       "rect": [
-        54.0,
-        804.02,
+        50.0,
+        788.65,
         434.8,
         44.8
       ],
@@ -2340,10 +2231,10 @@
       "key": "b8",
       "loopPhase": null,
       "opacity": 0.550000011920929,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-content/article-body/#0/b8",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/article-pane/article-scroll/article-body-content/article-body/#0/b8",
       "rect": [
-        40.0,
-        864.82,
+        36.0,
+        849.45,
         448.8,
         67.2
       ],
@@ -2403,7 +2294,7 @@
       "rect": [
         32.0,
         725.0,
-        58.66,
+        69.29,
         15.0
       ],
       "role": "group",
@@ -2416,14 +2307,14 @@
       "focusable": false,
       "focused": false,
       "inert": false,
-      "label": "Esc",
+      "label": "j k",
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#0/#0",
       "rect": [
         32.0,
         725.5,
-        26.91,
+        31.89,
         14.0
       ],
       "role": "group",
@@ -2443,7 +2334,7 @@
       "rect": [
         32.0,
         725.5,
-        26.91,
+        14.33,
         14.0
       ],
       "role": "group",
@@ -2463,107 +2354,6 @@
       "rect": [
         36.0,
         727.0,
-        18.91,
-        11.0
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "Esc"
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#0/#1",
-      "rect": [
-        64.91,
-        725.0,
-        25.75,
-        15.0
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "feed"
-    },
-    {
-      "blur": 0.0,
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1",
-      "rect": [
-        108.66,
-        725.0,
-        69.29,
-        15.0
-      ],
-      "role": "group",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "label": "j k",
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1/#0",
-      "rect": [
-        108.66,
-        725.5,
-        31.89,
-        14.0
-      ],
-      "role": "group",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "fill": "#ffffff16",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "key": "key0",
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1/#0/key0",
-      "rect": [
-        108.66,
-        725.5,
-        14.33,
-        14.0
-      ],
-      "role": "group",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1/#0/key0/#0",
-      "rect": [
-        112.66,
-        727.0,
         6.33,
         11.0
       ],
@@ -2581,9 +2371,9 @@
       "key": "key1",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1/#0/key1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#0/#0/key1",
       "rect": [
-        124.98,
+        48.33,
         725.5,
         15.56,
         14.0
@@ -2601,9 +2391,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1/#0/key1/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#0/#0/key1/#0",
       "rect": [
-        128.98,
+        52.33,
         727.0,
         7.56,
         11.0
@@ -2622,9 +2412,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#0/#1",
       "rect": [
-        146.55,
+        69.89,
         725.0,
         31.4,
         15.0
@@ -2642,9 +2432,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1",
       "rect": [
-        195.95,
+        119.29,
         725.0,
         52.57,
         15.0
@@ -2662,9 +2452,9 @@
       "label": "f",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1/#0",
       "rect": [
-        195.95,
+        119.29,
         725.5,
         14.48,
         14.0
@@ -2682,9 +2472,9 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2/#0/key0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1/#0/key0",
       "rect": [
-        195.95,
+        119.29,
         725.5,
         14.48,
         14.0
@@ -2702,9 +2492,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2/#0/key0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1/#0/key0/#0",
       "rect": [
-        199.95,
+        123.29,
         727.0,
         6.48,
         11.0
@@ -2723,9 +2513,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#1/#1",
       "rect": [
-        216.43,
+        139.77,
         725.0,
         32.09,
         15.0
@@ -2743,9 +2533,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2",
       "rect": [
-        266.52,
+        189.86,
         725.0,
         46.66,
         15.0
@@ -2763,9 +2553,9 @@
       "label": "L",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2/#0",
       "rect": [
-        266.52,
+        189.86,
         725.5,
         14.23,
         14.0
@@ -2783,9 +2573,9 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#0/key0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2/#0/key0",
       "rect": [
-        266.52,
+        189.86,
         725.5,
         14.23,
         14.0
@@ -2803,9 +2593,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#0/key0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2/#0/key0/#0",
       "rect": [
-        270.52,
+        193.86,
         727.0,
         6.23,
         11.0
@@ -2824,9 +2614,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#2/#1",
       "rect": [
-        286.74,
+        210.09,
         725.0,
         26.44,
         15.0
@@ -2844,9 +2634,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#4",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3",
       "rect": [
-        331.18,
+        254.52,
         725.0,
         75.91,
         15.0
@@ -2864,9 +2654,9 @@
       "label": "Tab",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#4/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#0",
       "rect": [
-        331.18,
+        254.52,
         725.5,
         27.42,
         14.0
@@ -2884,9 +2674,9 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#4/#0/key0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#0/key0",
       "rect": [
-        331.18,
+        254.52,
         725.5,
         27.42,
         14.0
@@ -2904,9 +2694,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#4/#0/key0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#0/key0/#0",
       "rect": [
-        335.18,
+        258.52,
         727.0,
         19.42,
         11.0
@@ -2925,9 +2715,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#4/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#3/#1",
       "rect": [
-        364.6,
+        287.95,
         725.0,
         42.48,
         15.0
@@ -2945,9 +2735,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#5",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#4",
       "rect": [
-        425.09,
+        348.43,
         725.0,
         74.66,
         15.0
@@ -2965,9 +2755,9 @@
       "label": "S",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#5/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#4/#0",
       "rect": [
-        425.09,
+        348.43,
         725.5,
         15.11,
         14.0
@@ -2985,9 +2775,9 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#5/#0/key0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#4/#0/key0",
       "rect": [
-        425.09,
+        348.43,
         725.5,
         15.11,
         14.0
@@ -3005,9 +2795,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#5/#0/key0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#4/#0/key0/#0",
       "rect": [
-        429.09,
+        352.43,
         727.0,
         7.11,
         11.0
@@ -3026,9 +2816,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#5/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#4/#1",
       "rect": [
-        446.2,
+        369.54,
         725.0,
         53.55,
         15.0
@@ -3046,9 +2836,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#6",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#5",
       "rect": [
-        517.74,
+        441.09,
         725.0,
         62.29,
         15.0
@@ -3066,9 +2856,9 @@
       "label": "r",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#6/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#5/#0",
       "rect": [
-        517.74,
+        441.09,
         725.5,
         15.13,
         14.0
@@ -3086,9 +2876,9 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#6/#0/key0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#5/#0/key0",
       "rect": [
-        517.74,
+        441.09,
         725.5,
         15.13,
         14.0
@@ -3106,9 +2896,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#6/#0/key0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#5/#0/key0/#0",
       "rect": [
-        521.74,
+        445.09,
         727.0,
         7.13,
         11.0
@@ -3127,9 +2917,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#6/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#5/#1",
       "rect": [
-        538.88,
+        462.22,
         725.0,
         41.16,
         15.0
@@ -3147,11 +2937,11 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#7",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/story-main/story-footer/#6",
       "rect": [
-        598.03,
+        521.38,
         732.5,
-        14.97,
+        91.63,
         0.0
       ],
       "role": "group",
@@ -3254,7 +3044,7 @@
         637.0,
         48.0,
         543.0,
-        149.88
+        151.88
       ],
       "role": "group",
       "scale": 1.0
@@ -3271,9 +3061,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-content/source-header",
       "rect": [
-        651.0,
-        60.0,
-        515.0,
+        665.0,
+        62.0,
+        487.0,
         18.0
       ],
       "role": "group",
@@ -3292,8 +3082,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-content/source-header/source-title",
       "rect": [
-        651.0,
-        60.88,
+        665.0,
+        62.88,
         83.32,
         16.25
       ],
@@ -3312,9 +3102,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-content/source-header/#1",
       "rect": [
-        742.32,
-        69.0,
-        348.6,
+        756.32,
+        71.0,
+        320.6,
         0.0
       ],
       "role": "group",
@@ -3332,8 +3122,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-content/source-header/source-badge",
       "rect": [
-        1098.92,
-        60.0,
+        1084.92,
+        62.0,
         67.08,
         18.0
       ],
@@ -3352,8 +3142,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-content/source-header/source-badge/#0",
       "rect": [
-        1105.92,
-        61.5,
+        1091.92,
+        63.5,
         53.08,
         15.0
       ],
@@ -3374,9 +3164,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-content/source-who",
       "rect": [
-        651.0,
-        88.0,
-        515.0,
+        665.0,
+        90.0,
+        487.0,
         15.0
       ],
       "role": "text",
@@ -3395,9 +3185,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-content/source-excerpt",
       "rect": [
-        651.0,
-        113.0,
-        515.0,
+        665.0,
+        115.0,
+        487.0,
         72.88
       ],
       "role": "group",
@@ -3415,9 +3205,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-content/source-excerpt/#0",
       "rect": [
-        661.0,
-        123.0,
-        495.0,
+        675.0,
+        125.0,
+        467.0,
         14.38
       ],
       "role": "text",
@@ -3437,9 +3227,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-content/source-excerpt/source-excerpt-text",
       "rect": [
-        661.0,
-        143.38,
-        495.0,
+        675.0,
+        145.38,
+        467.0,
         32.5
       ],
       "role": "text",
@@ -3459,7 +3249,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-hint",
       "rect": [
         637.0,
-        197.88,
+        199.88,
         543.0,
         15.0
       ],
@@ -3479,7 +3269,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-hint/#0",
       "rect": [
         637.0,
-        198.38,
+        200.38,
         26.91,
         14.0
       ],
@@ -3499,7 +3289,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-hint/#0/key0",
       "rect": [
         637.0,
-        198.38,
+        200.38,
         26.91,
         14.0
       ],
@@ -3519,7 +3309,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-hint/#0/key0/#0",
       "rect": [
         641.0,
-        199.88,
+        201.88,
         18.91,
         11.0
       ],
@@ -3540,7 +3330,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/source-viewer/source-hint/#1",
       "rect": [
         669.91,
-        197.88,
+        199.88,
         128.63,
         15.0
       ],

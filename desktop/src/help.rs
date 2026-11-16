@@ -8,7 +8,7 @@
 //! the background is inert while it is open.
 
 use rune::tok::{self, type_};
-use rune::{Color, El, col, row, text};
+use rune::{Color, El, ScrollSpec, col, row, text};
 use rune_kit::{Dialog, Keybind, Kit};
 
 use crate::keys::{self, HelpGroup};
@@ -44,13 +44,26 @@ pub fn view(k: &Kit, t: tok::Theme, accent: Color, open: bool, layer: &mut Vec<E
                 .font(type_::LABEL)
                 .color(t.text_secondary),
         );
+    let mut viewport = col()
+        .key("help-scroll")
+        .w_full()
+        .shrink()
+        .min_h(0.0)
+        .scroll(ScrollSpec { stick_bottom: false })
+        .scroll_edge_fade(10.0)
+        .child(columns);
+    if let Some([_, height]) = rune::memo::layout_size("window") {
+        let header = rune::memo::layout_size("help-dialog/header").map_or(50.0, |[_, h]| h);
+        let footer = rune::memo::layout_size("help-footer").map_or(15.0, |[_, h]| h);
+        // The layer has 16 points on each edge; the body has a 16-point gap and bottom inset.
+        viewport = viewport.max_h((height - 32.0 - header - footer - 32.0).max(0.0));
+    }
     Dialog::new("help", "Keyboard")
         .open(open)
         .width(720.0)
         .fit()
         .on_close(|s: &mut crate::app::App| s.help = false)
-        .child(columns)
-        .child(footer)
+        .child(col().w_full().px(16.0).pb(16.0).gap(16.0).child(viewport).child(footer))
         .build(k, layer);
 }
 

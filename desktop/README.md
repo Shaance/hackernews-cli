@@ -99,6 +99,12 @@ Desktop feed navigation uses Left/Right to select the same row in the adjacent c
 
 An empty feed waiting for startup or a tab uses static placeholder rows in the same viewport, with its loading label in the footer. Delayed startup results rise 12 pt and fade in over about 220 ms; data ready before the first paint appears immediately. Tab results enter from the tab's direction using the same 24 pt slide and fade as pages. Placeholder graphics fade out over about 120 ms while readable content arrives. Tabs and controls respond immediately, reduced motion is instant, and refresh/page requests keep the rows already on screen. Empty feeds and load failures show their own status instead of placeholders.
 
+Refresh and uncached page requests show pending status in the footer even when rows remain
+visible. Saving reserves the marker's space so titles stay aligned. Summary folding and citation
+changes remove outgoing text immediately and fade incoming reading content in over about 150 ms;
+reduced motion switches it instantly. Help and settings keep their controls visible in short
+windows, with scrolling for body content that does not fit.
+
 Fully cached feed windows return immediately without source requests. This session cache keeps the last fetched story data; Refresh always reloads the current ranked window, while other visited windows retain their last fetched data. Missing or failed cached entries use the normal fetch path.
 
 ## Where it keeps its files
@@ -165,6 +171,8 @@ does nothing fails the gate.
 
 `cargo test` covers the parts a golden cannot: the key map against the routing tables, the
 settings round-trip through a temp `XDG_CONFIG_HOME`, the layout file, and the feed's arithmetic.
+The gate also runs `scripts/check_polish.py` to check transient reading-text overlap, reduced
+motion, rapid reversals, short-window dialogs, saved-row geometry, and the compact browser action.
 
 ## The GUI proof
 
@@ -303,6 +311,8 @@ whether the focus ring is visible while it does. Run this on a real window, with
 - [ ] With **Reduce Motion** on in System Settings, opening a story and re-rooting the thread
       still land in the same place, without the glide.
 
-Discussion replies load on demand. Opening a story captures every top-level comment for the summary; expanding a branch fetches its actual child IDs in batches of up to 50. Loaded comments stay available while further replies load. Load more and retry controls keep partial failures explicit, and folding a pending branch does not reopen it. The count distinguishes loaded comments from top-level threads. Replies do not regenerate the summary or change its citation capture.
+Discussion replies load on demand. Opening a story captures every top-level comment for the summary; expanding a branch fetches its actual child IDs in batches of up to 50. Loaded comments stay available while further replies load. Load more and retry controls keep partial failures explicit, and folding a pending branch does not reopen it. The discussion count reports readable comments loaded so far; the article metadata keeps Hacker News’s total count. Replies do not regenerate the summary or change its citation capture.
 
 Long discussions use Rune’s variable-height virtual rows: offscreen comment text and controls are not mounted. Keyboard navigation reveals the selected row; this bounds mounted content but is not a claim about measured native scroll performance.
+
+The desktop reading view keeps the story title and metadata in one article header, aligned with the summary. The toolbar provides Back to feed. Collapsing replies keeps their parent comment readable; dead, deleted, and blank leaves are omitted. An unavailable parent with replies remains a compact disclosure so readable descendants stay reachable. Those comments are also excluded from summary sources.

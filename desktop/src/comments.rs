@@ -32,6 +32,11 @@ use std::collections::{HashMap, HashSet};
 
 use hn_lib::app::Comment;
 
+/// A source can be read only when it has content and HN has not marked it dead or deleted.
+pub(crate) fn readable(comment: &Comment) -> bool {
+    !comment.deleted && !comment.text.trim().is_empty()
+}
+
 /// Indent levels before the trail takes over (DESIGN.md's `MAX_DEPTH`).
 ///
 /// A comment at depth `MAX_DEPTH - 1` that still has replies is at the cap: its children are
@@ -61,6 +66,8 @@ pub enum BranchStatus {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Node {
     pub id: i32,
+    /// Unreadable parents remain as reply controls; unreadable leaves have no visible row.
+    pub readable: bool,
     pub author: String,
     pub time_ago: String,
     pub text: String,
@@ -108,16 +115,20 @@ impl Thread {
         let mut seen = HashSet::new();
         let mut nodes: Vec<Node> = comments
             .iter().filter(|comment| seen.insert(comment.id))
-            .map(|comment| Node {
-                id: comment.id,
-                author: comment.author.clone(),
-                time_ago: comment.time_ago.clone(),
-                text: drawn_text(&comment.text),
-                links: comment.links.clone(),
-                parent: None,
-                children: Vec::new(),
-                known_children: comment.child_ids.clone(),
-                branch: BranchStatus::Ready,
+            .map(|comment| {
+                let readable = readable(comment);
+                Node {
+                    id: comment.id,
+                    readable,
+                    author: if readable { comment.author.clone() } else { String::new() },
+                    time_ago: if readable { comment.time_ago.clone() } else { String::new() },
+                    text: if readable { drawn_text(&comment.text) } else { String::new() },
+                    links: if readable { comment.links.clone() } else { Vec::new() },
+                    parent: None,
+                    children: Vec::new(),
+                    known_children: comment.child_ids.clone(),
+                    branch: BranchStatus::Ready,
+                }
             })
             .collect();
         let index: HashMap<i32, usize> = nodes
@@ -148,12 +159,42 @@ impl Thread {
             root: None,
             focus: false,
         };
+        thread.prune_unreadable();
         thread.cursor = thread.rows().first().map(|row| row.id);
         thread
     }
 
+    /// Known, potentially readable direct replies. Unfetched IDs count until resolved.
+    pub fn child_count(&self, id: i32) -> usize {
+        self.node(id).map_or(0, |node| node.known_children.len())
+    }
+
     pub fn has_children(&self, id: i32) -> bool {
-        self.node(id).is_some_and(|node| !node.known_children.is_empty())
+        self.child_count(id) > 0
+    }
+
+    fn displayable(&self, id: i32) -> bool {
+        self.node(id).is_some_and(|node| node.readable || self.has_children(id))
+    }
+
+    /// Remove resolved unreadable leaves from the visible tree without losing their IDs.
+    /// A group whose last child vanished is pruned in the same way, up to the root.
+    fn prune_unreadable(&mut self) {
+        let mut removed = HashSet::new();
+        loop {
+            let mut changed = false;
+            for node in &self.nodes {
+                if !node.readable && node.known_children.iter().all(|id| removed.contains(id)) {
+                    changed |= removed.insert(node.id);
+                }
+            }
+            if !changed { break; }
+        }
+        for node in &mut self.nodes {
+            node.known_children.retain(|id| !removed.contains(id));
+            node.children.retain(|id| !removed.contains(id));
+        }
+        self.roots.retain(|id| !removed.contains(id));
     }
 
     pub fn reply_batch(&self, id: i32, retry: bool) -> Vec<i32> {
@@ -165,6 +206,7 @@ impl Thread {
 
     pub fn merge_replies(&mut self, parent: i32, requested: &[i32], result: Result<Vec<Comment>, String>) {
         let Some(&at) = self.index.get(&parent) else { return; };
+        let selected_row = self.cursor.and_then(|id| self.visible_row(id));
         let previous = match &self.nodes[at].branch { BranchStatus::Ready => Vec::new(), BranchStatus::Failed { ids, .. } => ids.clone() };
         let (comments, error) = match result { Ok(comments) => (comments, None), Err(message) => (Vec::new(), Some(message)) };
         for mut node in Thread::from_comments(&comments).nodes {
@@ -180,15 +222,22 @@ impl Thread {
         self.nodes[at].branch = if failed.is_empty() { BranchStatus::Ready } else {
             BranchStatus::Failed { message: error.unwrap_or_else(|| format!("{} replies unavailable", failed.len())), ids: failed }
         };
+        self.prune_unreadable();
+        if self.root.is_some_and(|id| !self.displayable(id)) { self.root = None; }
+        if self.cursor.is_some_and(|id| !self.displayable(id)) {
+            let rows = self.rows();
+            let index = selected_row.unwrap_or(0).min(rows.len().saturating_sub(1));
+            self.cursor = rows.get(index).map(|row| row.id);
+        }
     }
 
     /// How many comments the capture holds.
     pub fn len(&self) -> usize {
-        self.nodes.len()
+        self.nodes.iter().filter(|node| node.readable).count()
     }
 
     pub fn is_empty(&self) -> bool {
-        self.nodes.is_empty()
+        self.roots.is_empty()
     }
 
     /// How many top-level threads the story has.
@@ -260,6 +309,7 @@ impl Thread {
 
     /// The depth `id` draws at: 0 at the tree's root, whatever the re-root is.
     pub fn depth_of(&self, id: i32) -> Option<u32> {
+        if !self.displayable(id) { return None; }
         let depth = self.tree_depth(id)?;
         match self.root {
             Some(root) => {
@@ -532,7 +582,7 @@ impl Thread {
     /// a segment. Re-rooting at a comment unfolds it, because continuing a thread is a request
     /// to see its replies.
     pub fn reroot(&mut self, id: i32) -> bool {
-        if !self.index.contains_key(&id) {
+        if !self.displayable(id) {
             return false;
         }
         self.root = Some(id);
@@ -615,6 +665,140 @@ mod tests {
 
     fn depths(rows: &[Row]) -> Vec<u32> {
         rows.iter().map(|row| row.depth).collect()
+    }
+
+    #[test]
+    fn dead_deleted_and_empty_leaves_do_not_appear_in_the_discussion() {
+        let mut good = fixtures::comments().remove(0);
+        good.id = 1;
+        good.child_ids.clear();
+        let mut dead = good.clone();
+        dead.id = 50521101;
+        dead.author = "jheriko".into();
+        dead.text = "[dead]".into();
+        dead.deleted = true;
+        let mut deleted = dead.clone();
+        deleted.id = 50521845;
+        deleted.author.clear();
+        deleted.text.clear();
+        let mut deleted_two = deleted.clone();
+        deleted_two.id = 50521772;
+        let mut blank = good.clone();
+        blank.id = 50520567;
+        blank.author.clear();
+        blank.text = " \n\t ".into();
+        let mut literal = good.clone();
+        literal.id = 2;
+        literal.text = "[dead]".into();
+        let empty = Thread::from_comments(&[dead.clone(), deleted.clone()]);
+        assert!(empty.is_empty());
+        assert!(empty.rows().is_empty());
+        assert_eq!(empty.cursor(), None);
+        let mut thread = Thread::from_comments(&[dead, good, deleted, deleted_two, blank, literal]);
+        assert_eq!(ids(&thread.rows()), vec![1, 2]);
+        assert_eq!(thread.len(), 2);
+        assert_eq!(thread.roots(), 2);
+        assert_eq!(thread.cursor(), Some(1));
+        assert!(thread.next_sibling());
+        assert_eq!(thread.cursor(), Some(2));
+        assert!(thread.node(50521101).is_some(), "removed items remain resolved internally");
+        assert!(!thread.reroot(50521845));
+    }
+
+    #[test]
+    fn unavailable_parent_stays_reachable_and_filtered_replies_are_not_failures() {
+        let mut group = fixtures::comments().remove(0);
+        group.id = 10;
+        group.deleted = true;
+        group.text.clear();
+        group.links = vec!["https://example.com/hidden".into()];
+        group.child_ids = vec![11, 12, 13];
+        let mut good = group.clone();
+        good.id = 11;
+        good.deleted = false;
+        good.text = "Readable reply".into();
+        good.child_ids.clear();
+        let mut dead = good.clone();
+        dead.id = 12;
+        dead.deleted = true;
+        let mut thread = Thread::from_comments(&[group]);
+        assert_eq!(thread.len(), 0);
+        assert!(!thread.is_empty(), "an unavailable parent still offers its replies");
+        assert_eq!(ids(&thread.rows()), vec![10]);
+        assert!(thread.node(10).unwrap().links.is_empty());
+        assert_eq!(thread.child_count(10), 3);
+        assert_eq!(thread.reply_batch(10, false), vec![11, 12, 13]);
+        thread.merge_replies(10, &[11, 12, 13], Err("Offline".into()));
+        assert_eq!(ids(&thread.rows()), vec![10]);
+        assert_eq!(thread.reply_batch(10, true), vec![11, 12, 13]);
+        thread.merge_replies(10, &[11, 12, 13], Ok(vec![good, dead]));
+        assert_eq!(ids(&thread.rows()), vec![10, 11]);
+        assert_eq!(thread.children_of(10), vec![11]);
+        assert_eq!(thread.child_count(10), 2, "the missing reply remains retryable");
+        assert_eq!(thread.reply_batch(10, true), vec![13]);
+        assert!(thread.reply_batch(10, false).is_empty(), "dead replies do not loop");
+        assert_eq!(thread.parent_of(11), Some(10));
+        assert_eq!(thread.depth_of(11), Some(1));
+        assert!(thread.fold());
+        assert_eq!(ids(&thread.rows()), vec![10]);
+        assert!(thread.unfold());
+        assert_eq!(ids(&thread.rows()), vec![10, 11]);
+        let mut recovered = fixtures::comments().remove(0);
+        recovered.id = 13;
+        recovered.child_ids.clear();
+        thread.merge_replies(10, &[13], Ok(vec![recovered]));
+        assert_eq!(thread.children_of(10), vec![11, 13]);
+        assert!(matches!(thread.node(10).unwrap().branch, BranchStatus::Ready));
+    }
+
+    #[test]
+    fn exhausted_unavailable_group_disappears_and_reanchors_selection() {
+        let mut before = fixtures::comments().remove(0);
+        before.id = 1;
+        before.child_ids.clear();
+        let mut group = before.clone();
+        group.id = 2;
+        group.deleted = true;
+        group.child_ids = vec![3];
+        let mut after = before.clone();
+        after.id = 4;
+        let mut empty = before.clone();
+        empty.id = 3;
+        empty.text.clear();
+        let mut thread = Thread::from_comments(&[before, group, after]);
+        assert!(thread.select(2));
+        thread.merge_replies(2, &[3], Ok(vec![empty]));
+        assert_eq!(ids(&thread.rows()), vec![1, 4]);
+        assert_eq!(thread.cursor(), Some(4));
+        assert!(!thread.has_children(2));
+        assert!(thread.reply_batch(2, true).is_empty());
+        assert!(thread.node(3).is_some(), "the filtered success cannot become a retry");
+    }
+
+    #[test]
+    fn exhausted_nested_groups_do_not_leave_a_dead_reroot() {
+        let mut root = fixtures::comments().remove(0);
+        root.id = 1;
+        root.child_ids.clear();
+        let mut group = root.clone();
+        group.id = 2;
+        group.deleted = true;
+        group.child_ids = vec![3];
+        let mut inner = group.clone();
+        inner.id = 3;
+        inner.child_ids = vec![4];
+        let mut thread = Thread::from_comments(&[root, group, inner]);
+        assert!(thread.reroot(3));
+        let mut dead = fixtures::comments().remove(0);
+        dead.id = 4;
+        dead.deleted = true;
+        dead.child_ids.clear();
+        thread.merge_replies(3, &[4], Ok(vec![dead]));
+        assert_eq!(thread.root(), None);
+        assert_eq!(thread.cursor(), Some(1));
+        assert_eq!(ids(&thread.rows()), vec![1]);
+        assert!(!thread.has_children(2));
+        assert!(!thread.has_children(3));
     }
 
     #[test]

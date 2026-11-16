@@ -440,23 +440,23 @@ for name in story comments summary-generating; do
   tree="$ACTUAL/$name.json"
   q() { jq -r "$1" "$tree"; }
 
-  # The summary card is pinned 12 points into the inspector and above every comment: the
+  # The summary card aligns with the pane top and stays above every comment: the
   # discussion scrolls under it.
   pinned=$(q '[.elements[] | select((.key // "") == "inspector-pane") | .rect[1]][0] as $top
     | [.elements[] | select((.key // "") == "summary-card") | .rect[1]][0] as $card
     | [.elements[] | select((.key // "") | test("^comment-[0-9]+$")) | .rect[1]] | min as $first
-    | "\($card == $top + 12)/\($card < $first)"')
+    | "\($card == $top)/\($card < $first)"')
   if [ "$pinned" = "true/true" ]; then
     pass "$name summary pinned above the discussion"
   else
-    bad "$name summary pinned (card at top+12 / above first comment = '$pinned')"
+    bad "$name summary pinned (card at pane top / above first comment = '$pinned')"
   fi
 
   # The discussion is a tree, not a flat list: a reply draws at a deeper level than its parent,
-  # and the header counts the capture and the story's threads rather than the rows on screen.
+  # and the header counts loaded readable comments rather than mounted rows.
   deep=$(q '[.elements[] | select((.key // "") | test("^comment-[0-9]+$")) | select(.level > 1)] | length')
   count=$(q '[.elements[] | select((.key // "") == "discussion-count") | .text][0] // ""')
-  if [ "$deep" -ge 1 ] && [ "$count" = "17 comments loaded · 5 top-level" ]; then
+  if [ "$deep" -ge 1 ] && [ "$count" = "17 loaded" ]; then
     pass "$name discussion (tree, $deep rows below the top level, '$count')"
   else
     bad "$name discussion ($deep rows below the top level, count '$count')"
@@ -611,7 +611,7 @@ check parent "$(key_trail parent)" "" "and the trail collapses back to one segme
 
 check folded "$(key_rows folded)" "901,9010,9011,902,903,9030,90300,904,905" "h folds 9010's replies"
 hidden=$(jq -r '[.elements[] | select((.key // "") == "comment-hidden-9010") | .label][0] // ""' "$ACTUAL/keys-folded.json")
-check folded "$hidden" "3 replies hidden, Enter expands" "the fold counts the rows it hid"
+check folded "$hidden" "Show 3 hidden replies" "the fold counts the rows it hid"
 
 check unfolded "$(key_rows unfolded)" "901,9010,90100,901000,90101,9011,902,903,9030,90300,904,905" "l unfolds them again"
 
@@ -919,6 +919,10 @@ pass "columns preserve row geometry; selection changes only color; page groups m
 step "loading shells and actual AppSpec arrival contracts"
 cargo test --locked --offline --lib render_ -- --ignored --test-threads=1
 pass "loading accessibility and delayed startup/tab/page arrivals (normal and reduced motion)"
+
+step "reading transitions and compact layouts"
+python3 scripts/check_polish.py
+pass "reading surfaces never overlap; reduced motion is instant; dialogs and saved rows stay aligned"
 
 printf '\n'
 if [ "$fail" = 0 ]; then

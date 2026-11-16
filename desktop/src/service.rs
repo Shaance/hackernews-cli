@@ -129,7 +129,7 @@ impl Source {
     pub fn capture(&self, comments: &[Comment]) -> Vec<CapturedSource> {
         comments
             .iter()
-            .filter(|comment| !comment.deleted)
+            .filter(|comment| crate::comments::readable(comment))
             .map(|comment| {
                 let text = reader::sources::clean(&comment.text);
                 CapturedSource {
@@ -473,8 +473,12 @@ mod tests {
         let source = Source::fake();
         let mut comments = fixtures::comments();
         comments[1].deleted = true;
+        comments[2].text = " \n\t".into();
+        comments[3].text = "[dead]".into();
         let sources = source.capture(&comments);
-        assert_eq!(sources.len(), comments.len() - 1);
+        assert_eq!(sources.len(), comments.len() - 2);
         assert!(sources.iter().all(|source| source.id != 902));
+        assert!(sources.iter().all(|source| source.id != 903));
+        assert!(sources.iter().any(|source| source.id == 904 && source.text == "[dead]"));
     }
 }
