@@ -10,7 +10,7 @@
 //! re-root and focus mode. This module owns the story around it — the article, the card, the
 //! citation selection and the link chooser — and hands the thread's transitions straight through.
 
-use hn_lib::reader::{Article, Discussion, Source as CapturedSource};
+use hn_lib::reader::{Discussion, Source as CapturedSource};
 use hn_lib::HNCLIItem;
 
 use crate::bridge::StoryFilled;
@@ -192,10 +192,7 @@ impl Story {
             return false;
         }
         self.article = match filled.article {
-            Ok(Article { text }) => ArticleState::Ready {
-                text,
-                partial: filled.article_partial,
-            },
+            Ok((text, partial)) => ArticleState::Ready { text, partial },
             Err(message) => ArticleState::Failed(message),
         };
         self.pending_reply = None;
@@ -451,10 +448,7 @@ mod tests {
     fn filled(summary: Result<Discussion, SummaryError>) -> StoryFilled {
         StoryFilled {
             story_id: 2,
-            article: Ok(Article {
-                text: "# Libghostty 1.0\n\nBody.".to_string(),
-            }),
-            article_partial: false,
+            article: Ok(("# Libghostty 1.0\n\nBody.".to_string(), false)),
             comments: Ok(fixtures::thread()),
             sources: fixtures::sources(),
             summary,

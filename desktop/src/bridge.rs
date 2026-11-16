@@ -20,7 +20,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use hn_lib::app::Comment;
-use hn_lib::reader::{Article, Config, Discussion, Source as CapturedSource};
+use hn_lib::reader::{Config, Discussion, Source as CapturedSource};
 use hn_lib::HNCLIItem;
 use rune::{Latest, Waker};
 use tokio::runtime::{Handle, Runtime};
@@ -70,8 +70,7 @@ pub struct StoryRequest {
 /// because the card acts on the one classification the reader boundary exposes.
 pub struct StoryFilled {
     pub story_id: i32,
-    pub article: Result<Article, String>,
-    pub article_partial: bool,
+    pub article: Result<(String, bool), String>,
     /// The discussion as a tree: the top-level comments and their replies, level by level.
     pub comments: Result<Vec<Comment>, String>,
     pub sources: Vec<CapturedSource>,
@@ -258,10 +257,7 @@ async fn run(source: &Source, request: Request) -> Filled {
 /// from the top-level comments only, which is the capture the card's coverage line describes.
 async fn run_story(source: &Source, request: StoryRequest) -> StoryFilled {
     let story_id = request.story.id;
-    let (article, article_partial) = match source.article(&request.story).await {
-        Ok((text, partial)) => (Ok(Article { text }), partial),
-        Err(message) => (Err(message), false),
-    };
+    let article = source.article(&request.story).await;
     let comments = source.thread(story_id).await.map_err(|e| e.to_string());
     let sources = comments.as_ref().map(|comments| source.capture(comments)).unwrap_or_default();
     let summary = match &comments {
@@ -271,7 +267,6 @@ async fn run_story(source: &Source, request: StoryRequest) -> StoryFilled {
     StoryFilled {
         story_id,
         article,
-        article_partial,
         comments,
         sources,
         summary,
@@ -432,11 +427,10 @@ mod tests {
         );
         assert_eq!(filled.story_id, crate::fixtures::STORY_ID);
         assert_eq!(
-            filled.article.as_ref().map(|a| a.text.as_str()),
-            Ok(crate::fixtures::ARTICLE),
+            filled.article.as_ref().map(|(text, partial)| (text.as_str(), *partial)),
+            Ok((crate::fixtures::ARTICLE, false)),
             "the article comes from the reader's own extractor"
         );
-        assert!(!filled.article_partial);
         assert_eq!(
             filled.comments.as_ref().unwrap().len(),
             5,
