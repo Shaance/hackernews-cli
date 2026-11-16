@@ -265,6 +265,7 @@ pub fn inspector_pane(
     accent: Color,
     overlays: &mut Vec<El>,
     reduced: bool,
+    on_scroll: impl Fn(rune::ScrollPos) + 'static,
 ) -> El {
     let transition = reading_transition(reduced);
     let reflow = if reduced { Spring::NONE } else { Spring::new(0.18, 0.0) };
@@ -288,7 +289,7 @@ pub fn inspector_pane(
                 .gap(10.0)
                 .child(summary_card(s, k, t, accent, reduced, reflow))
                 .child(
-                    discussion_pane(s, k, t, accent, overlays)
+                    discussion_pane(s, k, t, accent, overlays, on_scroll)
                         .transition(transition)
                         .motion(reflow)
                         .grow(1.0)
@@ -669,6 +670,7 @@ fn discussion_pane(
     t: tok::Theme,
     accent: Color,
     overlays: &mut Vec<El>,
+    on_scroll: impl Fn(rune::ScrollPos) + 'static,
 ) -> El {
     col()
         .key("discussion-scroll")
@@ -678,6 +680,7 @@ fn discussion_pane(
         .scroll(ScrollSpec { stick_bottom: false })
         .scroll_edge_fade(20.0)
         .scroll_margin(20.0)
+        .on_scroll_offset(on_scroll)
         .child(discussion(s, k, t, accent, overlays).motion(motion::DEFAULT))
 }
 

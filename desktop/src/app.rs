@@ -17,6 +17,7 @@
 
 use std::cell::Cell;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
@@ -59,6 +60,9 @@ const LOAD_TIMEOUT: f64 = 10.0;
 /// How often the window's own state may be written. A grip drag moves the width every frame,
 /// and a file per frame is not worth it.
 const LAYOUT_SECONDS: f64 = 2.0;
+/// Rune can stop its display link between wheel events; keeping it warm briefly gives the
+/// discussion a more even native presentation cadence without drawing continuously at rest.
+const SCROLL_PACING_SECONDS: f64 = 0.05;
 /// The inspector's width range: 46% of the 1180 pt default window, and enough either side for
 /// the summary card to stay readable.
 const INSPECTOR_WIDTH: f32 = 543.0;
@@ -88,6 +92,13 @@ enum Arrival {
     Tab(i8),
     Page(i8),
     None,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum ScrollPacing {
+    Idle,
+    Moved,
+    Until(f64),
 }
 
 /// The live article pane's child view.
@@ -128,6 +139,9 @@ pub struct App {
     hover: Option<i32>,
     /// The open story, when the split is showing one. `None` is the feed.
     story: Option<Story>,
+    /// The discussion's scroll observer and poll share this frame-pacing state.
+    scroll_pacing: Rc<Cell<ScrollPacing>>,
+    scroll_waker: Option<Waker>,
     /// The inspector's width and open state. Opening a story opens it; `Esc` closes it.
     inspector: PaneState,
     /// The reader's summary settings, loaded once at launch and never logged.
@@ -173,6 +187,20 @@ pub struct App {
 }
 
 impl App {
+    fn discussion_scroll_observer(&self) -> impl Fn(rune::ScrollPos) + 'static {
+        let pacing = Rc::clone(&self.scroll_pacing);
+        let waker = self.scroll_waker.clone();
+        let previous = Cell::new(0.0);
+        // At this Rune pin, a source-less live-only handler can leave its live wake pending.
+        // The offset observer wakes poll without a handler commit or a live-only event.
+        move |at| {
+            if previous.replace(at.offset[1]) == at.offset[1] { return; }
+            if pacing.replace(ScrollPacing::Moved) == ScrollPacing::Idle {
+                if let Some(waker) = &waker { waker(); }
+            }
+        }
+    }
+
     /// Ask for the window `grid` shows. `ranking` says whether this request re-snapshots.
     ///
     /// Saved is the local store, not a feed: it renders every saved story from memory and
@@ -698,6 +726,8 @@ fn init() -> App {
         loading_since: None,
         hover: None,
         story: None,
+        scroll_pacing: Rc::new(Cell::new(ScrollPacing::Idle)),
+        scroll_waker: None,
         inspector: PaneState::new(INSPECTOR_WIDTH)
             .range(INSPECTOR_MIN, INSPECTOR_MAX)
             .collapsed(),
@@ -725,6 +755,7 @@ fn init() -> App {
 /// One aggregate fill request, then the waker that brings its answer back to `poll`.
 fn setup(s: &mut App, waker: Waker) {
     webview::set_waker(waker.clone());
+    s.scroll_waker = Some(waker.clone());
     s.bridge.set_waker(waker);
     // The remembered tab and page decide what the first request asks for, so they land before
     // it. The measured grid re-requests if the window is not the default size.
@@ -735,6 +766,15 @@ fn setup(s: &mut App, waker: Waker) {
 fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
     let mut changed = false;
     let mut feed_arrived = false;
+    match s.scroll_pacing.get() {
+        ScrollPacing::Moved => {
+            s.scroll_pacing.set(ScrollPacing::Until(now + SCROLL_PACING_SECONDS));
+            tx.wake_after(Duration::ZERO);
+        }
+        ScrollPacing::Until(until) if now < until => tx.wake_after(Duration::ZERO),
+        ScrollPacing::Until(_) => s.scroll_pacing.set(ScrollPacing::Idle),
+        ScrollPacing::Idle => {}
+    }
     if let Some(filled) = s.bridge.take() {
         let landed = s.feed.apply_fill(filled);
         changed |= landed;
@@ -1239,7 +1279,7 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
                 accent,
                 s.saved.contains(story.id()),
             )),
-            story_view::inspector_pane(story, &k, t, accent, &mut overlays, reduced),
+            story_view::inspector_pane(story, &k, t, accent, &mut overlays, reduced, s.discussion_scroll_observer()),
         ),
         None => (feed_body(s, &k, t, accent, cols, reduced), toolbar, col()),
     };
@@ -2829,6 +2869,56 @@ mod tests {
     }
 
     #[test]
+    fn discussion_scroll_keeps_frames_paced_until_it_is_still() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        let mut app = long_discussion();
+        assert_eq!(app.story.as_ref().unwrap().thread.len(), 244, "the synchronous fixture loaded its comments");
+        let wakes = Arc::new(AtomicUsize::new(0));
+        let wake_count = Arc::clone(&wakes);
+        app.scroll_waker = Some(Arc::new(move || { wake_count.fetch_add(1, Ordering::Relaxed); }));
+        let mut rt = rune::Runtime::new(app, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.poll = Some(poll);
+        for _ in 0..120 { rt.frame(1.0 / 60.0); }
+        assert_eq!(rt.state.scroll_pacing.get(), ScrollPacing::Idle, "initial layout settles");
+        assert_eq!(wakes.load(Ordering::Relaxed), 0, "initial offset is not a scroll");
+
+        let viewport = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("discussion-scroll")).unwrap().rect;
+        let point = (viewport[0] + viewport[2] / 2.0, viewport[1] + viewport[3] / 2.0);
+        let header_y = |rt: &rune::Runtime<App>| rt.elements().iter()
+            .find(|e| e.key.as_deref() == Some("discussion-header")).unwrap().rect[1];
+        let before = header_y(&rt);
+        let commits = rt.stats.commits;
+        rt.wheel(point.0, point.1, -5.0);
+        rt.frame(1.0 / 120.0);
+        assert!(header_y(&rt) < before, "the real discussion viewport scrolled");
+        assert_eq!(rt.state.scroll_pacing.get(), ScrollPacing::Moved);
+        assert_eq!(wakes.load(Ordering::Relaxed), 1, "the first movement wakes poll");
+        assert_eq!(rt.stats.commits, commits, "the moving offset callback does not rebuild the view");
+        rt.frame(1.0 / 120.0);
+        let ScrollPacing::Until(first_deadline) = rt.state.scroll_pacing.get() else { panic!("scroll starts pacing") };
+        assert!(rt.wake_deadline().is_some(), "pacing asks for another frame");
+        assert_eq!(rt.stats.commits, commits, "the offset callback does not rebuild the view");
+
+        rt.wheel(point.0, point.1, -5.0);
+        rt.frame(1.0 / 120.0);
+        rt.frame(1.0 / 120.0);
+        assert!(matches!(rt.state.scroll_pacing.get(), ScrollPacing::Until(until) if until > first_deadline), "further scrolling extends pacing");
+        assert_eq!(wakes.load(Ordering::Relaxed), 1, "an active cadence needs no extra wake");
+        for _ in 0..20 { rt.frame(1.0 / 120.0); }
+        assert_eq!(rt.state.scroll_pacing.get(), ScrollPacing::Idle, "pacing ends after the scroll rests");
+        assert!(rt.wake_deadline().is_none(), "the idle window has no pacing wake");
+        assert!(!rt.live_pending(), "the idle window has no live work pending");
+
+        rt.wheel(point.0, point.1, -5.0);
+        rt.frame(1.0 / 120.0);
+        assert_eq!(wakes.load(Ordering::Relaxed), 2, "a later gesture wakes poll again");
+        for _ in 0..20 { rt.frame(1.0 / 120.0); }
+        assert_eq!(rt.state.scroll_pacing.get(), ScrollPacing::Idle);
+        assert!(rt.wake_deadline().is_none() && !rt.live_pending(), "the window returns to idle again");
+    }
+
+    #[test]
     fn unavailable_reply_group_retries_from_pointer_and_keyboard() {
         for activation in [None, Some(rune::Key::Enter), Some(rune::Key::Right)] {
             let mut s = app(true, SavedView::in_memory());
@@ -3133,6 +3223,8 @@ mod tests {
             loading_since: None,
             hover: None,
             story: None,
+            scroll_pacing: Rc::new(Cell::new(ScrollPacing::Idle)),
+            scroll_waker: None,
             inspector: inspector(),
             config: Config::default(),
             settings: None,
