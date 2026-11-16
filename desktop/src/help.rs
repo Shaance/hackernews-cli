@@ -40,7 +40,7 @@ pub fn view(k: &Kit, t: tok::Theme, accent: Color, open: bool, layer: &mut Vec<E
         )
         .child(el_grow())
         .child(
-            text("The terminal app's keys, unchanged.")
+            text("Desktop keyboard shortcuts.")
                 .font(type_::LABEL)
                 .color(t.text_secondary),
         );

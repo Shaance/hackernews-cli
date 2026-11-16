@@ -26,15 +26,15 @@ use hn_lib::reader::{self, Config};
 use hn_lib::HNCLIItem;
 use rune::tok::{self, radius, type_};
 use rune::{
-    AppSpec, Color, Cx, El, KeyEvent, ScrollSpec, Spring, Tx, Waker, WindowHandle, col, el, row,
-    text,
+    col, el, row, text, AppSpec, Color, Cx, El, KeyEvent, ScrollSpec, Spring, SpringPair,
+    Transition, Tx, Waker, WindowHandle,
 };
 use rune_kit::shell::PaneMotion;
 use rune_kit::{Keybind, Kit, PaneState, SegmentedControl, SplitView, Toast, ToastRegion, Toolbar};
 
 use crate::bookmarks::SavedView;
 use crate::bridge::{Bridge, Request, StoryRequest};
-use crate::feed::{FeedModel, Fill};
+use crate::feed::{FeedModel, Fill, Filled};
 use crate::help;
 use crate::keys::{self, StoryKey, WindowKey};
 use crate::layout::Layout;
@@ -80,6 +80,15 @@ enum Ranking {
     Keep,
 }
 
+/// Why a newly accepted feed group arrives. Refresh and resize keep their current identity.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Arrival {
+    Initial,
+    Tab(i8),
+    Page(i8),
+    None,
+}
+
 /// The live article pane's child view.
 ///
 /// The pane is the story's real page by default. This is the one thing that can take it away:
@@ -106,8 +115,12 @@ pub struct App {
     bridge: Bridge,
     /// The grid the last commit measured. Written by `view`, read by `poll`.
     measured: Cell<Option<(usize, usize)>>,
-    /// The fill the newest request asked for, so `poll` asks once per invalidation.
-    requested: Option<Fill>,
+    /// The newest fill and ranking policy, so resize preserves a fresh request in flight.
+    requested: Option<(Fill, Ranking)>,
+    /// Accepted tab/page changes replace this group; refresh and resize keep its identity.
+    feed_revision: usize,
+    pending_arrival: Option<Arrival>,
+    arrival: Arrival,
     /// When the in-flight request started, on the frame clock, for [`LOAD_TIMEOUT`].
     loading_since: Option<f64>,
     /// The row under the pointer, for the hover actions.
@@ -165,21 +178,42 @@ impl App {
     /// never reaches the source, so the viewport applies to display only.
     fn request(&mut self, grid: (usize, usize), ranking: Ranking) {
         let fill = self.feed.fill(grid.0, grid.1);
-        self.requested = Some(fill);
+        self.requested = Some((fill, ranking));
+        self.feed.status.error = None;
         if fill.tab == StoryType::Saved {
             self.feed.apply_saved(self.saved.store());
+            self.accept_arrival();
             return;
         }
         let snapshot = match ranking {
             Ranking::Fresh => None,
-            Ranking::Keep if !self.feed.id_snapshot.is_empty() => Some(self.feed.id_snapshot.clone()),
+            Ranking::Keep if !self.feed.id_snapshot.is_empty()
+                && self.feed.stories_for.is_some_and(|(tab, _)| tab == self.feed.tab) => {
+                Some(self.feed.id_snapshot.clone())
+            }
             Ranking::Keep => None,
         };
+        // A complete held window can settle immediately against the same ranked snapshot.
+        // Fresh requests always reach the source; missing/failed items retain the normal fetch path.
+        if let Some(ids) = snapshot.as_ref() {
+            let end = (fill.from_rank + fill.count).min(ids.len());
+            if let Some(window) = ids.get(fill.from_rank..end) {
+                let held: Option<Vec<_>> = window.iter()
+                    .map(|id| self.feed.story_cache.get(id).cloned().map(Some)).collect();
+                if let Some(items) = held {
+                    self.bridge.cancel_feed();
+                    self.feed.apply_fill(Filled { tab: fill.tab, ids: ids.clone(), from_rank: fill.from_rank, items, error: None });
+                    self.accept_arrival();
+                    return;
+                }
+            }
+        }
         self.feed.status.loading = true;
         let request = Request::new(fill, snapshot);
         if self.headless {
             let filled = self.bridge.fill_now(self.source.as_ref(), request);
             self.feed.apply_fill(filled);
+            self.accept_arrival();
         } else {
             self.bridge.request(self.source.clone(), request);
         }
@@ -188,6 +222,9 @@ impl App {
     /// Re-request the current window with a new ranking, as `r` does. The story the reader has
     /// selected stays selected: the feed re-anchors on its id when the new snapshot lands.
     fn refresh(&mut self) {
+        self.loading_since = None;
+        self.pending_arrival = None;
+        self.arrival = Arrival::None;
         self.feed.pending_anchor = self.feed.selected_id();
         let grid = self.measured.get().unwrap_or(DEFAULT_GRID);
         self.request(grid, Ranking::Fresh);
@@ -239,10 +276,30 @@ impl App {
             feed_state::FeedAction::SwitchTab { .. } => Ranking::Fresh,
             _ => Ranking::Keep,
         };
+        let arrival = match action {
+            feed_state::FeedAction::TurnPage { display_cursor, .. } => Some(Arrival::Page(
+                if display_cursor < self.feed.display_cursor { -1 } else { 1 })),
+            feed_state::FeedAction::SwitchTab { tab, .. } => Some(Arrival::Tab(
+                if tab_index(tab) < tab_index(self.feed.tab) { -1 } else { 1 })),
+            _ => None,
+        };
         let applied = self.feed.apply(action, grid);
         if applied.fill.is_some() {
+            self.loading_since = None;
+            self.pending_arrival = arrival;
             self.request(grid, ranking);
         }
+    }
+
+    fn accept_arrival(&mut self) -> bool {
+        let Some(arrival) = self.pending_arrival.take() else { return false; };
+        if self.feed.status.error.is_some() { self.arrival = Arrival::None; return false; }
+        self.arrival = arrival;
+        if arrival != Arrival::Initial {
+            self.feed_revision += 1;
+            self.hover = None;
+        }
+        true
     }
 
     fn cells(&self) -> usize {
@@ -258,6 +315,10 @@ impl App {
 
     /// Open `story`: the split springs open and one aggregate request goes out.
     fn open_story(&mut self, story: HNCLIItem) {
+        // Returning to the feed is not another page arrival.
+        self.feed_revision = 0;
+        self.pending_arrival = None;
+        self.arrival = Arrival::None;
         let configured = self.configured();
         self.story = Some(Story::opening(story.clone(), configured));
         self.inspector.set_open(true);
@@ -403,9 +464,7 @@ impl App {
                 self.live = Live::Failed(error);
                 return true;
             }
-            self.live = Live::Ready {
-                url: String::new(),
-            };
+            self.live = Live::Ready { url: String::new() };
             changed = true;
         }
         let mut failure = None;
@@ -458,9 +517,9 @@ impl App {
     /// Whether the open story's summary failed because the provider rejected the key. That is
     /// the one failure a retry cannot fix, so `M` opens the dialog asking for a new key.
     fn auth_failed(&self) -> bool {
-        self.story.as_ref().is_some_and(|story| {
-            matches!(&story.summary, SummaryState::Failed { auth: true, .. })
-        })
+        self.story
+            .as_ref()
+            .is_some_and(|story| matches!(&story.summary, SummaryState::Failed { auth: true, .. }))
     }
 
     /// The summary card's settings button, and `M`: the dialog, asking for a key when the
@@ -606,6 +665,9 @@ fn init() -> App {
         bridge: Bridge::new().expect("a tokio runtime for the feed's requests"),
         measured: Cell::new(None),
         requested: None,
+        feed_revision: 0,
+        pending_arrival: Some(Arrival::Initial),
+        arrival: Arrival::Initial,
         loading_since: None,
         hover: None,
         story: None,
@@ -644,8 +706,11 @@ fn setup(s: &mut App, waker: Waker) {
 
 fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
     let mut changed = false;
+    let mut feed_arrived = false;
     if let Some(filled) = s.bridge.take() {
-        changed |= s.feed.apply_fill(filled);
+        let landed = s.feed.apply_fill(filled);
+        changed |= landed;
+        if landed { feed_arrived = s.accept_arrival(); }
     }
     if let Some(filled) = s.bridge.take_story() {
         // A landing for a story that is no longer open is dropped by `Story::land`.
@@ -692,11 +757,19 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
     // step with the split. A no-op in a headless run, where the pane is the extracted text.
     changed |= s.sync_live();
     // One request per invalidation: the measured grid is the only thing that moves it. A
-    // resize pages against the ranking on screen, so the ranks do not move under the reader.
+    // resize keeps an in-flight fresh request fresh; otherwise it uses the accepted ranking.
     if let Some(grid) = s.measured.get() {
         let need = s.feed.fill(grid.0, grid.1);
-        if s.requested != Some(need) {
-            s.request(grid, Ranking::Keep);
+        if s.requested.map(|(fill, _)| fill) != Some(need) {
+            let ranking = if s.feed.status.loading {
+                s.requested.map_or(Ranking::Keep, |(_, ranking)| ranking)
+            } else {
+                Ranking::Keep
+            };
+            if !matches!(s.pending_arrival, Some(Arrival::Initial | Arrival::Tab(_))) {
+                s.pending_arrival = None;
+            }
+            s.request(grid, ranking);
             changed = true;
         }
     }
@@ -705,6 +778,8 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
         let since = *s.loading_since.get_or_insert(now);
         if s.feed.timed_out(now - since, LOAD_TIMEOUT) {
             s.loading_since = None;
+            s.pending_arrival = None;
+            s.arrival = Arrival::None;
             changed = true;
         } else {
             tx.wake_after(Duration::from_secs_f64(LOAD_TIMEOUT));
@@ -743,7 +818,11 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
         }
     }
     if changed {
-        tx.instant();
+        if feed_arrived && !s.reduced {
+            tx.animated();
+        } else {
+            tx.instant();
+        }
     }
     changed
 }
@@ -788,6 +867,36 @@ fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
     if s.story.is_some() {
         return on_story_key(s, ev, tx);
     }
+    if matches!(
+        keys::parity_key(ev),
+        Some(crossterm::event::KeyCode::Left | crossterm::event::KeyCode::Right)
+    ) {
+        let (_, cols) = s.measured.get().unwrap_or(DEFAULT_GRID);
+        let shown = s.feed.stories.len();
+        if shown > 0 && !s.feed.status.loading {
+            let cols = cols.max(1);
+            let per_column = shown.div_ceil(cols);
+            let column = s.feed.selected / per_column;
+            let right = matches!(ev.key, rune::Key::Right);
+            if (right && column + 1 < cols && (column + 1) * per_column < shown)
+                || (!right && column > 0)
+            {
+                let start = if right { (column + 1) * per_column } else { (column - 1) * per_column };
+                s.feed.selected = (start + s.feed.selected % per_column).min(shown - 1);
+            } else if !right || s.feed.display_cursor + shown < s.feed.id_snapshot.len() {
+                let mut action = if right { feed_state::next_page(&s.feed.state(), s.cells()) }
+                    else { feed_state::prev_page(&s.feed.state(), s.cells()) };
+                if let feed_state::FeedAction::TurnPage { landing, .. } = &mut action {
+                    *landing = Some(if right { hn_lib::app::PageLanding::Start } else { hn_lib::app::PageLanding::End });
+                    s.apply(action);
+                }
+            }
+            if let Some(id) = s.feed.selected_id() {
+                tx.scroll_into_view(format!("story-{id}"));
+            }
+        }
+        return true;
+    }
     let cells = s.cells();
     let state = s.feed.state();
     let action = match keys::story_action(ev) {
@@ -809,7 +918,10 @@ fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
         },
         StoryAction::NextPage => feed_state::next_page(&state, cells),
         StoryAction::PrevPage => feed_state::prev_page(&state, cells),
-        StoryAction::SetType(tab) => feed_state::switch_tab(&state, tab),
+        StoryAction::SetType(tab) => {
+            tx.blur();
+            feed_state::switch_tab(&state, tab)
+        },
         StoryAction::ToggleBookmark => {
             s.toggle_saved();
             return true;
@@ -1059,7 +1171,9 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
     // overwrite it with the default and make `poll` re-request the wrong window.
     if s.story.is_none() {
         let rows = cx
-            .layout_with("feed-list", |rect| (rect[3] / ROW_HEIGHT).floor().max(0.0) as usize)
+            .layout_with("feed-list", |rect| {
+                (rect[3] / ROW_HEIGHT).floor().max(0.0) as usize
+            })
             .filter(|rows| *rows > 0)
             .unwrap_or(DEFAULT_GRID.0);
         s.measured.set(Some((rows, cols)));
@@ -1109,7 +1223,7 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
             )),
             story_view::inspector_pane(story, &k, t, accent, &mut overlays),
         ),
-        None => (feed_body(s, &k, t, accent, cols), toolbar, col()),
+        None => (feed_body(s, &k, t, accent, cols, reduced), toolbar, col()),
     };
     let shell = SplitView::new(main)
         .toolbar(toolbar)
@@ -1156,12 +1270,16 @@ fn story_main(story: &Story, k: &Kit, t: tok::Theme, pane: Pane<'_>) -> El {
         .key("story-main")
         .w_full()
         .h_full()
-        .child(story_view::article_pane(story, k, t, pane).grow(1.0).min_h(0.0))
+        .child(
+            story_view::article_pane(story, k, t, pane)
+                .grow(1.0)
+                .min_h(0.0),
+        )
         .child(el().w_full().h(1.0).fill(t.separator))
         .child(story_view::story_footer(k, t))
 }
 
-fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize) -> El {
+fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize, reduced: bool) -> El {
     let mut body = col().w_full().h_full();
     if let Some(error) = s.saved.error() {
         body = body.child(banner(error, t, accent));
@@ -1169,12 +1287,12 @@ fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize) -> El 
     // A failed ranking or window is a state with a retry, never a blank list.
     if let Some(error) = s.feed.status.error.as_deref() {
         body = body.child(feed_error(error, t, accent));
-    } else if s.feed.status.loading && s.feed.stories.is_empty() {
-        body = body.child(feed_loading(t));
     }
     body.child(
-        feed_list(s, t, accent, cols)
-            .scroll(ScrollSpec { stick_bottom: false })
+        feed_list(s, t, accent, cols, reduced)
+            .scroll(ScrollSpec {
+                stick_bottom: false,
+            })
             .scroll_edge_fade(20.0)
             .grow(1.0)
             .min_h(0.0),
@@ -1186,13 +1304,36 @@ fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize) -> El 
 /// Column-major: story `c * rows + r`, so the left column fills first and `j` walks straight
 /// down it. One scroll viewport for both columns; every cell keeps its own key, so
 /// `Tx::scroll_into_view` reaches a story whichever column it is in.
-fn feed_list(s: &App, t: tok::Theme, accent: Color, cols: usize) -> El {
+fn feed_list(s: &App, t: tok::Theme, accent: Color, cols: usize, reduced: bool) -> El {
     let shown = s.feed.stories.len();
     let per_column = shown.div_ceil(cols.max(1));
+    // Keep the scroll viewport stable; only a completed page turn remounts this group.
+    if s.feed.status.loading && s.feed.stories.is_empty() && s.feed.status.error.is_none() {
+        return feed_skeleton(s, t, cols, reduced);
+    }
+    let mut transition = Transition::none();
+    if !reduced && s.arrival != Arrival::None {
+        let enter = match s.arrival {
+            Arrival::Initial => Transition::offset(0.0, 12.0),
+            Arrival::Tab(direction) | Arrival::Page(direction) => Transition::offset(direction as f32 * 24.0, 0.0),
+            Arrival::None => Transition::none(),
+        };
+        transition = Transition::asymmetric(enter.combined(Transition::opacity()), Transition::none())
+            .springs(SpringPair::new(Spring::new(0.22, 0.0), Spring::NONE));
+        transition.insertion.opacity = 0.2;
+    }
     let mut list = col()
-        .key("feed-list")
+        .key(format!("feed-page-{}", s.feed_revision))
+        .transition(transition)
+        .instant_changes()
         .w_full()
         .gap(if cols == 2 { 0.0 } else { 2.0 });
+    if shown == 0 && s.feed.status.error.is_none() {
+        let label = if s.feed.tab == StoryType::Saved { "No saved stories yet" } else { "No stories to show" };
+        list = list.h_full().center().role("status").label(label)
+            .child(text(label).font(type_::BODY).color(t.text_secondary).a11y_hidden());
+        return col().key("feed-list").w_full().h_full().child(list.grow(1.0));
+    }
     for r in 0..per_column {
         let mut line = row().key(format!("line-{r}")).w_full().h(ROW_HEIGHT);
         for c in 0..cols {
@@ -1205,14 +1346,14 @@ fn feed_list(s: &App, t: tok::Theme, accent: Color, cols: usize) -> El {
                 // per-row rules join into one continuous divider.
                 line = line.child(el().w(1.0).h_full().fill(t.separator));
             }
-            line = line.child(story_row(s, i, t, accent).grow(1.0));
+            line = line.child(story_row(s, i, t, accent, reduced).grow(1.0));
         }
         list = list.child(line);
     }
-    list
+    col().key("feed-list").w_full().child(list)
 }
 
-fn story_row(s: &App, i: usize, t: tok::Theme, accent: Color) -> El {
+fn story_row(s: &App, i: usize, t: tok::Theme, accent: Color, reduced: bool) -> El {
     let story = &s.feed.stories[i];
     let id = story.id;
     let rank = s.feed.display_cursor + i + 1;
@@ -1223,6 +1364,9 @@ fn story_row(s: &App, i: usize, t: tok::Theme, accent: Color) -> El {
 
     let mut r = row()
         .key(format!("story-{id}"))
+        .motion(if reduced { Spring::NONE } else { Spring::new(0.12, 0.0) })
+        .instant_changes()
+        .transition(Transition::none())
         .role("button")
         .label(format!("{} \u{00b7} {}", story.title, meta(story, failed)))
         .h_full()
@@ -1252,9 +1396,14 @@ fn story_row(s: &App, i: usize, t: tok::Theme, accent: Color) -> El {
                 s.hover = None;
             }
         });
-    if selected {
-        r = r.child(el().w(2.0).h(26.0).radius(1.0).fill(accent));
-    }
+    r = r.child(
+        el().w(2.0)
+            .h(26.0)
+            .radius(1.0)
+            .fill(if selected { accent } else { Color::TRANSPARENT })
+            .motion(if reduced { Spring::NONE } else { Spring::new(0.12, 0.0) })
+            .transition(Transition::none()),
+    );
     // The saved marker is a dot beside the rank, never right-aligned chrome. The Saved view is
     // already a list of saved stories, so its rows carry no dot.
     let mut lead = row().gap(6.0).center_y().child(
@@ -1302,7 +1451,7 @@ fn story_row(s: &App, i: usize, t: tok::Theme, accent: Color) -> El {
         );
     }
     if selected {
-        r = r.fill(t.card);
+        r = r.fill(t.card.mix(accent, 0.08));
     }
     r
 }
@@ -1337,12 +1486,7 @@ fn saved_dot(key: impl Into<String>, accent: Color) -> El {
 
 /// A hover action on a row. It is a control in its own right: a press on it runs its own
 /// handler, not the row's select, because Rune dispatches a press to the deepest handler.
-fn act(
-    label: &str,
-    color: Color,
-    t: tok::Theme,
-    on_press: impl Fn(&mut App) + 'static,
-) -> El {
+fn act(label: &str, color: Color, t: tok::Theme, on_press: impl Fn(&mut App) + 'static) -> El {
     row()
         .role("button")
         .label(label)
@@ -1358,13 +1502,27 @@ fn act(
 
 fn footer(s: &App, k: &Kit, t: tok::Theme, accent: Color) -> El {
     let mut f = row()
+        .motion(Spring::NONE)
+        .instant_changes()
+        // Match the 18 pt page controls plus vertical padding while a label replaces them.
+        .min_h(42.0)
         .w_full()
         .px(24.0)
         .py(12.0)
         .gap(18.0)
         .center_y()
         .child(hint(k, t, &["j", "k"], "move"))
-        .child(hint(k, t, &["s"], if s.feed.tab == StoryType::Saved { "unsave" } else { "save" }))
+        .child(hint(k, t, &["←", "→"], "column / page"))
+        .child(hint(
+            k,
+            t,
+            &["s"],
+            if s.feed.tab == StoryType::Saved {
+                "unsave"
+            } else {
+                "save"
+            },
+        ))
         .child(hint(k, t, &["n", "p"], "page"))
         .child(hint(k, t, &["1", "4"], "tabs"))
         .child(el().grow(1.0));
@@ -1375,7 +1533,9 @@ fn footer(s: &App, k: &Kit, t: tok::Theme, accent: Color) -> El {
                 .color(t.text_secondary),
         );
     }
-    if s.feed.tab != StoryType::Saved {
+    if s.feed.status.loading && s.feed.stories.is_empty() && s.feed.status.error.is_none() {
+        f = f.child(text(loading_label(s.feed.tab)).font(type_::LABEL).color(t.text_secondary).a11y_hidden());
+    } else if s.feed.tab != StoryType::Saved {
         f = f.child(stepper(s.feed.stepper(), t, accent));
     }
     f
@@ -1397,41 +1557,26 @@ fn stepper(page: u32, t: tok::Theme, accent: Color) -> El {
         .label(format!("Page {page}"))
         .gap(2.0)
         .center_y()
-        .child(chev(
-            "\u{2039}",
-            "Previous page",
-            t,
-            |s: &mut App| {
-                let cells = s.cells();
-                let action = feed_state::prev_page(&s.feed.state(), cells);
-                s.apply(action);
-            },
-        ))
+        .child(chev("\u{2039}", "Previous page", t, |s: &mut App| {
+            let cells = s.cells();
+            let action = feed_state::prev_page(&s.feed.state(), cells);
+            s.apply(action);
+        }))
         .child(
             row()
                 .w(20.0)
                 .center()
                 .child(text(format!("{page}")).font(type_::LABEL).color(accent)),
         )
-        .child(chev(
-            "\u{203a}",
-            "Next page",
-            t,
-            |s: &mut App| {
-                let cells = s.cells();
-                let action = feed_state::next_page(&s.feed.state(), cells);
-                s.apply(action);
-            },
-        ))
+        .child(chev("\u{203a}", "Next page", t, |s: &mut App| {
+            let cells = s.cells();
+            let action = feed_state::next_page(&s.feed.state(), cells);
+            s.apply(action);
+        }))
 }
 
 /// One arrow of the page stepper. It is a button, not decoration: a press turns the page.
-fn chev(
-    glyph: &str,
-    label: &str,
-    t: tok::Theme,
-    on_press: impl Fn(&mut App) + 'static,
-) -> El {
+fn chev(glyph: &str, label: &str, t: tok::Theme, on_press: impl Fn(&mut App) + 'static) -> El {
     row()
         .role("button")
         .label(label)
@@ -1526,20 +1671,33 @@ fn feed_error(error: &str, t: tok::Theme, accent: Color) -> El {
         )
 }
 
-/// The first load: the window is empty because nothing has landed yet, not because the feed
-/// failed.
-fn feed_loading(t: tok::Theme) -> El {
-    row()
-        .key("feed-loading")
-        .role("status")
-        .w_full()
-        .px(24.0)
-        .py(10.0)
-        .child(
-            text("Loading stories")
-                .font(type_::LABEL)
-                .color(t.text_secondary),
-        )
+/// Decorative rows occupy the same viewport and lanes as the feed, with one status owner.
+fn feed_skeleton(s: &App, t: tok::Theme, cols: usize, reduced: bool) -> El {
+    let rows = s.measured.get().unwrap_or(DEFAULT_GRID).0;
+    let exit = if reduced { Transition::none() } else {
+        Transition::asymmetric(Transition::none(), Transition::opacity())
+            .springs(SpringPair::new(Spring::NONE, Spring::new(0.12, 0.0)))
+    };
+    let mut skeleton = col().key("feed-placeholder").transition(exit).instant_changes().motion(Spring::NONE).w_full().gap(if cols == 2 { 0.0 } else { 2.0 }).a11y_hidden();
+    for r in 0..rows {
+        let mut line = row().w_full().h(ROW_HEIGHT);
+        for c in 0..cols {
+            if c > 0 { line = line.child(el().w(1.0).h_full().fill(t.separator)); }
+            let width = [0.72, 0.88, 0.62, 0.81][(r + c) % 4];
+            line = line.child(row().grow(1.0).h_full().px(12.0).gap(14.0).center_y()
+                .child(el().w(2.0).h(26.0))
+                .child(el().w(18.0).h(12.0).radius(3.0).fill(t.control_off))
+                .child(col().grow(1.0).gap(8.0)
+                    .child(el().w_frac(width).h(12.0).radius(3.0).fill(t.control_off))
+                    .child(el().w_frac(width * 0.56).h(9.0).radius(3.0).fill(t.control_off))));
+        }
+        skeleton = skeleton.child(line);
+    }
+    col().key("feed-list").w_full().role("status").label(loading_label(s.feed.tab)).busy(true).child(skeleton)
+}
+
+fn loading_label(tab: StoryType) -> String {
+    format!("Loading {} stories", match tab { StoryType::Top => "Top", StoryType::New => "New", StoryType::Best => "Best", StoryType::Saved => "Saved" })
 }
 
 fn tab_index(tab: StoryType) -> usize {
@@ -1722,6 +1880,644 @@ pub fn spec() -> AppSpec<App> {
 mod tests {
     use super::*;
 
+    fn press(s: &mut App, key: rune::Key) {
+        on_key(
+            s,
+            &KeyEvent {
+                key,
+                mods: rune::Mods::default(),
+            },
+            &mut Tx::default(),
+        );
+    }
+
+    #[test]
+    fn desktop_arrows_follow_rendered_columns_and_clamp_short_columns() {
+        let mut s = app(true, SavedView::in_memory());
+        s.measured.set(Some((14, 2)));
+        s.request((14, 2), Ranking::Fresh);
+        for shown in [28, 27, 11, 3] {
+            s.feed.stories.truncate(shown);
+            let per_column = shown.div_ceil(2);
+            for selected in 0..per_column {
+                s.feed.selected = selected;
+                press(&mut s, rune::Key::Right);
+                let right = if selected < per_column && shown > per_column {
+                    (selected + per_column).min(shown - 1)
+                } else {
+                    selected
+                };
+                assert_eq!(s.feed.selected, right, "right from {selected} of {shown}");
+                press(&mut s, rune::Key::Left);
+                assert_eq!(
+                    s.feed.selected,
+                    if right >= per_column {
+                        right - per_column
+                    } else {
+                        right
+                    }
+                );
+                assert_eq!(s.feed.display_cursor, 0);
+                assert_eq!(s.feed_revision, 0);
+            }
+        }
+    }
+
+    #[test]
+    fn desktop_column_loading_empty_and_modifiers_do_not_page() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        s.feed.selected = 5;
+        press(&mut s, rune::Key::Left);
+        assert_eq!(s.feed.selected, 5);
+        s.measured.set(Some((11, 2)));
+        on_key(
+            &mut s,
+            &KeyEvent {
+                key: rune::Key::Right,
+                mods: rune::Mods {
+                    ctrl: true,
+                    ..Default::default()
+                },
+            },
+            &mut Tx::default(),
+        );
+        assert_eq!(s.feed.selected, 5);
+        s.feed.status.loading = true;
+        press(&mut s, rune::Key::Right);
+        assert_eq!(s.feed.selected, 5);
+        s.feed.status.loading = false;
+        s.feed.stories.clear();
+        press(&mut s, rune::Key::Right);
+        assert_eq!(s.feed.display_cursor, 0);
+        assert_eq!(s.feed_revision, 0);
+    }
+
+    #[test]
+    fn edge_arrows_turn_pages_and_land_at_the_matching_side() {
+        for cols in [1, 2] {
+            let mut s = app(true, SavedView::in_memory());
+            s.measured.set(Some((5, cols)));
+            s.request((5, cols), Ranking::Fresh);
+            s.feed.selected = s.feed.stories.len() - 1;
+            press(&mut s, rune::Key::Right);
+            assert_eq!(s.feed.display_cursor, 5 * cols);
+            assert_eq!(s.feed.selected, 0);
+            assert_eq!(s.arrival, Arrival::Page(1));
+            press(&mut s, rune::Key::Left);
+            assert_eq!(s.feed.display_cursor, 0);
+            assert_eq!(s.feed.selected, 5 * cols - 1);
+            assert_eq!(s.arrival, Arrival::Page(-1));
+        }
+    }
+
+    #[test]
+    fn arrow_paging_stops_at_known_ends_and_saved() {
+        let mut s = app(true, SavedView::in_memory());
+        s.measured.set(Some((5, 2)));
+        s.request((5, 2), Ranking::Fresh);
+        press(&mut s, rune::Key::Left);
+        assert_eq!(s.feed.display_cursor, 0);
+        for _ in 0..2 {
+            s.feed.selected = s.feed.stories.len() - 1;
+            press(&mut s, rune::Key::Right);
+        }
+        assert_eq!(s.feed.display_cursor, 20);
+        s.feed.selected = 9;
+        press(&mut s, rune::Key::Right);
+        assert_eq!(s.feed.display_cursor, 20, "exact snapshot end stays put");
+        press(&mut s, rune::Key::Text("4".into()));
+        press(&mut s, rune::Key::Right);
+        assert_eq!(s.feed.display_cursor, 0, "Saved never pages");
+    }
+
+    #[test]
+    fn fully_cached_windows_skip_source_requests_but_refresh_and_partial_windows_fetch() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        press(&mut s, rune::Key::Text("n".into()));
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        let before = *fake.requests.lock().unwrap();
+        press(&mut s, rune::Key::Text("p".into()));
+        assert!(!s.feed.status.loading);
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        assert_eq!(*fake.requests.lock().unwrap(), before, "cached return issues zero requests");
+        let mut updated = s.feed.stories[0].clone();
+        updated.title = "Updated by refresh".into();
+        fake.insert_item(updated);
+        s.refresh();
+        assert_eq!(s.feed.stories[0].title, "Updated by refresh");
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        let refreshed = *fake.requests.lock().unwrap();
+        assert!(refreshed.0 > before.0 && refreshed.1 > before.1);
+        s.feed.story_cache.remove(&12);
+        press(&mut s, rune::Key::Text("n".into()));
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        assert!(fake.requests.lock().unwrap().1 > refreshed.1, "partial cache still fetches");
+        s.feed.story_cache.remove(&12);
+        fake.fail(12);
+        s.request((11, 1), Ranking::Keep);
+        assert!(s.feed.failed.contains(&12));
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        let failed = fake.requests.lock().unwrap().1;
+        s.request((11, 1), Ranking::Keep);
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        assert!(fake.requests.lock().unwrap().1 > failed, "failure placeholders are not cache hits");
+    }
+
+    #[test]
+    fn a_cached_window_cancels_only_the_superseded_feed_worker() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        s.source = Arc::new(Source::Fake(crate::service::FakeService::fixture()
+            .with_delay(Duration::from_millis(50))));
+        s.headless = false;
+        s.request((11, 1), Ranking::Fresh);
+        s.open_selected();
+        assert!(s.bridge.is_pending());
+        assert!(s.bridge.is_story_pending());
+        s.request((11, 1), Ranking::Keep);
+        assert!(!s.feed.status.loading);
+        assert!(!s.bridge.is_pending(), "a held window supersedes the feed worker");
+        assert!(s.bridge.is_story_pending(), "feed cache must not cancel the independent story request");
+        let title = s.feed.stories[0].title.clone();
+        std::thread::sleep(Duration::from_millis(80));
+        poll(&mut s, 0.0, &mut Tx::default());
+        assert_eq!(s.feed.stories[0].title, title);
+        assert!(!s.feed.status.loading);
+    }
+
+    #[test]
+    fn explicit_paging_replaces_the_group_but_selection_and_refresh_do_not() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        press(&mut s, rune::Key::Down);
+        assert_eq!(s.feed_revision, 0);
+        for key in [
+            rune::Key::Text("n".into()),
+            rune::Key::Text("p".into()),
+            rune::Key::Text(" ".into()),
+            rune::Key::PageUp,
+            rune::Key::PageDown,
+        ] {
+            let before = s.feed.display_cursor;
+            let revision = s.feed_revision;
+            press(&mut s, key);
+            assert_ne!(s.feed.display_cursor, before);
+            assert_eq!(s.feed_revision, revision + 1);
+        }
+        let revision = s.feed_revision;
+        s.refresh();
+        assert_eq!(s.feed_revision, revision);
+        assert!(s.pending_arrival.is_none());
+        s.open_selected();
+        assert_eq!(s.feed_revision, 0, "returning from a story must not replay a page fade");
+    }
+
+    #[test]
+    fn asynchronous_page_arrival_consumes_the_effect_and_refresh_cancels_it() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        s.headless = false;
+        // Keep file/window restoration outside this feed-only test.
+        s.restored = true;
+        press(&mut s, rune::Key::Text("n".into()));
+        assert!(s.pending_arrival.is_some());
+        let deadline = std::time::Instant::now() + Duration::from_secs(2);
+        while s.feed.status.loading {
+            poll(&mut s, 0.0, &mut Tx::default());
+            assert!(std::time::Instant::now() < deadline, "fake fill must land");
+            std::thread::yield_now();
+        }
+        assert_eq!(s.feed.display_cursor, 11);
+        assert_eq!(s.feed_revision, 1);
+        assert!(s.pending_arrival.is_none());
+        poll(&mut s, 0.0, &mut Tx::default());
+        assert_eq!(s.feed_revision, 1);
+        press(&mut s, rune::Key::Text("n".into()));
+        assert!(s.pending_arrival.is_some());
+        press(&mut s, rune::Key::Text("p".into()));
+        assert_eq!(s.pending_arrival, Some(Arrival::Page(1)), "rejected back input must not flip the pending forward arrival");
+        s.refresh();
+        assert!(!s.pending_arrival.is_some(), "refresh supersedes the page effect");
+        let deadline = std::time::Instant::now() + Duration::from_secs(2);
+        while s.feed.status.loading {
+            poll(&mut s, 0.0, &mut Tx::default());
+            assert!(std::time::Instant::now() < deadline);
+            std::thread::yield_now();
+        }
+        assert_eq!(s.feed_revision, 1, "superseding refresh stays instant");
+    }
+
+    #[test]
+    fn opening_a_story_during_a_page_request_does_not_rearm_the_feed_fade() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        s.headless = false;
+        press(&mut s, rune::Key::Text("n".into()));
+        assert!(s.pending_arrival.is_some());
+        press(&mut s, rune::Key::Enter);
+        assert!(s.story.is_some(), "Enter opens before the page fill is polled");
+        let deadline = std::time::Instant::now() + Duration::from_secs(2);
+        while s.feed.status.loading {
+            poll(&mut s, 0.0, &mut Tx::default());
+            assert!(std::time::Instant::now() < deadline, "fake fill must land");
+            std::thread::yield_now();
+        }
+        assert_eq!(s.feed.display_cursor, 11, "the page fill still lands");
+        press(&mut s, rune::Key::Escape);
+        assert!(s.story.is_none());
+        assert_eq!(s.feed_revision, 0, "returning to the feed must not replay the fade");
+        assert!(s.pending_arrival.is_none());
+    }
+
+    #[test]
+    fn loading_shell_has_one_busy_accessible_status_and_no_fake_story_controls() {
+        let mut s = app(true, SavedView::in_memory());
+        s.feed.status.loading = true;
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.frame(0.0);
+        let tree = rt.accessibility_tree();
+        assert_eq!(tree.nodes.iter().filter(|(_, node)| node.is_busy()).count(), 1);
+        assert!(rt.elements().iter().all(|e| !e.key.as_deref().is_some_and(|key| key.starts_with("story-"))));
+        let viewport = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("feed-list")).unwrap().rect;
+        rt.update(|s, tx| { s.request((11, 1), Ranking::Fresh); tx.instant(); });
+        rt.frame(0.0);
+        let loaded = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("feed-list")).unwrap().rect;
+        assert_eq!(loaded, viewport, "loading and loaded content keep the same viewport");
+    }
+
+    #[test]
+    fn system_reduced_motion_lands_saved_tab_and_returns_keys_to_the_feed() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.set_system_reduced_motion(true);
+        rt.frame(0.0);
+        rt.update(|s, tx| { on_key(s, &KeyEvent { key: rune::Key::Text("4".into()), mods: Default::default() }, tx); });
+        rt.frame(0.05);
+        let elements = rt.elements();
+        let group = elements.iter().find(|e| e.key.as_deref() == Some("feed-page-1")).unwrap();
+        assert_eq!(group.opacity, 1.0);
+        assert_eq!(group.rect, group.target);
+        assert!(!elements.iter().any(|e| e.role == "radio" && e.focused));
+        assert!(elements.iter().all(|e| !e.key.as_deref().is_some_and(|key| key.starts_with("story-"))));
+    }
+
+    fn route(rt: &mut rune::Runtime<App>, key: rune::Key) {
+        rt.key(KeyEvent { key, mods: Default::default() });
+        rt.frame(0.3);
+    }
+
+    #[test]
+    fn numeric_tab_shortcuts_return_arrow_navigation_to_the_feed() {
+        for (key, tab) in [("1", StoryType::Top), ("2", StoryType::New), ("3", StoryType::Best), ("4", StoryType::Saved)] {
+            let mut s = app(true, saved_store());
+            s.request((11, 1), Ranking::Fresh);
+            let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+            rt.on_key = Some(on_key);
+            rt.frame(0.0);
+            route(&mut rt, rune::Key::Tab); // Deliberately begin with the radio group focused.
+            route(&mut rt, rune::Key::Text(key.into()));
+            route(&mut rt, rune::Key::Down);
+            assert_eq!(rt.state.feed.tab, tab);
+            assert_eq!(rt.state.feed.selected, 1, "{key} then Down moves within the chosen feed");
+            route(&mut rt, rune::Key::Up);
+            assert_eq!(rt.state.feed.tab, tab);
+            assert_eq!(rt.state.feed.selected, 0);
+        }
+    }
+
+    #[test]
+    fn intentionally_focused_tab_radios_keep_their_arrow_navigation() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.frame(0.0);
+        route(&mut rt, rune::Key::Tab);
+        route(&mut rt, rune::Key::Down);
+        assert_eq!(rt.state.feed.tab, StoryType::New);
+        assert!(rt.elements().iter().any(|e| e.key.as_deref() == Some("segment1") && e.focused));
+        rt.update(|s, _| { s.open_summary_settings(); });
+        rt.frame(0.0);
+        route(&mut rt, rune::Key::Text("3".into()));
+        assert_eq!(rt.state.feed.tab, StoryType::New, "dialog input must not switch feeds");
+        assert!(rt.state.settings.is_some());
+    }
+
+    #[test]
+    fn arrows_during_a_pending_shortcut_do_not_navigate_the_tab_radios() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        s.source = Arc::new(Source::Fake(crate::service::FakeService::fixture().with_delay(Duration::from_millis(50))));
+        s.headless = false;
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.poll = Some(poll);
+        rt.frame(0.0);
+        route(&mut rt, rune::Key::Text("2".into()));
+        route(&mut rt, rune::Key::Down);
+        assert_eq!(rt.state.feed.tab, StoryType::New);
+        let deadline = std::time::Instant::now() + Duration::from_secs(2);
+        while rt.state.feed.status.loading {
+            std::thread::yield_now();
+            rt.frame(0.0);
+            assert!(std::time::Instant::now() < deadline);
+        }
+        route(&mut rt, rune::Key::Down);
+        assert_eq!(rt.state.feed.tab, StoryType::New);
+        assert_eq!(rt.state.feed.selected, 1);
+    }
+
+    /// Explicit renderer fixture: keeps GPU setup out of the ordinary unit-test suite.
+    #[test]
+    #[ignore = "Run explicitly with Metal access for loading visual/AX verification"]
+    fn render_loading_shell_fixtures() {
+        fn loading() -> App {
+            let mut s = app(true, SavedView::in_memory());
+            s.feed.status.loading = true;
+            s
+        }
+        let out = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("target/ux-motion/rune-experiments/loading");
+        std::fs::create_dir_all(&out).unwrap();
+        for (size, name) in [("1180x760", "narrow"), ("1600x900", "wide")] {
+            for theme in ["dark", "light"] {
+                let stem = out.join(format!("{name}-{theme}"));
+                let args = rune::tooling::Args::parse_from(vec!["loading-fixture".into(),
+                    "--size".into(), size.into(), "--theme".into(), theme.into(),
+                    "--at".into(), "0.1".into(), "--snap".into(), stem.with_extension("png").display().to_string(),
+                    "--tree".into(), stem.with_extension("json").display().to_string()]);
+                let spec = AppSpec::new("Hacker News", (1180.0, 760.0), loading, view);
+                rune::tooling::headless(rune::App::new(spec), args);
+                let tree = std::fs::read_to_string(stem.with_extension("json")).unwrap();
+                assert!(tree.contains("Loading Top stories"));
+                assert!(!tree.contains("story-1"), "skeleton must not invent interactive stories");
+            }
+        }
+    }
+
+    #[test]
+    fn tab_arrivals_include_immediate_saved_and_latest_async_tab_only() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        press(&mut s, rune::Key::Text("4".into()));
+        assert_eq!(s.arrival, Arrival::Tab(1));
+        assert!(!s.feed.status.loading);
+        assert!(s.feed.stories.is_empty());
+        let saved_revision = s.feed_revision;
+        s.headless = false;
+        s.source = Arc::new(Source::Fake(crate::service::FakeService::fixture()
+            .with_delay(Duration::from_millis(20))));
+        press(&mut s, rune::Key::Text("2".into()));
+        press(&mut s, rune::Key::Text("3".into()));
+        settle_feed(&mut s);
+        assert_eq!(s.feed.stories[0].id, 201);
+        assert_eq!(s.arrival, Arrival::Tab(1));
+        assert_eq!(s.feed_revision, saved_revision + 1, "only the latest accepted tab arrives");
+    }
+
+    #[test]
+    fn new_tab_resets_timeout_but_its_resize_preserves_deadline_and_arrival() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        s.headless = false;
+        s.source = Arc::new(Source::Fake(crate::service::FakeService::fixture()
+            .with_delay(Duration::from_millis(100))));
+        s.loading_since = Some(0.0);
+        press(&mut s, rune::Key::Text("2".into()));
+        poll(&mut s, 9.9, &mut Tx::default());
+        assert_eq!(s.loading_since, Some(9.9));
+        s.measured.set(Some((10, 1)));
+        poll(&mut s, 10.1, &mut Tx::default());
+        assert_eq!(s.loading_since, Some(9.9));
+        assert_eq!(s.pending_arrival, Some(Arrival::Tab(1)));
+        press(&mut s, rune::Key::Text("3".into()));
+        poll(&mut s, 19.8, &mut Tx::default());
+        assert_eq!(s.loading_since, Some(19.8));
+        assert!(s.feed.status.loading && s.feed.status.error.is_none());
+    }
+
+    #[test]
+    fn retry_clears_feed_error_and_settled_empty_is_distinct_from_loading() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        if let Source::Fake(fake) = s.source.as_ref() { fake.fail_ranking(StoryType::New); }
+        press(&mut s, rune::Key::Text("2".into()));
+        assert!(s.feed.status.error.is_some());
+        s.source = Arc::new(Source::Fake(crate::service::FakeService::empty()
+            .with_delay(Duration::from_millis(10))));
+        s.headless = false;
+        s.refresh();
+        assert!(s.feed.status.loading && s.feed.status.error.is_none());
+        assert_eq!(s.arrival, Arrival::None, "retry must not replay stale tab motion");
+        settle_feed(&mut s);
+        assert!(!s.feed.status.loading && s.feed.status.error.is_none());
+        assert!(s.feed.stories.is_empty());
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.frame(0.0);
+        assert!(rt.elements().iter().any(|e| e.label.as_deref() == Some("No stories to show")));
+        assert!(!rt.accessibility_tree().nodes.iter().any(|(_, node)| node.is_busy()));
+    }
+
+    #[test]
+    #[ignore = "Explicit Metal-backed AppSpec workflow and motion-cause integration"]
+    fn render_feed_arrival_workflows() {
+        fn loaded() -> App {
+            let mut s = app(true, SavedView::in_memory());
+            s.request((11, 1), Ranking::Fresh);
+            s.headless = false;
+            s
+        }
+        fn loading() -> App {
+            let mut s = app(false, SavedView::in_memory());
+            s.feed.status.loading = true;
+            s
+        }
+        fn reduced() -> App { let mut s = loaded(); s.reduced = true; s }
+        fn reduced_loading() -> App { let mut s = loading(); s.reduced = true; s }
+        fn saved() -> App { let mut s = loaded(); s.headless = true; s }
+        fn wait_worker(s: &App) {
+            let deadline = std::time::Instant::now() + Duration::from_secs(2);
+            while s.bridge.is_pending() {
+                assert!(std::time::Instant::now() < deadline, "fixture worker must finish");
+                std::thread::yield_now();
+            }
+        }
+        fn initial(s: &mut App, now: f64, tx: &mut Tx) -> bool {
+            if now < 0.2 { return false; }
+            if s.requested.is_none() {
+                s.request(s.measured.get().unwrap_or(DEFAULT_GRID), Ranking::Fresh);
+                wait_worker(s);
+                return true;
+            }
+            poll(s, now, tx)
+        }
+        fn page(s: &mut App, now: f64, tx: &mut Tx) -> bool {
+            if now < 0.2 { return false; }
+            if s.feed_revision == 0 && !s.feed.status.loading {
+                on_key(s, &KeyEvent { key: rune::Key::Text("n".into()), mods: Default::default() }, tx);
+                wait_worker(s);
+                return true;
+            }
+            poll(s, now, tx)
+        }
+        fn tab(s: &mut App, now: f64, tx: &mut Tx) -> bool {
+            if now < 0.2 { return false; }
+            if s.feed.tab == StoryType::Top {
+                on_key(s, &KeyEvent { key: rune::Key::Text("2".into()), mods: Default::default() }, tx);
+                wait_worker(s);
+                return true;
+            }
+            poll(s, now, tx)
+        }
+        let out = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("target/ux-motion/skeleton-handoff/arrivals");
+        std::fs::create_dir_all(&out).unwrap();
+        for (name, init, poller, group, reduced) in [
+            ("initial", loading as fn() -> App, initial as fn(&mut App, f64, &mut Tx) -> bool, "feed-page-0", false),
+            ("tab", loaded, tab, "feed-page-1", false),
+            ("page", loaded, page, "feed-page-1", false),
+            ("saved-empty", saved, poll, "feed-page-1", false),
+            ("reduced-page", reduced, page, "feed-page-1", true),
+            ("reduced-initial", reduced_loading, initial, "feed-page-0", true),
+        ] {
+            let captures = if name == "tab" {
+                vec![("1180x760", "dark", "0.25"), ("1180x760", "dark", "0.3"),
+                     ("1180x760", "light", "0.25"), ("1180x760", "light", "0.3"),
+                     ("1600x900", "dark", "0.25"), ("1600x900", "dark", "0.3"),
+                     ("1600x900", "light", "0.25"), ("1600x900", "light", "0.3")]
+            } else { vec![("1180x760", "dark", "0.3")] };
+            for (size, theme, at) in captures {
+            let stem = out.join(format!("{name}-{size}-{theme}-{}ms", (at.parse::<f64>().unwrap() * 1000.0) as usize));
+            let mut argv = vec!["arrival-fixture".into(), "--size".into(), size.into(),
+                "--theme".into(), theme.into(), "--at".into(), at.into(),
+                "--snap".into(), stem.with_extension("png").display().to_string(),
+                "--tree".into(), stem.with_extension("json").display().to_string(),
+                "--trace".into(), stem.with_extension("jsonl").display().to_string()];
+            if name == "saved-empty" {
+                let script = out.join("saved-input.json");
+                std::fs::write(&script, r#"[{"t":0.2,"type":"key","name":"4"}]"#).unwrap();
+                argv.extend(["--script".into(), script.display().to_string()]);
+            }
+            let args = rune::tooling::Args::parse_from(argv);
+            let mut spec = AppSpec::new("Hacker News", (1180.0, 760.0), init, view);
+            spec.poll = Some(poller);
+            spec.on_key = Some(on_key);
+            rune::tooling::headless(rune::App::new(spec), args);
+            let mut names = std::collections::HashMap::new();
+            let mut moving = false;
+            let mut fading_placeholder = false;
+            let mut overlapping = false;
+            let mut placeholder_rect = None;
+            let mut viewport_rect = None;
+            for line in std::fs::read_to_string(stem.with_extension("jsonl")).unwrap().lines() {
+                let frame: serde_json::Value = serde_json::from_str(line).unwrap();
+                for node in frame["m"].as_array().into_iter().flatten() {
+                    names.insert(node["id"].as_u64().unwrap(), node["nm"].as_str().unwrap().to_string());
+                }
+                let mut incoming_partial = false;
+                let mut outgoing_partial = false;
+                for e in frame["e"].as_array().into_iter().flatten() {
+                    let path = names.get(&e[0].as_u64().unwrap());
+                    if path.is_some_and(|path| path.rsplit('/').next() == Some("feed-list")) {
+                        let rect: Vec<_> = e.as_array().unwrap()[1..5].to_vec();
+                        if let Some(before) = &viewport_rect { assert_eq!(&rect, before, "handoff must keep viewport geometry"); }
+                        else { viewport_rect = Some(rect); }
+                    }
+                    if path.is_some_and(|path| path.rsplit('/').next() == Some("feed-placeholder")) {
+                        let rect: Vec<_> = e.as_array().unwrap()[1..5].to_vec();
+                        if let Some(before) = &placeholder_rect { assert_eq!(&rect, before, "outgoing placeholder must not travel"); }
+                        else { placeholder_rect = Some(rect); }
+                        let opacity = e[5].as_f64().unwrap();
+                        outgoing_partial = opacity > 0.0 && opacity < 0.99;
+                        fading_placeholder |= outgoing_partial;
+                    }
+                    if path.is_some_and(|path| path.rsplit('/').next() == Some(group)) {
+                        let opacity = e[5].as_f64().unwrap();
+                        incoming_partial = opacity > 0.2 && opacity < 0.99;
+                        moving |= incoming_partial;
+                    }
+                }
+                overlapping |= incoming_partial && outgoing_partial;
+            }
+            assert_eq!(moving, !reduced, "{name}: actual AppSpec async arrival motion");
+            if name == "initial" || name == "tab" {
+                assert!(fading_placeholder && overlapping, "{name}: outgoing placeholder and incoming content must share the opacity handoff");
+            } else if name == "reduced-initial" {
+                assert!(!fading_placeholder, "reduced motion removes the placeholder immediately");
+            }
+            }
+        }
+    }
+
+    fn settle_feed(s: &mut App) {
+        let deadline = std::time::Instant::now() + Duration::from_secs(2);
+        while s.feed.status.loading {
+            poll(s, 0.0, &mut Tx::default());
+            assert!(std::time::Instant::now() < deadline, "fake feed must settle");
+            std::thread::yield_now();
+        }
+    }
+
+    #[test]
+    fn tab_switch_resize_keeps_the_new_tabs_fresh_request() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        s.source = Arc::new(Source::Fake(crate::service::FakeService::fixture()
+            .with_delay(Duration::from_millis(50))));
+        s.headless = false;
+        press(&mut s, rune::Key::Text("2".into()));
+        s.measured.set(Some((10, 1)));
+        poll(&mut s, 0.0, &mut Tx::default());
+        assert!(s.feed.status.loading, "resize must not settle the previous tab's cache");
+        settle_feed(&mut s);
+        assert_eq!(s.feed.tab, StoryType::New);
+        assert_eq!(s.feed.stories.len(), 10);
+        assert_eq!(s.feed.stories[0].id, 101);
+        assert!(s.feed.id_snapshot.iter().all(|id| *id >= 101));
+    }
+
+    #[test]
+    fn refresh_resize_keeps_fresh_ranking_and_updated_items() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        let fake = crate::service::FakeService::fixture().with_delay(Duration::from_millis(50));
+        fake.set_ranking(StoryType::Top, vec![9, 8, 7, 6]);
+        let mut item = crate::fixtures::item(8, 9);
+        item.title = "Fresh title after resize".into();
+        fake.insert_item(item);
+        s.source = Arc::new(Source::Fake(fake));
+        s.headless = false;
+        s.refresh();
+        s.measured.set(Some((10, 1)));
+        poll(&mut s, 0.0, &mut Tx::default());
+        assert!(s.feed.status.loading, "resize must not cancel an explicit refresh");
+        assert_eq!(s.feed.stories[0].id, 1, "held rows stay until the fresh window lands");
+        settle_feed(&mut s);
+        assert_eq!(s.feed.id_snapshot, vec![9, 8, 7, 6]);
+        assert_eq!(s.feed.stories[0].title, "Fresh title after resize");
+    }
+
+    #[test]
+    fn failed_tab_load_then_resize_never_reuses_the_previous_tabs_snapshot() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        let fake = crate::service::FakeService::fixture().with_delay(Duration::from_millis(50));
+        fake.fail_ranking(StoryType::New);
+        s.source = Arc::new(Source::Fake(fake));
+        s.headless = false;
+        press(&mut s, rune::Key::Text("2".into()));
+        settle_feed(&mut s);
+        assert!(s.feed.status.error.is_some());
+        s.measured.set(Some((10, 1)));
+        poll(&mut s, 0.0, &mut Tx::default());
+        settle_feed(&mut s);
+        assert_eq!(s.feed.tab, StoryType::New);
+        assert!(s.feed.stories.is_empty(), "a failed New load must not display cached Top rows");
+        assert!(s.feed.status.error.is_some());
+        assert!(s.feed.stories_for.is_none());
+    }
+
     /// The inspector the window builds: 543 points, clamped to 360..=640, collapsed.
     fn inspector() -> PaneState {
         PaneState::new(INSPECTOR_WIDTH)
@@ -1739,6 +2535,9 @@ mod tests {
             bridge: Bridge::new().expect("a tokio runtime for the feed's requests"),
             measured: Cell::new(None),
             requested: None,
+            feed_revision: 0,
+            pending_arrival: Some(Arrival::Initial),
+            arrival: Arrival::Initial,
             loading_since: None,
             hover: None,
             story: None,
@@ -1794,6 +2593,18 @@ mod tests {
             "save-time order"
         );
         assert!(!s.feed.status.loading, "the store is local: nothing is in flight");
+    }
+
+    #[test]
+    fn initial_saved_fill_preserves_its_hover_unsave_action() {
+        let mut s = app(true, saved_store());
+        s.feed.tab = StoryType::Saved;
+        s.hover = Some(11);
+        s.request((11, 1), Ranking::Fresh);
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.frame(0.0);
+        assert!(rt.elements().iter().any(|e| e.role == "button"
+            && e.label.as_deref() == Some("unsave") && e.path.contains("story-11")));
     }
 
     #[test]

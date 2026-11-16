@@ -207,6 +207,7 @@ pub struct FakeService {
     failing: Mutex<HashSet<i32>>,
     failing_rankings: Mutex<HashSet<StoryType>>,
     delay: Duration,
+    pub requests: Mutex<(usize, usize)>,
 }
 
 impl FakeService {
@@ -233,6 +234,7 @@ impl FakeService {
             failing: Mutex::new(HashSet::new()),
             failing_rankings: Mutex::new(HashSet::new()),
             delay: Duration::ZERO,
+            requests: Mutex::new((0, 0)),
         }
     }
 
@@ -244,6 +246,7 @@ impl FakeService {
             failing: Mutex::new(HashSet::new()),
             failing_rankings: Mutex::new(HashSet::new()),
             delay: Duration::ZERO,
+            requests: Mutex::new((0, 0)),
         }
     }
 
@@ -282,6 +285,7 @@ impl FakeService {
     }
 
     pub fn ranked_ids(&self, tab: StoryType) -> Vec<i32> {
+        self.requests.lock().unwrap().0 += 1;
         self.ids
             .lock()
             .unwrap()
@@ -339,6 +343,7 @@ impl HackerNewsCliService for FakeService {
     }
 
     async fn fetch_items_by_ids(&self, ids: &[i32]) -> Vec<Option<HNCLIItem>> {
+        self.requests.lock().unwrap().1 += 1;
         if !self.delay.is_zero() {
             tokio::time::sleep(self.delay).await;
         }

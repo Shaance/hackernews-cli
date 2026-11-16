@@ -860,6 +860,66 @@ else
   bad "sticky summary (card $card_top -> $card_after, comment-901 $comment_top -> $comment_after)"
 fi
 
+step "desktop feed columns and page opacity"
+for at in 0.5 0.65 0.85 1.05 1.10 1.43 1.9; do
+  "$BIN" --scene feed-wide --size 1600x900 --scale 2 --theme dark \
+    --script scripts/feed-navigation.json --at "$at" --tree "$ACTUAL/feed-nav-$at.json" \
+    --trace "$ACTUAL/feed-nav-$at.trace.jsonl" >/dev/null
+done
+HN_REDUCED_MOTION=1 "$BIN" --scene feed-wide --size 1600x900 --scale 2 --theme dark \
+  --script scripts/feed-navigation.json --at 1.05 --tree "$ACTUAL/feed-nav-reduced.json" >/dev/null
+python3 - "$ACTUAL" <<'PYFEED'
+import json, sys
+from pathlib import Path
+root = Path(sys.argv[1])
+def elements(at):
+    return json.loads((root / f"feed-nav-{at}.json").read_text())["elements"]
+def selected(at):
+    return [e["key"] for e in elements(at) if e.get("itemSelected") and e.get("key", "").startswith("story-")]
+def group(at):
+    return [e for e in elements(at) if e.get("key", "").startswith("feed-page-")]
+before = [e for e in elements("0.5") if e.get("key", "").startswith("story-")]
+# The same column-major arithmetic as the visible grid, derived from the page actually shown.
+ordered = sorted(before, key=lambda e: (e["rect"][0], e["rect"][1]))
+assert selected("0.65") == [ordered[(len(ordered) + 1) // 2]["key"]]
+assert selected("0.85") == [ordered[1]["key"]]
+for key in ["title-1", "title-2"]:
+    assert [e["rect"] for e in elements("0.5") if e.get("key") == key] == [e["rect"] for e in elements("0.85") if e.get("key") == key]
+assert group("0.5")[0]["key"] == group("0.85")[0]["key"] == "feed-page-0"
+a, b = group("1.05"), group("1.10")
+assert len(a) == len(b) == 1, "outgoing pages must not remain interactive"
+assert 0.2 < a[0]["opacity"] < b[0]["opacity"] < 1
+assert a[0]["rect"][0] > b[0]["rect"][0] > group("0.5")[0]["rect"][0] + 2, "directional motion must remain visible at 50/100 ms"
+assert group("reduced")[0]["rect"][:3] == group("0.5")[0]["rect"][:3]
+assert group("reduced")[0]["opacity"] == 1
+assert group("1.43")[0]["key"] == "feed-page-2"
+assert group("1.43")[0]["rect"][0] < group("0.5")[0]["rect"][0], "previous pages must enter from the left"
+assert len(group("1.9")) == 1 and group("1.9")[0]["opacity"] == 1
+assert group("1.9")[0]["key"] == "feed-page-3", "rapid next/back must converge"
+assert all(e["opacity"] == a[0]["opacity"] for e in elements("1.05") if e.get("key", "").startswith("story-")), "rows must inherit the group opacity without individual fades"
+for at in ["0.85", "1.10"]:
+    frames = [json.loads(line) for line in (root / f"feed-nav-{at}.trace.jsonl").read_text().splitlines()]
+    names = {}
+    saw_selection_color = False
+    for frame in frames:
+        names.update({node["id"]: node["nm"] for node in frame.get("m", [])})
+        tracks = [track for track in frame.get("tk", []) if track[2] == 1]
+        if 600 <= frame.get("t", -1) <= 850:
+            assert all(track[1] in {"fill-color", "text-color"} for track in tracks), "selection may animate only color"
+            saw_selection_color |= bool(tracks)
+        if frame.get("t", -1) >= 1000:
+            assert all(track[1] == "presence" for track in tracks), "page motion must use only group presence"
+            assert all(names.get(track[0], str(track[0])).rsplit("/", 1)[-1].startswith("feed-page-") for track in tracks), "only the page group may transition"
+
+    assert saw_selection_color, "selection must have a visible color response"
+
+PYFEED
+pass "columns preserve row geometry; selection changes only color; page groups move directionally; reduced motion lands instantly; rapid paging converges"
+
+step "loading shells and actual AppSpec arrival contracts"
+cargo test --locked --offline --lib render_ -- --ignored --test-threads=1
+pass "loading accessibility and delayed startup/tab/page arrivals (normal and reduced motion)"
+
 printf '\n'
 if [ "$fail" = 0 ]; then
   echo "PASS: goldens, motion lint and fidelity invariants"

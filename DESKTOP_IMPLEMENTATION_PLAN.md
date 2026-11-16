@@ -144,7 +144,13 @@ the owned runtime (block_on inside the worker), and `poll` takes the settled res
 `story_request_generation`. Accepted limitation: Latest discards superseded RESULTS but does not
 abort already-running futures.
 
+## Current desktop loading and upstream revision
+
+The desktop pins Rune/rune-kit and their required upstream workspace patches to `55ef5268f22038a95344b3e9d2b4a25ddba731b1`; root and prototype manifests remain independent. An empty pending feed uses static, inaccessible placeholder rows beneath one busy status and a footer loading label. Accepted delayed startup results use a 12 pt vertical arrival; tab results use the page vocabulary with direction determined by tab order. Ready content before the first paint is immediate. Refresh/resize/story return do not replay arrivals, and reduced motion is instant. Failure, retry and settled-empty states remain distinct.
+
 ## Keyboard parity (normative)
+
+Desktop exception: feed Left/Right select the same visual row in the adjacent column, clamping a shorter right column. At column edges, and in one column, they page forward/backward with first/last-story landing. Known ends and loading stay put. Pages use `n`/`p`, Space, Page Down/Page Up, or the page buttons. Discussion arrows keep their existing meanings. Feed selection uses a 120 ms color response with a permanent marker slot. Completed page turns receive a directional 24 pt slide and opacity arrival over about 220 ms; reduced motion and returning from a story are instant.
 
 `desktop/` owns a total Rune `Key` → crossterm `KeyCode` mapping table with a totality test over the
 pinned variants; case-sensitive bindings preserved; parity binds to `event::handle_stories_key`;

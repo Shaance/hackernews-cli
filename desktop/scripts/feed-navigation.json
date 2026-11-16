@@ -1,0 +1,32 @@
+[
+  {
+    "t": 0.6,
+    "type": "key",
+    "name": "Right"
+  },
+  {
+    "t": 0.7,
+    "type": "key",
+    "name": "Left"
+  },
+  {
+    "t": 0.8,
+    "type": "key",
+    "name": "Down"
+  },
+  {
+    "t": 1.0,
+    "type": "key",
+    "name": "n"
+  },
+  {
+    "t": 1.4,
+    "type": "key",
+    "name": "p"
+  },
+  {
+    "t": 1.45,
+    "type": "key",
+    "name": "n"
+  }
+]

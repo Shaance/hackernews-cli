@@ -11,7 +11,7 @@
 
 use crossterm::event::KeyCode;
 use hn_lib::app::StoryType;
-use hn_lib::event::{StoryAction, handle_stories_key};
+use hn_lib::event::{handle_stories_key, StoryAction};
 use rune::{Key, KeyEvent};
 
 /// The crossterm key a Rune key stands for, or `None` when the terminal app has no
@@ -59,9 +59,10 @@ pub fn parity_key(ev: &KeyEvent) -> Option<KeyCode> {
     key_code(&ev.key)
 }
 
-/// The feed action a Rune event means, through the terminal app's own table.
+/// The feed action through the terminal table, except desktop column arrows.
 pub fn story_action(ev: &KeyEvent) -> StoryAction {
     match parity_key(ev) {
+        Some(KeyCode::Left | KeyCode::Right) => StoryAction::None,
         Some(code) => handle_stories_key(code),
         None => StoryAction::None,
     }
@@ -234,6 +235,8 @@ pub enum HelpAction {
     /// the TUI's table maps `O` to `OpenUrl` like `Enter`/`o`, and the window
     /// intercepts it before that table (`reader_actions.rs:42,74` does the same).
     External,
+    ColumnLeft,
+    ColumnRight,
     /// The sheet's own dismissal. `Esc` is the runtime's (the dialog's `on_close`), and `?` is
     /// the feed's `ToggleHelp`, which the sheet reads as "close me".
     Close,
@@ -276,6 +279,16 @@ pub const HELP: &[HelpGroup] = &[
                 action: HelpAction::Feed(StoryAction::PrevStory),
             },
             HelpRow {
+                keys: &["\u{2190}"],
+                label: "Left column / previous page",
+                action: HelpAction::ColumnLeft,
+            },
+            HelpRow {
+                keys: &["\u{2192}"],
+                label: "Right column / next page",
+                action: HelpAction::ColumnRight,
+            },
+            HelpRow {
                 keys: &["g"],
                 label: "First story",
                 action: HelpAction::Feed(StoryAction::FirstStory),
@@ -286,12 +299,12 @@ pub const HELP: &[HelpGroup] = &[
                 action: HelpAction::Feed(StoryAction::LastStory),
             },
             HelpRow {
-                keys: &["n", "\u{2192}", "Space", "Page Down"],
+                keys: &["n", "Space", "Page Down"],
                 label: "Next page",
                 action: HelpAction::Feed(StoryAction::NextPage),
             },
             HelpRow {
-                keys: &["p", "\u{2190}", "Page Up"],
+                keys: &["p", "Page Up"],
                 label: "Previous page",
                 action: HelpAction::Feed(StoryAction::PrevPage),
             },
@@ -574,11 +587,11 @@ mod tests {
             (Key::Text("g".into()), StoryAction::FirstStory),
             (Key::Text("G".into()), StoryAction::LastStory),
             (Key::Text("n".into()), StoryAction::NextPage),
-            (Key::Right, StoryAction::NextPage),
+            (Key::Right, StoryAction::None),
             (Key::Text(" ".into()), StoryAction::NextPage),
             (Key::PageDown, StoryAction::NextPage),
             (Key::Text("p".into()), StoryAction::PrevPage),
-            (Key::Left, StoryAction::PrevPage),
+            (Key::Left, StoryAction::None),
             (Key::PageUp, StoryAction::PrevPage),
             (
                 Key::Text("1".into()),
@@ -813,6 +826,11 @@ mod tests {
                     HelpAction::Close
                 }
             }
+            HelpAction::ColumnLeft | HelpAction::ColumnRight => match parity_key(ev) {
+                Some(KeyCode::Left) => HelpAction::ColumnLeft,
+                Some(KeyCode::Right) => HelpAction::ColumnRight,
+                _ => HelpAction::Feed(StoryAction::None),
+            },
             HelpAction::Close => HelpAction::Close,
         }
     }
@@ -828,6 +846,7 @@ mod tests {
                     | ("Summary", HelpAction::Story(_))
                     | ("Window", HelpAction::Window(_))
                     | ("Feed", HelpAction::External)
+                    | ("Feed", HelpAction::ColumnLeft | HelpAction::ColumnRight)
                     | ("Window", HelpAction::Close) => row.action.clone(),
                     (title, action) => panic!("{title} group holds {action:?}"),
                 };

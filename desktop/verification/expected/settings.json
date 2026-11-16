@@ -270,7 +270,7 @@
                                 "bounds": [
                                   360.0,
                                   473.5,
-                                  168.0,
+                                  167.4,
                                   28.0
                                 ],
                                 "children": [
@@ -282,7 +282,7 @@
                                     "bounds": [
                                       360.0,
                                       473.5,
-                                      84.0,
+                                      83.7,
                                       28.0
                                     ],
                                     "key": "segment0",
@@ -299,9 +299,9 @@
                                       "focus"
                                     ],
                                     "bounds": [
-                                      444.0,
+                                      443.7,
                                       473.5,
-                                      84.0,
+                                      83.7,
                                       28.0
                                     ],
                                     "key": "segment1",
@@ -319,9 +319,9 @@
                               },
                               {
                                 "bounds": [
-                                  538.0,
+                                  537.4,
                                   480.0,
-                                  157.0,
+                                  156.6,
                                   15.0
                                 ],
                                 "key": "settings-model",
@@ -358,7 +358,7 @@
                                 "bounds": [
                                   360.0,
                                   538.5,
-                                  199.0,
+                                  198.6,
                                   24.0
                                 ],
                                 "name": "Refresh sources & summary",
@@ -370,9 +370,9 @@
                                   "focus"
                                 ],
                                 "bounds": [
-                                  684.0,
+                                  684.7,
                                   538.5,
-                                  67.5,
+                                  67.2,
                                   24.0
                                 ],
                                 "name": "Cancel",
@@ -384,9 +384,9 @@
                                   "focus"
                                 ],
                                 "bounds": [
-                                  759.5,
+                                  759.9,
                                   538.5,
-                                  60.5,
+                                  60.1,
                                   24.0
                                 ],
                                 "name": "Apply",
@@ -419,6 +419,18 @@
         ],
         "key": "kit-root",
         "role": "group"
+      },
+      {
+        "bounds": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "role": "status",
+        "states": [
+          "live-polite"
+        ]
       }
     ],
     "name": "Hacker News",
@@ -562,7 +574,7 @@
       "rect": [
         75.0,
         10.0,
-        250.0,
+        248.19,
         28.0
       ],
       "role": "group",
@@ -582,7 +594,7 @@
       "rect": [
         75.0,
         10.0,
-        250.0,
+        248.19,
         28.0
       ],
       "role": "radiogroup",
@@ -602,7 +614,7 @@
       "rect": [
         75.0,
         10.0,
-        62.5,
+        62.05,
         28.0
       ],
       "role": "group",
@@ -624,7 +636,7 @@
       "rect": [
         75.0,
         10.0,
-        62.5,
+        62.05,
         28.0
       ],
       "role": "radio",
@@ -643,9 +655,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/toolbar/leading/#0/segment0/label",
       "rect": [
-        94.5,
+        94.46,
         17.5,
-        23.5,
+        23.13,
         13.0
       ],
       "role": "text",
@@ -665,9 +677,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/toolbar/leading/#0/segment1",
       "rect": [
-        137.5,
+        137.05,
         10.0,
-        62.5,
+        62.05,
         28.0
       ],
       "role": "radio",
@@ -686,9 +698,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/toolbar/leading/#0/segment1/label",
       "rect": [
-        154.75,
+        154.18,
         17.5,
-        28.0,
+        27.78,
         13.0
       ],
       "role": "text",
@@ -708,9 +720,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/toolbar/leading/#0/segment2",
       "rect": [
-        200.0,
+        199.09,
         10.0,
-        62.5,
+        62.05,
         28.0
       ],
       "role": "radio",
@@ -729,9 +741,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/toolbar/leading/#0/segment2/label",
       "rect": [
-        217.5,
+        216.52,
         17.5,
-        27.5,
+        27.2,
         13.0
       ],
       "role": "text",
@@ -751,9 +763,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/toolbar/leading/#0/segment3",
       "rect": [
-        262.5,
+        261.14,
         10.0,
-        62.5,
+        62.05,
         28.0
       ],
       "role": "radio",
@@ -772,9 +784,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/toolbar/leading/#0/segment3/label",
       "rect": [
-        274.5,
+        273.14,
         17.5,
-        38.5,
+        38.05,
         13.0
       ],
       "role": "text",
@@ -793,9 +805,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/toolbar/spacer",
       "rect": [
-        333.0,
+        331.19,
         24.0,
-        827.0,
+        828.81,
         0.0
       ],
       "role": "group",
@@ -907,10 +919,30 @@
       "focusable": false,
       "focused": false,
       "inert": true,
+      "key": "feed-page-0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0",
+      "rect": [
+        8.0,
+        48.0,
+        1164.0,
+        636.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
       "key": "line-0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0",
       "rect": [
         8.0,
         48.0,
@@ -922,7 +954,7 @@
     },
     {
       "blur": 0.0,
-      "fill": "#1c1d20ff",
+      "fill": "#513321ff",
       "focusVisible": false,
       "focusable": false,
       "focused": false,
@@ -932,7 +964,7 @@
       "label": "Tesla to wind down Cybertruck production · 1057 points  ·  by PLenz  ·  1913 comments",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-0/story-1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1",
       "rect": [
         8.0,
         48.0,
@@ -951,7 +983,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-0/story-1/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#0",
       "rect": [
         20.0,
         63.0,
@@ -970,7 +1002,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-0/story-1/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#1",
       "rect": [
         36.0,
         68.5,
@@ -989,7 +1021,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-0/story-1/#1/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#1/#0",
       "rect": [
         36.0,
         68.5,
@@ -1010,11 +1042,11 @@
       "key": "rank-1",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-0/story-1/#1/#0/rank-1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#1/#0/rank-1",
       "rect": [
-        49.0,
+        49.02,
         68.5,
-        5.0,
+        4.98,
         15.0
       ],
       "role": "text",
@@ -1032,7 +1064,7 @@
       "label": "saved",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-0/story-1/#1/saved-dot-1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#1/saved-dot-1",
       "rect": [
         60.0,
         73.0,
@@ -1051,7 +1083,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-0/story-1/#2",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#2",
       "rect": [
         80.0,
         58.38,
@@ -1072,7 +1104,7 @@
       "key": "title-1",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-0/story-1/#2/title-1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#2/title-1",
       "rect": [
         80.0,
         58.38,
@@ -1093,7 +1125,7 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-0/story-1/#2/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#2/#1",
       "rect": [
         80.0,
         78.63,
@@ -1114,7 +1146,7 @@
       "key": "line-1",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1",
       "rect": [
         8.0,
         106.0,
@@ -1135,7 +1167,7 @@
       "label": "Libghostty 1.0 · 771 points  ·  by mfiguiere  ·  122 comments",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-1/story-2",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2",
       "rect": [
         8.0,
         106.0,
@@ -1154,9 +1186,28 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-1/story-2/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#0",
       "rect": [
         20.0,
+        121.0,
+        2.0,
+        26.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#1",
+      "rect": [
+        36.0,
         126.5,
         30.0,
         15.0
@@ -1173,9 +1224,9 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-1/story-2/#0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#1/#0",
       "rect": [
-        20.0,
+        36.0,
         126.5,
         18.0,
         15.0
@@ -1194,11 +1245,11 @@
       "key": "rank-2",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-1/story-2/#0/#0/rank-2",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#1/#0/rank-2",
       "rect": [
-        30.5,
+        46.6,
         126.5,
-        7.5,
+        7.4,
         15.0
       ],
       "role": "text",
@@ -1216,9 +1267,9 @@
       "label": "saved",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-1/story-2/#0/saved-dot-2",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#1/saved-dot-2",
       "rect": [
-        44.0,
+        60.0,
         131.0,
         6.0,
         6.0
@@ -1235,11 +1286,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-1/story-2/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#2",
       "rect": [
-        64.0,
+        80.0,
         116.38,
-        1096.0,
+        1080.0,
         35.25
       ],
       "role": "group",
@@ -1256,11 +1307,11 @@
       "key": "title-2",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-1/story-2/#1/title-2",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#2/title-2",
       "rect": [
-        64.0,
+        80.0,
         116.38,
-        1096.0,
+        1080.0,
         16.25
       ],
       "role": "text",
@@ -1277,11 +1328,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-1/story-2/#1/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#2/#1",
       "rect": [
-        64.0,
+        80.0,
         136.63,
-        1096.0,
+        1080.0,
         15.0
       ],
       "role": "text",
@@ -1298,7 +1349,7 @@
       "key": "line-2",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-2",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2",
       "rect": [
         8.0,
         164.0,
@@ -1319,7 +1370,7 @@
       "label": "A Jev that can ask Opus for help gives Opus accuracy at 4x lower cost · 513 points  ·  by theanomaly  ·  122 comments",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-2/story-3",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3",
       "rect": [
         8.0,
         164.0,
@@ -1338,9 +1389,28 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-2/story-3/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#0",
       "rect": [
         20.0,
+        179.0,
+        2.0,
+        26.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#1",
+      "rect": [
+        36.0,
         184.5,
         18.0,
         15.0
@@ -1357,9 +1427,9 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-2/story-3/#0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#1/#0",
       "rect": [
-        20.0,
+        36.0,
         184.5,
         18.0,
         15.0
@@ -1378,11 +1448,11 @@
       "key": "rank-3",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-2/story-3/#0/#0/rank-3",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#1/#0/rank-3",
       "rect": [
-        30.0,
+        46.48,
         184.5,
-        8.0,
+        7.52,
         15.0
       ],
       "role": "text",
@@ -1398,11 +1468,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-2/story-3/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#2",
       "rect": [
-        52.0,
+        68.0,
         174.38,
-        1108.0,
+        1092.0,
         35.25
       ],
       "role": "group",
@@ -1419,11 +1489,11 @@
       "key": "title-3",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-2/story-3/#1/title-3",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#2/title-3",
       "rect": [
-        52.0,
+        68.0,
         174.38,
-        1108.0,
+        1092.0,
         16.25
       ],
       "role": "text",
@@ -1440,11 +1510,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-2/story-3/#1/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#2/#1",
       "rect": [
-        52.0,
+        68.0,
         194.63,
-        1108.0,
+        1092.0,
         15.0
       ],
       "role": "text",
@@ -1461,7 +1531,7 @@
       "key": "line-3",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-3",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3",
       "rect": [
         8.0,
         222.0,
@@ -1482,7 +1552,7 @@
       "label": "US FAA says it will phase out floppy disks from air traffic control by 2028 · 356 points  ·  by ChrisArchitect  ·  289 comments",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-3/story-4",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4",
       "rect": [
         8.0,
         222.0,
@@ -1501,9 +1571,28 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-3/story-4/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#0",
       "rect": [
         20.0,
+        237.0,
+        2.0,
+        26.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#1",
+      "rect": [
+        36.0,
         242.5,
         18.0,
         15.0
@@ -1520,9 +1609,9 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-3/story-4/#0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#1/#0",
       "rect": [
-        20.0,
+        36.0,
         242.5,
         18.0,
         15.0
@@ -1541,11 +1630,11 @@
       "key": "rank-4",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-3/story-4/#0/#0/rank-4",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#1/#0/rank-4",
       "rect": [
-        30.0,
+        46.13,
         242.5,
-        8.0,
+        7.88,
         15.0
       ],
       "role": "text",
@@ -1561,11 +1650,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-3/story-4/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#2",
       "rect": [
-        52.0,
+        68.0,
         232.38,
-        1108.0,
+        1092.0,
         35.25
       ],
       "role": "group",
@@ -1582,11 +1671,11 @@
       "key": "title-4",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-3/story-4/#1/title-4",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#2/title-4",
       "rect": [
-        52.0,
+        68.0,
         232.38,
-        1108.0,
+        1092.0,
         16.25
       ],
       "role": "text",
@@ -1603,11 +1692,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-3/story-4/#1/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#2/#1",
       "rect": [
-        52.0,
+        68.0,
         252.63,
-        1108.0,
+        1092.0,
         15.0
       ],
       "role": "text",
@@ -1624,7 +1713,7 @@
       "key": "line-4",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-4",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4",
       "rect": [
         8.0,
         280.0,
@@ -1645,7 +1734,7 @@
       "label": "Gemini Omni 1.2 Flash · 347 points  ·  by thisisauserid  ·  234 comments",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-4/story-5",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5",
       "rect": [
         8.0,
         280.0,
@@ -1664,9 +1753,28 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-4/story-5/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#0",
       "rect": [
         20.0,
+        295.0,
+        2.0,
+        26.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#1",
+      "rect": [
+        36.0,
         300.5,
         18.0,
         15.0
@@ -1683,9 +1791,9 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-4/story-5/#0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#1/#0",
       "rect": [
-        20.0,
+        36.0,
         300.5,
         18.0,
         15.0
@@ -1704,11 +1812,11 @@
       "key": "rank-5",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-4/story-5/#0/#0/rank-5",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#1/#0/rank-5",
       "rect": [
-        30.5,
+        46.76,
         300.5,
-        7.5,
+        7.24,
         15.0
       ],
       "role": "text",
@@ -1724,11 +1832,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-4/story-5/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#2",
       "rect": [
-        52.0,
+        68.0,
         290.38,
-        1108.0,
+        1092.0,
         35.25
       ],
       "role": "group",
@@ -1745,11 +1853,11 @@
       "key": "title-5",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-4/story-5/#1/title-5",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#2/title-5",
       "rect": [
-        52.0,
+        68.0,
         290.38,
-        1108.0,
+        1092.0,
         16.25
       ],
       "role": "text",
@@ -1766,11 +1874,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-4/story-5/#1/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#2/#1",
       "rect": [
-        52.0,
+        68.0,
         310.63,
-        1108.0,
+        1092.0,
         15.0
       ],
       "role": "text",
@@ -1787,7 +1895,7 @@
       "key": "line-5",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-5",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5",
       "rect": [
         8.0,
         338.0,
@@ -1808,7 +1916,7 @@
       "label": "Firecracker VM Escape: PwnEscape Part 2 · 257 points  ·  by SerCe  ·  110 comments",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-5/story-6",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6",
       "rect": [
         8.0,
         338.0,
@@ -1827,9 +1935,28 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-5/story-6/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#0",
       "rect": [
         20.0,
+        353.0,
+        2.0,
+        26.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#1",
+      "rect": [
+        36.0,
         358.5,
         30.0,
         15.0
@@ -1846,9 +1973,9 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-5/story-6/#0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#1/#0",
       "rect": [
-        20.0,
+        36.0,
         358.5,
         18.0,
         15.0
@@ -1867,11 +1994,11 @@
       "key": "rank-6",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-5/story-6/#0/#0/rank-6",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#1/#0/rank-6",
       "rect": [
-        30.0,
+        46.44,
         358.5,
-        8.0,
+        7.56,
         15.0
       ],
       "role": "text",
@@ -1889,9 +2016,9 @@
       "label": "saved",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-5/story-6/#0/saved-dot-6",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#1/saved-dot-6",
       "rect": [
-        44.0,
+        60.0,
         363.0,
         6.0,
         6.0
@@ -1908,11 +2035,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-5/story-6/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#2",
       "rect": [
-        64.0,
+        80.0,
         348.38,
-        1096.0,
+        1080.0,
         35.25
       ],
       "role": "group",
@@ -1929,11 +2056,11 @@
       "key": "title-6",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-5/story-6/#1/title-6",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#2/title-6",
       "rect": [
-        64.0,
+        80.0,
         348.38,
-        1096.0,
+        1080.0,
         16.25
       ],
       "role": "text",
@@ -1950,11 +2077,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-5/story-6/#1/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#2/#1",
       "rect": [
-        64.0,
+        80.0,
         368.63,
-        1096.0,
+        1080.0,
         15.0
       ],
       "role": "text",
@@ -1971,7 +2098,7 @@
       "key": "line-6",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-6",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6",
       "rect": [
         8.0,
         396.0,
@@ -1992,7 +2119,7 @@
       "label": "First steps in bare-metal programming using UEFI · 233 points  ·  by LaSombra  ·  46 comments",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-6/story-7",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7",
       "rect": [
         8.0,
         396.0,
@@ -2011,9 +2138,28 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-6/story-7/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#0",
       "rect": [
         20.0,
+        411.0,
+        2.0,
+        26.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#1",
+      "rect": [
+        36.0,
         416.5,
         18.0,
         15.0
@@ -2030,9 +2176,9 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-6/story-7/#0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#1/#0",
       "rect": [
-        20.0,
+        36.0,
         416.5,
         18.0,
         15.0
@@ -2051,11 +2197,11 @@
       "key": "rank-7",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-6/story-7/#0/#0/rank-7",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#1/#0/rank-7",
       "rect": [
-        31.0,
+        47.14,
         416.5,
-        7.0,
+        6.86,
         15.0
       ],
       "role": "text",
@@ -2071,11 +2217,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-6/story-7/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#2",
       "rect": [
-        52.0,
+        68.0,
         406.38,
-        1108.0,
+        1092.0,
         35.25
       ],
       "role": "group",
@@ -2092,11 +2238,11 @@
       "key": "title-7",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-6/story-7/#1/title-7",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#2/title-7",
       "rect": [
-        52.0,
+        68.0,
         406.38,
-        1108.0,
+        1092.0,
         16.25
       ],
       "role": "text",
@@ -2113,11 +2259,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-6/story-7/#1/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#2/#1",
       "rect": [
-        52.0,
+        68.0,
         426.63,
-        1108.0,
+        1092.0,
         15.0
       ],
       "role": "text",
@@ -2134,7 +2280,7 @@
       "key": "line-7",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-7",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7",
       "rect": [
         8.0,
         454.0,
@@ -2155,7 +2301,7 @@
       "label": "Every Mac comes with an (undocumented) family member classifier · 219 points  ·  by infwhispers  ·  106 comments",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-7/story-8",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8",
       "rect": [
         8.0,
         454.0,
@@ -2174,9 +2320,28 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-7/story-8/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#0",
       "rect": [
         20.0,
+        469.0,
+        2.0,
+        26.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#1",
+      "rect": [
+        36.0,
         474.5,
         18.0,
         15.0
@@ -2193,9 +2358,9 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-7/story-8/#0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#1/#0",
       "rect": [
-        20.0,
+        36.0,
         474.5,
         18.0,
         15.0
@@ -2214,11 +2379,11 @@
       "key": "rank-8",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-7/story-8/#0/#0/rank-8",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#1/#0/rank-8",
       "rect": [
-        30.0,
+        46.45,
         474.5,
-        8.0,
+        7.55,
         15.0
       ],
       "role": "text",
@@ -2234,11 +2399,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-7/story-8/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#2",
       "rect": [
-        52.0,
+        68.0,
         464.38,
-        1108.0,
+        1092.0,
         35.25
       ],
       "role": "group",
@@ -2255,11 +2420,11 @@
       "key": "title-8",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-7/story-8/#1/title-8",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#2/title-8",
       "rect": [
-        52.0,
+        68.0,
         464.38,
-        1108.0,
+        1092.0,
         16.25
       ],
       "role": "text",
@@ -2276,11 +2441,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-7/story-8/#1/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#2/#1",
       "rect": [
-        52.0,
+        68.0,
         484.63,
-        1108.0,
+        1092.0,
         15.0
       ],
       "role": "text",
@@ -2297,7 +2462,7 @@
       "key": "line-8",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-8",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8",
       "rect": [
         8.0,
         512.0,
@@ -2318,7 +2483,7 @@
       "label": "Upload Your RAM · 180 points  ·  by susanthenerd  ·  129 comments",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-8/story-9",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9",
       "rect": [
         8.0,
         512.0,
@@ -2337,9 +2502,28 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-8/story-9/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#0",
       "rect": [
         20.0,
+        527.0,
+        2.0,
+        26.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#1",
+      "rect": [
+        36.0,
         532.5,
         18.0,
         15.0
@@ -2356,9 +2540,9 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-8/story-9/#0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#1/#0",
       "rect": [
-        20.0,
+        36.0,
         532.5,
         18.0,
         15.0
@@ -2377,11 +2561,11 @@
       "key": "rank-9",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-8/story-9/#0/#0/rank-9",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#1/#0/rank-9",
       "rect": [
-        30.0,
+        46.44,
         532.5,
-        8.0,
+        7.56,
         15.0
       ],
       "role": "text",
@@ -2397,11 +2581,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-8/story-9/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#2",
       "rect": [
-        52.0,
+        68.0,
         522.38,
-        1108.0,
+        1092.0,
         35.25
       ],
       "role": "group",
@@ -2418,11 +2602,11 @@
       "key": "title-9",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-8/story-9/#1/title-9",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#2/title-9",
       "rect": [
-        52.0,
+        68.0,
         522.38,
-        1108.0,
+        1092.0,
         16.25
       ],
       "role": "text",
@@ -2439,11 +2623,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-8/story-9/#1/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#2/#1",
       "rect": [
-        52.0,
+        68.0,
         542.63,
-        1108.0,
+        1092.0,
         15.0
       ],
       "role": "text",
@@ -2460,7 +2644,7 @@
       "key": "line-9",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-9",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9",
       "rect": [
         8.0,
         570.0,
@@ -2481,7 +2665,7 @@
       "label": "Devvm.dev: One VM for every project · 169 points  ·  by luispa  ·  64 comments",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-9/story-10",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10",
       "rect": [
         8.0,
         570.0,
@@ -2500,9 +2684,28 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-9/story-10/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#0",
       "rect": [
         20.0,
+        585.0,
+        2.0,
+        26.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#1",
+      "rect": [
+        36.0,
         590.5,
         18.0,
         15.0
@@ -2519,9 +2722,9 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-9/story-10/#0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#1/#0",
       "rect": [
-        20.0,
+        36.0,
         590.5,
         18.0,
         15.0
@@ -2540,11 +2743,11 @@
       "key": "rank-10",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-9/story-10/#0/#0/rank-10",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#1/#0/rank-10",
       "rect": [
-        25.0,
+        41.27,
         590.5,
-        13.0,
+        12.73,
         15.0
       ],
       "role": "text",
@@ -2560,11 +2763,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-9/story-10/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#2",
       "rect": [
-        52.0,
+        68.0,
         580.38,
-        1108.0,
+        1092.0,
         35.25
       ],
       "role": "group",
@@ -2581,11 +2784,11 @@
       "key": "title-10",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-9/story-10/#1/title-10",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#2/title-10",
       "rect": [
-        52.0,
+        68.0,
         580.38,
-        1108.0,
+        1092.0,
         16.25
       ],
       "role": "text",
@@ -2602,11 +2805,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-9/story-10/#1/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#2/#1",
       "rect": [
-        52.0,
+        68.0,
         600.63,
-        1108.0,
+        1092.0,
         15.0
       ],
       "role": "text",
@@ -2623,7 +2826,7 @@
       "key": "line-10",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-10",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10",
       "rect": [
         8.0,
         628.0,
@@ -2644,7 +2847,7 @@
       "label": "GitHub's new Git storage architecture · 168 points  ·  by DAlperin  ·  38 comments",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-10/story-11",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11",
       "rect": [
         8.0,
         628.0,
@@ -2663,9 +2866,28 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-10/story-11/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#0",
       "rect": [
         20.0,
+        643.0,
+        2.0,
+        26.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#1",
+      "rect": [
+        36.0,
         648.5,
         30.0,
         15.0
@@ -2682,9 +2904,9 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-10/story-11/#0/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#1/#0",
       "rect": [
-        20.0,
+        36.0,
         648.5,
         18.0,
         15.0
@@ -2703,11 +2925,11 @@
       "key": "rank-11",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-10/story-11/#0/#0/rank-11",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#1/#0/rank-11",
       "rect": [
-        28.0,
+        44.04,
         648.5,
-        10.0,
+        9.96,
         15.0
       ],
       "role": "text",
@@ -2725,9 +2947,9 @@
       "label": "saved",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-10/story-11/#0/saved-dot-11",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#1/saved-dot-11",
       "rect": [
-        44.0,
+        60.0,
         653.0,
         6.0,
         6.0
@@ -2744,11 +2966,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-10/story-11/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#2",
       "rect": [
-        64.0,
+        80.0,
         638.38,
-        1096.0,
+        1080.0,
         35.25
       ],
       "role": "group",
@@ -2765,11 +2987,11 @@
       "key": "title-11",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-10/story-11/#1/title-11",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#2/title-11",
       "rect": [
-        64.0,
+        80.0,
         638.38,
-        1096.0,
+        1080.0,
         16.25
       ],
       "role": "text",
@@ -2786,11 +3008,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/line-10/story-11/#1/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#2/#1",
       "rect": [
-        64.0,
+        80.0,
         658.63,
-        1096.0,
+        1080.0,
         15.0
       ],
       "role": "text",
@@ -2848,7 +3070,7 @@
       "rect": [
         32.0,
         723.5,
-        70.0,
+        69.29,
         15.0
       ],
       "role": "group",
@@ -2868,7 +3090,7 @@
       "rect": [
         32.0,
         724.0,
-        32.5,
+        31.89,
         14.0
       ],
       "role": "group",
@@ -2888,7 +3110,7 @@
       "rect": [
         32.0,
         724.0,
-        14.5,
+        14.33,
         14.0
       ],
       "role": "group",
@@ -2908,7 +3130,7 @@
       "rect": [
         36.0,
         725.5,
-        6.5,
+        6.33,
         11.0
       ],
       "role": "text",
@@ -2927,9 +3149,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#0/#0/key1",
       "rect": [
-        48.5,
+        48.33,
         724.0,
-        16.0,
+        15.56,
         14.0
       ],
       "role": "group",
@@ -2947,9 +3169,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#0/#0/key1/#0",
       "rect": [
-        52.5,
+        52.33,
         725.5,
-        8.0,
+        7.56,
         11.0
       ],
       "role": "text",
@@ -2968,9 +3190,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#0/#1",
       "rect": [
-        70.5,
+        69.89,
         723.5,
-        31.5,
+        31.4,
         15.0
       ],
       "role": "text",
@@ -2988,9 +3210,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1",
       "rect": [
-        120.0,
+        119.29,
         723.5,
-        48.5,
+        126.96,
         15.0
       ],
       "role": "group",
@@ -3003,14 +3225,14 @@
       "focusable": false,
       "focused": false,
       "inert": true,
-      "label": "s",
+      "label": "← →",
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1/#0",
       "rect": [
-        120.0,
+        119.29,
         724.0,
-        15.5,
+        39.0,
         14.0
       ],
       "role": "group",
@@ -3028,9 +3250,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1/#0/key0",
       "rect": [
-        120.0,
+        119.29,
         724.0,
-        15.5,
+        18.5,
         14.0
       ],
       "role": "group",
@@ -3048,14 +3270,55 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1/#0/key0/#0",
       "rect": [
-        124.0,
+        123.29,
         725.5,
-        7.5,
+        10.5,
         11.0
       ],
       "role": "text",
       "scale": 1.0,
-      "text": "S"
+      "text": "←"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "key1",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1/#0/key1",
+      "rect": [
+        139.79,
+        724.0,
+        18.5,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1/#0/key1/#0",
+      "rect": [
+        143.79,
+        725.5,
+        10.5,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "→"
     },
     {
       "blur": 0.0,
@@ -3069,14 +3332,14 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#1/#1",
       "rect": [
-        141.5,
+        164.29,
         723.5,
-        27.0,
+        81.96,
         15.0
       ],
       "role": "text",
       "scale": 1.0,
-      "text": "save"
+      "text": "column / page"
     },
     {
       "blur": 0.0,
@@ -3089,9 +3352,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#2",
       "rect": [
-        186.5,
+        264.25,
         723.5,
-        69.0,
+        47.92,
         15.0
       ],
       "role": "group",
@@ -3104,14 +3367,14 @@
       "focusable": false,
       "focused": false,
       "inert": true,
-      "label": "n p",
+      "label": "s",
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#2/#0",
       "rect": [
-        186.5,
+        264.25,
         724.0,
-        34.0,
+        15.11,
         14.0
       ],
       "role": "group",
@@ -3129,9 +3392,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#2/#0/key0",
       "rect": [
-        186.5,
+        264.25,
         724.0,
-        16.5,
+        15.11,
         14.0
       ],
       "role": "group",
@@ -3149,55 +3412,14 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#2/#0/key0/#0",
       "rect": [
-        190.5,
+        268.25,
         725.5,
-        8.5,
+        7.11,
         11.0
       ],
       "role": "text",
       "scale": 1.0,
-      "text": "N"
-    },
-    {
-      "blur": 0.0,
-      "fill": "#ffffff16",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": true,
-      "key": "key1",
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#2/#0/key1",
-      "rect": [
-        205.0,
-        724.0,
-        15.5,
-        14.0
-      ],
-      "role": "group",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": true,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#2/#0/key1/#0",
-      "rect": [
-        209.0,
-        725.5,
-        7.5,
-        11.0
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "P"
+      "text": "S"
     },
     {
       "blur": 0.0,
@@ -3211,14 +3433,14 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#2/#1",
       "rect": [
-        226.5,
+        285.36,
         723.5,
-        29.0,
+        26.81,
         15.0
       ],
       "role": "text",
       "scale": 1.0,
-      "text": "page"
+      "text": "save"
     },
     {
       "blur": 0.0,
@@ -3231,9 +3453,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3",
       "rect": [
-        273.5,
+        330.17,
         723.5,
-        62.5,
+        68.22,
         15.0
       ],
       "role": "group",
@@ -3246,14 +3468,14 @@
       "focusable": false,
       "focused": false,
       "inert": true,
-      "label": "1 4",
+      "label": "n p",
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3/#0",
       "rect": [
-        273.5,
+        330.17,
         724.0,
-        31.5,
+        33.38,
         14.0
       ],
       "role": "group",
@@ -3271,9 +3493,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3/#0/key0",
       "rect": [
-        273.5,
+        330.17,
         724.0,
-        14.0,
+        16.32,
         14.0
       ],
       "role": "group",
@@ -3291,14 +3513,14 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3/#0/key0/#0",
       "rect": [
-        278.0,
+        334.17,
         725.5,
-        5.0,
+        8.32,
         11.0
       ],
       "role": "text",
       "scale": 1.0,
-      "text": "1"
+      "text": "N"
     },
     {
       "blur": 0.0,
@@ -3312,9 +3534,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3/#0/key1",
       "rect": [
-        289.5,
+        348.49,
         724.0,
-        15.5,
+        15.06,
         14.0
       ],
       "role": "group",
@@ -3332,9 +3554,151 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3/#0/key1/#0",
       "rect": [
-        293.5,
+        352.49,
         725.5,
-        7.5,
+        7.06,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "P"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3/#1",
+      "rect": [
+        369.55,
+        723.5,
+        28.84,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "page"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4",
+      "rect": [
+        416.39,
+        723.5,
+        62.06,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "label": "1 4",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4/#0",
+      "rect": [
+        416.39,
+        724.0,
+        31.22,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "key0",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4/#0/key0",
+      "rect": [
+        416.39,
+        724.0,
+        14.0,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4/#0/key0/#0",
+      "rect": [
+        421.11,
+        725.5,
+        4.57,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "1"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "key1",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4/#0/key1",
+      "rect": [
+        432.39,
+        724.0,
+        15.22,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4/#0/key1/#0",
+      "rect": [
+        436.39,
+        725.5,
+        7.22,
         11.0
       ],
       "role": "text",
@@ -3351,11 +3715,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#3/#1",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4/#1",
       "rect": [
-        311.0,
+        453.61,
         723.5,
-        25.0,
+        24.84,
         15.0
       ],
       "role": "text",
@@ -3371,11 +3735,11 @@
       "inert": true,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#4",
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/#5",
       "rect": [
-        354.0,
+        496.45,
         731.0,
-        716.0,
+        573.55,
         0.0
       ],
       "role": "group",
@@ -3434,9 +3798,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/page-stepper/#0/#0",
       "rect": [
-        1094.5,
+        1094.6,
         723.5,
-        5.0,
+        4.8,
         15.0
       ],
       "role": "text",
@@ -3474,9 +3838,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/page-stepper/#1/#0",
       "rect": [
-        1115.5,
+        1115.51,
         723.5,
-        5.0,
+        4.98,
         15.0
       ],
       "role": "text",
@@ -3515,9 +3879,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/#2/page-stepper/#2/#0",
       "rect": [
-        1136.5,
+        1136.6,
         723.5,
-        5.0,
+        4.8,
         15.0
       ],
       "role": "text",
@@ -3965,7 +4329,7 @@
       "rect": [
         384.0,
         266.5,
-        73.5,
+        73.42,
         20.0
       ],
       "role": "group",
@@ -3986,7 +4350,7 @@
       "rect": [
         384.0,
         266.5,
-        73.5,
+        73.42,
         20.0
       ],
       "role": "text",
@@ -4068,7 +4432,7 @@
       "rect": [
         384.0,
         298.5,
-        60.0,
+        59.6,
         20.0
       ],
       "role": "group",
@@ -4089,7 +4453,7 @@
       "rect": [
         384.0,
         298.5,
-        60.0,
+        59.6,
         20.0
       ],
       "role": "text",
@@ -4197,6 +4561,12 @@
     },
     {
       "blur": 0.0,
+      "caret": [
+        558.13,
+        361.5,
+        1.5,
+        16.0
+      ],
       "color": "#eff0f2ff",
       "fill": "#00000000",
       "focusVisible": true,
@@ -4294,7 +4664,7 @@
       "rect": [
         360.0,
         420.5,
-        113.0,
+        112.53,
         16.0
       ],
       "role": "text",
@@ -4313,7 +4683,7 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-automatic/#0/control",
       "rect": [
-        481.0,
+        480.53,
         420.5,
         36.0,
         16.0
@@ -4333,7 +4703,7 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-automatic/#0/control/thumb",
       "rect": [
-        495.0,
+        494.53,
         421.5,
         21.0,
         14.0
@@ -4415,7 +4785,7 @@
       "rect": [
         360.0,
         473.5,
-        168.0,
+        167.39,
         28.0
       ],
       "role": "radiogroup",
@@ -4435,7 +4805,7 @@
       "rect": [
         360.0,
         473.5,
-        84.0,
+        83.7,
         28.0
       ],
       "role": "group",
@@ -4457,7 +4827,7 @@
       "rect": [
         360.0,
         473.5,
-        84.0,
+        83.7,
         28.0
       ],
       "role": "radio",
@@ -4476,9 +4846,9 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-profile/#0/#0/segment0/label",
       "rect": [
-        389.0,
+        388.96,
         481.0,
-        26.0,
+        25.77,
         13.0
       ],
       "role": "text",
@@ -4498,9 +4868,9 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-profile/#0/#0/segment1",
       "rect": [
-        444.0,
+        443.7,
         473.5,
-        84.0,
+        83.7,
         28.0
       ],
       "role": "radio",
@@ -4519,9 +4889,9 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-profile/#0/#0/segment1/label",
       "rect": [
-        456.0,
+        455.7,
         481.0,
-        60.0,
+        59.7,
         13.0
       ],
       "role": "text",
@@ -4541,9 +4911,9 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-profile/#0/settings-model",
       "rect": [
-        538.0,
+        537.39,
         480.0,
-        157.0,
+        156.55,
         15.0
       ],
       "role": "text",
@@ -4605,7 +4975,7 @@
       "rect": [
         360.0,
         538.5,
-        199.0,
+        198.55,
         24.0
       ],
       "role": "button",
@@ -4626,7 +4996,7 @@
       "rect": [
         372.0,
         540.5,
-        175.0,
+        174.55,
         20.0
       ],
       "role": "text",
@@ -4644,9 +5014,9 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#1",
       "rect": [
-        567.0,
+        566.55,
         550.5,
-        109.0,
+        110.16,
         0.0
       ],
       "role": "group",
@@ -4664,9 +5034,9 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#2",
       "rect": [
-        684.0,
+        684.71,
         538.5,
-        67.5,
+        67.16,
         24.0
       ],
       "role": "button",
@@ -4685,9 +5055,9 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#2/label",
       "rect": [
-        696.0,
+        696.71,
         540.5,
-        43.5,
+        43.16,
         20.0
       ],
       "role": "text",
@@ -4706,9 +5076,9 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#3",
       "rect": [
-        759.5,
+        759.87,
         538.5,
-        60.5,
+        60.13,
         24.0
       ],
       "role": "button",
@@ -4727,9 +5097,9 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#3/label",
       "rect": [
-        771.5,
+        771.87,
         540.5,
-        36.5,
+        36.13,
         20.0
       ],
       "role": "text",

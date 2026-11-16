@@ -79,10 +79,16 @@ access and nothing outside the process can press a key or raise its window:
 | `--open-story <id>` | opens that story once the feed holds it (and says so if the id is not on the page) |
 | `--on-top` | keeps the window above other apps, so a fullscreen capture is of this window |
 
-Keys are the terminal app's, unchanged: `j`/`k` move, `1`–`4` switch tabs, `Enter` opens a story,
+Keys follow the terminal app with the desktop feed exception below: `j`/`k` move, `1`–`4` switch tabs and return arrow navigation to the feed, `Enter` opens a story,
 `c` opens the discussion, `s` saves, `?` shows the keyboard sheet, `M` (or `⌘,`) opens the summary
 settings, `⌘?` shows the sheet, `⌘\` toggles the inspector, `q` quits. The sheet is generated from
 `src/keys.rs`, so it cannot drift from what the window binds.
+
+Desktop feed navigation uses Left/Right to select the same row in the adjacent column (clamped on a shorter right column). At a column edge they turn the page; in one column they page directly. Forward lands on the first story and backward on the last; known feed ends stay put. Use `n`/`p`, Space, Page Down/Page Up, or the page buttons to change pages. Selection has a restrained 120 ms color response with fixed text geometry. Completed page changes enter as one group from the navigation direction, 24 pt away and at 0.2 opacity, over about 220 ms. Reduced motion is instant. Discussion arrows retain their existing back/unfold bindings.
+
+An empty feed waiting for startup or a tab uses static placeholder rows in the same viewport, with its loading label in the footer. Delayed startup results rise 12 pt and fade in over about 220 ms; data ready before the first paint appears immediately. Tab results enter from the tab's direction using the same 24 pt slide and fade as pages. Placeholder graphics fade out over about 120 ms while readable content arrives. Tabs and controls respond immediately, reduced motion is instant, and refresh/page requests keep the rows already on screen. Empty feeds and load failures show their own status instead of placeholders.
+
+Fully cached feed windows return immediately without source requests. This session cache keeps the last fetched story data; Refresh always reloads the current ranked window, while other visited windows retain their last fetched data. Missing or failed cached entries use the normal fetch path.
 
 ## Where it keeps its files
 
@@ -210,11 +216,14 @@ the 31 MiB binary is not yet in the page cache; every run after that is the rang
 windowed launch adds AppKit window creation, which the headless path does not include and this
 number therefore does not claim.
 
+The release measurements above were recorded at the earlier `d751f07` pin; they have not been remeasured for the current upgrade.
+
 ## Known limitations
 
-- **Rune is pinned to a pre-release commit** (`d751f07`), not a published crate. Building needs
+- **Rune is pinned to a pre-release commit** (`55ef5268`), not a published crate. Building needs
   network access to `github.com/anomalyco/rune`, and an upstream change can break this crate
   without a version bump to warn us.
+- The desktop workspace mirrors Rune's required official patches for Parley, winit, wgpu-hal and both AccessKit adapters at the same revision. Rune's `tooling` feature preserves the existing release headless commands.
 - **macOS is the only platform with a verified window.** The headless path is cross-platform and
   the gate runs on Linux with `HN_TREES_ONLY=1`, but the window itself has only been driven on
   macOS. Linux needs the usual X11/Wayland and font packages a GPU window implies; nothing here
@@ -270,7 +279,7 @@ whether the focus ring is visible while it does. Run this on a real window, with
 **Help (`?`)**
 
 - [ ] The sheet is announced as a dialog named "Keyboard".
-- [ ] Each row reads as its keys then its action ("n, right arrow, space, page down — Next page").
+- [ ] Each row reads as its keys then its action ("n, space, page down — Next page").
 - [ ] `Esc` and `?` both close it.
 
 **Everywhere**

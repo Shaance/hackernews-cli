@@ -301,6 +301,8 @@ Focus is explicit: `focusable` + `focus_group` per pane, `focus_highlight` in am
 never wanders into the article body. `scroll_into_view` keeps the selected row on screen when
 `j`/`k` cross a page boundary, and resolves the row to its column when the feed is two-column.
 
+The desktop now builds against Rune `55ef5268`; the original API source locations in this design document refer to the earlier pinned design snapshot.
+
 ## Motion spec
 
 Rune's springs are duration + bounce, retargeted with exact position and velocity
@@ -310,8 +312,8 @@ Rune's springs are duration + bounce, retargeted with exact position and velocit
 | --- | --- | --- | --- |
 | `INSTANT` | 0.10 s / 0 | hover overlays, pointer feedback | unchanged (no travel) |
 | `SNAP` | 0.25 s / 0 | tab indicator, citation chip, switch knob, chevron, trail segment | snaps |
-| `SETTLE` | 0.30 s / 0 | selection card, failure card, list rows | snaps |
-| `GLIDE` | 0.32 s / 0 | source viewer; page turn, thread re-root, offset across both columns at once | fades in place |
+| `SETTLE` | 0.30 s / 0 | failure card, occasional layout changes | snaps |
+| `GLIDE` | 0.32 s / 0 | source viewer; thread re-root | fades in place |
 | `REFLOW` | 0.40 s / 0 | thread fold; focus mode; row removal; one-column ↔ two-column reflow | lands at once |
 | `MORPH` | 0.30 s / 0.16 | split opening from 0 width; settings, help, link chooser | fades |
 | `POP` | 0.25 s / 0.15 | the saved dot beside the rank; the toast follows it | fades |
@@ -322,8 +324,9 @@ from 0 to its remembered fraction and the article's measure reflows under it —
 slide aside, the split grows into it. **Save → `POP` + toast**: the dot overshoots once, the toast
 fades in behind it, nothing else on the row moves. **Fold a thread → `REFLOW`**: replies collapse,
 the comments below close the gap, and the folded header stays put so the click target does not
-move under the pointer. **Turn a page → `GLIDE`**: the list offsets by one page, and in two-column
-mode both columns travel together because they are one list.
+move under the pointer. **Turn a page → directional arrival**: the incoming feed group moves 24 pt from the navigation direction while opacity rises from 0.2 to 1 over about 220 ms, without staggering. The old group disappears immediately. Routine row selection has a restrained 120 ms color response and reserves its accent marker slot. Reduced motion is instant. Left/Right move between feed columns at the same visual row (clamped on a short right column); at column edges arrows turn pages, landing at the first/last story. Explicit paging remains on n/p, Space, Page Down/Page Up and the buttons. Both columns move together as one group.
+
+An empty pending feed shows static placeholder rows at the real grid's spacing, with one busy status and a footer loading label. Delayed startup results enter 12 pt upward with the same 220 ms fade; already-ready first-paint content appears immediately. Tab results enter horizontally according to tab order, including immediate Saved results. Placeholder rows have no controls or fake story text. Refresh and paging retain existing rows; failures and settled-empty states have their own messages. Reduced motion lands every arrival immediately.
 
 Pane resize uses `PaneMotion::spring(SETTLE).scale_with_width(480, .15, .3)` so a narrow window
 does not feel twitchy; the pane tail fades over the last 15% (`fade_tail`). Streaming summary rows

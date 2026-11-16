@@ -173,6 +173,11 @@ impl Bridge {
         self.story.cancel();
     }
 
+    /// Drop only the feed request when a held window settles synchronously.
+    pub fn cancel_feed(&self) {
+        self.latest.cancel();
+    }
+
     /// Drop every request and any answer not yet taken.
     pub fn cancel(&self) {
         self.latest.cancel();
