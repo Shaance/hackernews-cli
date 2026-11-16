@@ -237,7 +237,11 @@ async fn run(source: &Source, request: Request) -> Filled {
     };
     let items = source
         .fetch_pages_against(&ids, request.fill.from_rank, request.fill.count)
-        .await;
+        .await
+        .into_iter()
+        .zip(ids.iter().skip(request.fill.from_rank))
+        .map(|(item, &id)| item.ok_or(id))
+        .collect();
     Filled {
         tab: request.fill.tab,
         ids,
@@ -351,11 +355,11 @@ mod tests {
         let bridge = Bridge::new().unwrap();
         let source = Source::fake();
         if let Source::Fake(fake) = &source {
-            fake.fail(3);
+            fake.fail(14);
         }
-        let filled = bridge.fill_now(&source, Request::new(fill(StoryType::Top, 0, 5), None));
+        let filled = bridge.fill_now(&source, Request::new(fill(StoryType::Top, 11, 5), None));
         assert_eq!(filled.items.len(), 5);
-        assert!(filled.items[2].is_none());
+        assert_eq!(filled.items[2].as_ref().err(), Some(&14));
     }
 
     #[test]

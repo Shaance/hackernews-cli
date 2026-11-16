@@ -38,7 +38,8 @@ pub struct Filled {
     pub tab: StoryType,
     pub ids: Vec<i32>,
     pub from_rank: usize,
-    pub items: Vec<Option<HNCLIItem>>,
+    /// Successful items carry their own ID; failures retain the requested rank's ID.
+    pub items: Vec<Result<HNCLIItem, i32>>,
     /// The ranking itself could not be fetched. The window is not replaced: the feed keeps
     /// what it has and says so, rather than rendering an empty list.
     pub error: Option<String>,
@@ -241,21 +242,15 @@ impl FeedModel {
         self.id_snapshot = filled.ids;
         self.stories.clear();
         self.failed.clear();
-        for (offset, item) in filled.items.into_iter().enumerate() {
-            let rank = filled.from_rank + offset;
-            let id = self
-                .id_snapshot
-                .get(rank)
-                .copied()
-                .unwrap_or(-(rank as i32) - 1);
+        for item in filled.items {
             match item {
-                Some(item) => {
+                Ok(item) => {
                     self.story_cache.insert(item.id, item.clone());
                     self.stories.push(item);
                 }
                 // A page the feed already holds is not dropped because this fill could not
                 // return it: a shrink, or a transient item failure, keeps what was fetched.
-                None => match self.story_cache.get(&id) {
+                Err(id) => match self.story_cache.get(&id) {
                     Some(held) => self.stories.push(held.clone()),
                     None => {
                         self.failed.insert(id);
@@ -370,7 +365,7 @@ mod tests {
     fn filled(tab: StoryType, from_rank: usize, count: usize) -> Filled {
         let ids: Vec<i32> = (1..=30).collect();
         let items = (from_rank..(from_rank + count).min(ids.len()))
-            .map(|rank| Some(fixtures::item(rank, ids[rank])))
+            .map(|rank| Ok(fixtures::item(rank, ids[rank])))
             .collect();
         Filled {
             tab,
@@ -401,7 +396,7 @@ mod tests {
     fn a_fill_keeps_rank_order_and_marks_failures_in_place() {
         let mut feed = FeedModel::new();
         let mut fill = filled(StoryType::Top, 0, 5);
-        fill.items[2] = None;
+        fill.items[2] = Err(3);
         assert!(feed.apply_fill(fill));
         assert_eq!(feed.stories.len(), 5, "a failed item never shrinks the window");
         assert_eq!(feed.stories[2].title, UNAVAILABLE);
@@ -547,7 +542,7 @@ mod tests {
         // A refresh replaces the snapshot; the same story is now at another rank.
         let mut ids: Vec<i32> = (1..=30).collect();
         ids.rotate_left(3);
-        let items = (0..11).map(|rank| Some(fixtures::item(rank, ids[rank]))).collect();
+        let items = (0..11).map(|rank| Ok(fixtures::item(rank, ids[rank]))).collect();
         feed.apply_fill(Filled {
             tab: StoryType::Top,
             ids,
@@ -569,7 +564,7 @@ mod tests {
         let mut ids: Vec<i32> = (1..=30).collect();
         ids.swap(4, 20);
         feed.pending_anchor = Some(id);
-        let items = (0..11).map(|rank| Some(fixtures::item(rank, ids[rank]))).collect();
+        let items = (0..11).map(|rank| Ok(fixtures::item(rank, ids[rank]))).collect();
         feed.apply_fill(Filled {
             tab: StoryType::Top,
             ids: ids.clone(),
@@ -581,7 +576,7 @@ mod tests {
         assert_eq!(feed.selected, 0);
         // The moved cursor is what asks for the window the story now lives in.
         assert_eq!(feed.fill(11, 1).from_rank, 20);
-        let items = (20..30).map(|rank| Some(fixtures::item(rank, ids[rank]))).collect();
+        let items = (20..30).map(|rank| Ok(fixtures::item(rank, ids[rank]))).collect();
         feed.apply_fill(Filled {
             tab: StoryType::Top,
             ids,
@@ -601,7 +596,7 @@ mod tests {
         let mut ids: Vec<i32> = (1..=30).collect();
         ids.swap(4, 1);
         feed.pending_anchor = Some(id);
-        let items = (0..11).map(|rank| Some(fixtures::item(rank, ids[rank]))).collect();
+        let items = (0..11).map(|rank| Ok(fixtures::item(rank, ids[rank]))).collect();
         feed.apply_fill(Filled {
             tab: StoryType::Top,
             ids,
@@ -700,7 +695,7 @@ mod tests {
         // Growing back is served from the held pages: a rank the source cannot return now
         // renders the story the feed already has, not a placeholder.
         let mut grow = filled(StoryType::Top, 0, 38);
-        grow.items[20] = None;
+        grow.items[20] = Err(21);
         feed.apply_fill(grow);
         assert_eq!(feed.stories.len(), 30);
         assert_eq!(feed.stories[20].id, 21, "the held page, not a placeholder");

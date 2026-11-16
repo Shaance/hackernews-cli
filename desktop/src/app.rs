@@ -200,7 +200,7 @@ impl App {
             let end = (fill.from_rank + fill.count).min(ids.len());
             if let Some(window) = ids.get(fill.from_rank..end) {
                 let held: Option<Vec<_>> = window.iter()
-                    .map(|id| self.feed.story_cache.get(id).cloned().map(Some)).collect();
+                    .map(|id| self.feed.story_cache.get(id).cloned().map(Ok)).collect();
                 if let Some(items) = held {
                     self.bridge.cancel_feed();
                     self.feed.apply_fill(Filled { tab: fill.tab, ids: ids.clone(), from_rank: fill.from_rank, items, error: None });
