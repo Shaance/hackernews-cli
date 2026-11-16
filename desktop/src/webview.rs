@@ -19,22 +19,29 @@
 //! build.
 
 #[cfg(target_os = "macos")]
-pub use macos::{close, create, load_url, set_bounds, set_visible};
+pub use macos::{close, create, ready, set_bounds, set_visible, set_waker};
 
 #[cfg(not(target_os = "macos"))]
-pub use stub::{close, create, load_url, set_bounds, set_visible};
+pub use stub::{close, create, ready, set_bounds, set_visible, set_waker};
 
 #[cfg(target_os = "macos")]
 mod macos {
-    use std::cell::RefCell;
+    use std::cell::{Cell, RefCell};
+    use std::rc::Rc;
 
-    use rune::WindowHandle;
+    use rune::{Waker, WindowHandle};
     use wry::dpi::{LogicalPosition, LogicalSize};
-    use wry::{Rect, WebView, WebViewBuilder};
+    use wry::{PageLoadEvent, Rect, WebView, WebViewBuilder};
+
+    struct Child {
+        view: WebView,
+        ready: Rc<Cell<bool>>,
+    }
 
     thread_local! {
         /// The single child view. `None` before creation and after `close`.
-        static CHILD: RefCell<Option<WebView>> = const { RefCell::new(None) };
+        static CHILD: RefCell<Option<Child>> = const { RefCell::new(None) };
+        static WAKER: RefCell<Option<Waker>> = const { RefCell::new(None) };
     }
 
     /// Rune's `on_layout` rect is `[x, y, w, h]` in window points with the origin at the
@@ -55,17 +62,31 @@ mod macos {
     /// `build_as_child` needs it for exactly that long: it adds the `WKWebView` to the window's
     /// content view and keeps no reference to the handle afterwards.
     ///
-    /// The view starts on `about:blank`; the caller loads the story's URL with [`load_url`] as
-    /// soon as it has one, so a story that changes while the child is being built still lands on
-    /// the right page.
-    pub fn create(window: &WindowHandle, bounds: [f32; 4]) -> Result<(), String> {
+    /// Each hidden child navigates directly to its story. Its own commit callback cannot
+    /// mark a replacement ready, even when an older navigation finishes late.
+    pub fn create(window: &WindowHandle, bounds: [f32; 4], url: &str) -> Result<(), String> {
+        let ready = Rc::new(Cell::new(false));
+        let committed = Rc::clone(&ready);
+        let waker = WAKER.with(|slot| slot.borrow().clone());
         window.with_raw_handle(|raw| {
             let webview = WebViewBuilder::new()
                 .with_bounds(rect(bounds))
-                .with_url("about:blank")
+                .with_visible(false)
+                .with_url(url)
+                .with_on_page_load_handler(move |event, url| {
+                    // On macOS Started is didCommitNavigation, not the navigation request.
+                    if matches!(event, PageLoadEvent::Started)
+                        && !url.is_empty() && url != "about:blank"
+                    {
+                        committed.set(true);
+                        if let Some(waker) = &waker { waker(); }
+                    }
+                })
                 .build_as_child(&raw)
                 .map_err(|error| error.to_string())?;
-            CHILD.with(|slot| *slot.borrow_mut() = Some(webview));
+            CHILD.with(|slot| {
+                *slot.borrow_mut() = Some(Child { view: webview, ready });
+            });
             Ok(())
         })?
     }
@@ -77,7 +98,7 @@ mod macos {
     pub fn set_bounds(bounds: [f32; 4]) {
         CHILD.with(|slot| {
             if let Some(webview) = slot.borrow().as_ref() {
-                let _ = webview.set_bounds(rect(bounds));
+                let _ = webview.view.set_bounds(rect(bounds));
             }
         });
     }
@@ -87,16 +108,17 @@ mod macos {
     pub fn set_visible(visible: bool) {
         CHILD.with(|slot| {
             if let Some(webview) = slot.borrow().as_ref() {
-                let _ = webview.set_visible(visible);
+                let _ = webview.view.set_visible(visible);
             }
         });
     }
 
-    pub fn load_url(url: &str) -> Result<(), String> {
-        CHILD.with(|slot| match slot.borrow().as_ref() {
-            Some(webview) => webview.load_url(url).map_err(|error| error.to_string()),
-            None => Err("no child view to load into".to_owned()),
-        })
+    pub fn set_waker(waker: Waker) {
+        WAKER.with(|slot| *slot.borrow_mut() = Some(waker));
+    }
+
+    pub fn ready() -> bool {
+        CHILD.with(|slot| slot.borrow().as_ref().is_some_and(|child| child.ready.get()))
     }
 
     /// Drop the child. `WKWebView` deallocates on this thread, which is the one that made it.
@@ -109,10 +131,10 @@ mod macos {
 
 #[cfg(not(target_os = "macos"))]
 mod stub {
-    use rune::WindowHandle;
+    use rune::{Waker, WindowHandle};
 
     /// No child-view host on this platform: the article pane falls back to the extracted text.
-    pub fn create(_window: &WindowHandle, _bounds: [f32; 4]) -> Result<(), String> {
+    pub fn create(_window: &WindowHandle, _bounds: [f32; 4], _url: &str) -> Result<(), String> {
         Err("no child-view host on this platform".to_owned())
     }
 
@@ -120,9 +142,9 @@ mod stub {
 
     pub fn set_visible(_visible: bool) {}
 
-    pub fn load_url(_url: &str) -> Result<(), String> {
-        Err("no child-view host on this platform".to_owned())
-    }
+    pub fn set_waker(_waker: Waker) {}
+
+    pub fn ready() -> bool { false }
 
     pub fn close() {}
 }

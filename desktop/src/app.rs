@@ -1,7 +1,8 @@
 //! The window: `SplitView` shell, the responsive feed, the Saved view, and the story split.
 //!
-//! The view is a pure function of [`App`]; the only thing it writes back is the grid it
-//! measured, because `view` takes `&S` and `poll` needs the number. Everything else — the
+//! The view reads [`App`] and native child readiness, whose commit callback wakes the UI;
+//! it writes back only the measured grid because `view` takes `&S` and `poll` needs the number.
+//! Everything else — the
 //! ranked window, the page stepper, the selection — is `hn_lib::feed_state`'s arithmetic
 //! applied by [`FeedModel`].
 //!
@@ -98,10 +99,10 @@ enum Arrival {
 enum Live {
     /// No child view yet: nothing has asked for one.
     Idle,
-    /// A child exists and is showing `url`.
-    Ready { url: String },
-    /// Creation or navigation failed. The pane falls back to the extracted text and says why.
-    Failed(String),
+    /// A child belongs to this story; its native commit callback owns readiness.
+    Ready { story_id: i32 },
+    /// Creation failed. The pane falls back to the extracted text and says why.
+    Failed { story_id: i32, error: String },
 }
 
 /// `--open-story <id>`: the story to open once the feed holds it. `AppSpec::init` is a plain
@@ -315,6 +316,17 @@ impl App {
 
     /// Open `story`: the split springs open and one aggregate request goes out.
     fn open_story(&mut self, story: HNCLIItem) {
+        self.hide_live();
+        if !matches!(self.live,
+            Live::Ready { story_id } | Live::Failed { story_id, .. } if story_id == story.id)
+        {
+            webview::close();
+            self.live = Live::Idle;
+        }
+        // A newly mounted story-keyed region must report current bounds before showing.
+        if self.story.as_ref().is_none_or(|open| open.id() != story.id) {
+            self.live_bounds = None;
+        }
         // Returning to the feed is not another page arrival.
         self.feed_revision = 0;
         self.pending_arrival = None;
@@ -391,6 +403,7 @@ impl App {
 
     /// `Esc` from the split: back to the feed, with the feed's request untouched.
     fn close_story(&mut self) {
+        self.hide_live();
         self.story = None;
         self.inspector.set_open(false);
         self.bridge.cancel_story();
@@ -408,17 +421,17 @@ impl App {
 
     /// Whether the article pane is the live page rather than the extracted text.
     fn live_mode(&self) -> bool {
-        self.live_capable() && !matches!(self.live, Live::Failed(_))
+        self.live_capable() && !matches!(self.live, Live::Failed { .. })
     }
 
     /// What the article pane draws: the live page, or the extracted text and why it is there.
     fn pane(&self) -> Pane<'_> {
         if self.live_mode() {
-            Pane::Live
+            Pane::Live { loading: !webview::ready() }
         } else {
             Pane::Extracted {
                 reason: match &self.live {
-                    Live::Failed(error) => Some(error.as_str()),
+                    Live::Failed { error, .. } => Some(error.as_str()),
                     _ => None,
                 },
             }
@@ -436,9 +449,8 @@ impl App {
         }
     }
 
-    /// Keep the child view in step with the split: build it once the window handle and the
-    /// pane's rect both exist, load the open story's URL, and show it only while the pane is
-    /// actually on screen.
+    /// Build this story's hidden child once the window and current pane bounds exist.
+    /// Show it after its own navigation commits, only while the pane is on screen.
     ///
     /// The child is a subview of the window's content view, so it draws above everything Rune
     /// paints. That is why it is hidden while a dialog is open: the settings dialog and the
@@ -452,7 +464,8 @@ impl App {
         };
         // The same scheme-checked URL the terminal reader opens, with the HN item page as the
         // fallback for a story that has no usable link.
-        let url = hn_lib::url_open::safe_story_url(&story.story.url, story.story.id);
+        let story_id = story.id();
+        let url = hn_lib::url_open::safe_story_url(&story.story.url, story_id);
         let mut changed = false;
         if matches!(self.live, Live::Idle) {
             let (Some(window), Some(bounds)) = (self.native_window.as_ref(), self.live_bounds)
@@ -460,31 +473,19 @@ impl App {
                 // The window or the pane's rect has not landed yet; the next frame has both.
                 return false;
             };
-            if let Err(error) = webview::create(window, bounds) {
-                self.live = Live::Failed(error);
+            if let Err(error) = webview::create(window, bounds, &url) {
+                self.live = Live::Failed { story_id, error };
                 return true;
             }
-            self.live = Live::Ready { url: String::new() };
+            self.live = Live::Ready { story_id };
             changed = true;
         }
-        let mut failure = None;
-        if let Live::Ready { url: shown } = &mut self.live {
-            if *shown != url {
-                match webview::load_url(&url) {
-                    Ok(()) => {
-                        *shown = url;
-                        changed = true;
-                    }
-                    Err(error) => failure = Some(error),
-                }
-            }
-        }
-        if let Some(error) = failure {
-            self.live = Live::Failed(error);
-            return true;
-        }
-        let want = self.settings.is_none() && !self.help;
+        let want = webview::ready() && self.live_bounds.is_some()
+            && self.settings.is_none() && !self.help;
         if self.live_shown != want {
+            if want {
+                webview::set_bounds(self.live_bounds.unwrap());
+            }
             webview::set_visible(want);
             self.live_shown = want;
             changed = true;
@@ -721,6 +722,7 @@ fn init() -> App {
 
 /// One aggregate fill request, then the waker that brings its answer back to `poll`.
 fn setup(s: &mut App, waker: Waker) {
+    webview::set_waker(waker.clone());
     s.bridge.set_waker(waker);
     // The remembered tab and page decide what the first request asks for, so they land before
     // it. The measured grid re-requests if the window is not the default size.
@@ -1867,6 +1869,7 @@ pub fn run() {
         handle.update(move |s: &mut App, _| {
             s.native_window = Some(window);
             s.live = Live::Idle;
+            s.live_bounds = None;
             s.live_shown = false;
         });
     })
@@ -2598,6 +2601,56 @@ mod tests {
             let absent = if selected == 10000 { 10243 } else { 10000 };
             assert!(!elements.iter().any(|e| e["key"] == format!("comment-text-{absent}")), "offscreen text is not mounted");
         }
+    }
+
+    #[test]
+    fn native_story_ownership_resets_changed_ids_and_retains_same_story() {
+        let mut s = app(true, SavedView::in_memory());
+        let a = crate::fixtures::item(0, 1);
+        s.open_story(a.clone());
+        s.live = Live::Ready { story_id: 1 };
+        s.live_bounds = Some([10.0, 20.0, 400.0, 500.0]);
+        s.live_shown = true;
+        s.close_story();
+        assert!(!s.live_shown, "leaving hides the child synchronously");
+        assert_eq!(s.live, Live::Ready { story_id: 1 });
+        s.open_story(a.clone());
+        assert_eq!(s.live, Live::Ready { story_id: 1 });
+        assert_eq!(s.live_bounds, None, "remounted region must supply fresh bounds");
+        s.live_rect([30.0, 40.0, 500.0, 600.0]);
+        assert_eq!(s.live_bounds, Some([30.0, 40.0, 500.0, 600.0]));
+        s.open_story(a.clone());
+        assert!(s.live_bounds.is_some(), "same mounted identity retains valid layout");
+        let mut b = a; b.id = 2;
+        s.live_shown = true;
+        s.open_story(b.clone());
+        assert_eq!(s.live, Live::Idle, "different IDs reset even with the same URL");
+        assert!(!s.live_shown);
+        assert_eq!(s.live_bounds, None);
+        s.live = Live::Failed { story_id: 2, error: "No host".into() };
+        s.open_story(b);
+        assert!(matches!(s.live, Live::Failed { story_id: 2, .. }));
+        s.open_story(crate::fixtures::item(2, 3));
+        assert_eq!(s.live, Live::Idle, "a new story can retry child construction");
+    }
+
+    #[test]
+    #[cfg(target_os = "macos")]
+    fn uncommitted_native_article_has_an_accessible_placeholder_and_current_layout_key() {
+        let mut s = app(true, SavedView::in_memory());
+        s.open_story(crate::fixtures::item(0, 1));
+        s.headless = false;
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.frame(0.0);
+        rt.frame(0.0);
+        let elements = rt.elements();
+        let region = elements.iter().find(|e| e.key.as_deref() == Some("article-live-1")).unwrap();
+        assert!(region.rect[2] > 0.0 && region.rect[3] > 0.0);
+        let status = elements.iter().find(|e| e.key.as_deref() == Some("article-loading")).unwrap();
+        assert_eq!(status.role, "status");
+        assert_eq!(rt.accessibility_tree().nodes.iter().filter(|(_, node)| node.is_busy()).count(), 1);
+        assert!(rt.elements().iter().any(|e| e.key.as_deref() == Some("article-open-original") && e.label.as_deref() == Some("Open in browser")));
+        assert!(rt.state.live_bounds.is_some(), "loading preserves the native layout reporter");
     }
 
     #[test]

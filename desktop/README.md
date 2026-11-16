@@ -28,7 +28,13 @@ draws above everything Rune paints: anything the reader must still be able to pr
 outside its rect. The child is pinned to the region below the header and follows it through
 `El::on_layout`, so a window resize, a grip drag or `⌘\` moves the page with the pane. It is
 hidden — `setHidden`, not torn down — while the settings dialog or the help sheet is open, and
-while the feed is showing.
+while the feed is showing. Reopening that same story retains its page and scroll position.
+Opening a different story drops the old child immediately and creates a hidden child for the
+new URL. A centered “Loading article…” status stays visible until that child commits its
+navigation; it then uses the current pane bounds before appearing. Late callbacks belong to
+their original child and cannot expose a replacement. A stalled navigation can keep the status
+visible; Open in browser remains available. This handoff does not wait for every subresource
+or claim that commit guarantees the first painted pixels.
 
 **The readability capture still runs, and is still the point.** Opening a story fetches and
 extracts the article exactly as before; that capture is what the summary card and its citations

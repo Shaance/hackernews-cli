@@ -48,7 +48,7 @@ pub const FALLBACK_BANNER: &str = "live page unavailable \u{2014} showing extrac
 /// looking at the page or at a capture of it.
 pub enum Pane<'a> {
     /// The story's real page, in a child view over the pane's rect.
-    Live,
+    Live { loading: bool },
     /// The extracted text, with a banner saying why the live page is not there. `reason` is the
     /// child view's own failure, when there was one.
     Extracted { reason: Option<&'a str> },
@@ -67,7 +67,7 @@ pub fn article_pane<'a>(s: &Story, k: &Kit, t: tok::Theme, pane: Pane<'a>) -> El
         outer = outer.opacity(ARTICLE_DIMMED);
     }
     match pane {
-        Pane::Live => outer
+        Pane::Live { loading } => outer
             .child(
                 col()
                     .key("article-content")
@@ -79,13 +79,16 @@ pub fn article_pane<'a>(s: &Story, k: &Kit, t: tok::Theme, pane: Pane<'a>) -> El
             )
             .child(
                 el()
-                    .key("article-live")
+                    .key(format!("article-live-{}", s.id()))
                     .w_full()
                     .grow(1.0)
                     .min_h(0.0)
                     .min_w(0.0)
                     .fill(t.bg)
-                    .on_layout(|s: &mut App, rect| s.live_rect(rect)),
+                    .center()
+                    .on_layout(|s: &mut App, rect| s.live_rect(rect))
+                    .children(loading.then(|| text("Loading article…").key("article-loading")
+                        .role("status").busy(true).font(type_::LABEL).color(t.text_secondary))),
             ),
         Pane::Extracted { reason } => outer
             .child(fallback_banner(reason, t))
