@@ -212,11 +212,11 @@ pub fn comments() -> Vec<Comment> {
         .collect()
 }
 
-/// The replies to `ids`, one level down: what `fetch_comment_children` answers with.
+/// The actual item IDs requested by `fetch_comment_children`.
 pub fn replies(ids: &[i32]) -> Vec<Comment> {
     THREAD
         .iter()
-        .filter(|(_, parent, ..)| parent.is_some_and(|parent| ids.contains(&parent)))
+        .filter(|(id, ..)| ids.contains(id))
         .map(|row| comment(row, depth_of(row.0)))
         .collect()
 }
@@ -224,14 +224,7 @@ pub fn replies(ids: &[i32]) -> Vec<Comment> {
 /// The whole discussion of [`STORY_ID`]: the top-level comments and every reply the fixture
 /// holds, level by level, as the desktop's tree walk collects them.
 pub fn thread() -> Vec<Comment> {
-    let mut all = comments();
-    let mut frontier: Vec<i32> = all.iter().map(|c| c.id).collect();
-    while !frontier.is_empty() {
-        let children = replies(&frontier);
-        frontier = children.iter().map(|c| c.id).collect();
-        all.extend(children);
-    }
-    all
+    THREAD.iter().map(|row| comment(row, depth_of(row.0))).collect()
 }
 
 fn comment(row: &(i32, Option<i32>, &str, &str, &str, &[&str]), depth: usize) -> Comment {
@@ -520,7 +513,7 @@ mod tests {
         let thread = thread();
         assert_eq!(thread.len(), 17, "five top-level comments and twelve replies");
         assert_eq!(comments().len(), 5, "the capture's top level is unchanged");
-        assert_eq!(replies(&[901]).len(), 2);
+        assert_eq!(replies(&[9010, 9011]).len(), 2);
         // 901000 draws at depth 3, which is the cap: its replies are behind `continue thread`.
         assert_eq!(depth_of(901000), 3);
         assert_eq!(depth_of(90100000), 5);

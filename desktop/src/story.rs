@@ -134,6 +134,8 @@ pub struct Story {
     pub summary: SummaryState,
     /// The discussion: the tree, the fold set, the cursor, the re-root and focus mode.
     pub thread: Thread,
+    pub discussion: Option<Result<(), String>>,
+    pub pending_reply: Option<crate::bridge::ReplyRequest>,
     /// The captured comment sources, for the citation viewer's excerpt and extra text.
     pub sources: Vec<CapturedSource>,
     /// `S` folds the summary card; the discussion gets the height.
@@ -167,6 +169,8 @@ impl Story {
                 SummaryState::Unconfigured
             },
             thread: Thread::empty(),
+            discussion: None,
+            pending_reply: None,
             sources: Vec::new(),
             summary_open: true,
             citation: 0,
@@ -194,7 +198,11 @@ impl Story {
             },
             Err(message) => ArticleState::Failed(message),
         };
-        self.thread = Thread::from_comments(&filled.comments);
+        self.pending_reply = None;
+        self.discussion = Some(match filled.comments {
+            Ok(comments) => { self.thread = Thread::from_comments(&comments); Ok(()) },
+            Err(message) => Err(message),
+        });
         self.sources = filled.sources;
         let previous = self.summary.readable().cloned().map(Box::new);
         self.summary = match filled.summary {
@@ -207,6 +215,23 @@ impl Story {
         };
         // A citation index past the new bullet list would select nothing.
         self.citation = self.citation.min(self.citations().len().saturating_sub(1));
+        true
+    }
+
+    pub fn request_replies(&mut self, parent_id: i32, retry: bool) -> Option<crate::bridge::ReplyRequest> {
+        if self.pending_reply.is_some() { return None; }
+        let ids = self.thread.reply_batch(parent_id, retry);
+        if ids.is_empty() { return None; }
+        let request = crate::bridge::ReplyRequest { story_id: self.id(), parent_id, ids,
+            depth: self.thread.tree_depth(parent_id)? as usize + 1 };
+        self.pending_reply = Some(request.clone());
+        Some(request)
+    }
+
+    pub fn land_replies(&mut self, filled: crate::bridge::ReplyFilled) -> bool {
+        if filled.request.story_id != self.id() || self.pending_reply.as_ref() != Some(&filled.request) { return false; }
+        self.pending_reply = None;
+        self.thread.merge_replies(filled.request.parent_id, &filled.request.ids, filled.comments);
         true
     }
 
@@ -382,6 +407,8 @@ impl Story {
 
     /// `r`: ask for the aggregate again, keeping what is already readable on screen.
     pub fn retry(&mut self, configured: bool) {
+        self.pending_reply = None;
+        self.discussion = None;
         self.article = ArticleState::Loading;
         self.summary = if configured {
             SummaryState::Generating {
@@ -428,7 +455,7 @@ mod tests {
                 text: "# Libghostty 1.0\n\nBody.".to_string(),
             }),
             article_partial: false,
-            comments: fixtures::thread(),
+            comments: Ok(fixtures::thread()),
             sources: fixtures::sources(),
             summary,
         }

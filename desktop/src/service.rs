@@ -29,14 +29,6 @@ use hn_lib::{HNCLIItem, HackerNewsCliService, HackerNewsCliServiceImpl};
 use crate::bridge::SummaryError;
 use crate::fixtures;
 
-/// How many reply levels one story open walks below the top-level comments. The depth cap is
-/// four levels, so this leaves room for one `continue thread` re-root before the walk's edge.
-const TREE_DEPTH: usize = 6;
-
-/// How many comments one story open collects, across every level. A front-page thread can run to
-/// thousands; the reader gets the top of it, and `r` refetches.
-const TREE_NODES: usize = 200;
-
 /// Where the feed's ranked ids, the story's article and its discussion come from.
 pub enum Source {
     Live {
@@ -113,30 +105,16 @@ impl Source {
         }
     }
 
-    /// The story's discussion as a tree: the top-level comments, then their replies level by
-    /// level, through the same frozen seam the terminal reader uses.
-    ///
-    /// The walk is bounded twice — [`TREE_DEPTH`] levels and [`TREE_NODES`] comments — because
-    /// one story open is one aggregate request and a front-page thread can run to thousands of
-    /// comments. A level that fails to fetch stops the walk and keeps what landed: a partial
-    /// thread is readable, and a row never claims a reply the capture does not hold.
+    /// Initial discussion capture: every root, with known child IDs retained for disclosure.
     pub async fn thread(&self, story_id: i32) -> Result<Vec<Comment>> {
-        let mut all = self.comments(story_id).await?;
-        let mut frontier: Vec<i32> = all.iter().map(|c| c.id).collect();
-        let mut depth = 1;
-        while !frontier.is_empty() && depth <= TREE_DEPTH && all.len() < TREE_NODES {
-            let children = match self {
-                Source::Live { service, .. } => {
-                    service.fetch_comment_children(&frontier, depth).await
-                }
-                Source::Fake(fake) => fake.fetch_comment_children(&frontier, depth).await,
-            };
-            let Ok(children) = children else { break };
-            frontier = children.iter().map(|c| c.id).collect();
-            all.extend(children);
-            depth += 1;
+        self.comments(story_id).await
+    }
+
+    pub async fn children(&self, ids: &[i32], depth: usize) -> Result<Vec<Comment>> {
+        match self {
+            Source::Live { service, .. } => service.fetch_comment_children(ids, depth).await,
+            Source::Fake(fake) => fake.fetch_comment_children(ids, depth).await,
         }
-        Ok(all)
     }
 
     /// The captured sources a summary is written from: the same comments, with the excerpt the
@@ -194,7 +172,7 @@ impl Source {
                         SummaryError::new(failure.message, auth)
                     })
             }
-            Source::Fake(_) => Ok(fixtures::summary()),
+            Source::Fake(fake) => { *fake.summary_requests.lock().unwrap() += 1; Ok(fixtures::summary()) },
         }
     }
 }
@@ -208,6 +186,10 @@ pub struct FakeService {
     failing_rankings: Mutex<HashSet<StoryType>>,
     delay: Duration,
     pub requests: Mutex<(usize, usize)>,
+    pub comments: Mutex<Vec<Comment>>,
+    pub failing_comments: Mutex<HashSet<i32>>,
+    pub comment_requests: Mutex<Vec<Vec<i32>>>,
+    pub summary_requests: Mutex<usize>,
 }
 
 impl FakeService {
@@ -235,6 +217,10 @@ impl FakeService {
             failing_rankings: Mutex::new(HashSet::new()),
             delay: Duration::ZERO,
             requests: Mutex::new((0, 0)),
+            comments: Mutex::new(fixtures::thread()),
+            failing_comments: Mutex::new(HashSet::new()),
+            comment_requests: Mutex::new(Vec::new()),
+            summary_requests: Mutex::new(0),
         }
     }
 
@@ -247,6 +233,10 @@ impl FakeService {
             failing_rankings: Mutex::new(HashSet::new()),
             delay: Duration::ZERO,
             requests: Mutex::new((0, 0)),
+            comments: Mutex::new(Vec::new()),
+            failing_comments: Mutex::new(HashSet::new()),
+            comment_requests: Mutex::new(Vec::new()),
+            summary_requests: Mutex::new(0),
         }
     }
 
@@ -323,19 +313,27 @@ impl HackerNewsCliService for FakeService {
             .collect())
     }
 
-    async fn fetch_top_level_comments(&self, _story_id: i32) -> Result<Vec<Comment>> {
+    async fn fetch_top_level_comments(&self, story_id: i32) -> Result<Vec<Comment>> {
         if !self.delay.is_zero() {
             tokio::time::sleep(self.delay).await;
         }
-        Ok(fixtures::comments())
+        if self.failing_comments.lock().unwrap().contains(&story_id) { anyhow::bail!("Discussion unavailable"); }
+        Ok(self.comments.lock().unwrap().iter().filter(|c| c.depth == 0).cloned().collect())
     }
 
     async fn fetch_comment_children(
         &self,
         comment_ids: &[i32],
-        _depth: usize,
+        depth: usize,
     ) -> Result<Vec<Comment>> {
-        Ok(fixtures::replies(comment_ids))
+        self.comment_requests.lock().unwrap().push(comment_ids.to_vec());
+        if !self.delay.is_zero() { tokio::time::sleep(self.delay).await; }
+        let comments = self.comments.lock().unwrap();
+        let failed = self.failing_comments.lock().unwrap();
+        let out: Vec<_> = comment_ids.iter().filter(|id| !failed.contains(id)).filter_map(|id|
+            comments.iter().find(|c| c.id == *id).cloned().map(|mut c| { c.depth = depth; c })).collect();
+        if out.is_empty() && !comment_ids.is_empty() { anyhow::bail!("Replies unavailable"); }
+        Ok(out)
     }
 
     fn get_valid_story_types() -> HashSet<&'static str> {

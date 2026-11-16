@@ -154,7 +154,7 @@ pub struct App {
     /// Headless runs use the fake service and an in-memory Saved store, so a golden never
     /// depends on the network or on the machine's `saved.json`.
     headless: bool,
-    /// Set by `O` or the article header's "open original" button; drained in `poll`,
+    /// Set by `O` or the article header's "Open in browser" button; drained in `poll`,
     /// which opens the real page in the system browser (no-op when headless).
     pub(crate) pending_external: bool,
     /// The window handle Rune lent in `on_window`, for building the live pane's child view.
@@ -509,6 +509,30 @@ impl App {
         self.story.as_mut()
     }
 
+    pub(crate) fn story(&self) -> Option<&Story> { self.story.as_ref() }
+
+    pub(crate) fn load_replies(&mut self, parent: i32, retry: bool) {
+        let Some(request) = self.story.as_mut().and_then(|s| s.request_replies(parent, retry)) else { return; };
+        if self.headless {
+            let filled = self.bridge.replies_now(&self.source, request);
+            if let Some(story) = self.story.as_mut() { story.land_replies(filled); }
+        } else {
+            self.bridge.request_replies(Arc::clone(&self.source), request);
+        }
+    }
+
+    pub(crate) fn activate_comment(&mut self, id: i32) {
+        let Some(story) = self.story.as_mut() else { return; };
+        story.thread.select(id);
+        if story.pending_reply.as_ref().is_some_and(|request| request.parent_id == id) {
+            if story.thread.is_folded(id) { story.thread.unfold(); } else { story.thread.fold(); }
+            return;
+        }
+        let unloaded = story.thread.has_children(id) && story.thread.children_of(id).is_empty();
+        if unloaded { story.thread.unfold(); } else { story.thread.activate(); }
+        if unloaded { self.load_replies(id, false); }
+    }
+
     /// The settings dialog's draft, for its own press handlers.
     pub(crate) fn settings_mut(&mut self) -> Option<&mut Settings> {
         self.settings.as_mut()
@@ -730,12 +754,15 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
             }
         }
     }
+    if let Some(filled) = s.bridge.take_replies() {
+        changed |= s.story.as_mut().is_some_and(|story| story.land_replies(filled));
+    }
     // A reveal the trail's removal aborted, asked again now that the layout has no trail.
     if let Some(id) = s.story.as_mut().and_then(|open| open.pending_reveal.take()) {
         tx.scroll_into_view_in("discussion-scroll", format!("comment-{id}"));
         changed = true;
     }
-    // `O` / "open original": the real page, in the system browser, via the TUI's safe
+    // `O` / "Open in browser": the real page, in the system browser, via the TUI's safe
     // opener (scheme-checked, HN item-page fallback). Headless runs never open anything.
     if std::mem::take(&mut s.pending_external) {
         s.open_current_external();
@@ -1041,8 +1068,9 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             if story.open_source() {
                 return true;
             }
-            story.thread.activate();
-            thread_moved(story, root, tx);
+            let id = story.thread.cursor();
+            if let Some(id) = id { s.activate_comment(id); }
+            if let Some(story) = s.story.as_mut() { thread_moved(story, root, tx); }
             true
         }
         StoryKey::ToggleSummary => {
@@ -1094,8 +1122,10 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             true
         }
         StoryKey::Unfold => {
+            let id = story.thread.cursor();
             story.thread.unfold();
             thread_moved(story, root, tx);
+            if let Some(id) = id { s.load_replies(id, false); }
             true
         }
         StoryKey::FirstComment => {
@@ -1749,6 +1779,9 @@ fn scene_story(s: &mut App) {
         crate::fixtures::STORY_INDEX,
         crate::fixtures::STORY_ID,
     ));
+    if let Some(story) = s.story.as_mut() {
+        story.thread = crate::comments::Thread::from_comments(&crate::fixtures::thread());
+    }
 }
 
 /// The discussion as it opens: the tree at the story's top level, the cursor on the first
@@ -2214,11 +2247,13 @@ mod tests {
         s.headless = false;
         let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
         rt.on_key = Some(on_key);
-        rt.poll = Some(poll);
         rt.frame(0.0);
         route(&mut rt, rune::Key::Text("2".into()));
         route(&mut rt, rune::Key::Down);
         assert_eq!(rt.state.feed.tab, StoryType::New);
+        assert!(rt.state.feed.status.loading, "worker delivery is held until pending input is checked");
+        assert_eq!(rt.state.feed.selected, 0);
+        rt.poll = Some(poll);
         let deadline = std::time::Instant::now() + Duration::from_secs(2);
         while rt.state.feed.status.loading {
             std::thread::yield_now();
@@ -2523,6 +2558,134 @@ mod tests {
         PaneState::new(INSPECTOR_WIDTH)
             .range(INSPECTOR_MIN, INSPECTOR_MAX)
             .collapsed()
+    }
+
+    #[test]
+    #[ignore = "Explicit Metal-backed long-discussion mounting and reveal verification"]
+    fn render_long_discussion_workflows() {
+        fn long() -> App {
+            let mut s = app(true, SavedView::in_memory());
+            let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+            let template = crate::fixtures::comments().remove(0);
+            *fake.comments.lock().unwrap() = (10000..10244).map(|id| {
+                let mut c = template.clone(); c.id = id; c.child_ids.clear();
+                c.text = format!("Comment {id}: {}", "A mixed height paragraph. ".repeat(if id % 3 == 0 { 18 } else { 2 })); c
+            }).collect();
+            s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+            s
+        }
+        let out = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("target/ux-motion/comments");
+        std::fs::create_dir_all(&out).unwrap();
+        fn reduced() -> App { let mut s = long(); s.reduced = true; s }
+        for (name, script_text, selected) in [("top", "[]", 10000), ("bottom", r#"[{"t":0.2,"type":"key","name":"G"}]"#, 10243),
+            ("resize-reduced", r#"[{"t":0.1,"type":"resize","dw":400,"dh":140,"dur":0.1},{"t":0.3,"type":"key","name":"G"}]"#, 10243)] {
+            let script = out.join(format!("{name}-script.json"));
+            std::fs::write(&script, script_text).unwrap();
+            let stem = out.join(name);
+            let args = rune::tooling::Args::parse_from(vec!["comments-fixture".into(),
+                "--size".into(), "1180x760".into(), "--theme".into(), "dark".into(),
+                "--script".into(), script.display().to_string(), "--at".into(), "0.8".into(),
+                "--snap".into(), stem.with_extension("png").display().to_string(),
+                "--tree".into(), stem.with_extension("json").display().to_string()]);
+            let mut spec = AppSpec::new("Hacker News", (1180.0,760.0), if name == "resize-reduced" { reduced } else { long }, view);
+            spec.on_key = Some(on_key);
+            rune::tooling::headless(rune::App::new(spec), args);
+            let tree: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(stem.with_extension("json")).unwrap()).unwrap();
+            let elements = tree["elements"].as_array().unwrap();
+            let rows: Vec<_> = elements.iter().filter(|e| e["key"].as_str().is_some_and(|key| key.strip_prefix("comment-").is_some_and(|id| id.parse::<i32>().is_ok()))).collect();
+            assert!(rows.len() < 40, "244 mixed-height rows must not all mount: {}", rows.len());
+            assert!(rows.iter().any(|e| e["key"] == format!("comment-{selected}")), "keyboard reveal mounts the selected offscreen row");
+            let absent = if selected == 10000 { 10243 } else { 10000 };
+            assert!(!elements.iter().any(|e| e["key"] == format!("comment-text-{absent}")), "offscreen text is not mounted");
+        }
+    }
+
+    #[test]
+    fn replies_use_actual_child_ids_and_never_change_the_summary_capture() {
+        let mut s = app(true, SavedView::in_memory());
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        let story = s.story.as_ref().unwrap();
+        assert_eq!(story.thread.len(), 5);
+        let sources: Vec<_> = story.sources.iter().map(|s| (s.id, s.text.clone())).collect();
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        assert!(fake.comment_requests.lock().unwrap().is_empty(), "no reply prefetch");
+        let summaries = *fake.summary_requests.lock().unwrap();
+        s.activate_comment(901);
+        assert_eq!(s.story.as_ref().unwrap().thread.children_of(901), &[9010, 9011]);
+        s.activate_comment(9010);
+        let story = s.story.as_ref().unwrap();
+        assert_eq!(story.thread.children_of(9010), &[90100, 90101]);
+        assert_eq!(story.thread.tree_depth(90100), Some(2));
+        assert_eq!(story.sources.iter().map(|s| (s.id, s.text.clone())).collect::<Vec<_>>(), sources, "lazy replies do not alter citation identity");
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        assert_eq!(*fake.comment_requests.lock().unwrap(), vec![vec![9010, 9011], vec![90100, 90101]]);
+        assert_eq!(*fake.summary_requests.lock().unwrap(), summaries);
+    }
+
+    #[test]
+    fn every_root_is_captured_for_summary_and_successful_empty_discussion_is_distinct() {
+        let mut s = app(true, SavedView::in_memory());
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        let template = crate::fixtures::comments().remove(0);
+        *fake.comments.lock().unwrap() = (10000..10244).map(|id| {
+            let mut c = template.clone(); c.id = id; c.child_ids.clear(); c
+        }).collect();
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        let story = s.story.as_ref().unwrap();
+        assert_eq!(story.thread.roots(), 244);
+        assert_eq!(story.sources.len(), 244, "summary capture has no arbitrary root cap");
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        assert!(fake.comment_requests.lock().unwrap().is_empty());
+        assert_eq!(*fake.summary_requests.lock().unwrap(), 1);
+        fake.comments.lock().unwrap().clear();
+        s.retry_summary();
+        let story = s.story.as_ref().unwrap();
+        assert_eq!(story.discussion, Some(Ok(())));
+        assert!(story.thread.is_empty());
+        assert!(story.sources.is_empty());
+    }
+
+    #[test]
+    fn discussion_failure_is_explicit_retryable_and_does_not_generate_an_empty_summary() {
+        let mut s = app(true, SavedView::in_memory());
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        fake.failing_comments.lock().unwrap().insert(crate::fixtures::STORY_ID);
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        assert!(matches!(s.story.as_ref().unwrap().discussion, Some(Err(_))));
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        assert_eq!(*fake.summary_requests.lock().unwrap(), 0);
+        fake.failing_comments.lock().unwrap().clear();
+        s.retry_summary();
+        assert_eq!(s.story.as_ref().unwrap().discussion, Some(Ok(())));
+        assert_eq!(s.story.as_ref().unwrap().thread.roots(), 5);
+    }
+
+    #[test]
+    fn pending_replies_stay_folded_and_a_replaced_story_cannot_accept_them() {
+        let mut s = app(true, SavedView::in_memory());
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        s.headless = false;
+        s.source = Arc::new(Source::Fake(crate::service::FakeService::fixture().with_delay(std::time::Duration::from_millis(25))));
+        s.activate_comment(901);
+        let request = s.story.as_ref().unwrap().pending_reply.clone().unwrap();
+        s.activate_comment(901);
+        assert!(s.story.as_ref().unwrap().thread.is_folded(901), "second activation folds pending branch");
+        s.activate_comment(901);
+        assert!(!s.story.as_ref().unwrap().thread.is_folded(901));
+        s.activate_comment(901);
+        let mut tx = Tx::default();
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
+        while s.story.as_ref().unwrap().pending_reply.is_some() && std::time::Instant::now() < deadline {
+            poll(&mut s, 0.0, &mut tx); std::thread::yield_now();
+        }
+        assert!(s.story.as_ref().unwrap().pending_reply.is_none());
+        assert!(s.story.as_ref().unwrap().thread.is_folded(901));
+        assert_eq!(s.story.as_ref().unwrap().thread.children_of(901).len(), 2);
+        s.close_story();
+        s.headless = true;
+        s.open_story(crate::fixtures::item(1, 2));
+        assert!(!s.story.as_mut().unwrap().land_replies(crate::bridge::ReplyFilled { request, comments: Ok(crate::fixtures::replies(&[9010,9011])) }));
+        assert_eq!(s.story.as_ref().unwrap().thread.len(), 5);
     }
 
     /// An app built the way `init` builds one, without the machine's files or the network.

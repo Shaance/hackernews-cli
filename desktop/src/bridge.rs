@@ -51,6 +51,7 @@ pub struct Bridge {
     handle: Handle,
     latest: Latest<Filled>,
     story: Latest<StoryFilled>,
+    replies: Latest<ReplyFilled>,
 }
 
 /// One story open: the item to read, and the summary settings to read it with.
@@ -72,9 +73,22 @@ pub struct StoryFilled {
     pub article: Result<Article, String>,
     pub article_partial: bool,
     /// The discussion as a tree: the top-level comments and their replies, level by level.
-    pub comments: Vec<Comment>,
+    pub comments: Result<Vec<Comment>, String>,
     pub sources: Vec<CapturedSource>,
     pub summary: Result<Discussion, SummaryError>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ReplyRequest {
+    pub story_id: i32,
+    pub parent_id: i32,
+    pub ids: Vec<i32>,
+    pub depth: usize,
+}
+
+pub struct ReplyFilled {
+    pub request: ReplyRequest,
+    pub comments: Result<Vec<Comment>, String>,
 }
 
 /// A provider failure, with the one classification the summary card acts on.
@@ -110,13 +124,15 @@ impl Bridge {
             handle,
             latest: Latest::default(),
             story: Latest::default(),
+            replies: Latest::default(),
         })
     }
 
     /// Attach the waker `AppSpec::setup` hands over, so a landed answer runs `poll`.
     pub fn set_waker(&self, waker: Waker) {
         self.latest.set_waker(waker.clone());
-        self.story.set_waker(waker);
+        self.story.set_waker(waker.clone());
+        self.replies.set_waker(waker);
     }
 
     /// Ask for `request`, superseding any earlier one. The work runs on the runtime from a
@@ -131,6 +147,7 @@ impl Bridge {
     /// Ask for one story open, superseding any earlier one. A second open cancels the first
     /// story's answer, which is what "Latest-only" means here.
     pub fn request_story(&self, source: Arc<Source>, request: StoryRequest) {
+        self.replies.cancel();
         let handle = self.handle.clone();
         self.story.request(request, move |request| {
             handle.block_on(run_story(source.as_ref(), request))
@@ -145,8 +162,20 @@ impl Bridge {
 
     /// The story open, run to completion on this thread.
     pub fn story_now(&self, source: &Source, request: StoryRequest) -> StoryFilled {
+        self.replies.cancel();
         self.runtime.block_on(run_story(source, request))
     }
+
+    pub fn request_replies(&self, source: Arc<Source>, request: ReplyRequest) {
+        let handle = self.handle.clone();
+        self.replies.request(request, move |request| handle.block_on(run_replies(source.as_ref(), request)));
+    }
+
+    pub fn replies_now(&self, source: &Source, request: ReplyRequest) -> ReplyFilled {
+        self.runtime.block_on(run_replies(source, request))
+    }
+
+    pub fn take_replies(&self) -> Option<ReplyFilled> { self.replies.take() }
 
     /// The newest answer, once.
     pub fn take(&self) -> Option<Filled> {
@@ -171,6 +200,7 @@ impl Bridge {
     /// Drop the story open and any answer not yet taken, leaving the feed's request alone.
     pub fn cancel_story(&self) {
         self.story.cancel();
+        self.replies.cancel();
     }
 
     /// Drop only the feed request when a held window settles synchronously.
@@ -182,6 +212,7 @@ impl Bridge {
     pub fn cancel(&self) {
         self.latest.cancel();
         self.story.cancel();
+        self.replies.cancel();
     }
 }
 
@@ -231,16 +262,12 @@ async fn run_story(source: &Source, request: StoryRequest) -> StoryFilled {
         Ok((text, partial)) => (Ok(Article { text }), partial),
         Err(message) => (Err(message), false),
     };
-    let comments = source.thread(story_id).await.unwrap_or_default();
-    let top_level: Vec<Comment> = comments
-        .iter()
-        .filter(|comment| comment.depth == 0)
-        .cloned()
-        .collect();
-    let sources = source.capture(&top_level);
-    let summary = source
-        .summary(&request.config, &request.story, &sources)
-        .await;
+    let comments = source.thread(story_id).await.map_err(|e| e.to_string());
+    let sources = comments.as_ref().map(|comments| source.capture(comments)).unwrap_or_default();
+    let summary = match &comments {
+        Ok(_) => source.summary(&request.config, &request.story, &sources).await,
+        Err(message) => Err(SummaryError::new(format!("Discussion unavailable: {message}"), false)),
+    };
     StoryFilled {
         story_id,
         article,
@@ -249,6 +276,11 @@ async fn run_story(source: &Source, request: StoryRequest) -> StoryFilled {
         sources,
         summary,
     }
+}
+
+async fn run_replies(source: &Source, request: ReplyRequest) -> ReplyFilled {
+    let comments = source.children(&request.ids, request.depth).await.map_err(|e| e.to_string());
+    ReplyFilled { request, comments }
 }
 
 #[cfg(test)]
@@ -406,13 +438,13 @@ mod tests {
         );
         assert!(!filled.article_partial);
         assert_eq!(
-            filled.comments.len(),
-            crate::fixtures::thread().len(),
-            "the discussion is the whole tree"
+            filled.comments.as_ref().unwrap().len(),
+            5,
+            "initial discussion contains every root, without fetching replies"
         );
         assert_eq!(
             filled
-                .comments
+                .comments.as_ref().unwrap()
                 .iter()
                 .filter(|comment| comment.depth == 0)
                 .count(),

@@ -15,10 +15,11 @@
 //! kit's, including its syntax colouring. Nothing here parses Markdown.
 
 use std::f32::consts::FRAC_PI_2;
+use std::rc::Rc;
 
 use hn_lib::reader::Source as CapturedSource;
 use rune::tok::{self, motion, radius, type_};
-use rune::{Color, El, ScrollSpec, TextStyle, Tx, col, el, icon, row, text};
+use rune::{Color, El, GrowthSpec, ScrollSpec, TextStyle, Tx, col, el, icon, row, text};
 use rune_kit::{Keybind, Kit, Markdown, Placement, Popover, Spinner};
 
 use crate::app::App;
@@ -57,7 +58,7 @@ pub enum Pane<'a> {
 ///
 /// In [`Pane::Live`] the body is the child view's region, so the pane is the header plus an
 /// empty element that reports its rect through `on_layout`. The header stays Rune's, which is
-/// what keeps "open original ↗" clickable: the child draws above everything Rune paints, so
+/// what keeps "Open in browser ↗" clickable: the child draws above everything Rune paints, so
 /// anything the reader must still be able to press has to sit outside its rect.
 pub fn article_pane<'a>(s: &Story, k: &Kit, t: tok::Theme, pane: Pane<'a>) -> El {
     let mut outer = col().key("article-pane").w_full().h_full();
@@ -185,13 +186,14 @@ fn article_header(s: &Story, k: &Kit, t: tok::Theme) -> El {
         .child(
             row()
                 .key("article-open-original")
+                .role("button").label("Open in browser")
                 .px(10.0)
                 .py(4.0)
                 .radius(radius::SM)
                 .fill(t.control_off)
                 .on_press(|s: &mut App| s.pending_external = true)
                 .child(
-                    text("open original \u{2197}")
+                    text("Open in browser \u{2197}")
                         .font(type_::LABEL)
                         .color(t.text_secondary),
                 ),
@@ -670,12 +672,24 @@ fn discussion(s: &Story, k: &Kit, t: tok::Theme, accent: Color, overlays: &mut V
         .gap(2.0)
         .child(discussion_header(s, k, t, accent, overlays));
     if thread.is_empty() {
-        return list.child(
-            text("No comments yet.")
-                .key("discussion-empty")
-                .font(type_::LABEL)
-                .color(t.text_secondary),
-        );
+        let message = match &s.discussion {
+            None => "Loading discussion…",
+            Some(Ok(())) => "No comments yet.",
+            Some(Err(message)) => message,
+        };
+        list = list.child(text(message).key("discussion-empty").font(type_::LABEL).color(t.text_secondary));
+        if matches!(s.discussion, Some(Err(_))) {
+            list = list.child(row().key("discussion-retry").role("button").label("Retry discussion")
+                .focusable(true).on_press(|s: &mut App| s.retry_summary())
+                .child(text("Retry discussion").font(type_::LABEL).color(accent)));
+        }
+        return list;
+    }
+    if let Some(Err(message)) = &s.discussion {
+        list = list.child(text(message.clone()).role("alert").font(type_::LABEL).color(t.text_secondary))
+            .child(row().role("button").label("Retry discussion").focusable(true)
+                .on_press(|s: &mut App| s.retry_summary())
+                .child(text("Retry discussion").font(type_::LABEL).color(accent)));
     }
     // The trail is the cursor's ancestor chain, so it only has something to say once the cursor
     // is below the top level: one segment is the comment itself, and the row already says that.
@@ -683,10 +697,13 @@ fn discussion(s: &Story, k: &Kit, t: tok::Theme, accent: Color, overlays: &mut V
     if trail.len() > 1 {
         list = list.child(trail_strip(s, &trail, t));
     }
-    for row in thread.rows() {
-        list = list.child(comment_row(s, row.id, row.depth, k, t, accent));
-    }
-    list
+    let rows = Rc::new(thread.rows());
+    let keys = Rc::clone(&rows);
+    let kit = (*k).clone();
+    list.child(col().key("discussion-rows").w_full().gap(2.0)
+        .growth(GrowthSpec::default()).virtual_rows(rows.len(), 110.0,
+            move |_s: &App, i| format!("comment-{}", keys[i].id).into(),
+            move |app: &App, i| app.story().map(|s| comment_row(s, rows[i].id, rows[i].depth, &kit, t, accent)).unwrap_or_else(el)))
 }
 
 /// The discussion's header: what the capture holds, whether focus mode is on, and `L`'s chip.
@@ -712,7 +729,7 @@ fn discussion_header(
         )
         .child(
             text(format!(
-                "{} {} \u{00b7} {} top-level",
+                "{} {} loaded \u{00b7} {} top-level",
                 thread.len(),
                 if thread.len() == 1 { "comment" } else { "comments" },
                 thread.roots()
@@ -816,7 +833,7 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
     let selected = thread.cursor() == Some(id);
     let folded = thread.is_folded(id);
     let capped = thread.capped(id);
-    let replies = thread.children_of(id).len();
+    let replies = node.known_children.len();
     let mut r = col()
         .key(format!("comment-{id}"))
         .role("article")
@@ -865,7 +882,9 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
             icon(k.glyph.chevron_down, 12.0)
                 .icon_rotation(if folded { -FRAC_PI_2 } else { 0.0 })
                 .motion(motion::SNAP)
-                .color(t.text_secondary),
+                .color(t.text_secondary)
+                .role("button").label("Toggle replies").focusable(true)
+                .on_press(move |s: &mut App| s.activate_comment(id)),
         );
     } else {
         // A leaf keeps the chevron's lane, so authors line up down the thread.
@@ -896,7 +915,7 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
         );
     }
     if folded {
-        let hidden = thread.hidden_count(id);
+        let hidden = thread.hidden_count(id).max(replies);
         r = r.child(
             row()
                 .key(format!("comment-hidden-{id}"))
@@ -909,10 +928,7 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
                 .fill(t.control_off)
                 .focusable(true)
                 .on_press(move |s: &mut App| {
-                    if let Some(story) = s.story_mut() {
-                        story.thread.select(id);
-                        story.thread.unfold();
-                    }
+                    s.activate_comment(id);
                 })
                 .child(
                     text(format!("{hidden} replies hidden \u{00b7} Enter expands"))
@@ -922,7 +938,7 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
         );
     }
     if capped {
-        let behind = thread.reply_count(id);
+        let behind = thread.reply_count(id).max(replies);
         r = r.child(
             row()
                 .key(format!("comment-continue-{id}"))
@@ -935,9 +951,7 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
                 .fill(t.control_off)
                 .focusable(true)
                 .on_press(move |s: &mut App| {
-                    if let Some(story) = s.story_mut() {
-                        story.thread.reroot(id);
-                    }
+                    s.activate_comment(id);
                 })
                 .child(
                     text(format!("continue thread \u{2192} {behind} replies"))
@@ -945,6 +959,26 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
                         .color(accent),
                 ),
         );
+    }
+    if !folded && !capped && replies > 0 {
+        let loading = s.pending_reply.as_ref().is_some_and(|r| r.parent_id == id);
+        if loading {
+            r = r.child(text("Loading replies…").role("status").busy(true).font(type_::LABEL).color(t.text_secondary));
+        } else {
+            for (retry, label) in [(false, "Load replies"), (true, "Retry replies")] {
+                let count = thread.reply_batch(id, retry).len();
+                if count == 0 { continue; }
+                let label = if !retry && !thread.children_of(id).is_empty() { "Load more replies" } else { label };
+                let label = format!("{label} ({count})");
+                r = r.child(row().key(format!("comment-load-{id}-{retry}"))
+                    .role("button").label(label.clone()).focusable(true).disabled(s.pending_reply.is_some())
+                    .on_press(move |s: &mut App| s.load_replies(id, retry))
+                    .child(text(label).font(type_::LABEL).color(accent)));
+            }
+            if let crate::comments::BranchStatus::Failed { message, .. } = &node.branch {
+                r = r.child(text(message.clone()).role("status").font(type_::LABEL).color(t.text_secondary));
+            }
+        }
     }
     r
 }

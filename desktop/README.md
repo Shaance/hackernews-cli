@@ -19,7 +19,7 @@ typography, images, code blocks, and anything interactive.
 
 ```
 article pane
-├── Rune header   eyebrow · title · byline · "open original ↗"
+├── Rune header   eyebrow · title · byline · "Open in browser ↗"
 └── live region   the story's page, in a WKWebView child view
 ```
 
@@ -49,7 +49,7 @@ live page unavailable — showing extracted text
 | The child view failed to build | The banner carries the platform's own message beside it. |
 
 Summaries and citations work in all three, because they read the capture rather than the pane.
-`O` and `open original ↗` are unchanged in all three: they hand the URL to the system browser.
+`O` and `Open in browser ↗` are unchanged in all three: they hand the URL to the system browser.
 
 Two consequences of a native child view, both worth knowing before you use it:
 
@@ -291,3 +291,7 @@ whether the focus ring is visible while it does. Run this on a real window, with
       resize the pane.
 - [ ] With **Reduce Motion** on in System Settings, opening a story and re-rooting the thread
       still land in the same place, without the glide.
+
+Discussion replies load on demand. Opening a story captures every top-level comment for the summary; expanding a branch fetches its actual child IDs in batches of up to 50. Loaded comments stay available while further replies load. Load more and retry controls keep partial failures explicit, and folding a pending branch does not reopen it. The count distinguishes loaded comments from top-level threads. Replies do not regenerate the summary or change its citation capture.
+
+Long discussions use Rune’s variable-height virtual rows: offscreen comment text and controls are not mounted. Keyboard navigation reveals the selected row; this bounds mounted content but is not a claim about measured native scroll performance.

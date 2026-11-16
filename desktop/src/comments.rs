@@ -51,6 +51,12 @@ pub const DIMMED: f32 = 0.35;
 /// captured comment, so nothing is lost, only shortened where it is drawn.
 pub const MAX_TEXT: usize = 2000;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BranchStatus {
+    Ready,
+    Failed { ids: Vec<i32>, message: String },
+}
+
 /// One comment in the thread.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Node {
@@ -63,6 +69,8 @@ pub struct Node {
     /// The replies this capture holds, in HN's order. A reply the capture does not hold is not
     /// here, so a row never claims a thread it cannot show.
     pub children: Vec<i32>,
+    pub known_children: Vec<i32>,
+    pub branch: BranchStatus,
 }
 
 /// One visible row: a comment and the depth it draws at.
@@ -97,8 +105,9 @@ impl Thread {
     /// from the capture is a root rather than a lost row. The cursor starts on the first row, so
     /// `j` has somewhere to move from the moment the discussion lands.
     pub fn from_comments(comments: &[Comment]) -> Thread {
+        let mut seen = HashSet::new();
         let mut nodes: Vec<Node> = comments
-            .iter()
+            .iter().filter(|comment| seen.insert(comment.id))
             .map(|comment| Node {
                 id: comment.id,
                 author: comment.author.clone(),
@@ -107,6 +116,8 @@ impl Thread {
                 links: comment.links.clone(),
                 parent: None,
                 children: Vec::new(),
+                known_children: comment.child_ids.clone(),
+                branch: BranchStatus::Ready,
             })
             .collect();
         let index: HashMap<i32, usize> = nodes
@@ -116,7 +127,7 @@ impl Thread {
             .collect();
         for at in 0..nodes.len() {
             let parent = nodes[at].id;
-            for child in &comments[at].child_ids {
+            for child in &nodes[at].known_children.clone() {
                 if let Some(&child_at) = index.get(child) {
                     nodes[child_at].parent = Some(parent);
                     nodes[at].children.push(*child);
@@ -139,6 +150,36 @@ impl Thread {
         };
         thread.cursor = thread.rows().first().map(|row| row.id);
         thread
+    }
+
+    pub fn has_children(&self, id: i32) -> bool {
+        self.node(id).is_some_and(|node| !node.known_children.is_empty())
+    }
+
+    pub fn reply_batch(&self, id: i32, retry: bool) -> Vec<i32> {
+        let Some(node) = self.node(id) else { return Vec::new(); };
+        let failed = match &node.branch { BranchStatus::Ready => &[][..], BranchStatus::Failed { ids, .. } => ids };
+        node.known_children.iter().filter(|id| !self.index.contains_key(id)
+            && if retry { failed.contains(id) } else { !failed.contains(id) }).take(50).copied().collect()
+    }
+
+    pub fn merge_replies(&mut self, parent: i32, requested: &[i32], result: Result<Vec<Comment>, String>) {
+        let Some(&at) = self.index.get(&parent) else { return; };
+        let previous = match &self.nodes[at].branch { BranchStatus::Ready => Vec::new(), BranchStatus::Failed { ids, .. } => ids.clone() };
+        let (comments, error) = match result { Ok(comments) => (comments, None), Err(message) => (Vec::new(), Some(message)) };
+        for mut node in Thread::from_comments(&comments).nodes {
+            if self.index.contains_key(&node.id) { continue; }
+            node.parent = Some(parent);
+            self.index.insert(node.id, self.nodes.len());
+            self.nodes.push(node);
+        }
+        let known = self.nodes[at].known_children.clone();
+        self.nodes[at].children = known.iter().filter(|id| self.index.contains_key(id)).copied().collect();
+        let failed: Vec<_> = known.into_iter().filter(|id| !self.index.contains_key(id)
+            && (previous.contains(id) || requested.contains(id))).collect();
+        self.nodes[at].branch = if failed.is_empty() { BranchStatus::Ready } else {
+            BranchStatus::Failed { message: error.unwrap_or_else(|| format!("{} replies unavailable", failed.len())), ids: failed }
+        };
     }
 
     /// How many comments the capture holds.
@@ -239,7 +280,7 @@ impl Thread {
     }
 
     fn capped_at(&self, id: i32, depth: u32) -> bool {
-        depth + 1 >= MAX_DEPTH && !self.children_of(id).is_empty()
+        depth + 1 >= MAX_DEPTH && self.has_children(id)
     }
 
     /// How many rows a fold at `id` takes off screen: its replies as they would draw unfolded,
@@ -442,7 +483,7 @@ impl Thread {
         let Some(cursor) = self.cursor else {
             return false;
         };
-        if self.children_of(cursor).is_empty() || self.capped(cursor) {
+        if !self.has_children(cursor) || self.capped(cursor) {
             return false;
         }
         self.folded.insert(cursor)
@@ -523,7 +564,7 @@ impl Thread {
             .unwrap_or_default()
     }
 
-    fn tree_depth(&self, id: i32) -> Option<u32> {
+    pub fn tree_depth(&self, id: i32) -> Option<u32> {
         let mut depth = 0;
         let mut at = id;
         if !self.index.contains_key(&id) {
@@ -574,6 +615,30 @@ mod tests {
 
     fn depths(rows: &[Row]) -> Vec<u32> {
         rows.iter().map(|row| row.depth).collect()
+    }
+
+    #[test]
+    fn bounded_batches_preserve_order_and_failed_ids_do_not_block_unattempted_replies() {
+        let mut root = crate::fixtures::comments().remove(0);
+        root.child_ids = (1000..1123).collect();
+        let mut thread = Thread::from_comments(&[root.clone(), root.clone()]);
+        assert_eq!(thread.roots(), 1, "duplicate IDs never become duplicate rows");
+        assert!(thread.has_children(root.id));
+        let first = thread.reply_batch(root.id, false);
+        assert_eq!(first, (1000..1050).collect::<Vec<_>>());
+        let comments: Vec<_> = first.iter().skip(1).map(|id| { let mut c = root.clone(); c.id = *id; c.depth = 1; c.child_ids.clear(); c }).collect();
+        thread.merge_replies(root.id, &first, Ok(comments));
+        assert_eq!(thread.reply_batch(root.id, true), vec![1000]);
+        let second = thread.reply_batch(root.id, false);
+        assert_eq!(second, (1050..1100).collect::<Vec<_>>());
+        thread.merge_replies(root.id, &second, Err("Offline".into()));
+        assert_eq!(thread.reply_batch(root.id, false), (1100..1123).collect::<Vec<_>>());
+        let mut recovered = root.clone(); recovered.id = 1000; recovered.child_ids.clear(); recovered.depth = 1;
+        thread.merge_replies(root.id, &[1000], Ok(vec![recovered]));
+        assert_eq!(thread.children_of(root.id)[0], 1000, "retries restore API order");
+        assert_eq!(thread.reply_batch(root.id, true), second);
+        assert_eq!(thread.roots(), 1);
+        assert_eq!(thread.len(), 51);
     }
 
     #[test]

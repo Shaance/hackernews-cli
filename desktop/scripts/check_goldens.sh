@@ -456,7 +456,7 @@ for name in story comments summary-generating; do
   # and the header counts the capture and the story's threads rather than the rows on screen.
   deep=$(q '[.elements[] | select((.key // "") | test("^comment-[0-9]+$")) | select(.level > 1)] | length')
   count=$(q '[.elements[] | select((.key // "") == "discussion-count") | .text][0] // ""')
-  if [ "$deep" -ge 1 ] && [ "$count" = "17 comments · 5 top-level" ]; then
+  if [ "$deep" -ge 1 ] && [ "$count" = "17 comments loaded · 5 top-level" ]; then
     pass "$name discussion (tree, $deep rows below the top level, '$count')"
   else
     bad "$name discussion ($deep rows below the top level, count '$count')"
