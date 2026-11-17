@@ -19,21 +19,98 @@
 //! build.
 
 #[cfg(target_os = "macos")]
-pub use macos::{close, create, ready, set_bounds, set_visible, set_waker};
+pub use macos::{close, create, ready, set_bounds, set_visible, set_waker, take_back};
 
 #[cfg(not(target_os = "macos"))]
-pub use stub::{close, create, ready, set_bounds, set_visible, set_waker};
+pub use stub::{close, create, ready, set_bounds, set_visible, set_waker, take_back};
 
 #[cfg(target_os = "macos")]
 mod macos {
     use std::cell::{Cell, RefCell};
+    use std::ptr::NonNull;
     use std::rc::Rc;
 
+    use block2::RcBlock;
+    use objc2::{MainThreadMarker, rc::Retained, runtime::AnyObject};
+    use objc2_app_kit::{NSEvent, NSEventMask, NSEventType};
     use rune::{Waker, WindowHandle};
     use wry::dpi::{LogicalPosition, LogicalSize};
-    use wry::{PageLoadEvent, Rect, WebView, WebViewBuilder};
+    use wry::{PageLoadEvent, Rect, WebView, WebViewBuilder, WebViewExtMacOS};
+
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    enum BackPress { Idle, Held, Cancelled }
+
+    /// The monitor belongs to one child and is removed before that child's webview is dropped.
+    struct BackMonitor {
+        token: Retained<AnyObject>,
+        press: Rc<Cell<BackPress>>,
+        pending: Rc<Cell<bool>>,
+    }
+
+    impl BackMonitor {
+        fn new(view: &WebView, waker: Option<Waker>) -> Result<Self, String> {
+            let mtm = MainThreadMarker::new().ok_or("webview monitor must run on the main thread")?;
+            let view = view.webview();
+            let window = view.window().ok_or("webview has no window")?;
+            let press = Rc::new(Cell::new(BackPress::Idle));
+            let pending = Rc::new(Cell::new(false));
+            let on_press = Rc::clone(&press);
+            let on_pending = Rc::clone(&pending);
+            let block = RcBlock::new(move |ptr: NonNull<NSEvent>| -> *mut NSEvent {
+                // AppKit invokes this local monitor on the main thread before dispatch.
+                let event = unsafe { ptr.as_ref() };
+                if event.buttonNumber() != 3 { return ptr.as_ptr(); }
+                let same_window = event.window(mtm).is_some_and(|event_window| std::ptr::eq(&*event_window, &*window));
+                if !same_window {
+                    if event.r#type() == NSEventType::OtherMouseUp { on_press.set(BackPress::Idle); }
+                    return ptr.as_ptr();
+                }
+                if event.r#type() == NSEventType::OtherMouseDown {
+                    let point = view.convertPoint_fromView(event.locationInWindow(), None);
+                    let bounds = view.bounds();
+                    let inside = point.x >= bounds.origin.x && point.y >= bounds.origin.y
+                        && point.x < bounds.origin.x + bounds.size.width && point.y < bounds.origin.y + bounds.size.height;
+                    if !view.isHiddenOrHasHiddenAncestor() && inside {
+                        on_press.set(BackPress::Held);
+                        return std::ptr::null_mut();
+                    }
+                    on_press.set(BackPress::Idle);
+                } else if event.r#type() == NSEventType::OtherMouseUp {
+                    let held = on_press.replace(BackPress::Idle);
+                    if held != BackPress::Idle {
+                        if held == BackPress::Held && !view.isHiddenOrHasHiddenAncestor() {
+                            on_pending.set(true);
+                            if let Some(waker) = &waker { waker(); }
+                        }
+                        return std::ptr::null_mut();
+                    }
+                } else if event.r#type() == NSEventType::OtherMouseDragged && on_press.get() != BackPress::Idle {
+                    return std::ptr::null_mut();
+                }
+                ptr.as_ptr()
+            });
+            let mask = NSEventMask::OtherMouseDown | NSEventMask::OtherMouseDragged | NSEventMask::OtherMouseUp;
+            // The block returns the original event or null and is retained by AppKit until removal.
+            let token = unsafe { NSEvent::addLocalMonitorForEventsMatchingMask_handler(mask, &block) }
+                .ok_or("could not install webview mouse monitor")?;
+            Ok(Self { token, press, pending })
+        }
+
+        fn hide(&self) {
+            self.pending.set(false);
+            if self.press.get() == BackPress::Held { self.press.set(BackPress::Cancelled); }
+        }
+    }
+
+    impl Drop for BackMonitor {
+        fn drop(&mut self) {
+            // This token was returned by addLocalMonitor and is removed exactly once.
+            unsafe { NSEvent::removeMonitor(&self.token); }
+        }
+    }
 
     struct Child {
+        monitor: BackMonitor,
         view: WebView,
         ready: Rc<Cell<bool>>,
     }
@@ -68,6 +145,7 @@ mod macos {
         let ready = Rc::new(Cell::new(false));
         let committed = Rc::clone(&ready);
         let waker = WAKER.with(|slot| slot.borrow().clone());
+        let mouse_waker = waker.clone();
         window.with_raw_handle(|raw| {
             let webview = WebViewBuilder::new()
                 .with_bounds(rect(bounds))
@@ -84,9 +162,9 @@ mod macos {
                 })
                 .build_as_child(&raw)
                 .map_err(|error| error.to_string())?;
-            CHILD.with(|slot| {
-                *slot.borrow_mut() = Some(Child { view: webview, ready });
-            });
+            let monitor = BackMonitor::new(&webview, mouse_waker)?;
+            let old = CHILD.with(|slot| slot.borrow_mut().replace(Child { monitor, view: webview, ready }));
+            drop(old);
             Ok(())
         })?
     }
@@ -108,6 +186,7 @@ mod macos {
     pub fn set_visible(visible: bool) {
         CHILD.with(|slot| {
             if let Some(webview) = slot.borrow().as_ref() {
+                if !visible { webview.monitor.hide(); }
                 let _ = webview.view.set_visible(visible);
             }
         });
@@ -121,11 +200,14 @@ mod macos {
         CHILD.with(|slot| slot.borrow().as_ref().is_some_and(|child| child.ready.get()))
     }
 
+    pub fn take_back() -> bool {
+        CHILD.with(|slot| slot.borrow().as_ref().is_some_and(|child| child.monitor.pending.replace(false)))
+    }
+
     /// Drop the child. `WKWebView` deallocates on this thread, which is the one that made it.
     pub fn close() {
-        CHILD.with(|slot| {
-            slot.borrow_mut().take();
-        });
+        let child = CHILD.with(|slot| slot.borrow_mut().take());
+        drop(child);
     }
 }
 
@@ -145,6 +227,8 @@ mod stub {
     pub fn set_waker(_waker: Waker) {}
 
     pub fn ready() -> bool { false }
+
+    pub fn take_back() -> bool { false }
 
     pub fn close() {}
 }

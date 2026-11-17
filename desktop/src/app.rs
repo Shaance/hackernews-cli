@@ -861,6 +861,7 @@ fn setup(s: &mut App, waker: Waker) {
 
 fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
     let mut changed = false;
+    if webview::take_back() { changed |= s.story_back(tx); }
     let mut feed_arrived = false;
     let mut summary_arrived = false;
     let mut replies_arrived = false;

@@ -103,9 +103,9 @@ citation and `Enter` opens its captured comment alongside the supporting summary
 current branch or its nearest open parent, and Page Up/Down scrolls. In a source, `Tab` and
 `Shift+Tab` switch citations and `Esc` returns to the same discussion position. Focus mode
 starts on and `f` toggles it; moving the pointer over a comment selects it while focus is on.
-The footer's Back control follows the same path, as does a mouse Back button over the app chrome
-or discussion. Passive shortcut hints dim with pointer use and return with keyboard navigation;
-the Back and browser actions remain visible.
+The footer's Back control follows the same path, as does a mouse Back button over the app chrome,
+discussion, and native article pane on macOS. Passive shortcut hints dim with pointer use and
+return with keyboard navigation; the Back and browser actions remain visible.
 `Shift+L` lists links in the post and selected comment, or says when there are none. These
 shortcuts work when the app chrome or discussion has focus; the live page retains its own
 keyboard while focused.
