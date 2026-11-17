@@ -1,5 +1,5 @@
 [
-  { "t": 0.05, "type": "click", "key": "item1" },
-  { "t": 0.15, "type": "click", "x": 486, "y": 487.5 },
+  { "t": 0.05, "type": "click", "key": "settings-providers/segment1" },
+  { "t": 0.15, "type": "click", "key": "settings-quality/segment1" },
   { "t": 0.25, "type": "mark", "name": "picked" }
 ]

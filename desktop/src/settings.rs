@@ -13,7 +13,7 @@ use std::path::PathBuf;
 use hn_lib::reader::{self, Config, Profile, Provider};
 use rune::tok::{self, type_};
 use rune::{Color, El, ScrollSpec, TextEdit, col, el, row, text};
-use rune_kit::{Button, ButtonVariant, Dialog, Kit, RadioGroup, RadioItem, SegmentedControl, Switch, TextInput};
+use rune_kit::{Button, ButtonVariant, Dialog, Kit, SegmentedControl, Switch, TextInput};
 
 /// The dialog's draft state, and the path `Apply` writes.
 pub struct Settings {
@@ -137,26 +137,24 @@ impl Settings {
     /// The dialog, in the overlay layer. `open` is the app's flag; `on_close` is what `Esc`,
     /// the close button and a click outside all run.
     pub fn view(&self, k: &Kit, t: tok::Theme, accent: Color, open: bool, layer: &mut Vec<El>) {
+        let mut kit = k.clone();
+        kit.c.bg_accent = accent;
+        kit.c.border_focus = accent;
+        let k = &kit;
         let provider = self.draft.provider;
-        let providers = RadioGroup::new()
-            .label("Provider")
-            .item(
-                RadioItem::new(Provider::OpenRouter.label(), provider == Provider::OpenRouter)
-                    .on_select(|s: &mut crate::app::App| {
-                        if let Some(settings) = s.settings_mut() {
-                            settings.set_provider(Provider::OpenRouter);
-                        }
-                    }),
-            )
-            .item(
-                RadioItem::new(Provider::Anthropic.label(), provider == Provider::Anthropic)
-                    .on_select(|s: &mut crate::app::App| {
-                        if let Some(settings) = s.settings_mut() {
-                            settings.set_provider(Provider::Anthropic);
-                        }
-                    }),
-            )
-            .build(k);
+        let providers = SegmentedControl::new(
+            &[Provider::OpenRouter.label(), Provider::Anthropic.label()],
+            Some(if provider == Provider::OpenRouter { 0 } else { 1 }),
+        )
+        .label("Provider")
+        .fit()
+        .on_pick(|s: &mut crate::app::App, picked: usize, _tx: &mut rune::Tx| {
+            if let Some(settings) = s.settings_mut() {
+                settings.set_provider(if picked == 0 { Provider::OpenRouter } else { Provider::Anthropic });
+            }
+        })
+        .build(k)
+        .key("settings-providers");
 
         let key_label = format!("{} key", provider.label());
         let key = TextInput::new(&self.key)
@@ -169,6 +167,7 @@ impl Settings {
 
         let automatic = Switch::new(self.draft.automatic)
             .label("Automatic summaries")
+            .hide_label()
             .on_toggle(|s: &mut crate::app::App| {
                 if let Some(settings) = s.settings_mut() {
                     settings.toggle_automatic();
@@ -180,7 +179,7 @@ impl Settings {
             &[Profile::Fast.label(), Profile::Thorough.label()],
             Some(if self.draft.profile == Profile::Fast { 0 } else { 1 }),
         )
-        .label("Profile")
+        .label("Summary quality")
         .fit()
         .on_pick(|s: &mut crate::app::App, picked: usize, _tx: &mut rune::Tx| {
             if let Some(settings) = s.settings_mut() {
@@ -191,39 +190,43 @@ impl Settings {
                 });
             }
         })
-        .build(k);
+        .build(k)
+        .key("settings-quality");
 
         let mut body = col()
             .key("settings-fields")
             .w_full()
-            .gap(16.0)
-            .child(providers)
+            .gap(20.0)
             .child(
                 col()
                     .key("settings-key")
                     .w_full()
-                    .gap(6.0)
+                    .gap(8.0)
+                    .child(text("Provider").font(type_::LABEL).color(t.text_secondary).a11y_hidden())
+                    .child(row().child(providers))
                     .child(
                         text(key_label)
                             .font(type_::LABEL)
-                            .color(t.text_secondary),
-                    )
-                    .child(key)
-                    .child(
-                        text("Masked. Delete clears it; the environment is the fallback.")
-                            .font(type_::LABEL)
                             .color(t.text_secondary)
-                            .wrap(),
-                    ),
+                            .a11y_hidden(),
+                    )
+                    .child(key),
             )
             .child(
                 col()
                     .key("settings-automatic")
                     .w_full()
                     .gap(6.0)
-                    .child(automatic)
                     .child(
-                        text("Off stops new automatic requests. Submitted work can finish.")
+                        row()
+                            .w_full()
+                            .center_y()
+                            .justify_between()
+                            .child(text("Automatic summaries").font(type_::BODY).color(t.text).a11y_hidden())
+                            .child(automatic),
+                    )
+                    .child(
+                        text("Summarize stories on first open.")
                             .font(type_::LABEL)
                             .color(t.text_secondary)
                             .wrap(),
@@ -233,7 +236,8 @@ impl Settings {
                 col()
                     .key("settings-profile")
                     .w_full()
-                    .gap(6.0)
+                    .gap(8.0)
+                    .child(text("Summary quality").font(type_::LABEL).color(t.text_secondary).a11y_hidden())
                     .child(
                         row()
                             .w_full()
@@ -248,12 +252,6 @@ impl Settings {
                                     .wrap_anywhere()
                                     .shrink(),
                             ),
-                    )
-                    .child(
-                        text("Fast is a quick overview; Thorough reads more of the discussion.")
-                            .font(type_::LABEL)
-                            .color(t.text_secondary)
-                            .wrap(),
                     ),
             );
         if self.reenter {
@@ -284,7 +282,7 @@ impl Settings {
                 .center_y()
                 .child(
                     Button::new("Regenerate summary")
-                        .variant(ButtonVariant::Neutral)
+                        .variant(ButtonVariant::GhostMuted)
                         .on_press(|s: &mut crate::app::App| s.apply_settings(true))
                         .build(k),
                 )
