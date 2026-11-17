@@ -224,7 +224,7 @@
                                           8.0,
                                           48.0,
                                           1164.0,
-                                          656.5
+                                          652.0
                                         ],
                                         "children": [
                                           {
@@ -233,7 +233,7 @@
                                             ],
                                             "bounds": [
                                               8.0,
-                                              60.5,
+                                              56.0,
                                               1164.0,
                                               56.0
                                             ],
@@ -246,7 +246,7 @@
                                                 ],
                                                 "bounds": [
                                                   8.0,
-                                                  60.5,
+                                                  56.0,
                                                   1164.0,
                                                   56.0
                                                 ],
@@ -257,7 +257,7 @@
                                                     ],
                                                     "bounds": [
                                                       49.0,
-                                                      81.0,
+                                                      76.5,
                                                       5.0,
                                                       15.0
                                                     ],
@@ -271,7 +271,7 @@
                                                     ],
                                                     "bounds": [
                                                       60.0,
-                                                      85.5,
+                                                      81.0,
                                                       6.0,
                                                       6.0
                                                     ],
@@ -288,7 +288,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      70.9,
+                                                      66.4,
                                                       1080.0,
                                                       16.3
                                                     ],
@@ -302,7 +302,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      91.1,
+                                                      86.6,
                                                       1080.0,
                                                       15.0
                                                     ],
@@ -327,7 +327,7 @@
                                             ],
                                             "bounds": [
                                               8.0,
-                                              118.5,
+                                              114.0,
                                               1164.0,
                                               56.0
                                             ],
@@ -340,7 +340,7 @@
                                                 ],
                                                 "bounds": [
                                                   8.0,
-                                                  118.5,
+                                                  114.0,
                                                   1164.0,
                                                   56.0
                                                 ],
@@ -351,7 +351,7 @@
                                                     ],
                                                     "bounds": [
                                                       46.6,
-                                                      139.0,
+                                                      134.5,
                                                       7.4,
                                                       15.0
                                                     ],
@@ -365,7 +365,7 @@
                                                     ],
                                                     "bounds": [
                                                       60.0,
-                                                      143.5,
+                                                      139.0,
                                                       6.0,
                                                       6.0
                                                     ],
@@ -382,7 +382,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      128.9,
+                                                      124.4,
                                                       1080.0,
                                                       16.3
                                                     ],
@@ -396,7 +396,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      149.1,
+                                                      144.6,
                                                       1080.0,
                                                       15.0
                                                     ],
@@ -418,7 +418,7 @@
                                             ],
                                             "bounds": [
                                               8.0,
-                                              176.5,
+                                              172.0,
                                               1164.0,
                                               56.0
                                             ],
@@ -431,7 +431,7 @@
                                                 ],
                                                 "bounds": [
                                                   8.0,
-                                                  176.5,
+                                                  172.0,
                                                   1164.0,
                                                   56.0
                                                 ],
@@ -442,7 +442,7 @@
                                                     ],
                                                     "bounds": [
                                                       46.5,
-                                                      197.0,
+                                                      192.5,
                                                       7.5,
                                                       15.0
                                                     ],
@@ -456,7 +456,7 @@
                                                     ],
                                                     "bounds": [
                                                       60.0,
-                                                      201.5,
+                                                      197.0,
                                                       6.0,
                                                       6.0
                                                     ],
@@ -469,7 +469,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      186.9,
+                                                      182.4,
                                                       1080.0,
                                                       16.3
                                                     ],
@@ -483,7 +483,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      207.1,
+                                                      202.6,
                                                       1080.0,
                                                       15.0
                                                     ],
@@ -505,7 +505,7 @@
                                             ],
                                             "bounds": [
                                               8.0,
-                                              234.5,
+                                              230.0,
                                               1164.0,
                                               56.0
                                             ],
@@ -518,7 +518,7 @@
                                                 ],
                                                 "bounds": [
                                                   8.0,
-                                                  234.5,
+                                                  230.0,
                                                   1164.0,
                                                   56.0
                                                 ],
@@ -529,7 +529,7 @@
                                                     ],
                                                     "bounds": [
                                                       46.1,
-                                                      255.0,
+                                                      250.5,
                                                       7.9,
                                                       15.0
                                                     ],
@@ -543,7 +543,7 @@
                                                     ],
                                                     "bounds": [
                                                       60.0,
-                                                      259.5,
+                                                      255.0,
                                                       6.0,
                                                       6.0
                                                     ],
@@ -556,7 +556,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      244.9,
+                                                      240.4,
                                                       1080.0,
                                                       16.3
                                                     ],
@@ -570,7 +570,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      265.1,
+                                                      260.6,
                                                       1080.0,
                                                       15.0
                                                     ],
@@ -592,7 +592,7 @@
                                             ],
                                             "bounds": [
                                               8.0,
-                                              292.5,
+                                              288.0,
                                               1164.0,
                                               56.0
                                             ],
@@ -605,7 +605,7 @@
                                                 ],
                                                 "bounds": [
                                                   8.0,
-                                                  292.5,
+                                                  288.0,
                                                   1164.0,
                                                   56.0
                                                 ],
@@ -616,7 +616,7 @@
                                                     ],
                                                     "bounds": [
                                                       46.8,
-                                                      313.0,
+                                                      308.5,
                                                       7.3,
                                                       15.0
                                                     ],
@@ -630,7 +630,7 @@
                                                     ],
                                                     "bounds": [
                                                       60.0,
-                                                      317.5,
+                                                      313.0,
                                                       6.0,
                                                       6.0
                                                     ],
@@ -643,7 +643,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      302.9,
+                                                      298.4,
                                                       1080.0,
                                                       16.3
                                                     ],
@@ -657,7 +657,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      323.1,
+                                                      318.6,
                                                       1080.0,
                                                       15.0
                                                     ],
@@ -679,7 +679,7 @@
                                             ],
                                             "bounds": [
                                               8.0,
-                                              350.5,
+                                              346.0,
                                               1164.0,
                                               56.0
                                             ],
@@ -692,7 +692,7 @@
                                                 ],
                                                 "bounds": [
                                                   8.0,
-                                                  350.5,
+                                                  346.0,
                                                   1164.0,
                                                   56.0
                                                 ],
@@ -703,7 +703,7 @@
                                                     ],
                                                     "bounds": [
                                                       46.4,
-                                                      371.0,
+                                                      366.5,
                                                       7.6,
                                                       15.0
                                                     ],
@@ -717,7 +717,7 @@
                                                     ],
                                                     "bounds": [
                                                       60.0,
-                                                      375.5,
+                                                      371.0,
                                                       6.0,
                                                       6.0
                                                     ],
@@ -734,7 +734,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      360.9,
+                                                      356.4,
                                                       1080.0,
                                                       16.3
                                                     ],
@@ -748,7 +748,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      381.1,
+                                                      376.6,
                                                       1080.0,
                                                       15.0
                                                     ],
@@ -770,7 +770,7 @@
                                             ],
                                             "bounds": [
                                               8.0,
-                                              408.5,
+                                              404.0,
                                               1164.0,
                                               56.0
                                             ],
@@ -783,7 +783,7 @@
                                                 ],
                                                 "bounds": [
                                                   8.0,
-                                                  408.5,
+                                                  404.0,
                                                   1164.0,
                                                   56.0
                                                 ],
@@ -794,7 +794,7 @@
                                                     ],
                                                     "bounds": [
                                                       47.2,
-                                                      429.0,
+                                                      424.5,
                                                       6.9,
                                                       15.0
                                                     ],
@@ -808,7 +808,7 @@
                                                     ],
                                                     "bounds": [
                                                       60.0,
-                                                      433.5,
+                                                      429.0,
                                                       6.0,
                                                       6.0
                                                     ],
@@ -821,7 +821,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      418.9,
+                                                      414.4,
                                                       1080.0,
                                                       16.3
                                                     ],
@@ -835,7 +835,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      439.1,
+                                                      434.6,
                                                       1080.0,
                                                       15.0
                                                     ],
@@ -857,7 +857,7 @@
                                             ],
                                             "bounds": [
                                               8.0,
-                                              466.5,
+                                              462.0,
                                               1164.0,
                                               56.0
                                             ],
@@ -870,7 +870,7 @@
                                                 ],
                                                 "bounds": [
                                                   8.0,
-                                                  466.5,
+                                                  462.0,
                                                   1164.0,
                                                   56.0
                                                 ],
@@ -881,7 +881,7 @@
                                                     ],
                                                     "bounds": [
                                                       46.4,
-                                                      487.0,
+                                                      482.5,
                                                       7.6,
                                                       15.0
                                                     ],
@@ -895,7 +895,7 @@
                                                     ],
                                                     "bounds": [
                                                       60.0,
-                                                      491.5,
+                                                      487.0,
                                                       6.0,
                                                       6.0
                                                     ],
@@ -908,7 +908,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      476.9,
+                                                      472.4,
                                                       1080.0,
                                                       16.3
                                                     ],
@@ -922,7 +922,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      497.1,
+                                                      492.6,
                                                       1080.0,
                                                       15.0
                                                     ],
@@ -944,7 +944,7 @@
                                             ],
                                             "bounds": [
                                               8.0,
-                                              524.5,
+                                              520.0,
                                               1164.0,
                                               56.0
                                             ],
@@ -957,7 +957,7 @@
                                                 ],
                                                 "bounds": [
                                                   8.0,
-                                                  524.5,
+                                                  520.0,
                                                   1164.0,
                                                   56.0
                                                 ],
@@ -968,7 +968,7 @@
                                                     ],
                                                     "bounds": [
                                                       46.4,
-                                                      545.0,
+                                                      540.5,
                                                       7.6,
                                                       15.0
                                                     ],
@@ -982,7 +982,7 @@
                                                     ],
                                                     "bounds": [
                                                       60.0,
-                                                      549.5,
+                                                      545.0,
                                                       6.0,
                                                       6.0
                                                     ],
@@ -995,7 +995,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      534.9,
+                                                      530.4,
                                                       1080.0,
                                                       16.3
                                                     ],
@@ -1009,7 +1009,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      555.1,
+                                                      550.6,
                                                       1080.0,
                                                       15.0
                                                     ],
@@ -1031,7 +1031,7 @@
                                             ],
                                             "bounds": [
                                               8.0,
-                                              582.5,
+                                              578.0,
                                               1164.0,
                                               56.0
                                             ],
@@ -1044,7 +1044,7 @@
                                                 ],
                                                 "bounds": [
                                                   8.0,
-                                                  582.5,
+                                                  578.0,
                                                   1164.0,
                                                   56.0
                                                 ],
@@ -1055,7 +1055,7 @@
                                                     ],
                                                     "bounds": [
                                                       41.3,
-                                                      603.0,
+                                                      598.5,
                                                       12.7,
                                                       15.0
                                                     ],
@@ -1069,7 +1069,7 @@
                                                     ],
                                                     "bounds": [
                                                       60.0,
-                                                      607.5,
+                                                      603.0,
                                                       6.0,
                                                       6.0
                                                     ],
@@ -1082,7 +1082,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      592.9,
+                                                      588.4,
                                                       1080.0,
                                                       16.3
                                                     ],
@@ -1096,7 +1096,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      613.1,
+                                                      608.6,
                                                       1080.0,
                                                       15.0
                                                     ],
@@ -1118,7 +1118,7 @@
                                             ],
                                             "bounds": [
                                               8.0,
-                                              640.5,
+                                              636.0,
                                               1164.0,
                                               56.0
                                             ],
@@ -1131,7 +1131,7 @@
                                                 ],
                                                 "bounds": [
                                                   8.0,
-                                                  640.5,
+                                                  636.0,
                                                   1164.0,
                                                   56.0
                                                 ],
@@ -1142,7 +1142,7 @@
                                                     ],
                                                     "bounds": [
                                                       44.0,
-                                                      661.0,
+                                                      656.5,
                                                       10.0,
                                                       15.0
                                                     ],
@@ -1156,7 +1156,7 @@
                                                     ],
                                                     "bounds": [
                                                       60.0,
-                                                      665.5,
+                                                      661.0,
                                                       6.0,
                                                       6.0
                                                     ],
@@ -1173,7 +1173,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      650.9,
+                                                      646.4,
                                                       1080.0,
                                                       16.3
                                                     ],
@@ -1187,7 +1187,7 @@
                                                     ],
                                                     "bounds": [
                                                       80.0,
-                                                      671.1,
+                                                      666.6,
                                                       1080.0,
                                                       15.0
                                                     ],
@@ -2097,7 +2097,7 @@
         8.0,
         48.0,
         1164.0,
-        656.5
+        652.0
       ],
       "role": "group",
       "scale": 1.0
@@ -2115,7 +2115,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0",
       "rect": [
         8.0,
-        60.5,
+        56.0,
         1164.0,
         56.0
       ],
@@ -2137,7 +2137,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1",
       "rect": [
         8.0,
-        60.5,
+        56.0,
         1164.0,
         56.0
       ],
@@ -2156,7 +2156,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#0",
       "rect": [
         20.0,
-        75.5,
+        71.0,
         2.0,
         26.0
       ],
@@ -2175,7 +2175,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#1",
       "rect": [
         36.0,
-        81.0,
+        76.5,
         30.0,
         15.0
       ],
@@ -2194,7 +2194,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#1/#0",
       "rect": [
         36.0,
-        81.0,
+        76.5,
         18.0,
         15.0
       ],
@@ -2215,7 +2215,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#1/#0/rank-1",
       "rect": [
         49.02,
-        81.0,
+        76.5,
         4.98,
         15.0
       ],
@@ -2237,7 +2237,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#1/saved-dot-1",
       "rect": [
         60.0,
-        85.5,
+        81.0,
         6.0,
         6.0
       ],
@@ -2256,7 +2256,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#2",
       "rect": [
         80.0,
-        70.88,
+        66.38,
         1080.0,
         35.25
       ],
@@ -2277,7 +2277,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#2/title-1",
       "rect": [
         80.0,
-        70.88,
+        66.38,
         1080.0,
         16.25
       ],
@@ -2298,7 +2298,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#2/#1",
       "rect": [
         80.0,
-        91.13,
+        86.63,
         1080.0,
         15.0
       ],
@@ -2319,7 +2319,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1",
       "rect": [
         8.0,
-        118.5,
+        114.0,
         1164.0,
         56.0
       ],
@@ -2340,7 +2340,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2",
       "rect": [
         8.0,
-        118.5,
+        114.0,
         1164.0,
         56.0
       ],
@@ -2359,7 +2359,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#0",
       "rect": [
         20.0,
-        133.5,
+        129.0,
         2.0,
         26.0
       ],
@@ -2378,7 +2378,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#1",
       "rect": [
         36.0,
-        139.0,
+        134.5,
         30.0,
         15.0
       ],
@@ -2397,7 +2397,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#1/#0",
       "rect": [
         36.0,
-        139.0,
+        134.5,
         18.0,
         15.0
       ],
@@ -2418,7 +2418,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#1/#0/rank-2",
       "rect": [
         46.6,
-        139.0,
+        134.5,
         7.4,
         15.0
       ],
@@ -2440,7 +2440,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#1/saved-dot-2",
       "rect": [
         60.0,
-        143.5,
+        139.0,
         6.0,
         6.0
       ],
@@ -2459,7 +2459,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#2",
       "rect": [
         80.0,
-        128.88,
+        124.38,
         1080.0,
         35.25
       ],
@@ -2480,7 +2480,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#2/title-2",
       "rect": [
         80.0,
-        128.88,
+        124.38,
         1080.0,
         16.25
       ],
@@ -2501,7 +2501,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#2/#1",
       "rect": [
         80.0,
-        149.13,
+        144.63,
         1080.0,
         15.0
       ],
@@ -2522,7 +2522,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2",
       "rect": [
         8.0,
-        176.5,
+        172.0,
         1164.0,
         56.0
       ],
@@ -2543,7 +2543,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3",
       "rect": [
         8.0,
-        176.5,
+        172.0,
         1164.0,
         56.0
       ],
@@ -2562,7 +2562,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#0",
       "rect": [
         20.0,
-        191.5,
+        187.0,
         2.0,
         26.0
       ],
@@ -2581,7 +2581,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#1",
       "rect": [
         36.0,
-        197.0,
+        192.5,
         30.0,
         15.0
       ],
@@ -2600,7 +2600,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#1/#0",
       "rect": [
         36.0,
-        197.0,
+        192.5,
         18.0,
         15.0
       ],
@@ -2621,7 +2621,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#1/#0/rank-3",
       "rect": [
         46.48,
-        197.0,
+        192.5,
         7.52,
         15.0
       ],
@@ -2642,7 +2642,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#1/unsaved-dot-3",
       "rect": [
         60.0,
-        201.5,
+        197.0,
         6.0,
         6.0
       ],
@@ -2661,7 +2661,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#2",
       "rect": [
         80.0,
-        186.88,
+        182.38,
         1080.0,
         35.25
       ],
@@ -2682,7 +2682,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#2/title-3",
       "rect": [
         80.0,
-        186.88,
+        182.38,
         1080.0,
         16.25
       ],
@@ -2703,7 +2703,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#2/#1",
       "rect": [
         80.0,
-        207.13,
+        202.63,
         1080.0,
         15.0
       ],
@@ -2724,7 +2724,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3",
       "rect": [
         8.0,
-        234.5,
+        230.0,
         1164.0,
         56.0
       ],
@@ -2745,7 +2745,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4",
       "rect": [
         8.0,
-        234.5,
+        230.0,
         1164.0,
         56.0
       ],
@@ -2764,7 +2764,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#0",
       "rect": [
         20.0,
-        249.5,
+        245.0,
         2.0,
         26.0
       ],
@@ -2783,7 +2783,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#1",
       "rect": [
         36.0,
-        255.0,
+        250.5,
         30.0,
         15.0
       ],
@@ -2802,7 +2802,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#1/#0",
       "rect": [
         36.0,
-        255.0,
+        250.5,
         18.0,
         15.0
       ],
@@ -2823,7 +2823,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#1/#0/rank-4",
       "rect": [
         46.13,
-        255.0,
+        250.5,
         7.88,
         15.0
       ],
@@ -2844,7 +2844,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#1/unsaved-dot-4",
       "rect": [
         60.0,
-        259.5,
+        255.0,
         6.0,
         6.0
       ],
@@ -2863,7 +2863,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#2",
       "rect": [
         80.0,
-        244.88,
+        240.38,
         1080.0,
         35.25
       ],
@@ -2884,7 +2884,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#2/title-4",
       "rect": [
         80.0,
-        244.88,
+        240.38,
         1080.0,
         16.25
       ],
@@ -2905,7 +2905,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#2/#1",
       "rect": [
         80.0,
-        265.13,
+        260.63,
         1080.0,
         15.0
       ],
@@ -2926,7 +2926,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4",
       "rect": [
         8.0,
-        292.5,
+        288.0,
         1164.0,
         56.0
       ],
@@ -2947,7 +2947,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5",
       "rect": [
         8.0,
-        292.5,
+        288.0,
         1164.0,
         56.0
       ],
@@ -2966,7 +2966,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#0",
       "rect": [
         20.0,
-        307.5,
+        303.0,
         2.0,
         26.0
       ],
@@ -2985,7 +2985,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#1",
       "rect": [
         36.0,
-        313.0,
+        308.5,
         30.0,
         15.0
       ],
@@ -3004,7 +3004,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#1/#0",
       "rect": [
         36.0,
-        313.0,
+        308.5,
         18.0,
         15.0
       ],
@@ -3025,7 +3025,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#1/#0/rank-5",
       "rect": [
         46.76,
-        313.0,
+        308.5,
         7.24,
         15.0
       ],
@@ -3046,7 +3046,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#1/unsaved-dot-5",
       "rect": [
         60.0,
-        317.5,
+        313.0,
         6.0,
         6.0
       ],
@@ -3065,7 +3065,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#2",
       "rect": [
         80.0,
-        302.88,
+        298.38,
         1080.0,
         35.25
       ],
@@ -3086,7 +3086,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#2/title-5",
       "rect": [
         80.0,
-        302.88,
+        298.38,
         1080.0,
         16.25
       ],
@@ -3107,7 +3107,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#2/#1",
       "rect": [
         80.0,
-        323.13,
+        318.63,
         1080.0,
         15.0
       ],
@@ -3128,7 +3128,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5",
       "rect": [
         8.0,
-        350.5,
+        346.0,
         1164.0,
         56.0
       ],
@@ -3149,7 +3149,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6",
       "rect": [
         8.0,
-        350.5,
+        346.0,
         1164.0,
         56.0
       ],
@@ -3168,7 +3168,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#0",
       "rect": [
         20.0,
-        365.5,
+        361.0,
         2.0,
         26.0
       ],
@@ -3187,7 +3187,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#1",
       "rect": [
         36.0,
-        371.0,
+        366.5,
         30.0,
         15.0
       ],
@@ -3206,7 +3206,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#1/#0",
       "rect": [
         36.0,
-        371.0,
+        366.5,
         18.0,
         15.0
       ],
@@ -3227,7 +3227,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#1/#0/rank-6",
       "rect": [
         46.44,
-        371.0,
+        366.5,
         7.56,
         15.0
       ],
@@ -3249,7 +3249,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#1/saved-dot-6",
       "rect": [
         60.0,
-        375.5,
+        371.0,
         6.0,
         6.0
       ],
@@ -3268,7 +3268,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#2",
       "rect": [
         80.0,
-        360.88,
+        356.38,
         1080.0,
         35.25
       ],
@@ -3289,7 +3289,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#2/title-6",
       "rect": [
         80.0,
-        360.88,
+        356.38,
         1080.0,
         16.25
       ],
@@ -3310,7 +3310,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#2/#1",
       "rect": [
         80.0,
-        381.13,
+        376.63,
         1080.0,
         15.0
       ],
@@ -3331,7 +3331,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6",
       "rect": [
         8.0,
-        408.5,
+        404.0,
         1164.0,
         56.0
       ],
@@ -3352,7 +3352,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7",
       "rect": [
         8.0,
-        408.5,
+        404.0,
         1164.0,
         56.0
       ],
@@ -3371,7 +3371,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#0",
       "rect": [
         20.0,
-        423.5,
+        419.0,
         2.0,
         26.0
       ],
@@ -3390,7 +3390,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#1",
       "rect": [
         36.0,
-        429.0,
+        424.5,
         30.0,
         15.0
       ],
@@ -3409,7 +3409,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#1/#0",
       "rect": [
         36.0,
-        429.0,
+        424.5,
         18.0,
         15.0
       ],
@@ -3430,7 +3430,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#1/#0/rank-7",
       "rect": [
         47.14,
-        429.0,
+        424.5,
         6.86,
         15.0
       ],
@@ -3451,7 +3451,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#1/unsaved-dot-7",
       "rect": [
         60.0,
-        433.5,
+        429.0,
         6.0,
         6.0
       ],
@@ -3470,7 +3470,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#2",
       "rect": [
         80.0,
-        418.88,
+        414.38,
         1080.0,
         35.25
       ],
@@ -3491,7 +3491,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#2/title-7",
       "rect": [
         80.0,
-        418.88,
+        414.38,
         1080.0,
         16.25
       ],
@@ -3512,7 +3512,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#2/#1",
       "rect": [
         80.0,
-        439.13,
+        434.63,
         1080.0,
         15.0
       ],
@@ -3533,7 +3533,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7",
       "rect": [
         8.0,
-        466.5,
+        462.0,
         1164.0,
         56.0
       ],
@@ -3554,7 +3554,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8",
       "rect": [
         8.0,
-        466.5,
+        462.0,
         1164.0,
         56.0
       ],
@@ -3573,7 +3573,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#0",
       "rect": [
         20.0,
-        481.5,
+        477.0,
         2.0,
         26.0
       ],
@@ -3592,7 +3592,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#1",
       "rect": [
         36.0,
-        487.0,
+        482.5,
         30.0,
         15.0
       ],
@@ -3611,7 +3611,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#1/#0",
       "rect": [
         36.0,
-        487.0,
+        482.5,
         18.0,
         15.0
       ],
@@ -3632,7 +3632,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#1/#0/rank-8",
       "rect": [
         46.45,
-        487.0,
+        482.5,
         7.55,
         15.0
       ],
@@ -3653,7 +3653,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#1/unsaved-dot-8",
       "rect": [
         60.0,
-        491.5,
+        487.0,
         6.0,
         6.0
       ],
@@ -3672,7 +3672,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#2",
       "rect": [
         80.0,
-        476.88,
+        472.38,
         1080.0,
         35.25
       ],
@@ -3693,7 +3693,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#2/title-8",
       "rect": [
         80.0,
-        476.88,
+        472.38,
         1080.0,
         16.25
       ],
@@ -3714,7 +3714,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#2/#1",
       "rect": [
         80.0,
-        497.13,
+        492.63,
         1080.0,
         15.0
       ],
@@ -3735,7 +3735,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8",
       "rect": [
         8.0,
-        524.5,
+        520.0,
         1164.0,
         56.0
       ],
@@ -3756,7 +3756,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9",
       "rect": [
         8.0,
-        524.5,
+        520.0,
         1164.0,
         56.0
       ],
@@ -3775,7 +3775,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#0",
       "rect": [
         20.0,
-        539.5,
+        535.0,
         2.0,
         26.0
       ],
@@ -3794,7 +3794,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#1",
       "rect": [
         36.0,
-        545.0,
+        540.5,
         30.0,
         15.0
       ],
@@ -3813,7 +3813,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#1/#0",
       "rect": [
         36.0,
-        545.0,
+        540.5,
         18.0,
         15.0
       ],
@@ -3834,7 +3834,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#1/#0/rank-9",
       "rect": [
         46.44,
-        545.0,
+        540.5,
         7.56,
         15.0
       ],
@@ -3855,7 +3855,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#1/unsaved-dot-9",
       "rect": [
         60.0,
-        549.5,
+        545.0,
         6.0,
         6.0
       ],
@@ -3874,7 +3874,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#2",
       "rect": [
         80.0,
-        534.88,
+        530.38,
         1080.0,
         35.25
       ],
@@ -3895,7 +3895,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#2/title-9",
       "rect": [
         80.0,
-        534.88,
+        530.38,
         1080.0,
         16.25
       ],
@@ -3916,7 +3916,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#2/#1",
       "rect": [
         80.0,
-        555.13,
+        550.63,
         1080.0,
         15.0
       ],
@@ -3937,7 +3937,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9",
       "rect": [
         8.0,
-        582.5,
+        578.0,
         1164.0,
         56.0
       ],
@@ -3958,7 +3958,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10",
       "rect": [
         8.0,
-        582.5,
+        578.0,
         1164.0,
         56.0
       ],
@@ -3977,7 +3977,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#0",
       "rect": [
         20.0,
-        597.5,
+        593.0,
         2.0,
         26.0
       ],
@@ -3996,7 +3996,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#1",
       "rect": [
         36.0,
-        603.0,
+        598.5,
         30.0,
         15.0
       ],
@@ -4015,7 +4015,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#1/#0",
       "rect": [
         36.0,
-        603.0,
+        598.5,
         18.0,
         15.0
       ],
@@ -4036,7 +4036,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#1/#0/rank-10",
       "rect": [
         41.27,
-        603.0,
+        598.5,
         12.73,
         15.0
       ],
@@ -4057,7 +4057,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#1/unsaved-dot-10",
       "rect": [
         60.0,
-        607.5,
+        603.0,
         6.0,
         6.0
       ],
@@ -4076,7 +4076,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#2",
       "rect": [
         80.0,
-        592.88,
+        588.38,
         1080.0,
         35.25
       ],
@@ -4097,7 +4097,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#2/title-10",
       "rect": [
         80.0,
-        592.88,
+        588.38,
         1080.0,
         16.25
       ],
@@ -4118,7 +4118,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#2/#1",
       "rect": [
         80.0,
-        613.13,
+        608.63,
         1080.0,
         15.0
       ],
@@ -4139,7 +4139,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10",
       "rect": [
         8.0,
-        640.5,
+        636.0,
         1164.0,
         56.0
       ],
@@ -4160,7 +4160,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11",
       "rect": [
         8.0,
-        640.5,
+        636.0,
         1164.0,
         56.0
       ],
@@ -4179,7 +4179,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#0",
       "rect": [
         20.0,
-        655.5,
+        651.0,
         2.0,
         26.0
       ],
@@ -4198,7 +4198,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#1",
       "rect": [
         36.0,
-        661.0,
+        656.5,
         30.0,
         15.0
       ],
@@ -4217,7 +4217,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#1/#0",
       "rect": [
         36.0,
-        661.0,
+        656.5,
         18.0,
         15.0
       ],
@@ -4238,7 +4238,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#1/#0/rank-11",
       "rect": [
         44.04,
-        661.0,
+        656.5,
         9.96,
         15.0
       ],
@@ -4260,7 +4260,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#1/saved-dot-11",
       "rect": [
         60.0,
-        665.5,
+        661.0,
         6.0,
         6.0
       ],
@@ -4279,7 +4279,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#2",
       "rect": [
         80.0,
-        650.88,
+        646.38,
         1080.0,
         35.25
       ],
@@ -4300,7 +4300,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#2/title-11",
       "rect": [
         80.0,
-        650.88,
+        646.38,
         1080.0,
         16.25
       ],
@@ -4321,7 +4321,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#2/#1",
       "rect": [
         80.0,
-        671.13,
+        666.63,
         1080.0,
         15.0
       ],

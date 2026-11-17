@@ -101,7 +101,7 @@ access and nothing outside the process can press a key or raise its window:
 | `--open-story <id>` | opens that story once the feed holds it (and says so if the id is not on the page) |
 | `--on-top` | keeps the window above other apps, so a fullscreen capture is of this window |
 
-Keys follow the terminal app with the desktop feed exception below: `j`/`k` move, `1`–`4` switch tabs and return arrow navigation to the feed, `Enter` opens a story,
+Keys follow the terminal app with the desktop feed exceptions below: `j`/`k` move, `1`–`4` switch tabs and return arrow navigation to the feed, `Enter` opens a story,
 `c` opens the discussion, `s` saves, `?` shows the keyboard sheet, `M` (or `⌘,`) opens the summary
 settings, `⌘?` shows the sheet, `⌘\` toggles the inspector, `⌘=` or `⌘+` zooms in,
 `⌘-` zooms out, `⌘0` returns to actual size, and `q` quits. The zoom applies to the whole
@@ -124,7 +124,7 @@ actions remain visible.
 shortcuts work when the app chrome or discussion has focus; the live page retains its own
 keyboard while focused.
 
-Desktop feed navigation uses Left/Right to select the same row in the adjacent column (clamped on a shorter right column). At a column edge they turn the page; in one column they page directly. Forward lands on the first story and backward on the last; known feed ends stay put. Use `n`/`p`, Space, Page Down/Page Up, or the page buttons to change pages. Keyboard selection is instant; pointer selection has a restrained 120 ms color response with fixed text geometry. Completed page changes enter as one group from the navigation direction, 24 pt away and at 0.2 opacity, over about 220 ms. Reduced motion is instant. Discussion arrows retain their existing back/unfold bindings.
+The desktop feed also accepts `M` for summary settings; the terminal feed does not. Desktop feed navigation uses Left/Right to select the same row in the adjacent column (clamped on a shorter right column). At a column edge they turn the page; in one column they page directly. Forward lands on the first story and backward on the last; known feed ends stay put. Use `n`/`p`, Space, Page Down/Page Up, or the page buttons to change pages. Keyboard selection is instant; pointer selection has a restrained 120 ms color response with fixed text geometry. Completed page changes enter as one group from the navigation direction, 24 pt away and at 0.2 opacity, over about 220 ms. Reduced motion is instant. Discussion arrows retain their existing back/unfold bindings.
 
 Moving the pointer over a feed row selects it; clicking the row opens the story. The separate
 Save or Unsave action changes the saved list without opening it.

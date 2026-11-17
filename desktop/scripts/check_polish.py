@@ -234,8 +234,10 @@ def reachable_rows(elements):
             and e["rect"][1] + e["rect"][3] <= viewport[1] + viewport[3] + .01}
 all_rows = {e["path"] for e in top if str(e.get("key", "")).startswith("help-row-")}
 assert len(all_rows) == 50 and reachable_rows(top) | reachable_rows(scrolled) == all_rows
-for fixed in ["close", "help-footer"]:
-    assert one(top, fixed)["rect"] == one(scrolled, fixed)["rect"], fixed
+assert one(top, "close")["rect"] == one(scrolled, "close")["rect"]
+default = capture("help-default", scene="help")
+viewport = one(default, "help-scroll")["rect"]
+assert reachable_rows(default) == all_rows, "every shortcut must fit at the default size"
 resized = capture("help-resized-short", scene="help", at=.9,
                   events=[{"t": .2, "type": "resize", "dw": 0, "dh": -200, "dur": .3}])
 panel = one(resized, "help-dialog")["rect"]

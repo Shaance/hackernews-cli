@@ -115,11 +115,11 @@ window could hold.
 | Window width | < 1200pt | ≥ 1200pt |
 | Order | `i` | `c * rows + r` — column-major: the left column fills first |
 | Scroll | one list | one list, shared by both columns |
-| Page size | 30 | 30 (unchanged — the page is a page, not a screenful) |
+| Page size | one visible column of rows | two visible columns of rows |
 | Divider | none | 1pt hairline, `tok::separator`, full column height |
 
 **Column-major, not row-major.** Story `i` sits at column `i / rowsPerColumn`, row
-`i % rowsPerColumn`, so ranks 1–15 run down the left column and 16–30 down the right. `j` moves
+`i % rowsPerColumn`, so a 14-row screenful places ranks 1–14 on the left and 15–28 on the right. `j` moves
 straight down the column it is in; it never alternates columns on every press. Row-major
 (`r * 2 + c`) was the first pass and it reads as two interleaved lists: the eye tracks one column
 while the cursor zigzags across both. Column-major keeps the cursor and the eye on the same path,
@@ -132,27 +132,21 @@ exactly the one-column feed — no intermediate three-column state, no card grid
 
 ### Fill the grid
 
-A two-column feed that renders one page of 30 into 14 visible rows leaves the right column half
-empty at the bottom: the last row has a story on the left and nothing on the right. So fetch
-enough pages to cover the visible capacity.
+A two-column feed requests enough ranked stories to fill both columns, rather than stopping at
+30 and leaving the right column partly empty.
 
 ```
 visibleCells = visibleRows × columns
-pagesNeeded  = ceil(visibleCells / pageSize)
 ```
 
-| Window | List viewport | Rows | Columns | Visible cells | Pages of 30 |
-| --- | --- | --- | --- | --- | --- |
-| 1180×760 | 656pt | 11 | 1 | 11 | 1 |
-| 1600×900 | 796pt | 14 | 2 | 28 | 1 |
-| 1600×1200 | 1096pt | 19 | 2 | 38 | 2 |
+| Window | List viewport | Rows | Columns | Visible cells |
+| --- | --- | --- | --- | --- |
+| 1180×760 | 656pt | 11 | 1 | 11 |
+| 1600×900 | 796pt | 14 | 2 | 28 |
+| 1600×1200 | 1096pt | 19 | 2 | 38 |
 
-At 1600×900 one page of 30 already covers 28 cells, so the grid is full and the 15th row sits
-just below the fold. At 1600×1200 the same page leaves 8 cells empty, so the app fetches a second
-page and renders 38 of the 60 it holds. One column is the same rule: `ceil(11 / 30) = 1`.
-
-`pages_needed()` in `prototypes/rune-mocks/src/main.rs` is that formula, and the wide mock renders
-30 stories into 15 rows to prove the grid is full. The real app measures the viewport on resize,
+The desktop requests the visible ranked window against a stable ID snapshot and advances by one
+screenful. The stepper counts 30-rank buckets, independently of the screenful size. On resize it
 re-pages when needed to keep the selected story visible, and retains fetched stories in its cache.
 Shrinking never drops a page it already has, so returning to cached stories does not re-fetch.
 

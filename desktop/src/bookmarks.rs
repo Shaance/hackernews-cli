@@ -114,6 +114,10 @@ impl SavedView {
         self.error.as_deref()
     }
 
+    pub fn read_failed(&self) -> bool {
+        !self.loaded
+    }
+
     pub fn store(&self) -> &[HNCLIItem] {
         &self.store
     }

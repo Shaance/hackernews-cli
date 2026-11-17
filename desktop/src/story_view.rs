@@ -118,7 +118,8 @@ fn fallback_banner(reason: Option<&str>, t: tok::Theme) -> El {
         .child(
             text(FALLBACK_BANNER)
                 .font(type_::LABEL)
-                .color(t.text_secondary),
+                .color(t.text_secondary)
+                .truncate(),
         );
     if let Some(reason) = reason {
         banner = banner.child(

@@ -80,6 +80,8 @@ Status: fixed in run A — Feed and discussion keyboard selection land immediate
   and the Summary and Window groups are below the fold with only the edge fade to say so; a visible scroll bar
   (`--scroll-bars` shows Rune can draw one) or a third column at wide sizes would help. Size S.
 
+Status: fixed in run F — Removed the redundant footer; all 50 shortcut rows fit at the default size and remain scrollable in short windows.
+
 ### P2. Help lists two different keys as the same cap "G"
 - Severity: should-fix. Lens: polish. Screen: help. Verified: rendered + code.
 - Evidence: `$A/help-1180-dark.png`, Feed group: "G First story" and "G Last story". `keys.rs:305` is
@@ -87,6 +89,8 @@ Status: fixed in run A — Feed and discussion keyboard selection land immediate
   writes the same key as `["⇧G"]` (`keys.rs:396`) and renders correctly.
 - What the user experiences: an apparent duplicate binding; the reader cannot learn Last story from the sheet.
 - Fix: `keys: &["⇧G"]` for Last story (the `"⇧G"` cap already parses, `keys.rs:836`). Size S.
+
+Status: fixed in run F — The feed help marks Last story as ⇧G.
 
 ### P3. Kit controls draw AppKit-blue focus rings; the design says amber everywhere
 - Severity: should-fix. Lens: polish. Screen: help, settings, any `rune_kit` button. Verified: rendered.
@@ -124,6 +128,8 @@ Status: fixed in run C — Regenerate appears only when settings has an open sto
   computed in `view` from the `window` rect already read at `app.rs:1456` and passed via `PaneState::range`;
   keep the persisted width untouched so `⌘0` restores it. Give the banner `.truncate()`. Size S–M.
 
+Status: partially fixed in run F — The fallback banner truncates; the inspector cap remains open because a visual-only clamp breaks grip dragging.
+
 ### M3. Crossing the 1200 pt breakpoint jumps twice and drops the selected story
 - Severity: should-fix. Lens: motion + polish. Screen: feed, resize or zoom across 1200 pt.
   Verified: rendered (tree samples).
@@ -158,6 +164,8 @@ Status: fixed in run B — Resize and zoom keep the selected story; Saved may cl
 - Fix: keep the fixed `FEED_GUTTER` at the top and put the leftover below the last row; update DESIGN.md's
   page-size column. Size S.
 
+Status: fixed in run F — Feed and loading rows use the fixed top gutter; the design describes screenful paging.
+
 ### P7. `M` does nothing on the feed, though the README and help imply it opens settings
 - Severity: should-fix. Lens: polish (keyboard journey). Screen: feed. Verified: rendered (tree after `M` on
   `feed` has no `settings-*` element; the same key on `story` opens the dialog) + code.
@@ -167,6 +175,8 @@ Status: fixed in run B — Resize and zoom keep the selected story; Saved may cl
 - What the user experiences: a documented key silently does nothing on the first screen.
 - Fix: add `M` to the feed's action table (it already opens the same dialog as `⌘,`), or scope the README line
   and the help row to the story. Binding it is simpler. Size S.
+
+Status: fixed in run F — Plain uppercase M opens summary settings on the feed as an explicitly documented desktop exception.
 
 ### P8. Amber-on-grey chips are 1.6:1 contrast in light mode (continue thread, Reload, Retry, …)
 - Severity: should-fix. Lens: polish (light/dark parity). Screen: comments/thread at the depth cap.
@@ -225,6 +235,8 @@ Status: fixed in run A — The toast clears the measured footer and removal noti
   read. Nothing was changed." with the parser detail in secondary text; add "Reveal in Finder" (`open -R` on
   the path, macOS); hide row-only footer hints when the list is empty; give the toolbar trailing group an 8 pt
   gap. The empty (non-corrupt) state should say how to save ("Press S on a story to save it"). Size S.
+
+Status: fixed in run F — Saved errors distinguish read and write failures, offer recovery, and no longer masquerade as an empty list.
 
 ### P11. Live-page seams that headless renders cannot show (needs live check)
 - Severity: should-fix until checked. Lens: motion + polish. Screen: story split with the WKWebView.

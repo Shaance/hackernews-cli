@@ -59,7 +59,8 @@ pub fn parity_key(ev: &KeyEvent) -> Option<KeyCode> {
     key_code(&ev.key)
 }
 
-/// The feed action through the terminal table, except desktop column arrows.
+/// The feed action through the terminal table, except desktop column arrows. The feed also
+/// intercepts `M` for summary settings in `on_key`; the terminal feed has no such binding.
 pub fn story_action(ev: &KeyEvent) -> StoryAction {
     match parity_key(ev) {
         Some(KeyCode::Left | KeyCode::Right) => StoryAction::None,
@@ -307,7 +308,7 @@ pub const HELP: &[HelpGroup] = &[
                 action: HelpAction::Feed(StoryAction::FirstStory),
             },
             HelpRow {
-                keys: &["G"],
+                keys: &["⇧G"],
                 label: "Last story",
                 action: HelpAction::Feed(StoryAction::LastStory),
             },
@@ -615,6 +616,9 @@ mod tests {
 
     #[test]
     fn parity_covers_every_binding_in_the_terminal_table() {
+        // The desktop intercepts M separately; this test must not mask a terminal binding.
+        assert_eq!(handle_stories_key(KeyCode::Char('M')), StoryAction::None);
+        assert_eq!(story_action(&KeyEvent { key: Key::Text("M".into()), mods: Mods::default() }), StoryAction::None);
         // The bindings `handle_stories_key` defines, as Rune keys. If the terminal table gains
         // a binding, this list is where the window has to say what it means.
         let bindings = [
@@ -891,6 +895,8 @@ mod tests {
 
     #[test]
     fn every_help_row_is_a_binding_the_window_actually_has() {
+        let feed = HELP.iter().find(|group| group.title == "Feed").unwrap();
+        assert_eq!(feed.rows.iter().find(|row| row.label == "Last story").unwrap().keys, &["⇧G"]);
         for group in HELP {
             for row in group.rows {
                 // The group is the context: a Feed row must be a feed binding, and so on.

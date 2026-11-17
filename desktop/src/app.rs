@@ -1171,6 +1171,12 @@ fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
     if s.story.is_some() {
         return on_story_key(s, ev, tx);
     }
+    // Desktop feed exception: the terminal feed has no summary-settings action.
+    if matches!(&ev.key, rune::Key::Text(text) if text == "M")
+        && matches!(keys::parity_key(ev), Some(crossterm::event::KeyCode::Char('M'))) {
+        s.open_summary_settings();
+        return true;
+    }
     if matches!(
         keys::parity_key(ev),
         Some(crossterm::event::KeyCode::Left | crossterm::event::KeyCode::Right)
@@ -1529,15 +1535,13 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
             .springs(SpringPair::new(Spring::new(0.15, 0.0), Spring::NONE))
     };
     let mut toolbar = Toolbar::new().leading(feed_tabs(s, &k, t, accent, reduced).transition(handoff));
-    if s.feed.tab == StoryType::Saved {
-        toolbar = toolbar.trailing(
-            text(s.saved.path_label())
+    let trailing = if s.feed.tab == StoryType::Saved {
+        row().gap(8.0).center_y().child(text(s.saved.path_label())
                 .font(type_::LABEL)
                 .color(t.text_secondary)
-                .truncate_middle(),
-        );
-    }
-    toolbar = toolbar.trailing(brand(t));
+                .truncate_middle()).child(brand(t))
+    } else { brand(t) };
+    toolbar = toolbar.trailing(trailing);
 
     // One window, one `SplitView`: the feed is this window with the inspector collapsed, so the
     // inspector's slot exists before a story opens and its width can spring out from 0.
@@ -1556,7 +1560,7 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
                 window.map_or(360.0, |rect| (rect[3] - 310.0).clamp(230.0, 440.0)),
                 [s.scroll_observer(Some(0)), s.scroll_observer(None), s.scroll_observer(Some(1))]),
         ),
-        None => (feed_body(s, &k, t, accent, feed_cols, reduced, contrast, feed_height).transition(handoff), toolbar, col()),
+        None => (feed_body(s, &k, t, accent, feed_cols, reduced, contrast).transition(handoff), toolbar, col()),
     };
     let shell = SplitView::new(main)
         .toolbar(toolbar)
@@ -1672,17 +1676,17 @@ fn story_main(story: &Story, k: &Kit, t: tok::Theme, pane: Pane<'_>) -> El {
         )
 }
 
-fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize, reduced: bool, contrast: bool, height: f32) -> El {
+fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize, reduced: bool, contrast: bool) -> El {
     let mut body = col().w_full().h_full();
     if let Some(error) = s.saved.error() {
-        body = body.child(banner(error, k, t));
+        body = body.child(banner(s, error, k, t));
     }
     // A failed ranking or window is a state with a retry, never a blank list.
     if let Some(error) = s.feed.status.error.as_deref() {
         body = body.child(feed_error(error, k, t));
     }
     body.child(
-        feed_list(s, t, accent, cols, reduced, height)
+        feed_list(s, t, accent, cols, reduced)
             .on_wheel(App::pointer_wheel)
             .scroll(ScrollSpec {
                 stick_bottom: false,
@@ -1698,7 +1702,7 @@ fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize, reduce
 /// Column-major: story `c * rows + r`, so the left column fills first and `j` walks straight
 /// down it. One scroll viewport for both columns; every cell keeps its own key, so
 /// `Tx::scroll_into_view` reaches a story whichever column it is in.
-fn feed_list(s: &App, t: tok::Theme, accent: Color, cols: usize, reduced: bool, height: f32) -> El {
+fn feed_list(s: &App, t: tok::Theme, accent: Color, cols: usize, reduced: bool) -> El {
     // The measured grid is available during this view, before poll can settle its fill.
     // Show the screenful containing the selection immediately, using the held stories.
     let capacity = s.measured.get().unwrap_or(DEFAULT_GRID).0.saturating_mul(cols);
@@ -1710,7 +1714,7 @@ fn feed_list(s: &App, t: tok::Theme, accent: Color, cols: usize, reduced: bool, 
     let per_column = shown.div_ceil(cols.max(1));
     // Keep the scroll viewport stable; only a completed page turn remounts this group.
     if s.feed.status.loading && s.feed.stories.is_empty() && s.feed.status.error.is_none() {
-        return feed_skeleton(s, t, cols, reduced, height);
+        return feed_skeleton(s, t, cols, reduced);
     }
     let mut transition = Transition::none();
     if !reduced && s.arrival != Arrival::None {
@@ -1728,12 +1732,12 @@ fn feed_list(s: &App, t: tok::Theme, accent: Color, cols: usize, reduced: bool, 
         .transition(transition)
         .instant_changes()
         .w_full()
-        .pt(feed_gutter(height, per_column, cols,
-            s.feed.tab != StoryType::Saved && per_column >= s.measured.get().unwrap_or(DEFAULT_GRID).0))
+        .pt(FEED_GUTTER)
         .pb(FEED_GUTTER)
         .gap(if cols == 2 { 0.0 } else { 2.0 });
-    if shown == 0 && s.feed.status.error.is_none() {
-        let label = if s.feed.tab == StoryType::Saved { "No saved stories yet" } else { "No stories to show" };
+    if shown == 0 && s.feed.status.error.is_none()
+        && (s.feed.tab != StoryType::Saved || s.saved.error().is_none()) {
+        let label = if s.feed.tab == StoryType::Saved { "Press S on a story to save it" } else { "No stories to show" };
         list = list.px(24.0).role("status").label(label)
             .child(text(label).font(type_::BODY).color(t.text_secondary).a11y_hidden());
         return col().key("feed-list").w_full().child(list);
@@ -1755,12 +1759,6 @@ fn feed_list(s: &App, t: tok::Theme, accent: Color, cols: usize, reduced: bool, 
         list = list.child(line);
     }
     col().key("feed-list").w_full().child(list)
-}
-
-fn feed_gutter(height: f32, rows: usize, cols: usize, full: bool) -> f32 {
-    let gap = if cols == 2 { 0.0 } else { 2.0 };
-    let content = rows as f32 * ROW_HEIGHT + rows.saturating_sub(1) as f32 * gap;
-    if full { ((height - content) / 2.0).max(FEED_GUTTER) } else { FEED_GUTTER }
 }
 
 fn story_row(s: &App, i: usize, t: tok::Theme, accent: Color, reduced: bool) -> El {
@@ -1932,8 +1930,9 @@ fn footer(s: &App, k: &Kit, t: tok::Theme, accent: Color, reduced: bool, contras
         .px(24.0)
         .py(12.0)
         .gap(18.0)
-        .center_y()
-        .child(h(&["j", "k"], "move"))
+        .center_y();
+    if !s.feed.stories.is_empty() {
+        f = f.child(h(&["j", "k"], "move"))
         .child(h(&["←", "→"], "column / page"))
         .child(h(
             &["s"],
@@ -1943,8 +1942,9 @@ fn footer(s: &App, k: &Kit, t: tok::Theme, accent: Color, reduced: bool, contras
                 "save"
             },
         ))
-        .child(h(&["n", "p"], "page"))
-        .child(h(&["1", "4"], "tabs"))
+        .child(h(&["n", "p"], "page"));
+    }
+    f = f.child(h(&["1", "4"], "tabs"))
         .child(el().grow(1.0));
     if !s.feed.status.loading && s.feed.exhausted(s.cells()) {
         f = f.child(
@@ -2023,9 +2023,11 @@ fn chev(glyph: &str, label: &str, t: tok::Theme, on_press: impl Fn(&mut App) + '
         .child(text(glyph).font(type_::LABEL).color(t.text_secondary))
 }
 
-/// The corrupt-file banner: the list is not silently empty, and Reload is one press away.
-fn banner(error: &str, k: &Kit, t: tok::Theme) -> El {
-    row()
+/// The saved-file banner keeps recovery actions next to the error.
+fn banner(s: &App, error: &str, k: &Kit, t: tok::Theme) -> El {
+    let message = if s.saved.read_failed() { "Your saved list could not be read. Nothing was changed." }
+        else { "Your saved list could not be updated. Nothing was changed." };
+    let banner = row()
         .key("saved-banner")
         .role("alert")
         .w_full()
@@ -2034,18 +2036,9 @@ fn banner(error: &str, k: &Kit, t: tok::Theme) -> El {
         .gap(12.0)
         .center_y()
         .fill(t.card)
-        .child(
-            text("Saved stories could not be read")
-                .font(type_::LABEL)
-                .color(t.text),
-        )
-        .child(
-            text(error.to_string())
-                .font(type_::LABEL)
-                .color(t.text_secondary)
-                .truncate_middle(),
-        )
-        .child(el().grow(1.0))
+        .child(col().grow(1.0).min_w(0.0).gap(2.0)
+            .child(text(message).font(type_::LABEL).color(t.text).truncate())
+            .child(text(error.to_string()).font(type_::LABEL).color(t.text_secondary).truncate()))
         .child(
             quiet_button("Reload")
                 .on_press(|s: &mut App| {
@@ -2053,7 +2046,16 @@ fn banner(error: &str, k: &Kit, t: tok::Theme) -> El {
                     s.refresh();
                 })
                 .build(k).key("saved-reload").cursor(rune::Cursor::Pointer),
-        )
+        );
+    #[cfg(target_os = "macos")]
+    let banner = if s.saved.path().is_some() {
+        banner.child(quiet_button("Reveal in Finder").on_press(|s: &mut App| {
+            if !s.headless && let Some(path) = s.saved.path() {
+                let _ = std::process::Command::new("/usr/bin/open").arg("-R").arg(path).spawn();
+            }
+        }).build(k).key("saved-reveal").cursor(rune::Cursor::Pointer))
+    } else { banner };
+    banner
 }
 
 /// The feed's own failure: the ranking or the window could not be loaded. It is a state with a
@@ -2088,7 +2090,7 @@ fn feed_error(error: &str, k: &Kit, t: tok::Theme) -> El {
 }
 
 /// Decorative rows occupy the same viewport and lanes as the feed, with one status owner.
-fn feed_skeleton(s: &App, t: tok::Theme, cols: usize, reduced: bool, height: f32) -> El {
+fn feed_skeleton(s: &App, t: tok::Theme, cols: usize, reduced: bool) -> El {
     let rows = s.measured.get().unwrap_or(DEFAULT_GRID).0;
     let transition = if reduced { Transition::none() } else {
         let mut transition = Transition::asymmetric(Transition::opacity(), Transition::opacity())
@@ -2097,7 +2099,7 @@ fn feed_skeleton(s: &App, t: tok::Theme, cols: usize, reduced: bool, height: f32
         transition
     };
     let mut skeleton = col().key("feed-placeholder").transition(transition).instant_changes().motion(Spring::NONE).w_full()
-        .pt(feed_gutter(height, rows, cols, true)).pb(FEED_GUTTER)
+        .pt(FEED_GUTTER).pb(FEED_GUTTER)
         .gap(if cols == 2 { 0.0 } else { 2.0 }).a11y_hidden();
     for r in 0..rows {
         let mut line = row().w_full().h(ROW_HEIGHT);
@@ -2419,6 +2421,64 @@ mod tests {
             rt.frame(0.0);
             assert_eq!(rt.elements().iter().any(|e| e.label.as_deref() == Some("Regenerate summary")), has_story);
         }
+    }
+
+    #[test]
+    fn feed_settings_key_is_a_plain_capital_m_desktop_exception() {
+        let mut s = app(true, SavedView::in_memory());
+        for (key, mods) in [
+            ("m", rune::Mods::default()),
+            ("M", rune::Mods { ctrl: true, ..Default::default() }),
+        ] {
+            assert!(!on_key(&mut s, &KeyEvent { key: rune::Key::Text(key.into()), mods }, &mut Tx::default()));
+            assert!(s.settings.is_none());
+        }
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.frame(0.0);
+        rt.key(KeyEvent { key: rune::Key::Text("M".into()), mods: rune::Mods { shift: true, ..Default::default() } });
+        rt.frame(0.3);
+        assert!(rt.elements().iter().any(|e| e.key.as_deref() == Some("settings-dialog")));
+        assert!(rt.state.story.is_none());
+    }
+
+    #[test]
+    fn saved_empty_and_unreadable_states_show_the_right_actions() {
+        for corrupt in [false, true] {
+            let mut s = app(true, SavedView::in_memory());
+            if corrupt { scene_saved_corrupt(&mut s); } else { s.feed.tab = StoryType::Saved; }
+            s.request(DEFAULT_GRID, Ranking::Fresh);
+            let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+            rt.frame(0.0);
+            let elements = rt.elements();
+            let text = |value| elements.iter().any(|e| e.text.as_deref() == Some(value));
+            assert_eq!(text("Press S on a story to save it"), !corrupt);
+            assert!(!text("No saved stories yet"));
+            assert_eq!(text("Your saved list could not be read. Nothing was changed."), corrupt);
+            assert_eq!(text("expected value at line 1 column 2"), corrupt);
+            assert_eq!(elements.iter().any(|e| e.key.as_deref() == Some("saved-reveal")), corrupt && cfg!(target_os = "macos"));
+            for label in ["move", "column / page", "unsave", "page"] { assert!(!text(label), "{label}"); }
+            assert!(text("tabs"));
+            if corrupt {
+                let path = elements.iter().find(|e| e.text.as_deref() == Some("~/.local/share/hn/saved.json")).unwrap().rect;
+                let brand = elements.iter().find(|e| e.key.as_deref() == Some("brand")).unwrap().rect;
+                assert!((brand[0] - path[0] - path[2] - 8.0).abs() < 0.5);
+            }
+        }
+    }
+
+    #[test]
+    fn saved_write_failure_is_not_reported_as_a_read_failure() {
+        let dir = temp_dir("saved-write-banner");
+        std::fs::create_dir_all(&dir).unwrap();
+        let mut saved = SavedView::load_at(dir.join("blocked/saved.json"));
+        std::fs::write(dir.join("blocked"), b"not a directory").unwrap();
+        saved.toggle(&crate::fixtures::item(0, 1));
+        assert!(saved.error().is_some());
+        let mut rt = rune::Runtime::new(app(true, saved), view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.frame(0.0);
+        assert!(rt.elements().iter().any(|e| e.text.as_deref() == Some("Your saved list could not be updated. Nothing was changed.")));
+        std::fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]
@@ -3358,7 +3418,7 @@ mod tests {
     fn loading_shell_entrance_survives_a_new_keyed_parent() {
         fn stage(s: &App, cx: &mut Cx<App>) -> El {
             let child = if s.feed.status.loading {
-                col().key("new-parent").w_full().child(feed_skeleton(s, tok::theme(cx.system_dark()), 1, false, 760.0))
+                col().key("new-parent").w_full().child(feed_skeleton(s, tok::theme(cx.system_dark()), 1, false))
             } else { col().key("old-parent").w_full() };
             col().w_full().h_full().child(child)
         }
@@ -4331,7 +4391,7 @@ mod tests {
     }
 
     #[test]
-    fn full_feed_has_balanced_gutters_and_pointer_tabs_return_navigation_to_rows() {
+    fn full_feed_has_fixed_top_inset_and_pointer_tabs_return_navigation_to_rows() {
         for size in [(800.0, 640.0), (1180.0, 760.0), (1600.0, 900.0)] {
             let mut s = app(true, saved_store());
             s.request(DEFAULT_GRID, Ranking::Fresh);
@@ -4345,12 +4405,9 @@ mod tests {
             let elements = rt.elements();
             let viewport = elements.iter().find(|e| e.key.as_deref() == Some("feed-list")).unwrap().rect;
             let first = elements.iter().find(|e| e.key.as_deref() == Some("story-1")).unwrap().rect;
-            let (rows, cols) = rt.state.measured.get().unwrap();
-            let last_id = rt.state.feed.stories[(rows - 1).min(rt.state.feed.stories.len() - 1)].id;
-            let last = elements.iter().find(|e| e.key.as_deref() == Some(&format!("story-{last_id}"))).unwrap().rect;
+            let (_, cols) = rt.state.measured.get().unwrap();
             let top = first[1] - viewport[1];
-            let bottom = viewport[1] + viewport[3] - last[1] - last[3];
-            assert!(top >= FEED_GUTTER && (top - bottom).abs() < 1.0, "{size:?}: {top} vs {bottom}");
+            assert!((top - FEED_GUTTER).abs() < 0.5, "{size:?}: top inset {top}");
             assert_eq!(cols, if size.0 >= BREAKPOINT { 2 } else { 1 });
             let brand = elements.iter().find(|e| e.key.as_deref() == Some("brand")).unwrap();
             assert_eq!(brand.label.as_deref(), Some("Hacker News"));
@@ -4378,22 +4435,20 @@ mod tests {
             let loading = rt.elements();
             let viewport = loading.iter().find(|e| e.key.as_deref() == Some("feed-list")).unwrap().rect;
             let line = loading.iter().find(|e| e.path.ends_with("feed-placeholder/#0")).unwrap().rect;
-            assert!((line[1] - viewport[1] - feed_gutter(viewport[3], rows, cols, true)).abs() < 0.5);
+            assert!((line[1] - viewport[1] - FEED_GUTTER).abs() < 0.5);
             rt.state.bridge.cancel_feed();
             rt.state.requested = None;
             rt.state.headless = true;
             rt.poll = Some(poll);
             rt.set_viewport(if cols == 1 { (1600.0, 900.0) } else { (800.0, 640.0) }, 1.0);
             for _ in 0..4 { rt.frame(0.25); }
-            let (rows, new_cols) = rt.state.measured.get().unwrap();
+            let (_, new_cols) = rt.state.measured.get().unwrap();
             assert_ne!(cols, new_cols, "resize crosses the column breakpoint");
             let elements = rt.elements();
             let viewport = elements.iter().find(|e| e.key.as_deref() == Some("feed-list")).unwrap().rect;
             let first = elements.iter().find(|e| e.key.as_deref() == Some("story-1")).unwrap().rect;
-            let last_id = rt.state.feed.stories[rows - 1].id;
-            let last = elements.iter().find(|e| e.key.as_deref() == Some(&format!("story-{last_id}"))).unwrap().rect;
-            assert!(((first[1] - viewport[1]) - (viewport[1] + viewport[3] - last[1] - last[3])).abs() < 1.0,
-                "resized full pages retain balanced gutters: {size:?} {rows} {new_cols} {viewport:?} {first:?} {last:?}");
+            assert!((first[1] - viewport[1] - FEED_GUTTER).abs() < 0.5,
+                "resized full pages retain the top inset: {size:?} {new_cols} {viewport:?} {first:?}");
         }
     }
 

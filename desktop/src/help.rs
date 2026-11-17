@@ -27,23 +27,6 @@ pub fn view(k: &Kit, t: tok::Theme, accent: Color, open: bool, layer: &mut Vec<E
         }
         columns = columns.child(body);
     }
-    let footer = row()
-        .key("help-footer")
-        .w_full()
-        .gap(6.0)
-        .center_y()
-        .child(Keybind::new(&["Esc"]).build(k))
-        .child(
-            text("closes this sheet")
-                .font(type_::LABEL)
-                .color(t.text_secondary),
-        )
-        .child(el_grow())
-        .child(
-            text("Desktop keyboard shortcuts.")
-                .font(type_::LABEL)
-                .color(t.text_secondary),
-        );
     let mut viewport = col()
         .key("help-scroll")
         .w_full()
@@ -54,21 +37,16 @@ pub fn view(k: &Kit, t: tok::Theme, accent: Color, open: bool, layer: &mut Vec<E
         .child(columns);
     if let Some([_, height]) = rune::memo::layout_size("window") {
         let header = rune::memo::layout_size("help-dialog/header").map_or(50.0, |[_, h]| h);
-        let footer = rune::memo::layout_size("help-footer").map_or(15.0, |[_, h]| h);
-        // The layer has 16 points on each edge; the body has a 16-point gap and bottom inset.
-        viewport = viewport.max_h((height - 32.0 - header - footer - 32.0).max(0.0));
+        // The layer has 16 points on each edge, and the body has a 16-point bottom inset.
+        viewport = viewport.max_h((height - 32.0 - header - 16.0).max(0.0));
     }
     Dialog::new("help", "Keyboard")
         .open(open)
         .width(720.0)
         .fit()
         .on_close(|s: &mut crate::app::App| s.help = false)
-        .child(col().w_full().px(16.0).pb(16.0).gap(16.0).child(viewport).child(footer))
+        .child(col().w_full().px(16.0).pb(16.0).child(viewport))
         .build(k, layer);
-}
-
-fn el_grow() -> El {
-    rune::el().grow(1.0)
 }
 
 /// One group: its title, then a row per binding.
