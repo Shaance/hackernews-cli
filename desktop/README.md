@@ -245,14 +245,19 @@ bash desktop/scripts/package-macos.sh
 open desktop/dist/HN.app
 ```
 
-This is a spike, not a release pipeline. What a real one still needs:
+Locally the bundle is unsigned, so it runs only on the machine that built it.
 
-- **Signing.** The bundle is unsigned. It runs from the machine that built it; anywhere else
-  Gatekeeper refuses it until it is signed with a Developer ID and notarized.
+`.github/workflows/desktop-release.yml` is the release pipeline. It runs the tests, stages the
+bundle with this script, signs it with a Developer ID (hardened runtime), notarizes and staples
+it, and uploads `HN-<ref>-macos-arm64.zip`. Every push to `main` keeps the zip as a workflow
+artifact. A `desktop-vX.Y.Z` tag that matches `Cargo.toml`'s version also publishes it as a
+GitHub Release. The workflow's header lists the signing and notarization secrets. Without them,
+a `main` push uploads an unsigned zip and a tag refuses to release.
+
+Still missing:
+
 - **An icon.** `CFBundleIconFile` is omitted rather than naming a file that does not exist.
-- **A universal binary.** The staged executable is whatever `cargo build --release` produced —
-  this machine's architecture only.
-- **A version story.** `CFBundleShortVersionString` comes from `Cargo.toml`, which is `0.1.0`.
+- **Intel Macs.** Builds are Apple Silicon only.
 
 ### Measured
 

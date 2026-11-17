@@ -1,0 +1,134 @@
+name: Desktop release
+
+# Builds an Apple Silicon HN.app, signs it with a Developer ID, notarizes and
+# staples it. Every push to main keeps the zip as a workflow artifact; a `desktop-v*` tag also
+# attaches it to a GitHub Release. The acceptance gate (goldens, trees) stays in desktop.yml.
+#
+# Secrets (Settings → Secrets and variables → Actions):
+#   MACOS_CERTIFICATE_P12       base64 of the "Developer ID Application" certificate + key (.p12)
+#   MACOS_CERTIFICATE_PASSWORD  the .p12's export password
+#   MACOS_SIGNING_IDENTITY      e.g. "Developer ID Application: Jane Doe (TEAMID1234)"
+#   APPLE_API_KEY_P8            base64 of an App Store Connect API key (.p8) for notarytool
+#   APPLE_API_KEY_ID            that key's ID
+#   APPLE_API_ISSUER_ID         its issuer ID
+# Without them a main push still builds and uploads an unsigned zip; a tag refuses to release.
+
+on:
+  push:
+    branches: ["main"]
+    tags: ["desktop-v*"]
+    paths: ["desktop/**", ".github/workflows/desktop-release.yml", "src/**", "Cargo.toml", "Cargo.lock"]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_NET_GIT_FETCH_WITH_CLI: "true"
+
+jobs:
+  macos-app:
+    name: macOS Apple Silicon app
+    runs-on: macos-14
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Decide signing
+        id: sign
+        env:
+          P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          P8: ${{ secrets.APPLE_API_KEY_P8 }}
+        run: |
+          if [ -n "$P12" ] && [ -n "$P8" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          elif [ "$GITHUB_REF_TYPE" = tag ]; then
+            echo "::error::A release tag needs the signing and notarization secrets."
+            exit 1
+          else
+            echo "::warning::Signing secrets are not set; this build is unsigned."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check the tag matches Cargo.toml
+        if: github.ref_type == 'tag'
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1)
+          if [ "${GITHUB_REF_NAME#desktop-v}" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match desktop/Cargo.toml version $version."
+            exit 1
+          fi
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            desktop/target
+          key: desktop-release-${{ hashFiles('desktop/Cargo.lock') }}
+          restore-keys: desktop-release-
+
+      - name: Test
+        run: cargo test --release --locked
+
+      # macos-14 runners are Apple Silicon, so the host build is the arm64 app.
+      - name: Build and stage HN.app
+        run: bash scripts/package-macos.sh
+
+      - name: Sign
+        if: steps.sign.outputs.enabled == 'true'
+        env:
+          P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          P12_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+        run: |
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          keychain_password=$(uuidgen)
+          echo "$P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$RUNNER_TEMP/cert.p12" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
+          security set-key-partition-list -S apple-tool:,apple: -k "$keychain_password" "$keychain" >/dev/null
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          rm "$RUNNER_TEMP/cert.p12"
+          codesign --force --options runtime --timestamp --sign "$IDENTITY" dist/HN.app
+          codesign --verify --strict --verbose=2 dist/HN.app
+
+      - name: Notarize and staple
+        if: steps.sign.outputs.enabled == 'true'
+        env:
+          P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          ISSUER: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          echo "$P8" | base64 --decode > "$RUNNER_TEMP/notary.p8"
+          ditto -c -k --keepParent dist/HN.app "$RUNNER_TEMP/HN-notarize.zip"
+          xcrun notarytool submit "$RUNNER_TEMP/HN-notarize.zip" \
+            --key "$RUNNER_TEMP/notary.p8" --key-id "$KEY_ID" --issuer "$ISSUER" --wait
+          rm "$RUNNER_TEMP/notary.p8"
+          xcrun stapler staple dist/HN.app
+          spctl --assess --type execute --verbose dist/HN.app
+
+      - name: Zip
+        id: zip
+        run: |
+          name="HN-${GITHUB_REF_NAME//\//-}-macos-arm64.zip"
+          ditto -c -k --keepParent dist/HN.app "dist/$name"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.zip.outputs.name }}
+          path: desktop/dist/${{ steps.zip.outputs.name }}
+
+      - name: Publish release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "dist/${{ steps.zip.outputs.name }}" \
+            --title "HN desktop ${GITHUB_REF_NAME#desktop-v}" --generate-notes
