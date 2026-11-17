@@ -124,7 +124,7 @@ actions remain visible.
 shortcuts work when the app chrome or discussion has focus; the live page retains its own
 keyboard while focused.
 
-Desktop feed navigation uses Left/Right to select the same row in the adjacent column (clamped on a shorter right column). At a column edge they turn the page; in one column they page directly. Forward lands on the first story and backward on the last; known feed ends stay put. Use `n`/`p`, Space, Page Down/Page Up, or the page buttons to change pages. Selection has a restrained 120 ms color response with fixed text geometry. Completed page changes enter as one group from the navigation direction, 24 pt away and at 0.2 opacity, over about 220 ms. Reduced motion is instant. Discussion arrows retain their existing back/unfold bindings.
+Desktop feed navigation uses Left/Right to select the same row in the adjacent column (clamped on a shorter right column). At a column edge they turn the page; in one column they page directly. Forward lands on the first story and backward on the last; known feed ends stay put. Use `n`/`p`, Space, Page Down/Page Up, or the page buttons to change pages. Keyboard selection is instant; pointer selection has a restrained 120 ms color response with fixed text geometry. Completed page changes enter as one group from the navigation direction, 24 pt away and at 0.2 opacity, over about 220 ms. Reduced motion is instant. Discussion arrows retain their existing back/unfold bindings.
 
 Moving the pointer over a feed row selects it; clicking the row opens the story. The separate
 Save or Unsave action changes the saved list without opening it.

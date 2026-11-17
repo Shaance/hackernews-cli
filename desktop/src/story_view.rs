@@ -683,7 +683,7 @@ fn discussion(s: &Story, k: &Kit, t: tok::Theme, accent: Color, overlays: &mut V
     list.child(stack
         .growth(GrowthSpec { spring: Spring::NONE, ..GrowthSpec::default() }).virtual_rows(rows.len(), 110.0,
             move |_s: &App, i| format!("comment-{}", keys[i].id).into(),
-            move |app: &App, i| app.story().map(|s| comment_row(s, rows[i].id, rows[i].depth, &kit, t, accent, false, reduced)).unwrap_or_else(el)))
+            move |app: &App, i| app.story().map(|s| comment_row(s, rows[i].id, rows[i].depth, &kit, t, accent, false, reduced, app.keyboard_selection)).unwrap_or_else(el)))
 }
 
 /// The discussion's header: what the capture holds, whether focus mode is on, and `L`'s chip.
@@ -779,7 +779,7 @@ fn trail_strip(s: &Story, trail: &[i32], t: tok::Theme) -> El {
 ///
 /// The row is the fold target and the cursor target at once. Folding keeps the comment readable;
 /// a comment at the depth cap offers `continue thread` instead of drawing deeper replies.
-fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: Color, context: bool, reduced: bool) -> El {
+fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: Color, context: bool, reduced: bool, keyboard: bool) -> El {
     let thread = &s.thread;
     let captured = context.then(|| s.shown_source()).flatten().filter(|source| source.id == id);
     let node = thread.node(id);
@@ -812,22 +812,25 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
         .focus_selected(selected)
         .focus_ring(1.5, 0.0, accent)
         .animated_changes()
-        .motion(Spring::NONE)
+        .motion(if reduced || keyboard { Spring::NONE } else { Spring::new(0.12, 0.0) })
         // Outgoing virtual rows would otherwise paint over the live rows closing their space.
         .transition(if depth == 0 || reduced { Transition::none() } else {
             Transition::asymmetric(Transition::opacity(), Transition::none())
                 .springs(SpringPair::new(Spring::new(0.15, 0.0), Spring::NONE))
         });
+    if keyboard || reduced { r = r.child_exit(Transition::none()); }
     if depth > 0 && !reduced { r = r.fold_glide(Spring::new(0.12, 0.0)); }
-    r = r.on_press(move |s: &mut App| {
+    r = r.on_press_tx(move |s: &mut App, tx: &mut Tx| {
         if let Some(story) = s.story_mut() {
             if !context { story.citation_focus = false; }
-            story.with_thread(|thread| { thread.select(id); });
+            let changed = story.with_thread(|thread| thread.cursor() != Some(id) && thread.select(id));
+            if changed { s.keyboard_selection = tx.by_keys(); }
         }
     }).on_pointer_move_local(move |s: &mut App, _, tx| {
         if let Some(story) = s.story_mut() {
             let changed = story.with_thread(|thread| thread.focus() && thread.cursor() != Some(id) && thread.select(id));
             if changed && !context { story.citation_focus = false; }
+            if changed { s.keyboard_selection = false; }
             if !changed { tx.live_only(); }
         }
     });
@@ -1111,7 +1114,7 @@ fn source_viewer(
         .child(stack
         .growth(GrowthSpec { spring: Spring::NONE, ..GrowthSpec::default() }).virtual_rows(rows.len(), 110.0,
             move |_app: &App, i| format!("source-comment-{}", keys[i].id).into(),
-            move |app: &App, i| app.story().map(|story| comment_row(story, rows[i].id, rows[i].depth, &kit, t, accent, true, reduced)).unwrap_or_else(el)));
+            move |app: &App, i| app.story().map(|story| comment_row(story, rows[i].id, rows[i].depth, &kit, t, accent, true, reduced, app.keyboard_selection)).unwrap_or_else(el)));
     col().key("source-viewer").role("region").label(format!("Comment by {}", source.author))
         .focusable(true).w_full().h_full().scroll(ScrollSpec { stick_bottom: false }).scroll_edge_fade(20.0)
         .on_wheel(App::pointer_wheel)
@@ -1206,7 +1209,7 @@ mod tests {
 
     fn nested_comment(story: &Story, cx: &mut rune::Cx<Story>) -> El {
         let dark = cx.system_dark();
-        comment_row(story, 9010, 1, &Kit::neutral(dark), tok::theme(dark), tok::accent(3, dark), false, false)
+        comment_row(story, 9010, 1, &Kit::neutral(dark), tok::theme(dark), tok::accent(3, dark), false, false, true)
     }
 
     #[test]

@@ -76,6 +76,7 @@ const INSPECTOR_MAX: f32 = 640.0;
 struct Notice {
     message: String,
     until: f64,
+    show_dot: bool,
 }
 
 /// Whether a request takes a new ranking or pages against the one the feed already has.
@@ -140,6 +141,8 @@ pub struct App {
     loading_since: Option<f64>,
     /// The row under the pointer, for the hover actions.
     hover: Option<i32>,
+    /// Whether the last selection came from the keyboard.
+    pub(crate) keyboard_selection: bool,
     /// Passive shortcut hints yield visual emphasis to pointer use and return on navigation.
     hints: rune::Live<f32>,
     /// The open story, when the split is showing one. `None` is the feed.
@@ -198,13 +201,23 @@ pub struct App {
 }
 
 impl App {
-    pub(crate) fn keyboard_navigation(&self, ev: &KeyEvent) {
+    pub(crate) fn keyboard_navigation(&mut self, ev: &KeyEvent) {
         if self.settings.is_some() || self.help || keys::parity_key(ev).is_none() { return; }
         if matches!(ev.key, rune::Key::Tab | rune::Key::Home | rune::Key::End | rune::Key::PageUp | rune::Key::PageDown)
             || (self.story.is_some() && keys::story_key(ev) != StoryKey::None)
             || (self.story.is_none() && (keys::story_action(ev) != StoryAction::None
                 || matches!(ev.key, rune::Key::Left | rune::Key::Right)))
         {
+            if self.story.is_none() && (matches!(ev.key, rune::Key::Left | rune::Key::Right)
+                || matches!(keys::story_action(ev), StoryAction::NextStory | StoryAction::PrevStory
+                    | StoryAction::FirstStory | StoryAction::LastStory | StoryAction::NextPage
+                    | StoryAction::PrevPage | StoryAction::SetType(_)))
+                || self.story.is_some() && matches!(keys::story_key(ev), StoryKey::NextComment | StoryKey::PrevComment
+                    | StoryKey::NextSibling | StoryKey::PrevSibling | StoryKey::Parent | StoryKey::Fold
+                    | StoryKey::Unfold | StoryKey::FirstComment | StoryKey::LastComment | StoryKey::PopTrail
+                    | StoryKey::Enter | StoryKey::Back | StoryKey::Focus) {
+                self.keyboard_selection = true;
+            }
             self.hints.snap(1.0);
         }
     }
@@ -320,6 +333,7 @@ impl App {
                 (None, false) => "Removed from Saved".to_string(),
             },
             until: f64::INFINITY,
+            show_dot: self.saved.error().is_some() || saved,
         });
         if self.feed.tab == StoryType::Saved {
             self.refresh();
@@ -631,7 +645,7 @@ impl App {
 
     pub(crate) fn choose_links(&mut self) {
         if !self.story.as_mut().is_some_and(|story| story.open_links()) {
-            self.toast = Some(Notice { message: "No links in this post or selected comment".to_string(), until: f64::INFINITY });
+            self.toast = Some(Notice { message: "No links in this post or selected comment".to_string(), until: f64::INFINITY, show_dot: true });
         }
     }
 
@@ -746,6 +760,7 @@ impl App {
         self.toast = Some(Notice {
             message: "Settings saved".to_string(),
             until: f64::INFINITY,
+            show_dot: true,
         });
         if !self.configured() {
             for story in self.story.iter_mut().chain(self.readings.values_mut()) {
@@ -853,6 +868,7 @@ fn init() -> App {
         arrival: Arrival::Initial,
         loading_since: None,
         hover: None,
+        keyboard_selection: true,
         hints: rune::Live::new(1.0),
         story: None,
         visible_comment: Cell::new(None),
@@ -898,6 +914,7 @@ fn setup(s: &mut App, waker: Waker) {
 
 fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
     let mut changed = false;
+    let mut toast_expired = false;
     if webview::take_back() { changed |= s.story_back(tx); }
     let mut feed_arrived = false;
     let mut summary_arrived = false;
@@ -950,6 +967,7 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
                 s.toast = Some(Notice {
                     message,
                     until: f64::INFINITY,
+                    show_dot: true,
                 });
             }
         }
@@ -1054,10 +1072,11 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
         } else if now >= notice.until {
             s.toast = None;
             changed = true;
+            toast_expired = true;
         }
     }
     if changed {
-        if (feed_arrived || summary_arrived || replies_arrived) && !s.reduced {
+        if (feed_arrived || summary_arrived || replies_arrived || toast_expired) && !s.reduced {
             tx.animated();
         } else {
             tx.instant();
@@ -1274,7 +1293,7 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
                 return true;
             }
             StoryKey::Links => {
-                s.toast = Some(Notice { message: "Open links from the discussion".to_string(), until: f64::INFINITY });
+                s.toast = Some(Notice { message: "Open links from the discussion".to_string(), until: f64::INFINITY, show_dot: true });
                 return true;
             }
             StoryKey::ToggleSummary | StoryKey::Refresh | StoryKey::Settings | StoryKey::ToggleSaved
@@ -1477,7 +1496,11 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
         s.measured.set(Some((rows, cols)));
     }
 
-    let mut toolbar = Toolbar::new().leading(feed_tabs(s, &k, t, accent, reduced));
+    let handoff = if reduced { Transition::none() } else {
+        Transition::asymmetric(Transition::opacity(), Transition::none())
+            .springs(SpringPair::new(Spring::new(0.15, 0.0), Spring::NONE))
+    };
+    let mut toolbar = Toolbar::new().leading(feed_tabs(s, &k, t, accent, reduced).transition(handoff));
     if s.feed.tab == StoryType::Saved {
         toolbar = toolbar.trailing(
             text(s.saved.path_label())
@@ -1495,17 +1518,17 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
     let mut overlays = Vec::new();
     let (main, toolbar, inspector) = match &s.story {
         Some(story) => (
-            story_main(story, &k, t, s.pane()),
+            story_main(story, &k, t, s.pane()).transition(handoff),
             Toolbar::new().leading(story_view::story_toolbar(
                 t,
                 accent,
                 s.saved.contains(story.id()),
-            )).trailing(brand(t)),
+            ).transition(handoff)).trailing(brand(t)),
             story_view::inspector_pane(story, &k, t, accent, &mut overlays, reduced,
                 window.map_or(360.0, |rect| (rect[3] - 310.0).clamp(230.0, 440.0)),
                 [s.scroll_observer(Some(0)), s.scroll_observer(None), s.scroll_observer(Some(1))]),
         ),
-        None => (feed_body(s, &k, t, accent, cols, reduced, contrast, feed_height), toolbar, col()),
+        None => (feed_body(s, &k, t, accent, cols, reduced, contrast, feed_height).transition(handoff), toolbar, col()),
     };
     let shell = SplitView::new(main)
         .toolbar(toolbar)
@@ -1532,14 +1555,17 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
         base = base.child(el().w_full().h(1.0).fill(t.separator)).child(story_view::story_footer(story, &k, t, &s.hints, reduced, contrast));
     }
     if let Some(notice) = &s.toast {
+        let footer = if s.story.is_some() { "story-footer" } else { "feed-footer" };
+        let inset = window.and_then(|w| cx.layout_with(footer, move |r| w[1] + w[3] - r[1] + 12.0)).unwrap_or(64.0);
+        let mut toast = Toast::new("toast-saved", notice.message.clone());
+        if notice.show_dot { toast = toast.lead(saved_dot("toast-dot", accent)); }
         overlays.push(
             ToastRegion::new()
-                .toast(
-                    Toast::new("toast-saved", notice.message.clone())
-                        .lead(saved_dot("toast-dot", accent))
-                        .build(&k),
-                )
-                .build(&k),
+                .toast(toast.build(&k).instant_changes())
+                .build(&k)
+                .pin(None, None, Some(32.0), Some(inset))
+                .transition(Transition::opacity().springs(SpringPair::new(
+                    Spring::new(0.2, 0.0), Spring::new(0.15, 0.0)))),
         );
     }
     // The dialogs are the last layer, so they sit over the toast and the split.
@@ -1709,7 +1735,7 @@ fn story_row(s: &App, i: usize, t: tok::Theme, accent: Color, reduced: bool) -> 
 
     let mut r = row()
         .key(format!("story-{id}"))
-        .motion(if reduced { Spring::NONE } else { Spring::new(0.12, 0.0) })
+        .motion(if reduced || s.keyboard_selection { Spring::NONE } else { Spring::new(0.12, 0.0) })
         .instant_changes()
         .transition(Transition::none())
         .role("button")
@@ -1739,6 +1765,7 @@ fn story_row(s: &App, i: usize, t: tok::Theme, accent: Color, reduced: bool) -> 
             if !s.feed.status.loading && let Some(index) = s.feed.stories.iter().position(|story| story.id == id)
                 && s.feed.selected != index {
                 s.feed.selected = index;
+                s.keyboard_selection = false;
             } else {
                 tx.live_only();
             }
@@ -1755,7 +1782,7 @@ fn story_row(s: &App, i: usize, t: tok::Theme, accent: Color, reduced: bool) -> 
             .h(26.0)
             .radius(1.0)
             .fill(if selected { accent } else { Color::TRANSPARENT })
-            .motion(if reduced { Spring::NONE } else { Spring::new(0.12, 0.0) })
+            .motion(if reduced || s.keyboard_selection { Spring::NONE } else { Spring::new(0.12, 0.0) })
             .transition(Transition::none()),
     );
     // The saved marker is a dot beside the rank, never right-aligned chrome. The Saved view is
@@ -1771,9 +1798,14 @@ fn story_row(s: &App, i: usize, t: tok::Theme, accent: Color, reduced: bool) -> 
     if !in_saved_view {
         let key = format!("saved-dot-{id}");
         lead = lead.child(if saved {
-            saved_dot(key, accent)
+            let mut pop = Transition::asymmetric(Transition::scale(0.6), Transition::none())
+                .springs(SpringPair::new(Spring::new(0.25, 0.15), Spring::NONE));
+            pop.insertion.opacity = 1.0;
+            saved_dot(key, accent).animated_changes()
+                .transition(if reduced { Transition::none() } else { pop })
+                .motion_intent(rune::MotionIntent::OVERSHOOT)
         } else {
-            el().key(key).size(6.0, 6.0)
+            el().key(format!("unsaved-dot-{id}")).size(6.0, 6.0)
         });
     }
     r = r.child(lead).child(
@@ -2091,6 +2123,7 @@ fn scene_feed_saved(s: &mut App) {
     s.toast = Some(Notice {
         message: "Saved · Press 4 for Saved".to_string(),
         until: rune::scene_clock().now + TOAST_SECONDS,
+        show_dot: true,
     });
 }
 
@@ -2253,6 +2286,143 @@ pub fn spec() -> AppSpec<App> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn feed_story_handoffs_remove_outgoing_paint_in_both_motion_modes() {
+        for reduced in [false, true] {
+            let mut s = app(true, saved_store());
+            s.reduced = reduced;
+            s.request(DEFAULT_GRID, Ranking::Fresh);
+            let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+            rt.on_key = Some(on_key);
+            rt.frame(0.0);
+            for (key, incoming, outgoing, leading, old_leading) in [
+                (rune::Key::Enter, "story-main", "feed-list", "story-toolbar", "feed-tabs"),
+                (rune::Key::Escape, "feed-list", "story-main", "feed-tabs", "story-toolbar"),
+            ] {
+                rt.key(KeyEvent { key, mods: Default::default() });
+                rt.frame(0.0);
+                rt.frame(0.05);
+                let elements = rt.elements();
+                for wanted in [incoming, leading] {
+                    let node = elements.iter().find(|e| e.key.as_deref() == Some(wanted) && !e.exiting).unwrap();
+                    assert!(node.opacity > 0.0 && (reduced || node.opacity < 1.0),
+                        "{wanted} reduced={reduced}: {}", node.opacity);
+                }
+                assert!(!elements.iter().any(|e| [outgoing, old_leading].contains(&e.key.as_deref().unwrap_or("")) && e.opacity > 0.001),
+                    "outgoing {outgoing} or {old_leading} still paints");
+                rt.frame(0.5);
+            }
+        }
+    }
+
+    #[test]
+    fn keyboard_selection_is_instant_and_feed_hover_eases() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request(DEFAULT_GRID, Ranking::Fresh);
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.frame(0.0);
+        let full = rt.elements().iter().find(|e| e.key.as_deref() == Some("story-1")).unwrap().fill;
+        rt.key(KeyEvent { key: rune::Key::Text("j".into()), mods: Default::default() });
+        rt.frame(0.016);
+        let after = rt.elements();
+        assert_eq!(after.iter().find(|e| e.key.as_deref() == Some("story-2")).unwrap().fill, full);
+        assert_eq!(after.iter().find(|e| e.key.as_deref() == Some("story-1")).unwrap().fill.a, 0.0);
+        let [x, y, w, h] = after.iter().find(|e| e.key.as_deref() == Some("story-3")).unwrap().rect;
+        rt.pointer_move(x + w / 2.0, y + h / 2.0);
+        rt.frame(0.0);
+        rt.frame(0.05);
+        let during = rt.elements().iter().find(|e| e.key.as_deref() == Some("story-3")).unwrap().fill.a;
+        rt.key(KeyEvent { key: rune::Key::Text("s".into()), mods: Default::default() });
+        rt.frame(0.016);
+        let after_save = rt.elements().iter().find(|e| e.key.as_deref() == Some("story-3")).unwrap().fill.a;
+        rt.frame(0.3);
+        let settled = rt.elements().iter().find(|e| e.key.as_deref() == Some("story-3")).unwrap().fill.a;
+        assert!(during > 0.0 && during < after_save && after_save < settled && (settled - full.a).abs() < 0.001,
+            "hover {during} -> {after_save} -> {settled}");
+
+        let mut s = app(true, SavedView::in_memory());
+        scene_story(&mut s);
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.frame(0.0);
+        let selected = rt.elements().iter().find(|e| e.key.as_deref() == Some("comment-text-901")).unwrap().text_color;
+        rt.key(KeyEvent { key: rune::Key::Text("j".into()), mods: Default::default() });
+        rt.frame(0.016);
+        assert_eq!(rt.state.story.as_ref().unwrap().thread.cursor(), Some(9010));
+        let elements = rt.elements();
+        assert_eq!(elements.iter().find(|e| e.key.as_deref() == Some("comment-text-9010")).unwrap().text_color, selected);
+        assert!(!elements.iter().any(|e| e.key.as_deref() == Some("focus-rail-901") && e.opacity > 0.001));
+        assert_eq!(elements.iter().find(|e| e.key.as_deref() == Some("focus-rail-9010") && !e.exiting).unwrap().opacity, 1.0);
+        let dimmed = elements.iter().find(|e| e.key.as_deref() == Some("comment-text-901")).unwrap().text_color;
+        let [x, y, w, h] = elements.iter().find(|e| e.key.as_deref() == Some("comment-901")).unwrap().visible;
+        rt.pointer_move(x + w / 2.0, y + h / 2.0);
+        rt.frame(0.0);
+        rt.frame(0.05);
+        let during = rt.elements().iter().find(|e| e.key.as_deref() == Some("comment-text-901")).unwrap().text_color;
+        rt.frame(0.3);
+        let settled = rt.elements().iter().find(|e| e.key.as_deref() == Some("comment-text-901")).unwrap().text_color;
+        assert_eq!(rt.state.story.as_ref().unwrap().thread.cursor(), Some(901));
+        assert!(during != dimmed && during != settled && settled == selected, "discussion hover must ease");
+        rt.key(KeyEvent { key: rune::Key::Text("j".into()), mods: Default::default() });
+        rt.frame(0.016);
+        assert!(!rt.elements().iter().any(|e| e.key.as_deref() == Some("focus-rail-901") && e.opacity > 0.001));
+    }
+
+    #[test]
+    fn save_dot_pops_and_toast_fades_above_footer() {
+        for reduced in [false, true] {
+            let mut s = app(true, SavedView::in_memory());
+            s.reduced = reduced;
+            s.request(DEFAULT_GRID, Ranking::Fresh);
+            let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+            rt.on_key = Some(on_key);
+            rt.poll = Some(poll);
+            rt.frame(0.0);
+            rt.key(KeyEvent { key: rune::Key::Text("s".into()), mods: Default::default() });
+            rt.frame(0.0);
+            rt.frame(0.05);
+            let elements = rt.elements();
+            let dot = elements.iter().find(|e| e.key.as_deref() == Some("saved-dot-1") && !e.exiting).unwrap();
+            assert!(if reduced { dot.scale == 1.0 } else { dot.scale >= 0.6 && dot.scale < 1.0 }, "dot scale {}", dot.scale);
+            let toast = elements.iter().find(|e| e.key.as_deref() == Some("toast-saved") && !e.exiting).unwrap();
+            let footer = elements.iter().find(|e| e.key.as_deref() == Some("feed-footer")).unwrap();
+            assert!(toast.rect[1] + toast.rect[3] < footer.rect[1], "toast {:?}, footer {:?}", toast.rect, footer.rect);
+            rt.frame(0.4);
+            assert!((rt.elements().iter().find(|e| e.key.as_deref() == Some("saved-dot-1")).unwrap().scale - 1.0).abs() < 0.001);
+            rt.key(KeyEvent { key: rune::Key::Text("s".into()), mods: Default::default() });
+            rt.frame(0.05);
+            let elements = rt.elements();
+            assert!(elements.iter().any(|e| e.key.as_deref() == Some("toast-saved") && e.label.as_deref() == Some("Removed from Saved")));
+            assert!(!elements.iter().any(|e| e.key.as_deref() == Some("toast-dot") && e.opacity > 0.001));
+            rt.key(KeyEvent { key: rune::Key::Text("s".into()), mods: Default::default() });
+            rt.frame(0.4);
+            rt.frame(1.8);
+            while rt.state.toast.is_some() { rt.frame(0.01); }
+            rt.frame(0.05);
+            let toast = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("toast-saved"));
+            if reduced { assert!(toast.is_none() || toast.unwrap().opacity == 0.0); }
+            else { assert!(toast.as_ref().is_some_and(|e| e.exiting && e.opacity > 0.0 && e.opacity < 1.0), "toast {toast:?}"); }
+            rt.frame(0.1);
+            assert!(rt.elements().iter().find(|e| e.key.as_deref() == Some("toast-saved")).is_none_or(|e| e.opacity < 0.08));
+            rt.frame(0.15);
+            assert!(!rt.elements().iter().any(|e| e.key.as_deref() == Some("toast-saved") && e.opacity > 0.0));
+        }
+        let mut s = app(true, SavedView::in_memory());
+        s.request(DEFAULT_GRID, Ranking::Fresh);
+        scene_story(&mut s);
+        s.zoom = 1.5;
+        let mut rt = rune::Runtime::new(s, view, (800.0, 640.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.frame(0.0);
+        rt.key(KeyEvent { key: rune::Key::Text("s".into()), mods: Default::default() });
+        rt.frame(0.1);
+        let elements = rt.elements();
+        let toast = elements.iter().find(|e| e.key.as_deref() == Some("toast-saved")).unwrap();
+        let footer = elements.iter().find(|e| e.key.as_deref() == Some("story-footer")).unwrap();
+        assert!(toast.rect[1] + toast.rect[3] < footer.rect[1], "toast {:?}, footer {:?}", toast.rect, footer.rect);
+    }
 
     #[test]
     fn zoom_shortcuts_step_clamp_and_reset_in_feed_and_story() {
@@ -5456,6 +5626,7 @@ mod tests {
             arrival: Arrival::Initial,
             loading_since: None,
             hover: None,
+            keyboard_selection: true,
             hints: rune::Live::new(1.0),
             story: None,
             visible_comment: Cell::new(None),

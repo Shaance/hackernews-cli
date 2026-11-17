@@ -910,21 +910,17 @@ assert all(e["opacity"] == a[0]["opacity"] for e in elements("1.05") if e.get("k
 for at in ["0.85", "1.10"]:
     frames = [json.loads(line) for line in (root / f"feed-nav-{at}.trace.jsonl").read_text().splitlines()]
     names = {}
-    saw_selection_color = False
     for frame in frames:
         names.update({node["id"]: node["nm"] for node in frame.get("m", [])})
         tracks = [track for track in frame.get("tk", []) if track[2] == 1]
         if 600 <= frame.get("t", -1) <= 850:
-            assert all(track[1] in {"fill-color", "text-color"} for track in tracks), "selection may animate only color"
-            saw_selection_color |= bool(tracks)
+            assert not tracks, "keyboard selection must land instantly"
         if frame.get("t", -1) >= 1000:
             assert all(track[1] == "presence" for track in tracks), "page motion must use only group presence"
             assert all(names.get(track[0], str(track[0])).rsplit("/", 1)[-1].startswith("feed-page-") for track in tracks), "only the page group may transition"
 
-    assert saw_selection_color, "selection must have a visible color response"
-
 PYFEED
-pass "columns preserve row geometry; selection changes only color; page groups move directionally; reduced motion lands instantly; rapid paging converges"
+pass "columns preserve row geometry; keyboard selection is instant; page groups move directionally; reduced motion lands instantly; rapid paging converges"
 
 step "loading shells and actual AppSpec arrival contracts"
 cargo test --locked --offline --lib render_ -- --ignored --test-threads=1

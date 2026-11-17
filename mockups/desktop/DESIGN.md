@@ -274,8 +274,8 @@ Saved view drops it, because there every row is saved); the footer carries each 
 Saving is a confirmation, not a state you keep reading. A 6pt amber dot sits right of the rank,
 vertically centred on the title line — the only persistent mark a saved story carries. Toggling it
 plays `POP` 0.25/0.15 (0.6 → 1.0, small overshoot) and nothing else on the row moves. A `Toast`
-bottom-right says "Saved · Press 4 for Saved" (or "Removed from Saved"), carrying its own copy of
-the dot as its lead, and leaves after 2.4 s. The right edge stays empty: no label, no badge, no
+bottom-right says "Saved · Press 4 for Saved" with its own copy of the dot as its lead, or
+"Removed from Saved" without the dot, and leaves after 2.4 s. The right edge stays empty: no label, no badge, no
 timestamp — that edge belongs to hover actions. The Saved view has no dots at all, because every
 row there is saved; hover reveals `unsave` instead.
 
@@ -315,16 +315,15 @@ Rune's springs are duration + bounce, retargeted with exact position and velocit
 | `SETTLE` | 0.30 s / 0 | failure card, occasional layout changes | snaps |
 | `GLIDE` | 0.32 s / 0 | source viewer; thread re-root | fades in place |
 | `REFLOW` | 0.40 s / 0 | thread fold; focus mode; row removal; one-column ↔ two-column reflow | lands at once |
-| `MORPH` | 0.30 s / 0.16 | split opening from 0 width; settings, help, link chooser | fades |
-| `POP` | 0.25 s / 0.15 | the saved dot beside the rank; the toast follows it | fades |
+| `MORPH` | 0.30 s / 0.16 | inspector sliding into place; settings, help, link chooser | fades |
+| `POP` | 0.25 s / 0.15 | the saved dot beside the rank; the toast follows it | instant |
 | `REDUCED_FADE` | 0.15 s curve | replacement for every spatial move | — |
 
-Four of these carry the reading loop. **Open a story → `MORPH`**: the inspector's width springs
-from 0 to its remembered fraction and the article's measure reflows under it — the feed does not
-slide aside, the split grows into it. **Save → `POP` + toast**: the dot overshoots once, the toast
+Four of these carry the reading loop. **Open a story → `MORPH`**: the inspector slides in at its
+remembered width, keeping the article's measure stable. **Save → `POP` + toast**: the dot overshoots once, the toast
 fades in behind it, nothing else on the row moves. **Fold a thread → `REFLOW`**: replies collapse,
 the comments below close the gap, and the folded header stays put so the click target does not
-move under the pointer. **Turn a page → directional arrival**: the incoming feed group moves 24 pt from the navigation direction while opacity rises from 0.2 to 1 over about 220 ms, without staggering. The old group disappears immediately. Routine row selection has a restrained 120 ms color response and reserves its accent marker slot. Reduced motion is instant. Left/Right move between feed columns at the same visual row (clamped on a short right column); at column edges arrows turn pages, landing at the first/last story. Explicit paging remains on n/p, Space, Page Down/Page Up and the buttons. Both columns move together as one group.
+move under the pointer. **Turn a page → directional arrival**: the incoming feed group moves 24 pt from the navigation direction while opacity rises from 0.2 to 1 over about 220 ms, without staggering. The old group disappears immediately. Keyboard selection is instant; pointer selection has a restrained 120 ms color response and reserves its accent marker slot. Reduced motion is instant. Left/Right move between feed columns at the same visual row (clamped on a short right column); at column edges arrows turn pages, landing at the first/last story. Explicit paging remains on n/p, Space, Page Down/Page Up and the buttons. Both columns move together as one group.
 
 An empty pending feed shows static placeholder rows at the real grid's spacing, with one busy status and a footer loading label. Delayed startup results enter 12 pt upward with the same 220 ms fade; already-ready first-paint content appears immediately. Tab results enter horizontally according to tab order, including immediate Saved results. Placeholder rows have no controls or fake story text. Refresh and paging retain existing rows; failures and settled-empty states have their own messages. Reduced motion lands every arrival immediately.
 

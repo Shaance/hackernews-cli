@@ -45,6 +45,8 @@ Severity: **ship-blocker** (would make a reader call it unfinished on first use)
   543 pt width while fading (x 1090 → 637 over ~250 ms, ~5 pt overshoot at 400 ms). That is the better choice
   (the article measure never reflows mid-motion); update DESIGN.md, not the code.
 
+Status: fixed in run A — Main pane and toolbar cut outgoing content immediately; the inspector retains its slide.
+
 ### M2. Held `j`/`k` leaves a trail because the highlight lags the cursor
 - Severity: should-fix (proposed spec change). Lens: motion. Screen: feed; the discussion uses the same
   pattern. Verified: rendered (feed), code (discussion).
@@ -61,6 +63,8 @@ Severity: **ship-blocker** (would make a reader call it unfinished on first use)
 - Fix: keyboard-driven selection changes land instantly (`Spring::NONE`); keep the 0.12 s response for
   pointer hover selection, where it softens jitter. Record the source of the last selection change in `App`
   (`keyboard_navigation`, `app.rs:201`, already runs on every key) and choose `.motion()` from it. Size S.
+
+Status: fixed in run A — Feed and discussion keyboard selection land immediately; pointer selection eases.
 
 ### P1. The help sheet cuts its last row at the default window and says "close" three times
 - Severity: should-fix. Lens: polish. Screen: help (`?`). Verified: rendered.
@@ -191,6 +195,8 @@ Severity: **ship-blocker** (would make a reader call it unfinished on first use)
   exit pass, or keep `ToastRegion` mounted and toggle its child). For the dot, a one-shot `.scale(0.6 → 1.0)`
   insertion transition with `Spring::new(0.25, 0.15)`, none under reduced motion. Size S.
 
+Status: fixed in run A — The toast fades out and the saved dot pops once, with no pop under reduced motion.
+
 ### P9. The toast straddles the footer divider
 - Severity: nice-to-have. Lens: polish. Screen: feed. Verified: rendered (`$A/toast-crop.png`).
 - Evidence: `toast-saved` occupies y 668–712; the footer's hairline is at y 709 and `feed-footer` starts at 710.
@@ -198,6 +204,8 @@ Severity: **ship-blocker** (would make a reader call it unfinished on first use)
 - Fix: lift the `ToastRegion` by the footer height (or bottom-inset it from the footer's top) so it floats
   wholly above the divider. Also, "Removed from Saved" carries the amber saved dot as its lead; drop the dot on
   removal so the mark keeps meaning "saved". Size S.
+
+Status: fixed in run A — The toast clears the measured footer and removal notices omit the saved dot.
 
 ### P10. A corrupt saved file says "No saved stories yet" and shows a raw parser error
 - Severity: should-fix. Lens: polish (error state). Screen: Saved tab with an unreadable `saved.json`.

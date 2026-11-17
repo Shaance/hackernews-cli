@@ -54,7 +54,8 @@ def one(elements, key_name):
 def no_reading_ghosts(elements):
     ghosts = [e.get("key") for e in elements if e.get("exiting")
               and e.get("text") and e.get("opacity", 1) > .001
-              and "/inspector-pane/" in e.get("path", "")]
+              and any(scope in e.get("path", "") for scope in
+                      ("/inspector-pane/", "/main-pane/", "/toolbar/leading/"))]
     assert not ghosts, f"outgoing reading text remains painted: {ghosts}"
 
 
@@ -111,6 +112,17 @@ def rejects_mutation(name, value, check):
 
 summary = [key(.1, "S"), key(.8, "S")]
 citations = [key(.1, "Tab"), key(.2, "Enter"), key(.8, "Escape")]
+for reduced in [False, True]:
+    for name, at, incoming, outgoing in [("open", .15, "story-main", "feed-list"),
+                                         ("close", .85, "feed-list", "story-main")]:
+        elements = capture(f"feed-story-{name}-{reduced}", scene="feed",
+                           events=[key(.1, "Enter"), key(.8, "Escape")], at=at, reduced=reduced)
+        # The inspector itself slides out on close; its internal replacements are checked below.
+        no_reading_ghosts([e for e in elements if name != "close"
+                           or "/inspector-pane/" not in e.get("path", "")])
+        one(elements, incoming)
+        assert not any(e.get("key") == outgoing and e.get("opacity", 1) > .001 for e in elements)
+    print(f"PASS feed/story handoffs: reduced={reduced}", flush=True)
 for reduced in [False, True]:
     mode = "reduced" if reduced else "normal"
     for theme in ["dark", "light"]:
