@@ -276,7 +276,7 @@ pub fn inspector_pane(
                 .gap(10.0)
                 .child(summary_card(s, k, t, accent, reduced, summary_height, summary_scroll))
                 .child(
-                    discussion_pane(s, k, t, accent, overlays, discussion_scroll)
+                    discussion_pane(s, k, t, accent, overlays, reduced, discussion_scroll)
                         .transition(transition)
                         .motion(reflow)
                         .grow(1.0)
@@ -296,7 +296,7 @@ pub fn inspector_pane(
             enter.insertion.opacity = 0.4;
             enter
         };
-        stage = stage.child(source_viewer(s, source, k, t, accent, source_scroll)
+        stage = stage.child(source_viewer(s, source, k, t, accent, reduced, source_scroll)
             .pin(Some(0.0), Some(0.0), Some(0.0), Some(0.0)).transition(enter));
     }
     stage
@@ -341,7 +341,7 @@ fn summary_card(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: bool,
 
 fn expanded_summary(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: bool, max_height: f32,
     on_scroll: impl Fn(rune::ScrollPos) + 'static) -> El {
-    let mut body = col().w_full().gap(12.0);
+    let mut body = col().w_full().gap(14.0);
     if matches!(s.article_summary, ArticleSummaryState::Unconfigured)
         && matches!(s.summary, SummaryState::Unconfigured)
     {
@@ -376,22 +376,26 @@ fn expanded_summary(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: b
             _ => {}
         }
         body = body
-            .child(text("Article").key("article-summary-heading").font(type_::TITLE).color(t.text))
+            .child(col().w_full().gap(6.0)
+            .child(text("Article").key("article-summary-heading").role("heading").level(3).font(type_::SECTION).color(t.text_secondary))
             .child(col().key("article-summary-body").w_full().child_exit(Transition::none())
                 .child(col().key("article-summary-result").w_full().transition(Transition::none()).animated_changes()
                     .motion(Spring::NONE).opacity(if article_waiting && !reduced { 0.4 } else { 1.0 })
                     .offset(0.0, if article_waiting && !reduced { 8.0 } else { 0.0 })
                     .opacity_motion(article_motion).offset_motion(article_motion).child(article))
-                .children(article_waiting.then(|| generating(k, t, "Reading the article…"))))
-            .child(text("Discussion").key("discussion-summary-heading").font(type_::TITLE).color(t.text))
+                .children(article_waiting.then(|| generating(k, t, "Reading the article…")))))
+            .child(col().w_full().gap(6.0)
+            .child(text("Discussion").key("discussion-summary-heading").role("heading").level(3).font(type_::SECTION).color(t.text_secondary))
             .child(col().key("discussion-summary-body").w_full().child_exit(Transition::none())
                 .child(col().key("discussion-summary-result").w_full().transition(Transition::none()).animated_changes()
                     .motion(Spring::NONE).opacity(if discussion_waiting && !reduced { 0.4 } else { 1.0 })
                     .offset(0.0, if discussion_waiting && !reduced { 8.0 } else { 0.0 })
                     .opacity_motion(discussion_motion).offset_motion(discussion_motion).child(discussion))
-                .children(discussion_waiting.then(|| generating(k, t, "Reading the discussion…"))));
+                .children(discussion_waiting.then(|| generating(k, t, "Reading the discussion…")))));
     }
-    col().key("summary-open").w_full().gap(10.0).px(14.0).py(14.0)
+    let more = rune::Live::new(0.0_f32);
+    let on_more = more.clone();
+    col().key("summary-open").w_full().gap(10.0).px(14.0).pt(14.0).pb(20.0)
         .child(summary_header(t))
         .child(col().key("summary-scroll").role("region").label("Summary content").focusable(true)
             .on_key(|_: &mut App, ev: &rune::KeyEvent, tx: &mut Tx| match ev.key {
@@ -399,8 +403,12 @@ fn expanded_summary(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: b
                 rune::Key::PageUp => { tx.scroll_page("summary-scroll", -1); true }
                 _ => false,
             }).w_full().min_h(0.0).shrink()
-            .max_h((max_height - 56.0).max(80.0)).scroll(ScrollSpec { stick_bottom: false }).on_scroll_offset(on_scroll)
+            .max_h((max_height - 62.0).max(80.0)).scroll(ScrollSpec { stick_bottom: false }).on_scroll_offset(on_scroll)
+            .chain_scroll_offset(move |at| { on_more.set(if at.max[1] > at.offset[1] + 1.0 { 1.0 } else { 0.0 }); })
             .scroll_edge_fade(12.0).child(body))
+        .child(row().key("summary-more").pin(None, None, Some(14.0), Some(2.0))
+            .live_opacity(&more).a11y_hidden()
+            .child(text("More below ↓").font(type_::LABEL).color(t.text_secondary)))
 }
 
 fn summary_header(t: tok::Theme) -> El {
@@ -615,6 +623,7 @@ fn discussion_pane(
     t: tok::Theme,
     accent: Color,
     overlays: &mut Vec<El>,
+    reduced: bool,
     on_scroll: impl Fn(rune::ScrollPos) + 'static,
 ) -> El {
     col()
@@ -626,11 +635,11 @@ fn discussion_pane(
         .scroll_edge_fade(20.0)
         .scroll_margin(20.0)
         .on_scroll_offset(on_scroll)
-        .child(discussion(s, k, t, accent, overlays).motion(motion::DEFAULT))
+        .child(discussion(s, k, t, accent, overlays, reduced).motion(motion::DEFAULT))
 }
 
 /// The discussion: the header, the sticky ancestor trail, then the tree's visible rows.
-fn discussion(s: &Story, k: &Kit, t: tok::Theme, accent: Color, overlays: &mut Vec<El>) -> El {
+fn discussion(s: &Story, k: &Kit, t: tok::Theme, accent: Color, overlays: &mut Vec<El>, reduced: bool) -> El {
     let thread = &s.thread;
     let mut list = col()
         .key("discussion")
@@ -673,9 +682,9 @@ fn discussion(s: &Story, k: &Kit, t: tok::Theme, accent: Color, overlays: &mut V
     let keys = Rc::clone(&rows);
     let kit = (*k).clone();
     list.child(col().key("discussion-rows").w_full().gap(2.0)
-        .growth(GrowthSpec::default()).virtual_rows(rows.len(), 110.0,
+        .growth(GrowthSpec { spring: Spring::NONE, ..GrowthSpec::default() }).virtual_rows(rows.len(), 110.0,
             move |_s: &App, i| format!("comment-{}", keys[i].id).into(),
-            move |app: &App, i| app.story().map(|s| comment_row(s, rows[i].id, rows[i].depth, &kit, t, accent, false)).unwrap_or_else(el)))
+            move |app: &App, i| app.story().map(|s| comment_row(s, rows[i].id, rows[i].depth, &kit, t, accent, false, reduced)).unwrap_or_else(el)))
 }
 
 /// The discussion's header: what the capture holds, whether focus mode is on, and `L`'s chip.
@@ -774,22 +783,28 @@ fn trail_strip(s: &Story, trail: &[i32], t: tok::Theme) -> El {
 ///
 /// The row is the fold target and the cursor target at once. Folding keeps the comment readable;
 /// a comment at the depth cap offers `continue thread` instead of drawing deeper replies.
-fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: Color, context: bool) -> El {
+fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: Color, context: bool, reduced: bool) -> El {
     let thread = &s.thread;
-    let Some(node) = thread.node(id) else {
-        return el();
-    };
-    let selected = !context && thread.cursor() == Some(id);
-    let folded = !context && thread.is_folded(id);
-    let capped = !context && thread.capped(id);
+    let captured = context.then(|| s.shown_source()).flatten().filter(|source| source.id == id);
+    let node = thread.node(id);
+    if node.is_none() && captured.is_none() { return el(); }
+    let nav = context.then(|| &s.source.as_ref().unwrap().nav);
+    let cursor = nav.map_or_else(|| thread.cursor(), |nav| nav.cursor);
+    let focus = nav.map_or_else(|| thread.focus(), |nav| nav.focus);
+    let selected = cursor == Some(id);
+    let folded = nav.map_or_else(|| thread.is_folded(id), |nav| nav.folded.contains(&id));
+    let capped = if context { depth + 1 >= MAX_DEPTH && thread.has_children(id) } else { thread.capped(id) };
+    let readable = captured.is_some() || node.is_some_and(|node| node.readable);
+    let author = captured.map(|source| source.author.as_str()).or_else(|| node.map(|node| node.author.as_str())).unwrap_or("");
+    let body = captured.map(|source| source.text.as_str()).or_else(|| node.map(|node| node.text.as_str())).unwrap_or("");
     let replies = thread.child_count(id);
-    let loaded = !node.children.is_empty();
+    let loaded = node.is_some_and(|node| !node.children.is_empty());
     let loading = s.pending_reply.as_ref().is_some_and(|r| r.parent_id == id);
     let expanded = (loaded || loading) && !folded && !capped;
     let mut r = col()
         .key(format!("{}comment-{id}", if context { "source-" } else { "" }))
-        .role(if node.readable { "article" } else { "group" })
-        .label(if node.readable { format!("Comment by {}", node.author) } else { "Replies".to_string() })
+        .role(if readable { "article" } else { "group" })
+        .label(if readable { format!("Comment by {author}") } else { "Replies".to_string() })
         .level(depth + 1)
         .w_full()
         .gap(4.0)
@@ -797,20 +812,29 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
         .pr(10.0)
         .py(8.0)
         .radius(radius::SM)
-        .focusable(!context)
+        .focusable(true)
         .focus_selected(selected)
         .focus_ring(1.5, 0.0, accent)
-        .motion(motion::REFLOW);
-    if !context {
-        r = r.on_press(move |s: &mut App| {
-            if let Some(story) = s.story_mut() {
-                story.thread.select(id);
-            }
+        .motion(Spring::NONE)
+        .transition(if depth == 0 || reduced { Transition::none() } else {
+            Transition::asymmetric(Transition::opacity(), Transition::none())
+                .springs(SpringPair::new(Spring::new(0.15, 0.0), Spring::NONE))
         });
-    }
-    if selected && thread.focus() {
+    r = r.on_press(move |s: &mut App| {
+        if let Some(story) = s.story_mut() {
+            if !context { story.citation_focus = false; }
+            story.with_thread(|thread| { thread.select(id); });
+        }
+    }).on_pointer_move_local(move |s: &mut App, _, tx| {
+        if let Some(story) = s.story_mut() {
+            let changed = story.with_thread(|thread| thread.focus() && thread.cursor() != Some(id) && thread.select(id));
+            if changed && !context { story.citation_focus = false; }
+            if !changed { tx.live_only(); }
+        }
+    });
+    if selected {
         r = r.child(el().key(format!("focus-rail-{id}"))
-            .pin(Some(0.0), Some(7.0), None, Some(7.0)).w(2.0).fill(accent));
+            .pin(Some(5.0 + depth as f32 * INDENT), Some(7.0), None, Some(7.0)).w(2.0).fill(accent));
     }
     if replies > 0 { r = r.expanded(expanded); }
     // One hairline per ancestor level: the threadline that says how deep this row is.
@@ -819,7 +843,7 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
             el()
                 .key(format!("guide-{id}-{level}"))
                 .pin(
-                    Some(8.0 + (level as f32 - 0.5) * INDENT),
+                    Some(14.0 + (level as f32 - 1.0) * INDENT),
                     Some(0.0),
                     None,
                     Some(0.0),
@@ -828,14 +852,12 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
                 .fill(t.text_secondary.alpha(0.5)),
         );
     }
-    let retry_primary = !node.readable && !loaded && !folded && !capped && !loading
+    let retry_primary = !readable && !loaded && !folded && !capped && !loading
         && thread.reply_batch(id, false).is_empty() && !thread.reply_batch(id, true).is_empty();
     let action = if capped { "Continue thread" } else if folded { "Show replies" }
         else if retry_primary { "Retry replies" } else if !loaded && !loading { "Load replies" }
         else { "Hide replies" };
-    if !node.readable && context {
-        r = r.child(text("Comment unavailable").font(type_::LABEL).color(t.text_secondary));
-    } else if !node.readable {
+    if !readable {
         let noun = if replies == 1 { "reply" } else { "replies" };
         r = r.child(
             row()
@@ -861,7 +883,7 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
             .w_full()
             .gap(6.0)
             .center_y();
-        if !context && (replies > 0 || capped) {
+        if replies > 0 || capped {
             who = who.child(
                 icon(k.glyph.chevron_down, 12.0)
                     .icon_rotation(if expanded { 0.0 } else { -FRAC_PI_2 })
@@ -876,22 +898,22 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
         }
         who = who
             .child(
-                text(node.author.clone())
+                text(author.to_string())
                     .key(format!("comment-author-{id}"))
                     .shrink()
                     .min_w(0.0)
                     .font(type_::TITLE)
-                    .color(if !context && thread.dimmed(id) { t.text_secondary } else { t.text })
+                    .color(if focus && !thread.in_chain_from(id, cursor) { t.text_secondary } else { t.text })
                     .truncate(),
             )
             .child(
-                text(node.time_ago.clone())
+                text(node.map_or("", |node| node.time_ago.as_str()).to_string())
                     .key(format!("comment-age-{id}"))
                     .font(type_::LABEL)
                     .color(t.text_secondary),
             );
         if folded && !capped {
-            let hidden = thread.hidden_count(id).max(replies);
+            let hidden = if context { thread.hidden_count_at(id, depth) } else { thread.hidden_count(id) }.max(replies);
             let noun = if hidden == 1 { "reply" } else { "replies" };
             who = who.child(
                 row()
@@ -910,15 +932,15 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
         }
         r = r.child(who.child(el().grow(1.0)))
             .child(
-                text(node.text.clone())
-                    .key(format!("comment-text-{id}"))
+                text(body.to_string())
+                    .key(if captured.is_some() { "source-comment-text".to_string() } else { format!("comment-text-{id}") })
                     .ml(18.0)
                     .font(type_::BODY)
-                    .color(if !context && thread.focus() && thread.in_chain(id) { t.text } else { t.text_secondary })
+                    .color(if !focus || selected { t.text } else { t.text_secondary })
                     .wrap_anywhere(),
             );
     }
-    if capped && node.readable {
+    if capped && readable {
         let behind = thread.reply_count(id).max(replies);
         r = r.child(
             row()
@@ -944,12 +966,13 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
         );
     }
     if !folded && !capped && replies > 0 {
-        let indent = if node.readable { 18.0 } else { 0.0 };
+        let indent = if readable { 18.0 } else { 0.0 };
         if loading {
-            r = r.child(text("Loading replies…").ml(indent).role("status").busy(true).font(type_::LABEL).color(t.text_secondary));
+            r = r.child(text("Loading replies…").ml(indent).role("status").busy(true)
+                .transition(Transition::none()).font(type_::LABEL).color(t.text_secondary));
         } else {
             for (retry, label) in [(false, "Load replies"), (true, "Retry replies")] {
-                if !context && !node.readable && !loaded && (!retry || retry_primary) { continue; }
+                if !readable && !loaded && (!retry || retry_primary) { continue; }
                 let count = thread.reply_batch(id, retry).len();
                 if count == 0 { continue; }
                 let label = if !retry && !thread.children_of(id).is_empty() { "Load more replies" } else { label };
@@ -959,7 +982,7 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
                     .on_press(move |s: &mut App| s.load_replies(id, retry))
                     .child(text(label).font(type_::LABEL).color(accent)));
             }
-            if let crate::comments::BranchStatus::Failed { message, .. } = &node.branch {
+            if let Some(crate::comments::BranchStatus::Failed { message, .. }) = node.map(|node| &node.branch) {
                 r = r.child(text(message.clone()).ml(indent).role("status").font(type_::LABEL).color(t.text_secondary));
             }
         }
@@ -1058,51 +1081,29 @@ fn source_viewer(
     k: &Kit,
     t: tok::Theme,
     accent: Color,
+    reduced: bool,
     on_scroll: impl Fn(rune::ScrollPos) + 'static,
 ) -> El {
     let thread = &s.thread;
     let mut content = col().key("source-content").w_full().px(28.0).py(14.0).gap(10.0)
-        .child(text(format!("Comment by {}", source.author)).key("source-title").font(type_::TITLE).color(t.text))
-        .child(text(age_of(s, source.id)).key("source-who").font(type_::LABEL).color(t.text_secondary))
-        .child(text(source.text.clone()).key("source-comment-text").font(type_::BODY).color(t.text).wrap_anywhere());
-    if let Some(node) = thread.node(source.id) {
-        if thread.has_children(source.id) {
-            content = content.child(text("Replies").key("source-replies-heading").font(type_::TITLE).color(t.text));
-            let loading = s.pending_reply.as_ref().is_some_and(|request| request.parent_id == source.id);
-            if loading {
-                content = content.child(text("Loading replies…").role("status").busy(true).font(type_::LABEL).color(t.text_secondary));
-            } else {
-                for (retry, label) in [(false, "Load replies"), (true, "Retry replies")] {
-                    if thread.reply_batch(source.id, retry).is_empty() { continue; }
-                    let id = source.id;
-                    let label = if !retry && !node.children.is_empty() { "Load more replies" } else { label };
-                    content = content.child(row().key(format!("source-load-{id}-{retry}"))
-                        .role("button").label(label).focusable(true).disabled(s.pending_reply.is_some())
-                        .on_press(move |s: &mut App| s.load_replies(id, retry))
-                        .child(text(label).font(type_::LABEL).color(t.text)));
-                }
-                if let crate::comments::BranchStatus::Failed { message, .. } = &node.branch {
-                    content = content.child(text(message.clone()).role("alert").font(type_::LABEL).color(t.text_secondary).wrap());
-                }
-            }
-            let root_depth = thread.tree_depth(source.id).unwrap_or(0);
-            let rows: Vec<_> = thread.subtree(source.id).into_iter().skip(1)
-                .filter_map(|id| thread.tree_depth(id).map(|depth| (id, depth.saturating_sub(root_depth + 1).min(MAX_DEPTH - 1))))
-                .collect();
-            let rows = Rc::new(rows);
-            let keys = Rc::clone(&rows);
-            let kit = (*k).clone();
-            content = content.child(col().key("source-replies").w_full().gap(2.0)
-                .growth(GrowthSpec::default()).virtual_rows(rows.len(), 110.0,
-                    move |_app: &App, i| format!("source-comment-{}", keys[i].0).into(),
-                    move |app: &App, i| app.story().map(|story| comment_row(story, rows[i].0, rows[i].1, &kit, t, accent, true)).unwrap_or_else(el)));
+        .child(text("Discussion summary").key("source-summary-heading").font(type_::LABEL).color(t.text_secondary));
+    if let Some(summary) = s.summary.readable() {
+        for (index, bullet) in summary.bullets.iter().enumerate().filter(|(_, bullet)| bullet.sources.contains(&source.id)) {
+            content = content.child(row().key(format!("source-summary-{index}")).w_full().gap(8.0)
+                .child(text("•").font(type_::BODY).color(accent))
+                .child(text(bullet.text.clone()).grow(1.0).min_w(0.0).font(type_::BODY).color(t.text).wrap()));
         }
-    } else {
-        content = content.child(text("Replies are unavailable for this captured comment.")
-            .role("status").font(type_::LABEL).color(t.text_secondary).wrap());
     }
+    let rows = Rc::new(thread.source_rows(&s.source.as_ref().unwrap().nav));
+    let keys = Rc::clone(&rows);
+    let kit = (*k).clone();
+    content = content.child(el().w_full().h(1.0).my(4.0).fill(t.separator))
+        .child(col().key("source-replies").w_full().gap(2.0)
+        .growth(GrowthSpec { spring: Spring::NONE, ..GrowthSpec::default() }).virtual_rows(rows.len(), 110.0,
+            move |_app: &App, i| format!("source-comment-{}", keys[i].id).into(),
+            move |app: &App, i| app.story().map(|story| comment_row(story, rows[i].id, rows[i].depth, &kit, t, accent, true, reduced)).unwrap_or_else(el)));
     col().key("source-viewer").role("region").label(format!("Comment by {}", source.author))
-        .w_full().h_full().scroll(ScrollSpec { stick_bottom: false }).scroll_edge_fade(20.0)
+        .focusable(true).w_full().h_full().scroll(ScrollSpec { stick_bottom: false }).scroll_edge_fade(20.0)
         .on_scroll_offset(on_scroll).child(content)
 }
 
@@ -1111,7 +1112,7 @@ pub fn story_footer(s: &Story, k: &Kit, t: tok::Theme) -> El {
     let in_source = s.source.is_some();
     let mut footer = row().key("story-footer").instant_changes().w_full().px(24.0).py(10.0).gap(18.0).flex_wrap().center_y()
         .child(hint(k, t, &["Esc"], if in_source { "discussion" } else { "feed" }))
-        .child(hint(k, t, &["j", "k"], if in_source { "scroll" } else { "move" }))
+        .child(hint(k, t, &["j", "k"], "move"))
         .child(hint(k, t, &["Tab"], if in_source { "next source" } else { "citation" }));
     if !in_source {
         footer = footer.child(hint(k, t, &["⇧", "S"], "summary"))
@@ -1165,14 +1166,6 @@ fn host_of(url: &str) -> String {
     }
 }
 
-/// The age of the comment a citation points at, from the discussion tree.
-fn age_of(s: &Story, id: i32) -> String {
-    s.thread
-        .node(id)
-        .map(|node| node.time_ago.clone())
-        .unwrap_or_else(|| "captured".to_string())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1196,7 +1189,7 @@ mod tests {
 
     fn nested_comment(story: &Story, cx: &mut rune::Cx<Story>) -> El {
         let dark = cx.system_dark();
-        comment_row(story, 9010, 1, &Kit::neutral(dark), tok::theme(dark), tok::accent(3, dark), false)
+        comment_row(story, 9010, 1, &Kit::neutral(dark), tok::theme(dark), tok::accent(3, dark), false, false)
     }
 
     #[test]

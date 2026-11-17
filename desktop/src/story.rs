@@ -14,7 +14,7 @@ use hn_lib::reader::{Article, Discussion, Source as CapturedSource};
 use hn_lib::HNCLIItem;
 
 use crate::bridge::{CommentsRefreshed, StoryFilled, StoryUpdate, SummaryError};
-use crate::comments::Thread;
+use crate::comments::{Navigation, Thread};
 
 /// One summary bullet, in the desktop's own shape so state can be cloned and compared.
 ///
@@ -115,6 +115,12 @@ pub struct LinkChooser {
     pub selected: usize,
 }
 
+/// The captured comment and its temporary, independent thread navigation.
+pub(crate) struct SourceView {
+    pub id: i32,
+    pub nav: Navigation,
+}
+
 impl LinkChooser {
     /// The link `Enter` would open.
     pub fn selected_url(&self) -> Option<&str> {
@@ -158,7 +164,7 @@ pub struct Story {
     /// `Tab` has selected a citation, so `Enter` reads it.
     pub citation_focus: bool,
     /// The source viewer's comment id, when it is open.
-    pub source: Option<i32>,
+    pub(crate) source: Option<SourceView>,
     /// `L`'s chooser, when it is open.
     pub links: Option<LinkChooser>,
     /// A comment the next frame must scroll into view again. A sticky element that leaves the
@@ -310,8 +316,11 @@ impl Story {
 
     pub fn land_replies(&mut self, filled: crate::bridge::ReplyFilled) -> bool {
         if filled.request.story_id != self.id() || self.pending_reply.as_ref() != Some(&filled.request) { return false; }
+        let selected = self.source.as_ref().and_then(|source| self.thread.source_rows(&source.nav)
+            .iter().position(|row| Some(row.id) == source.nav.cursor));
         self.pending_reply = None;
         self.thread.merge_replies(filled.request.parent_id, &filled.request.ids, filled.comments);
+        self.repair_source_navigation(selected);
         true
     }
 
@@ -388,7 +397,7 @@ impl Story {
             && self.source.is_some()
         {
             // The viewer follows the selection, so Tab walks the sources.
-            self.source = Some(id);
+            self.source = Some(SourceView { id, nav: Navigation::rooted(id) });
         }
     }
 
@@ -412,13 +421,13 @@ impl Story {
         let Some(id) = self.citations().get(self.citation).copied() else {
             return false;
         };
-        self.source = Some(id);
+        self.source = Some(SourceView { id, nav: Navigation::rooted(id) });
         true
     }
 
     /// `Esc` in the viewer: back to the summary, keeping the citation selected.
     pub fn close_source(&mut self) -> bool {
-        let closed = self.source.take();
+        let closed = self.source.take().map(|source| source.id);
         if let Some((summary, sources)) = self.staged_summary.take() {
             self.summary = SummaryState::Done(summary);
             self.sources = sources;
@@ -431,8 +440,16 @@ impl Story {
 
     /// The captured source the viewer is showing.
     pub fn shown_source(&self) -> Option<&CapturedSource> {
-        let id = self.source?;
+        let id = self.source.as_ref()?.id;
         self.sources.iter().find(|source| source.id == id)
+    }
+
+    /// Apply the same navigation operations to whichever view owns input.
+    pub(crate) fn with_thread<T>(&mut self, f: impl FnOnce(&mut Thread) -> T) -> T {
+        match &mut self.source {
+            Some(source) => self.thread.with_navigation(&mut source.nav, f),
+            None => f(&mut self.thread),
+        }
     }
 
     /// `L`: offer the links the post and the focused comment carry. Returns whether there is
@@ -513,7 +530,10 @@ impl Story {
     pub fn land_refresh(&mut self, result: CommentsRefreshed, sources: Vec<CapturedSource>) {
         self.refreshing_comments = false;
         let CommentsRefreshed { comments, descendants, warning, .. } = result;
+        let selected = self.source.as_ref().and_then(|source| self.thread.source_rows(&source.nav)
+            .iter().position(|row| Some(row.id) == source.nav.cursor));
         self.thread.merge_comments(comments.as_deref().unwrap_or(&[]), &descendants);
+        self.repair_source_navigation(selected);
         self.refresh_error = match comments {
             Ok(comments) => {
                 self.merge_current_sources(&comments, sources);
@@ -527,6 +547,19 @@ impl Story {
     fn merge_current_sources(&mut self, comments: &[hn_lib::app::Comment], sources: Vec<CapturedSource>) {
         self.current_sources.retain(|source| !comments.iter().any(|comment| comment.id == source.id));
         self.current_sources.extend(sources);
+    }
+
+    fn repair_source_navigation(&mut self, selected: Option<usize>) {
+        let Some(source) = &mut self.source else { return; };
+        if source.nav.root.is_some_and(|id| id != source.id
+            && self.thread.node(id).is_none_or(|node| !node.readable && !self.thread.has_children(id))) {
+            let focus = source.nav.focus;
+            source.nav = Navigation { focus, ..Navigation::rooted(source.id) };
+        }
+        let rows = self.thread.source_rows(&source.nav);
+        if !rows.iter().any(|row| Some(row.id) == source.nav.cursor) {
+            source.nav.cursor = rows.get(selected.unwrap_or(0).min(rows.len().saturating_sub(1))).map(|row| row.id);
+        }
     }
 }
 
@@ -770,12 +803,12 @@ mod tests {
         assert!(story.citation_focus);
         assert_eq!(story.citation, 0);
         assert!(story.open_source());
-        assert_eq!(story.source, Some(901));
+        assert_eq!(story.shown_source().map(|source| source.id), Some(901));
         assert_eq!(story.shown_source().unwrap().author, "tptacek");
         // A second Enter does not re-open; Esc closes and keeps the selection.
         assert!(!story.open_source());
         assert!(story.close_source());
-        assert_eq!(story.source, None);
+        assert!(story.source.is_none());
         assert!(story.citation_focus);
         // Tab wraps.
         story.next_citation();

@@ -92,7 +92,7 @@ pub fn is_reading_external(ev: &KeyEvent) -> bool {
 ///
 /// The terminal app splits these across `Reader::key` (`src/reader/interaction.rs:7`) and
 /// `reader_actions::handle` (`src/reader_actions.rs:60`); the desktop also scrolls the summary
-/// viewport with `J`/`K` and the source viewer with `j`/`k`/`g`/`G`.
+/// viewport with `J`/`K`; the source viewer uses the same comment navigation as discussion.
 ///
 /// `h` and `l` are the one place the two tables disagree. README.md's discussion table has
 /// `h` as back and `l` as expand/collapse; DESIGN.md's keyboard table has `h`/`l` as
@@ -128,7 +128,7 @@ pub enum StoryKey {
     PrevSibling,
     /// `u`: the parent comment.
     Parent,
-    /// `h`, `c`: fold the focused comment's replies.
+    /// `h` folds this comment; `c` also collapses its nearest open ancestor.
     Fold,
     /// `l`, `Right`: unfold the focused comment, or re-root at it when it is at the cap.
     Unfold,
@@ -415,7 +415,7 @@ pub const HELP: &[HelpGroup] = &[
             },
             HelpRow {
                 keys: &["h", "c"],
-                label: "Fold replies",
+                label: "Fold replies (c: parent)",
                 action: HelpAction::Story(StoryKey::Fold),
             },
             HelpRow {
@@ -450,17 +450,17 @@ pub const HELP: &[HelpGroup] = &[
             },
             HelpRow {
                 keys: &["Enter"],
-                label: "Expand, or read the citation",
+                label: "Toggle replies, or read citation",
                 action: HelpAction::Story(StoryKey::Enter),
             },
             HelpRow {
                 keys: &["Tab"],
-                label: "Next citation",
+                label: "Next citation or source",
                 action: HelpAction::Story(StoryKey::NextCitation),
             },
             HelpRow {
                 keys: &["\u{21e7}Tab"],
-                label: "Previous citation",
+                label: "Previous citation or source",
                 action: HelpAction::Story(StoryKey::PrevCitation),
             },
             HelpRow {
@@ -480,7 +480,7 @@ pub const HELP: &[HelpGroup] = &[
             },
             HelpRow {
                 keys: &["Esc", "q", "\u{2190}"],
-                label: "Back to the feed",
+                label: "Back to discussion or feed",
                 action: HelpAction::Story(StoryKey::Back),
             },
         ],

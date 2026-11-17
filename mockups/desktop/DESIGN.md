@@ -93,7 +93,7 @@ Two consequences worth stating, because they are the cost of a native child view
 | | Screen | What it is |
 | --- | --- | --- |
 | 01 | Story split (hero) | The story's live page on the left, discussion right, summary pinned at the top of the inspector. The page is a `WKWebView` child view under a Rune header (eyebrow, title, byline, `open original ↗`); the extracted Markdown at a 66ch measure is the fallback, under a banner. Drag the grip to resize; double-click resets to 54/46; below the minimum the inspector collapses. `Esc` returns to the feed, `⌘\` collapses the split. See *The article pane is the live page*. |
-| 02 | Feed, one column | `SegmentedControl` for Top/New/Best/Saved — the toolbar holds nothing else. Rows carry rank, title, points/author/comments, a saved dot beside the rank, and hover-revealed save / open / browser on the right edge. Selection is a card fill plus an amber edge, not reverse video. |
+| 02 | Feed, one column | `SegmentedControl` for Top/New/Best/Saved — the toolbar holds nothing else. Rows carry rank, title, points/author/comments, a saved dot beside the rank, and a hover-revealed save action. Moving over a row selects it; clicking opens it. Selection is a card fill plus an amber edge, not reverse video. |
 | 03 | Feed, two columns | The same list at ≥1400pt: two columns, **column-major** — the left column fills first, then the right. One shared scroll, a hairline divider, and enough pages fetched to fill the visible grid. See *Responsive feed*. |
 | 04 | Summary states | *Generating* (skeleton rows that grow and fade in as tokens arrive, with "2 of 3 sources captured"), *done* (numbered citations, `Tab` to select, `Enter` to read), *failed* (provider error + Retry, the old summary still readable underneath), *citation source* (the excerpt sent to the model, the extra captured text, the article dimmed to 0.55). |
 | 05 | Comments | The discussion with the summary folded to one line. A guide rail per depth level, a hover target that folds the parent thread, hover-revealed save / links / collapse. `L` opens the link chooser as a popover. See *Comments*. |
@@ -286,8 +286,8 @@ window adds a pointer layer on top; nothing is mouse-only.
 
 | Input | Behaviour |
 | --- | --- |
-| hover row / comment | reveals row actions, highlights the citation it references |
-| click row | selects; double-click opens the story |
+| move over a feed row / comment | selects the feed row, or the comment when focus mode is on; feed Save appears on hover |
+| click feed row | opens the story; Save remains a separate action |
 | click chevron / indent guide | folds that thread / the whole parent thread |
 | click a trail segment | re-roots the thread at that ancestor |
 | click citation chip | opens the source viewer |

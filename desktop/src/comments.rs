@@ -84,6 +84,21 @@ pub struct Row {
     pub depth: u32,
 }
 
+/// A source has its own navigation lifetime while sharing the discussion's nodes.
+#[derive(Debug, Clone)]
+pub(crate) struct Navigation {
+    pub cursor: Option<i32>,
+    pub root: Option<i32>,
+    pub folded: HashSet<i32>,
+    pub focus: bool,
+}
+
+impl Navigation {
+    pub fn rooted(id: i32) -> Self {
+        Self { cursor: Some(id), root: Some(id), folded: HashSet::new(), focus: true }
+    }
+}
+
 /// The thread: the tree, the fold set, the cursor, the re-root and focus mode.
 #[derive(Debug, Clone, Default)]
 pub struct Thread {
@@ -304,26 +319,48 @@ impl Thread {
     /// The rows on screen, top to bottom: the visible roots and everything under them that is
     /// neither folded nor behind the depth cap.
     pub fn rows(&self) -> Vec<Row> {
+        self.rows_with(self.root, &self.folded)
+    }
+
+    pub(crate) fn source_rows(&self, nav: &Navigation) -> Vec<Row> {
+        self.rows_with(nav.root, &nav.folded)
+    }
+
+    fn rows_with(&self, root: Option<i32>, folded: &HashSet<i32>) -> Vec<Row> {
         let mut rows = Vec::new();
-        match self.root {
-            Some(root) => self.walk(root, 0, &mut rows),
+        match root {
+            Some(root) => self.walk(root, 0, folded, &mut rows),
             None => {
                 for root in &self.roots {
-                    self.walk(*root, 0, &mut rows);
+                    self.walk(*root, 0, folded, &mut rows);
                 }
             }
         }
         rows
     }
 
-    fn walk(&self, id: i32, depth: u32, rows: &mut Vec<Row>) {
+    fn walk(&self, id: i32, depth: u32, folded: &HashSet<i32>, rows: &mut Vec<Row>) {
         rows.push(Row { id, depth });
-        if self.folded.contains(&id) || self.capped_at(id, depth) {
+        if folded.contains(&id) || self.capped_at(id, depth) {
             return;
         }
         for child in self.children_of(id) {
-            self.walk(child, depth + 1, rows);
+            self.walk(child, depth + 1, folded, rows);
         }
+    }
+
+    /// Reuse the thread's transitions without changing the mounted discussion's navigation.
+    pub(crate) fn with_navigation<T>(&mut self, nav: &mut Navigation, f: impl FnOnce(&mut Self) -> T) -> T {
+        std::mem::swap(&mut self.cursor, &mut nav.cursor);
+        std::mem::swap(&mut self.root, &mut nav.root);
+        std::mem::swap(&mut self.folded, &mut nav.folded);
+        std::mem::swap(&mut self.focus, &mut nav.focus);
+        let result = f(self);
+        std::mem::swap(&mut self.cursor, &mut nav.cursor);
+        std::mem::swap(&mut self.root, &mut nav.root);
+        std::mem::swap(&mut self.folded, &mut nav.folded);
+        std::mem::swap(&mut self.focus, &mut nav.focus);
+        result
     }
 
     /// [`Thread::walk`] with the fold set ignored: the rows a fold would put back.
@@ -376,6 +413,10 @@ impl Thread {
         let Some(depth) = self.depth_of(id) else {
             return 0;
         };
+        self.hidden_count_at(id, depth)
+    }
+
+    pub(crate) fn hidden_count_at(&self, id: i32, depth: u32) -> usize {
         let mut rows = Vec::new();
         for child in self.children_of(id) {
             self.walk_unfolded(child, depth + 1, &mut rows);
@@ -421,7 +462,11 @@ impl Thread {
     /// Whether `id` is the cursor, one of its ancestors, or in its subtree: the chain focus mode
     /// keeps at full contrast.
     pub fn in_chain(&self, id: i32) -> bool {
-        let Some(cursor) = self.cursor else {
+        self.in_chain_from(id, self.cursor)
+    }
+
+    pub(crate) fn in_chain_from(&self, id: i32, cursor: Option<i32>) -> bool {
+        let Some(cursor) = cursor else {
             return true;
         };
         if id == cursor {
@@ -572,6 +617,21 @@ impl Thread {
             return false;
         }
         self.folded.insert(cursor)
+    }
+
+    /// `c`: collapse the current branch, or the nearest visible open ancestor.
+    pub fn collapse(&mut self) -> bool {
+        if self.cursor.is_some_and(|id| !self.children_of(id).is_empty()) && self.fold() { return true; }
+        let mut at = self.cursor;
+        while let Some(parent) = at.and_then(|id| self.parent_of(id)) {
+            if self.visible_row(parent).is_none() { return false; }
+            if self.has_children(parent) && !self.is_folded(parent) && !self.capped(parent) {
+                self.cursor = Some(parent);
+                return self.fold();
+            }
+            at = Some(parent);
+        }
+        false
     }
 
     /// `l`: unfold the focused comment, or re-root at it when it is at the cap.

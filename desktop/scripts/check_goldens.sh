@@ -612,7 +612,7 @@ check folded "$hidden" "Show 3 hidden replies" "the fold counts the rows it hid"
 check unfolded "$(key_rows unfolded)" "901,9010,90100,901000,90101,9011,902,903,9030,90300,904,905" "l unfolds them again"
 
 check focus "$(key_focus focus)" "Turn focus mode on" "f turns focus mode off"
-check focus "$(key_rail focus)" "" "the selected rail is removed"
+check focus "$(key_rail focus)" "focus-rail-9010" "the selected comment stays marked with focus mode off"
 
 check reroot "$(key_rows reroot)" "901000,9010000,90100000,90100001,9010001,9010002" "Enter on continue thread re-roots"
 check reroot "$(key_trail reroot)" "trail-901,trail-9010,trail-90100,trail-901000" "and pushes a trail segment"
@@ -622,7 +622,7 @@ check pop "$(key_rows pop)" "90100,901000,9010000,90100000,90100001,9010001,9010
 check pop "$(key_trail pop)" "trail-901,trail-9010,trail-90100" "the trail is one segment shorter"
 
 check focus2 "$(key_focus focus2)" "Turn focus mode on" "f turns focus off deeper in the thread"
-check focus2 "$(key_rail focus2)" "" "no focus rail while off"
+check focus2 "$(key_rail focus2)" "focus-rail-9010000" "the selected comment stays marked deeper in the thread"
 check focus3 "$(key_focus focus3)" "Turn focus mode off" "f turns focus back on"
 check focus3 "$(key_rail focus3)" "focus-rail-9010000" "the selected comment is marked"
 check focus3 "$(key_rows focus3)" "90100,901000,9010000,90100000,90100001,9010001,9010002" "the story stays open"
