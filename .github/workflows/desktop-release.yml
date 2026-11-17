@@ -76,7 +76,7 @@ jobs:
 
       # macos-14 runners are Apple Silicon, so the host build is the arm64 app.
       - name: Build and stage HN.app
-        run: bash scripts/package-macos.sh
+        run: HN_BUILD=${{ github.run_number }} bash scripts/package-macos.sh
 
       - name: Sign
         if: steps.sign.outputs.enabled == 'true'

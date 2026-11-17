@@ -9,6 +9,7 @@
 # Usage:  bash desktop/scripts/package-macos.sh
 #   HN_SKIP_BUILD=1   use the binary already in target/release
 #   HN_APP_NAME=...   the bundle's name (default HN)
+#   HN_BUILD=...      CFBundleVersion, the build number (default: the Cargo.toml version)
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -17,6 +18,7 @@ NAME=${HN_APP_NAME:-HN}
 EXE=hn-desktop
 BUNDLE_ID=dev.hn.desktop
 VERSION=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1)
+BUILD=${HN_BUILD:-$VERSION}
 BIN=target/release/$EXE
 APP=dist/$NAME.app
 
@@ -36,9 +38,9 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/$EXE"
 chmod +x "$APP/Contents/MacOS/$EXE"
+cp assets/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 
-# The keys LaunchServices reads. `CFBundleIconFile` is omitted: there is no icon yet, and a
-# plist naming a missing file is worse than one that names none.
+# The keys LaunchServices reads. assets/AppIcon.icns is built from assets/AppIcon-1024.png.
 cat >"$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -50,7 +52,8 @@ cat >"$APP/Contents/Info.plist" <<PLIST
   <key>CFBundleExecutable</key><string>$EXE</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$VERSION</string>
-  <key>CFBundleVersion</key><string>$VERSION</string>
+  <key>CFBundleVersion</key><string>$BUILD</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>NSHighResolutionCapable</key><true/>
 </dict>
