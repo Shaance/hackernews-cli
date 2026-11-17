@@ -52,8 +52,8 @@ const ROW_HEIGHT: f32 = 56.0;
 /// Window width at which the feed becomes two columns (DESIGN.md's table).
 const BREAKPOINT: f32 = 1400.0;
 /// The grid the first request asks for: the 1180×760 default window, one column.
-const DEFAULT_GRID: (usize, usize) = (10, 1);
-const FEED_GUTTER: f32 = 20.0;
+const DEFAULT_GRID: (usize, usize) = (11, 1);
+const FEED_GUTTER: f32 = 8.0;
 const DEFAULT_FEED_HEIGHT: f32 = 661.0;
 /// How long the save confirmation stays.
 const TOAST_SECONDS: f64 = 2.4;
@@ -144,6 +144,9 @@ pub struct App {
     hints: rune::Live<f32>,
     /// The open story, when the split is showing one. `None` is the feed.
     story: Option<Story>,
+    /// The selected row and viewport's unscrolled vertical geometry.
+    visible_comment: Cell<Option<(i32, bool, [f32; 2], [f32; 2])>>,
+    comment_offsets: [Rc<Cell<f32>>; 2],
     /// Readings kept for this window's lifetime, including their summary citation snapshots.
     readings: HashMap<i32, Story>,
     /// The reading viewports' scroll observers and poll share this frame-pacing state.
@@ -210,13 +213,15 @@ impl App {
         false
     }
 
-    fn scroll_observer(&self) -> impl Fn(rune::ScrollPos) + 'static {
+    fn scroll_observer(&self, slot: Option<usize>) -> impl Fn(rune::ScrollPos) + 'static {
         let pacing = Rc::clone(&self.scroll_pacing);
+        let offset = slot.map(|i| Rc::clone(&self.comment_offsets[i]));
         let waker = self.scroll_waker.clone();
         let previous = Cell::new(0.0);
         // At this Rune pin, a source-less live-only handler can leave its live wake pending.
         // The offset observer wakes poll without a handler commit or a live-only event.
         move |at| {
+            if let Some(offset) = &offset { offset.set(at.offset[1]); }
             if previous.replace(at.offset[1]) == at.offset[1] { return; }
             if pacing.replace(ScrollPacing::Moved) == ScrollPacing::Idle && let Some(waker) = &waker {
                 waker();
@@ -845,6 +850,8 @@ fn init() -> App {
         hover: None,
         hints: rune::Live::new(1.0),
         story: None,
+        visible_comment: Cell::new(None),
+        comment_offsets: [Rc::new(Cell::new(0.0)), Rc::new(Cell::new(0.0))],
         readings: HashMap::new(),
         scroll_pacing: Rc::new(Cell::new(ScrollPacing::Idle)),
         scroll_waker: None,
@@ -1187,6 +1194,11 @@ fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
 fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
     let key = keys::story_key(ev);
     if matches!(key, StoryKey::Back) { return s.story_back(tx); }
+    let visible_comment = s.visible_comment.get().and_then(|(id, source, row, viewport)| {
+        let y = row[0] - s.comment_offsets[usize::from(source)].get();
+        let top = viewport[0] + if source { 0.0 } else { 27.0 };
+        (y < viewport[0] + viewport[1] && y + row[1] > top).then_some((id, source))
+    });
     let Some(story) = s.story.as_mut() else {
         return false;
     };
@@ -1273,7 +1285,7 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             let can_activate = id.is_some_and(|id| story.thread.has_children(id));
             if let Some(id) = id { s.activate_comment(id); }
             if can_activate {
-                if let Some(story) = s.story.as_mut() { thread_moved(story, root, tx); }
+                if let Some(story) = s.story.as_mut() { thread_moved(story, root, true, visible_comment, tx); }
             }
             true
         }
@@ -1314,7 +1326,7 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
                 StoryKey::PopTrail if cursor != source_root => thread.pop_trail(),
                 _ => false,
             });
-            if changed { thread_moved(story, root, tx); }
+            if changed { thread_moved(story, root, key == StoryKey::Fold, visible_comment, tx); }
             true
         }
         StoryKey::Unfold => {
@@ -1323,7 +1335,7 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             let retry = id.is_some_and(|id| story.thread.children_of(id).is_empty()
                 && story.thread.reply_batch(id, false).is_empty()
                 && !story.thread.reply_batch(id, true).is_empty());
-            if story.with_thread(|thread| thread.unfold()) { thread_moved(story, root, tx); }
+            if story.with_thread(|thread| thread.unfold()) { thread_moved(story, root, true, visible_comment, tx); }
             if let Some(id) = id { s.load_replies(id, retry); }
             true
         }
@@ -1376,7 +1388,15 @@ fn reveal_citation(story: &Story, tx: &mut Tx, focus: bool) {
 /// A transition that re-roots the tree glides the viewport to the new root on `GLIDE` — the
 /// rows crossfade in place, so the offset is the only thing that travels. Anything else just
 /// reveals the row the cursor landed on.
-fn thread_moved(story: &mut Story, before: Option<i32>, tx: &mut Tx) {
+fn thread_moved(story: &mut Story, before: Option<i32>, fold: bool, visible: Option<(i32, bool)>, tx: &mut Tx) {
+    let source = story.source.is_some();
+    if fold {
+        let (root, cursor) = story.with_thread(|thread| (thread.root(), thread.cursor()));
+        if root == before && let Some(id) = cursor && visible == Some((id, source)) {
+            tx.keep_on_screen(format!("{}comment-{id}", if source { "source-" } else { "" }));
+            return;
+        }
+    }
     if let Some(source) = &story.source {
         if source.nav.root != before {
             tx.scroll_to_y("source-viewer", 0.0);
@@ -1412,6 +1432,15 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
     if let Some(rect) = window {
         s.window_size.set(Some((rect[2], rect[3])));
     }
+    // Tx has no keyed visibility query; scroll observers supply offsets without view commits.
+    let visible = s.story.as_ref().and_then(|story| {
+        let source = story.source.as_ref();
+        let id = source.map_or_else(|| story.thread.cursor(), |view| view.nav.cursor)?;
+        let viewport = cx.layout_with(if source.is_some() { "source-viewer" } else { "discussion-scroll" }, |r| [r[1], r[3]])?;
+        let row = cx.layout_with(&format!("{}comment-{id}", if source.is_some() { "source-" } else { "" }), |r| [r[1], r[3]])?;
+        Some((id, source.is_some(), row, viewport))
+    });
+    s.visible_comment.set(visible);
     let wide = window.is_some_and(|rect| rect[2] >= BREAKPOINT);
     let cols = if wide { 2 } else { 1 };
     // The feed's grid is only measurable while the feed is on screen: a story open must not
@@ -1449,7 +1478,7 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
             )).trailing(brand(t)),
             story_view::inspector_pane(story, &k, t, accent, &mut overlays, reduced,
                 window.map_or(360.0, |rect| (rect[3] - 310.0).clamp(230.0, 440.0)),
-                [s.scroll_observer(), s.scroll_observer(), s.scroll_observer()]),
+                [s.scroll_observer(Some(0)), s.scroll_observer(None), s.scroll_observer(Some(1))]),
         ),
         None => (feed_body(s, &k, t, accent, cols, reduced, contrast, feed_height), toolbar, col()),
     };
@@ -2789,6 +2818,7 @@ mod tests {
         rt.state.refresh();
         poll_until(&mut rt.state, |s| !s.feed.status.loading);
         assert!(rt.state.feed.status.error.is_none());
+        let page_size = rt.state.measured.get().unwrap_or(DEFAULT_GRID).0;
         press(&mut rt.state, rune::Key::Text("n".into()));
         rt.update(|_, tx| tx.instant());
         rt.frame(0.0);
@@ -2796,7 +2826,7 @@ mod tests {
         assert_eq!(rt.accessibility_tree().nodes.iter().filter(|(_, node)| node.is_busy()).count(), 1);
         assert_eq!(rt.state.feed.stories[0].id, 1);
         poll_until(&mut rt.state, |s| !s.feed.status.loading);
-        assert_eq!(rt.state.feed.stories[0].id, 1 + DEFAULT_GRID.0 as i32);
+        assert_eq!(rt.state.feed.stories[0].id, 1 + page_size as i32);
         press(&mut rt.state, rune::Key::Text("p".into()));
         assert!(!rt.state.feed.status.loading, "cached return settles before a frame can show busy");
         rt.update(|_, tx| tx.instant());
@@ -3180,30 +3210,154 @@ mod tests {
     }
 
     #[test]
-    fn disclosure_edge_click_folds_without_slow_row_reflow() {
-        for (source, reduced) in [(false, false), (true, false), (false, true)] {
+    fn disclosure_edge_click_folds_and_unfolds_without_slow_row_reflow() {
+        for (source, reduced) in [(false, false), (true, false), (false, true), (true, true)] {
             let mut s = app(true, SavedView::in_memory());
             scene_comments(&mut s);
             if source { s.open_citation(0); }
             let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
             rt.set_system_reduced_motion(reduced);
             rt.frame(0.0);
+            for _ in 0..30 { rt.frame(1.0 / 60.0); }
             let elements = rt.elements();
             let button = elements.iter().find(|e| e.key.as_deref() == Some("comment-disclosure-901") && !e.inert).unwrap();
             assert_eq!((button.rect[2], button.rect[3]), (28.0, 28.0));
             let [x, y, _, _] = button.rect;
-            rt.pointer_down(x + 1.0, y + 1.0);
-            rt.pointer_up(x + 1.0, y + 1.0);
-            rt.frame(0.0);
+            let measure = |rt: &rune::Runtime<App>| rt.elements().iter()
+                .find(|e| e.key.as_deref() == Some(if source { "source-replies" } else { "discussion-rows" })).unwrap().rect[3];
+            let footer = elements.iter().find(|e| e.key.as_deref() == Some("story-footer")).unwrap().rect;
+            let original = measure(&rt);
+            let click = |rt: &mut rune::Runtime<App>| {
+                rt.pointer_down(x + 1.0, y + 1.0);
+                rt.pointer_up(x + 1.0, y + 1.0);
+                rt.frame(0.0);
+            };
+            click(&mut rt);
             let story = rt.state.story.as_ref().unwrap();
             assert!(if source { story.source.as_ref().unwrap().nav.folded.contains(&901) } else { story.thread.is_folded(901) });
             let reply = if source { "source-comment-9010" } else { "comment-9010" };
-            assert!(!rt.elements().iter().any(|e| e.key.as_deref() == Some(reply)));
-            let next = if source { "source-comment-901" } else { "comment-902" };
-            let y0 = rt.elements().iter().find(|e| e.key.as_deref() == Some(next) && !e.inert).unwrap().rect[1];
-            rt.frame(0.15);
-            let y1 = rt.elements().iter().find(|e| e.key.as_deref() == Some(next) && !e.inert).unwrap().rect[1];
-            assert!((y0 - y1).abs() < 0.5, "folded rows must not drift after the response: source={source} reduced={reduced} {y0} -> {y1}");
+            assert!(!rt.elements().iter().any(|e| e.key.as_deref() == Some(reply)), "outgoing replies must not paint over moving live rows");
+            let mut closing = vec![measure(&rt)];
+            for dt in [0.05, 0.05, 0.10, 0.10] {
+                rt.frame(dt);
+                closing.push(measure(&rt));
+                assert_eq!(rt.elements().iter().find(|e| e.key.as_deref() == Some("story-footer")).unwrap().rect, footer);
+            }
+            if reduced { assert!(closing.iter().all(|y| (*y - closing[0]).abs() < 0.5)); }
+            else {
+                assert!(closing[0] > closing[1] && closing[1] > closing[2] && closing[2] > closing[3], "{source}: {closing:?}");
+                assert!((closing[3] - closing[4]).abs() < 3.0, "fold settles by 300 ms: {closing:?}");
+            }
+            click(&mut rt);
+            let mut opening = vec![measure(&rt)];
+            for dt in [0.05, 0.05, 0.10, 0.10] {
+                rt.frame(dt);
+                opening.push(measure(&rt));
+            }
+            if reduced { assert!(opening.iter().all(|y| (*y - opening[0]).abs() < 0.5)); }
+            else {
+                assert!(opening[0] < opening[1] && opening[1] < opening[2] && opening[2] < opening[3], "{source}: {opening:?}");
+                assert!((opening[3] - opening[4]).abs() < 3.0, "unfold settles by 300 ms: {opening:?}");
+            }
+            assert!((opening[4] - original).abs() < 0.5, "unfold restores the same rows");
+            if !reduced {
+                click(&mut rt);
+                rt.frame(0.05);
+                let mid = measure(&rt);
+                click(&mut rt);
+                let reversed = measure(&rt);
+                rt.frame(0.05);
+                assert!((reversed - mid).abs() <= 10.0, "reversal starts near the visible position");
+                assert!(measure(&rt) > reversed, "reversal opens immediately");
+                rt.frame(0.25);
+                assert!((measure(&rt) - original).abs() < 0.5);
+            }
+        }
+    }
+
+    #[test]
+    fn keyboard_fold_and_unfold_move_the_loaded_rows() {
+        let mut s = app(true, SavedView::in_memory());
+        scene_comments(&mut s);
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.frame(0.0);
+        let height = |rt: &rune::Runtime<App>| rt.elements().iter()
+            .find(|e| e.key.as_deref() == Some("discussion-rows")).unwrap().rect[3];
+        rt.key(KeyEvent { key: rune::Key::Text("h".into()), mods: Default::default() });
+        rt.frame(0.0);
+        let closing = height(&rt);
+        rt.frame(0.05);
+        assert!(height(&rt) < closing);
+        rt.key(KeyEvent { key: rune::Key::Text("l".into()), mods: Default::default() });
+        rt.frame(0.0);
+        let opening = height(&rt);
+        rt.frame(0.05);
+        assert!(height(&rt) > opening);
+        rt.frame(0.3);
+        rt.key(KeyEvent { key: rune::Key::Text("h".into()), mods: Default::default() });
+        rt.frame(0.05);
+        let before_hover = height(&rt);
+        let [x, y, w, h] = rt.elements().iter().find(|e| e.key.as_deref() == Some("comment-902") && !e.inert).unwrap().visible;
+        rt.pointer_move(x + w / 2.0, y + h / 2.0);
+        rt.frame(0.0);
+        assert!((height(&rt) - before_hover).abs() < 3.0, "hover must not interrupt an active fold");
+    }
+
+    #[test]
+    fn keyboard_fold_holds_a_partly_visible_parent() {
+        for source in [false, true] {
+            let mut s = app(true, SavedView::in_memory());
+            scene_comments(&mut s);
+            let mut comments = crate::fixtures::thread();
+            let sample = comments.iter().find(|comment| comment.id == 9011).unwrap().clone();
+            for id in 9900..9925 {
+                let mut comment = sample.clone();
+                comment.id = id;
+                comment.child_ids.clear();
+                comments.iter_mut().find(|comment| comment.id == 901).unwrap().child_ids.push(id);
+                comments.push(comment);
+            }
+            s.story.as_mut().unwrap().thread = crate::comments::Thread::from_comments(&comments);
+            if source { s.open_citation(0); }
+            s.story.as_mut().unwrap().with_thread(|thread| { assert!(thread.select(9010)); });
+            let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+            rt.on_key = Some(on_key);
+            rt.frame(0.0);
+            let (viewport, parent) = if source { ("source-viewer", "source-comment-9010") } else { ("discussion-scroll", "comment-9010") };
+            let element = |rt: &rune::Runtime<App>, key: &str| rt.elements().into_iter()
+                .find(|e| e.key.as_deref() == Some(key) && !e.inert).unwrap();
+            for key in ["h", "l"] {
+                let current = element(&rt, parent);
+                let offset = current.scrolled[1] + current.rect[1] - element(&rt, viewport).rect[1] + 20.0;
+                rt.update(|_, tx| tx.scroll_to_instant(viewport, 0.0, offset));
+                rt.frame(0.0);
+                let before = element(&rt, parent);
+                assert!(before.visible[3] > 0.0 && before.visible[3] < before.rect[3], "the parent is partly visible: {source} {:?}", before.rect);
+                let mut positions = vec![before.rect[1]];
+                rt.key(KeyEvent { key: rune::Key::Text(key.into()), mods: Default::default() });
+                for dt in [0.0, 0.05, 0.05, 0.10] {
+                    rt.frame(dt);
+                    positions.push(element(&rt, parent).rect[1]);
+                }
+                assert!(positions.iter().all(|y| (*y - positions[0]).abs() < 1.0), "the visible parent stays in place: {positions:?}");
+            }
+            let current = element(&rt, parent);
+            let offset = current.scrolled[1] + current.rect[1] + current.rect[3] - element(&rt, viewport).rect[1] + 30.0;
+            rt.update(|_, tx| tx.scroll_to_instant(viewport, 0.0, offset));
+            rt.frame(0.0);
+            assert_eq!(element(&rt, parent).visible[3], 0.0, "the selected parent is offscreen");
+            rt.key(KeyEvent { key: rune::Key::Text("h".into()), mods: Default::default() });
+            rt.frame(0.0);
+            assert!(element(&rt, parent).visible[3] > 0.0, "an offscreen keyboard target is revealed");
+            rt.key(KeyEvent { key: rune::Key::Text("l".into()), mods: Default::default() });
+            rt.frame(0.3);
+            rt.update(|_, tx| tx.scroll_to_instant(viewport, 0.0, 100_000.0));
+            rt.frame(0.0);
+            assert!(!rt.elements().iter().any(|e| e.key.as_deref() == Some(parent) && !e.inert), "a distant virtual row is unmounted");
+            rt.key(KeyEvent { key: rune::Key::Text("h".into()), mods: Default::default() });
+            for dt in [0.0, 0.05, 0.10] { rt.frame(dt); }
+            assert!(element(&rt, parent).visible[3] > 0.0, "a distant virtual target is revealed");
         }
     }
 
@@ -3625,6 +3779,8 @@ mod tests {
             let viewport = loading.iter().find(|e| e.key.as_deref() == Some("feed-list")).unwrap().rect;
             let line = loading.iter().find(|e| e.path.ends_with("feed-placeholder/#0")).unwrap().rect;
             assert!((line[1] - viewport[1] - feed_gutter(viewport[3], rows, cols, true)).abs() < 0.5);
+            rt.state.bridge.cancel_feed();
+            rt.state.requested = None;
             rt.state.headless = true;
             rt.poll = Some(poll);
             rt.set_viewport(if cols == 1 { (1600.0, 900.0) } else { (800.0, 640.0) }, 1.0);
@@ -5083,6 +5239,8 @@ mod tests {
             hover: None,
             hints: rune::Live::new(1.0),
             story: None,
+            visible_comment: Cell::new(None),
+            comment_offsets: [Rc::new(Cell::new(0.0)), Rc::new(Cell::new(0.0))],
             readings: HashMap::new(),
             scroll_pacing: Rc::new(Cell::new(ScrollPacing::Idle)),
             scroll_waker: None,

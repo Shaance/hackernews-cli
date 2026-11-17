@@ -127,6 +127,10 @@ changes remove outgoing text immediately and fade incoming reading content in ov
 reduced motion switches it instantly. Help and settings keep their controls visible in short
 windows, with scrolling for body content that does not fit.
 
+Comment folds close their space with a short glide; expanded replies fade in over 150 ms.
+Visible parents stay in place during keyboard folds, while offscreen selections are revealed.
+Reduced motion makes both changes immediate.
+
 Fully cached feed windows return immediately without source requests. This session cache keeps the last fetched story data; Refresh always reloads the current ranked window, while other visited windows retain their last fetched data. Missing or failed cached entries use the normal fetch path.
 
 ## Where it keeps its files

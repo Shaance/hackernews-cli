@@ -111,7 +111,7 @@
                                   246.0,
                                   95.6,
                                   324.0,
-                                  529.8
+                                  508.8
                                 ],
                                 "children": [
                                   {
@@ -122,7 +122,7 @@
                                       246.0,
                                       95.6,
                                       324.0,
-                                      413.4
+                                      392.4
                                     ],
                                     "children": [
                                       {
@@ -852,49 +852,8 @@
                                               "scroll-into-view"
                                             ],
                                             "bounds": [
-                                              384.0,
-                                              473.5,
-                                              14.0,
-                                              14.0
-                                            ],
-                                            "name": "?",
-                                            "role": "group"
-                                          },
-                                          {
-                                            "actions": [
-                                              "scroll-into-view"
-                                            ],
-                                            "bounds": [
-                                              408.0,
-                                              473.0,
-                                              112.5,
-                                              15.0
-                                            ],
-                                            "name": "Keyboard shortcuts",
-                                            "role": "label"
-                                          }
-                                        ],
-                                        "key": "help-row-keyboard-shortcuts",
-                                        "role": "group"
-                                      },
-                                      {
-                                        "actions": [
-                                          "scroll-into-view"
-                                        ],
-                                        "bounds": [
-                                          246.0,
-                                          494.0,
-                                          324.0,
-                                          15.0
-                                        ],
-                                        "children": [
-                                          {
-                                            "actions": [
-                                              "scroll-into-view"
-                                            ],
-                                            "bounds": [
                                               381.5,
-                                              494.5,
+                                              473.5,
                                               16.5,
                                               14.0
                                             ],
@@ -907,7 +866,7 @@
                                             ],
                                             "bounds": [
                                               408.0,
-                                              494.0,
+                                              473.0,
                                               23.6,
                                               15.0
                                             ],
@@ -928,7 +887,7 @@
                                     ],
                                     "bounds": [
                                       246.0,
-                                      527.0,
+                                      506.0,
                                       324.0,
                                       98.4
                                     ],
@@ -939,13 +898,54 @@
                                         ],
                                         "bounds": [
                                           246.0,
-                                          527.0,
+                                          506.0,
                                           324.0,
                                           14.4
                                         ],
                                         "key": "help-title-summary",
                                         "name": "Summary",
                                         "role": "label"
+                                      },
+                                      {
+                                        "actions": [
+                                          "scroll-into-view"
+                                        ],
+                                        "bounds": [
+                                          246.0,
+                                          526.4,
+                                          324.0,
+                                          15.0
+                                        ],
+                                        "children": [
+                                          {
+                                            "actions": [
+                                              "scroll-into-view"
+                                            ],
+                                            "bounds": [
+                                              371.3,
+                                              526.9,
+                                              26.7,
+                                              14.0
+                                            ],
+                                            "name": "⇧S",
+                                            "role": "group"
+                                          },
+                                          {
+                                            "actions": [
+                                              "scroll-into-view"
+                                            ],
+                                            "bounds": [
+                                              408.0,
+                                              526.4,
+                                              153.3,
+                                              15.0
+                                            ],
+                                            "name": "Show or hide the summary",
+                                            "role": "label"
+                                          }
+                                        ],
+                                        "key": "help-row-show-or-hide-the-summary",
+                                        "role": "group"
                                       },
                                       {
                                         "actions": [
@@ -963,12 +963,12 @@
                                               "scroll-into-view"
                                             ],
                                             "bounds": [
-                                              371.3,
+                                              372.1,
                                               547.9,
-                                              26.7,
+                                              25.9,
                                               14.0
                                             ],
-                                            "name": "⇧S",
+                                            "name": "⇧J",
                                             "role": "group"
                                           },
                                           {
@@ -978,14 +978,14 @@
                                             "bounds": [
                                               408.0,
                                               547.4,
-                                              153.3,
+                                              124.0,
                                               15.0
                                             ],
-                                            "name": "Show or hide the summary",
+                                            "name": "Scroll summary down",
                                             "role": "label"
                                           }
                                         ],
-                                        "key": "help-row-show-or-hide-the-summary",
+                                        "key": "help-row-scroll-summary-down",
                                         "role": "group"
                                       },
                                       {
@@ -1004,12 +1004,12 @@
                                               "scroll-into-view"
                                             ],
                                             "bounds": [
-                                              372.1,
+                                              370.8,
                                               568.9,
-                                              25.9,
+                                              27.2,
                                               14.0
                                             ],
-                                            "name": "⇧J",
+                                            "name": "⇧K",
                                             "role": "group"
                                           },
                                           {
@@ -1019,14 +1019,14 @@
                                             "bounds": [
                                               408.0,
                                               568.4,
-                                              124.0,
+                                              107.0,
                                               15.0
                                             ],
-                                            "name": "Scroll summary down",
+                                            "name": "Scroll summary up",
                                             "role": "label"
                                           }
                                         ],
-                                        "key": "help-row-scroll-summary-down",
+                                        "key": "help-row-scroll-summary-up",
                                         "role": "group"
                                       },
                                       {
@@ -1045,49 +1045,8 @@
                                               "scroll-into-view"
                                             ],
                                             "bounds": [
-                                              370.8,
-                                              589.9,
-                                              27.2,
-                                              14.0
-                                            ],
-                                            "name": "⇧K",
-                                            "role": "group"
-                                          },
-                                          {
-                                            "actions": [
-                                              "scroll-into-view"
-                                            ],
-                                            "bounds": [
-                                              408.0,
-                                              589.4,
-                                              107.0,
-                                              15.0
-                                            ],
-                                            "name": "Scroll summary up",
-                                            "role": "label"
-                                          }
-                                        ],
-                                        "key": "help-row-scroll-summary-up",
-                                        "role": "group"
-                                      },
-                                      {
-                                        "actions": [
-                                          "scroll-into-view"
-                                        ],
-                                        "bounds": [
-                                          246.0,
-                                          610.4,
-                                          324.0,
-                                          15.0
-                                        ],
-                                        "children": [
-                                          {
-                                            "actions": [
-                                              "scroll-into-view"
-                                            ],
-                                            "bounds": [
                                               368.4,
-                                              610.9,
+                                              589.9,
                                               29.6,
                                               14.0
                                             ],
@@ -1100,7 +1059,7 @@
                                             ],
                                             "bounds": [
                                               408.0,
-                                              610.4,
+                                              589.4,
                                               103.8,
                                               15.0
                                             ],
@@ -1745,12 +1704,12 @@
                                               "scroll-into-view"
                                             ],
                                             "bounds": [
-                                              714.4,
+                                              695.9,
                                               410.5,
-                                              35.6,
+                                              54.0,
                                               14.0
                                             ],
-                                            "name": "Enter",
+                                            "name": "Enter o",
                                             "role": "group"
                                           },
                                           {
@@ -1950,12 +1909,12 @@
                                               "scroll-into-view"
                                             ],
                                             "bounds": [
-                                              733.5,
+                                              722.0,
                                               515.5,
-                                              16.4,
+                                              28.0,
                                               14.0
                                             ],
-                                            "name": "o",
+                                            "name": "⇧O",
                                             "role": "group"
                                           },
                                           {
@@ -2102,12 +2061,12 @@
                                               "scroll-into-view"
                                             ],
                                             "bounds": [
-                                              725.3,
+                                              709.3,
                                               610.9,
-                                              24.7,
+                                              40.7,
                                               14.0
                                             ],
-                                            "name": "⌘?",
+                                            "name": "? ⌘?",
                                             "role": "group"
                                           },
                                           {
@@ -2919,7 +2878,7 @@
         8.0,
         48.0,
         1164.0,
-        639.5
+        656.5
       ],
       "role": "group",
       "scale": 1.0
@@ -2937,7 +2896,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0",
       "rect": [
         8.0,
-        89.5,
+        60.5,
         1164.0,
         56.0
       ],
@@ -2959,7 +2918,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1",
       "rect": [
         8.0,
-        89.5,
+        60.5,
         1164.0,
         56.0
       ],
@@ -2978,7 +2937,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#0",
       "rect": [
         20.0,
-        104.5,
+        75.5,
         2.0,
         26.0
       ],
@@ -2997,7 +2956,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#1",
       "rect": [
         36.0,
-        110.0,
+        81.0,
         30.0,
         15.0
       ],
@@ -3016,7 +2975,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#1/#0",
       "rect": [
         36.0,
-        110.0,
+        81.0,
         18.0,
         15.0
       ],
@@ -3037,7 +2996,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#1/#0/rank-1",
       "rect": [
         49.02,
-        110.0,
+        81.0,
         4.98,
         15.0
       ],
@@ -3059,7 +3018,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#1/saved-dot-1",
       "rect": [
         60.0,
-        114.5,
+        85.5,
         6.0,
         6.0
       ],
@@ -3078,7 +3037,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#2",
       "rect": [
         80.0,
-        99.88,
+        70.88,
         1080.0,
         35.25
       ],
@@ -3099,7 +3058,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#2/title-1",
       "rect": [
         80.0,
-        99.88,
+        70.88,
         1080.0,
         16.25
       ],
@@ -3120,7 +3079,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-0/story-1/#2/#1",
       "rect": [
         80.0,
-        120.13,
+        91.13,
         1080.0,
         15.0
       ],
@@ -3141,7 +3100,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1",
       "rect": [
         8.0,
-        147.5,
+        118.5,
         1164.0,
         56.0
       ],
@@ -3162,7 +3121,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2",
       "rect": [
         8.0,
-        147.5,
+        118.5,
         1164.0,
         56.0
       ],
@@ -3181,7 +3140,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#0",
       "rect": [
         20.0,
-        162.5,
+        133.5,
         2.0,
         26.0
       ],
@@ -3200,7 +3159,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#1",
       "rect": [
         36.0,
-        168.0,
+        139.0,
         30.0,
         15.0
       ],
@@ -3219,7 +3178,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#1/#0",
       "rect": [
         36.0,
-        168.0,
+        139.0,
         18.0,
         15.0
       ],
@@ -3240,7 +3199,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#1/#0/rank-2",
       "rect": [
         46.6,
-        168.0,
+        139.0,
         7.4,
         15.0
       ],
@@ -3262,7 +3221,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#1/saved-dot-2",
       "rect": [
         60.0,
-        172.5,
+        143.5,
         6.0,
         6.0
       ],
@@ -3281,7 +3240,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#2",
       "rect": [
         80.0,
-        157.88,
+        128.88,
         1080.0,
         35.25
       ],
@@ -3302,7 +3261,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#2/title-2",
       "rect": [
         80.0,
-        157.88,
+        128.88,
         1080.0,
         16.25
       ],
@@ -3323,7 +3282,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-1/story-2/#2/#1",
       "rect": [
         80.0,
-        178.13,
+        149.13,
         1080.0,
         15.0
       ],
@@ -3344,7 +3303,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2",
       "rect": [
         8.0,
-        205.5,
+        176.5,
         1164.0,
         56.0
       ],
@@ -3365,7 +3324,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3",
       "rect": [
         8.0,
-        205.5,
+        176.5,
         1164.0,
         56.0
       ],
@@ -3384,7 +3343,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#0",
       "rect": [
         20.0,
-        220.5,
+        191.5,
         2.0,
         26.0
       ],
@@ -3403,7 +3362,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#1",
       "rect": [
         36.0,
-        226.0,
+        197.0,
         30.0,
         15.0
       ],
@@ -3422,7 +3381,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#1/#0",
       "rect": [
         36.0,
-        226.0,
+        197.0,
         18.0,
         15.0
       ],
@@ -3443,7 +3402,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#1/#0/rank-3",
       "rect": [
         46.48,
-        226.0,
+        197.0,
         7.52,
         15.0
       ],
@@ -3464,7 +3423,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#1/saved-dot-3",
       "rect": [
         60.0,
-        230.5,
+        201.5,
         6.0,
         6.0
       ],
@@ -3483,7 +3442,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#2",
       "rect": [
         80.0,
-        215.88,
+        186.88,
         1080.0,
         35.25
       ],
@@ -3504,7 +3463,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#2/title-3",
       "rect": [
         80.0,
-        215.88,
+        186.88,
         1080.0,
         16.25
       ],
@@ -3525,7 +3484,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-2/story-3/#2/#1",
       "rect": [
         80.0,
-        236.13,
+        207.13,
         1080.0,
         15.0
       ],
@@ -3546,7 +3505,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3",
       "rect": [
         8.0,
-        263.5,
+        234.5,
         1164.0,
         56.0
       ],
@@ -3567,7 +3526,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4",
       "rect": [
         8.0,
-        263.5,
+        234.5,
         1164.0,
         56.0
       ],
@@ -3586,7 +3545,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#0",
       "rect": [
         20.0,
-        278.5,
+        249.5,
         2.0,
         26.0
       ],
@@ -3605,7 +3564,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#1",
       "rect": [
         36.0,
-        284.0,
+        255.0,
         30.0,
         15.0
       ],
@@ -3624,7 +3583,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#1/#0",
       "rect": [
         36.0,
-        284.0,
+        255.0,
         18.0,
         15.0
       ],
@@ -3645,7 +3604,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#1/#0/rank-4",
       "rect": [
         46.13,
-        284.0,
+        255.0,
         7.88,
         15.0
       ],
@@ -3666,7 +3625,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#1/saved-dot-4",
       "rect": [
         60.0,
-        288.5,
+        259.5,
         6.0,
         6.0
       ],
@@ -3685,7 +3644,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#2",
       "rect": [
         80.0,
-        273.88,
+        244.88,
         1080.0,
         35.25
       ],
@@ -3706,7 +3665,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#2/title-4",
       "rect": [
         80.0,
-        273.88,
+        244.88,
         1080.0,
         16.25
       ],
@@ -3727,7 +3686,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-3/story-4/#2/#1",
       "rect": [
         80.0,
-        294.13,
+        265.13,
         1080.0,
         15.0
       ],
@@ -3748,7 +3707,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4",
       "rect": [
         8.0,
-        321.5,
+        292.5,
         1164.0,
         56.0
       ],
@@ -3769,7 +3728,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5",
       "rect": [
         8.0,
-        321.5,
+        292.5,
         1164.0,
         56.0
       ],
@@ -3788,7 +3747,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#0",
       "rect": [
         20.0,
-        336.5,
+        307.5,
         2.0,
         26.0
       ],
@@ -3807,7 +3766,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#1",
       "rect": [
         36.0,
-        342.0,
+        313.0,
         30.0,
         15.0
       ],
@@ -3826,7 +3785,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#1/#0",
       "rect": [
         36.0,
-        342.0,
+        313.0,
         18.0,
         15.0
       ],
@@ -3847,7 +3806,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#1/#0/rank-5",
       "rect": [
         46.76,
-        342.0,
+        313.0,
         7.24,
         15.0
       ],
@@ -3868,7 +3827,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#1/saved-dot-5",
       "rect": [
         60.0,
-        346.5,
+        317.5,
         6.0,
         6.0
       ],
@@ -3887,7 +3846,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#2",
       "rect": [
         80.0,
-        331.88,
+        302.88,
         1080.0,
         35.25
       ],
@@ -3908,7 +3867,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#2/title-5",
       "rect": [
         80.0,
-        331.88,
+        302.88,
         1080.0,
         16.25
       ],
@@ -3929,7 +3888,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-4/story-5/#2/#1",
       "rect": [
         80.0,
-        352.13,
+        323.13,
         1080.0,
         15.0
       ],
@@ -3950,7 +3909,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5",
       "rect": [
         8.0,
-        379.5,
+        350.5,
         1164.0,
         56.0
       ],
@@ -3971,7 +3930,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6",
       "rect": [
         8.0,
-        379.5,
+        350.5,
         1164.0,
         56.0
       ],
@@ -3990,7 +3949,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#0",
       "rect": [
         20.0,
-        394.5,
+        365.5,
         2.0,
         26.0
       ],
@@ -4009,7 +3968,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#1",
       "rect": [
         36.0,
-        400.0,
+        371.0,
         30.0,
         15.0
       ],
@@ -4028,7 +3987,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#1/#0",
       "rect": [
         36.0,
-        400.0,
+        371.0,
         18.0,
         15.0
       ],
@@ -4049,7 +4008,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#1/#0/rank-6",
       "rect": [
         46.44,
-        400.0,
+        371.0,
         7.56,
         15.0
       ],
@@ -4071,7 +4030,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#1/saved-dot-6",
       "rect": [
         60.0,
-        404.5,
+        375.5,
         6.0,
         6.0
       ],
@@ -4090,7 +4049,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#2",
       "rect": [
         80.0,
-        389.88,
+        360.88,
         1080.0,
         35.25
       ],
@@ -4111,7 +4070,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#2/title-6",
       "rect": [
         80.0,
-        389.88,
+        360.88,
         1080.0,
         16.25
       ],
@@ -4132,7 +4091,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-5/story-6/#2/#1",
       "rect": [
         80.0,
-        410.13,
+        381.13,
         1080.0,
         15.0
       ],
@@ -4153,7 +4112,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6",
       "rect": [
         8.0,
-        437.5,
+        408.5,
         1164.0,
         56.0
       ],
@@ -4174,7 +4133,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7",
       "rect": [
         8.0,
-        437.5,
+        408.5,
         1164.0,
         56.0
       ],
@@ -4193,7 +4152,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#0",
       "rect": [
         20.0,
-        452.5,
+        423.5,
         2.0,
         26.0
       ],
@@ -4212,7 +4171,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#1",
       "rect": [
         36.0,
-        458.0,
+        429.0,
         30.0,
         15.0
       ],
@@ -4231,7 +4190,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#1/#0",
       "rect": [
         36.0,
-        458.0,
+        429.0,
         18.0,
         15.0
       ],
@@ -4252,7 +4211,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#1/#0/rank-7",
       "rect": [
         47.14,
-        458.0,
+        429.0,
         6.86,
         15.0
       ],
@@ -4273,7 +4232,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#1/saved-dot-7",
       "rect": [
         60.0,
-        462.5,
+        433.5,
         6.0,
         6.0
       ],
@@ -4292,7 +4251,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#2",
       "rect": [
         80.0,
-        447.88,
+        418.88,
         1080.0,
         35.25
       ],
@@ -4313,7 +4272,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#2/title-7",
       "rect": [
         80.0,
-        447.88,
+        418.88,
         1080.0,
         16.25
       ],
@@ -4334,7 +4293,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-6/story-7/#2/#1",
       "rect": [
         80.0,
-        468.13,
+        439.13,
         1080.0,
         15.0
       ],
@@ -4355,7 +4314,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7",
       "rect": [
         8.0,
-        495.5,
+        466.5,
         1164.0,
         56.0
       ],
@@ -4376,7 +4335,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8",
       "rect": [
         8.0,
-        495.5,
+        466.5,
         1164.0,
         56.0
       ],
@@ -4395,7 +4354,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#0",
       "rect": [
         20.0,
-        510.5,
+        481.5,
         2.0,
         26.0
       ],
@@ -4414,7 +4373,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#1",
       "rect": [
         36.0,
-        516.0,
+        487.0,
         30.0,
         15.0
       ],
@@ -4433,7 +4392,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#1/#0",
       "rect": [
         36.0,
-        516.0,
+        487.0,
         18.0,
         15.0
       ],
@@ -4454,7 +4413,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#1/#0/rank-8",
       "rect": [
         46.45,
-        516.0,
+        487.0,
         7.55,
         15.0
       ],
@@ -4475,7 +4434,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#1/saved-dot-8",
       "rect": [
         60.0,
-        520.5,
+        491.5,
         6.0,
         6.0
       ],
@@ -4494,7 +4453,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#2",
       "rect": [
         80.0,
-        505.88,
+        476.88,
         1080.0,
         35.25
       ],
@@ -4515,7 +4474,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#2/title-8",
       "rect": [
         80.0,
-        505.88,
+        476.88,
         1080.0,
         16.25
       ],
@@ -4536,7 +4495,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-7/story-8/#2/#1",
       "rect": [
         80.0,
-        526.13,
+        497.13,
         1080.0,
         15.0
       ],
@@ -4557,7 +4516,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8",
       "rect": [
         8.0,
-        553.5,
+        524.5,
         1164.0,
         56.0
       ],
@@ -4578,7 +4537,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9",
       "rect": [
         8.0,
-        553.5,
+        524.5,
         1164.0,
         56.0
       ],
@@ -4597,7 +4556,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#0",
       "rect": [
         20.0,
-        568.5,
+        539.5,
         2.0,
         26.0
       ],
@@ -4616,7 +4575,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#1",
       "rect": [
         36.0,
-        574.0,
+        545.0,
         30.0,
         15.0
       ],
@@ -4635,7 +4594,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#1/#0",
       "rect": [
         36.0,
-        574.0,
+        545.0,
         18.0,
         15.0
       ],
@@ -4656,7 +4615,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#1/#0/rank-9",
       "rect": [
         46.44,
-        574.0,
+        545.0,
         7.56,
         15.0
       ],
@@ -4677,7 +4636,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#1/saved-dot-9",
       "rect": [
         60.0,
-        578.5,
+        549.5,
         6.0,
         6.0
       ],
@@ -4696,7 +4655,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#2",
       "rect": [
         80.0,
-        563.88,
+        534.88,
         1080.0,
         35.25
       ],
@@ -4717,7 +4676,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#2/title-9",
       "rect": [
         80.0,
-        563.88,
+        534.88,
         1080.0,
         16.25
       ],
@@ -4738,7 +4697,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-8/story-9/#2/#1",
       "rect": [
         80.0,
-        584.13,
+        555.13,
         1080.0,
         15.0
       ],
@@ -4759,7 +4718,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9",
       "rect": [
         8.0,
-        611.5,
+        582.5,
         1164.0,
         56.0
       ],
@@ -4780,7 +4739,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10",
       "rect": [
         8.0,
-        611.5,
+        582.5,
         1164.0,
         56.0
       ],
@@ -4799,7 +4758,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#0",
       "rect": [
         20.0,
-        626.5,
+        597.5,
         2.0,
         26.0
       ],
@@ -4818,7 +4777,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#1",
       "rect": [
         36.0,
-        632.0,
+        603.0,
         30.0,
         15.0
       ],
@@ -4837,7 +4796,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#1/#0",
       "rect": [
         36.0,
-        632.0,
+        603.0,
         18.0,
         15.0
       ],
@@ -4858,7 +4817,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#1/#0/rank-10",
       "rect": [
         41.27,
-        632.0,
+        603.0,
         12.73,
         15.0
       ],
@@ -4879,7 +4838,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#1/saved-dot-10",
       "rect": [
         60.0,
-        636.5,
+        607.5,
         6.0,
         6.0
       ],
@@ -4898,7 +4857,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#2",
       "rect": [
         80.0,
-        621.88,
+        592.88,
         1080.0,
         35.25
       ],
@@ -4919,7 +4878,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#2/title-10",
       "rect": [
         80.0,
-        621.88,
+        592.88,
         1080.0,
         16.25
       ],
@@ -4940,13 +4899,216 @@
       "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-9/story-10/#2/#1",
       "rect": [
         80.0,
-        642.13,
+        613.13,
         1080.0,
         15.0
       ],
       "role": "text",
       "scale": 1.0,
       "text": "169 points  ·  by luispa  ·  64 comments"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "line-10",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10",
+      "rect": [
+        8.0,
+        640.5,
+        1164.0,
+        56.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "story-11",
+      "label": "GitHub's new Git storage architecture · 168 points  ·  by DAlperin  ·  38 comments",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11",
+      "rect": [
+        8.0,
+        640.5,
+        1164.0,
+        56.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#0",
+      "rect": [
+        20.0,
+        655.5,
+        2.0,
+        26.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#1",
+      "rect": [
+        36.0,
+        661.0,
+        30.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#1/#0",
+      "rect": [
+        36.0,
+        661.0,
+        18.0,
+        15.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "rank-11",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#1/#0/rank-11",
+      "rect": [
+        44.04,
+        661.0,
+        9.96,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "11"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f48d2fff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "saved-dot-11",
+      "label": "saved",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#1/saved-dot-11",
+      "rect": [
+        60.0,
+        665.5,
+        6.0,
+        6.0
+      ],
+      "role": "status",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#2",
+      "rect": [
+        80.0,
+        650.88,
+        1080.0,
+        35.25
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "title-11",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#2/title-11",
+      "rect": [
+        80.0,
+        650.88,
+        1080.0,
+        16.25
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "GitHub's new Git storage architecture"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/main-pane/#0/feed-list/feed-page-0/line-10/story-11/#2/#1",
+      "rect": [
+        80.0,
+        671.13,
+        1080.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "168 points  ·  by DAlperin  ·  38 comments"
     },
     {
       "blur": 0.0,
@@ -6155,7 +6317,7 @@
         246.0,
         95.63,
         323.98,
-        529.75
+        508.75
       ],
       "role": "group",
       "scale": 1.0
@@ -6175,7 +6337,7 @@
         246.0,
         95.63,
         323.98,
-        413.38
+        392.38
       ],
       "role": "group",
       "scale": 1.0
@@ -8512,134 +8674,13 @@
       "focusable": false,
       "focused": false,
       "inert": false,
-      "key": "help-row-keyboard-shortcuts",
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-feed/help-row-keyboard-shortcuts",
-      "rect": [
-        246.0,
-        473.0,
-        323.98,
-        15.0
-      ],
-      "role": "group",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-feed/help-row-keyboard-shortcuts/#0",
-      "rect": [
-        246.0,
-        473.5,
-        152.0,
-        14.0
-      ],
-      "role": "group",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "label": "?",
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-feed/help-row-keyboard-shortcuts/#0/#0",
-      "rect": [
-        384.0,
-        473.5,
-        14.0,
-        14.0
-      ],
-      "role": "group",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "fill": "#ffffff16",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "key": "key0",
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-feed/help-row-keyboard-shortcuts/#0/#0/key0",
-      "rect": [
-        384.0,
-        473.5,
-        14.0,
-        14.0
-      ],
-      "role": "group",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-feed/help-row-keyboard-shortcuts/#0/#0/key0/#0",
-      "rect": [
-        388.1,
-        475.0,
-        5.8,
-        11.0
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "?"
-    },
-    {
-      "blur": 0.0,
-      "color": "#eff0f2ff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-feed/help-row-keyboard-shortcuts/#1",
-      "rect": [
-        408.0,
-        473.0,
-        112.5,
-        15.0
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "Keyboard shortcuts"
-    },
-    {
-      "blur": 0.0,
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
       "key": "help-row-quit",
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-feed/help-row-quit",
       "rect": [
         246.0,
-        494.0,
+        473.0,
         323.98,
         15.0
       ],
@@ -8658,7 +8699,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-feed/help-row-quit/#0",
       "rect": [
         246.0,
-        494.5,
+        473.5,
         152.0,
         14.0
       ],
@@ -8678,7 +8719,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-feed/help-row-quit/#0/#0",
       "rect": [
         381.54,
-        494.5,
+        473.5,
         16.46,
         14.0
       ],
@@ -8698,7 +8739,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-feed/help-row-quit/#0/#0/key0",
       "rect": [
         381.54,
-        494.5,
+        473.5,
         16.46,
         14.0
       ],
@@ -8718,7 +8759,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-feed/help-row-quit/#0/#0/key0/#0",
       "rect": [
         385.54,
-        496.0,
+        475.0,
         8.46,
         11.0
       ],
@@ -8739,7 +8780,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-feed/help-row-quit/#1",
       "rect": [
         408.0,
-        494.0,
+        473.0,
         23.55,
         15.0
       ],
@@ -8760,7 +8801,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary",
       "rect": [
         246.0,
-        527.0,
+        506.0,
         323.98,
         98.38
       ],
@@ -8781,7 +8822,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-title-summary",
       "rect": [
         246.0,
-        527.0,
+        506.0,
         323.98,
         14.38
       ],
@@ -8802,7 +8843,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-show-or-hide-the-summary",
       "rect": [
         246.0,
-        547.38,
+        526.38,
         323.98,
         15.0
       ],
@@ -8821,7 +8862,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-show-or-hide-the-summary/#0",
       "rect": [
         246.0,
-        547.88,
+        526.88,
         152.0,
         14.0
       ],
@@ -8841,7 +8882,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-show-or-hide-the-summary/#0/#0",
       "rect": [
         371.3,
-        547.88,
+        526.88,
         26.7,
         14.0
       ],
@@ -8861,7 +8902,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-show-or-hide-the-summary/#0/#0/key0",
       "rect": [
         371.3,
-        547.88,
+        526.88,
         26.7,
         14.0
       ],
@@ -8881,7 +8922,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-show-or-hide-the-summary/#0/#0/key0/#0",
       "rect": [
         375.3,
-        549.38,
+        528.38,
         18.7,
         11.0
       ],
@@ -8902,7 +8943,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-show-or-hide-the-summary/#1",
       "rect": [
         408.0,
-        547.38,
+        526.38,
         153.27,
         15.0
       ],
@@ -8923,7 +8964,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-scroll-summary-down",
       "rect": [
         246.0,
-        568.38,
+        547.38,
         323.98,
         15.0
       ],
@@ -8942,7 +8983,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-scroll-summary-down/#0",
       "rect": [
         246.0,
-        568.88,
+        547.88,
         152.0,
         14.0
       ],
@@ -8962,7 +9003,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-scroll-summary-down/#0/#0",
       "rect": [
         372.08,
-        568.88,
+        547.88,
         25.92,
         14.0
       ],
@@ -8982,7 +9023,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-scroll-summary-down/#0/#0/key0",
       "rect": [
         372.08,
-        568.88,
+        547.88,
         25.92,
         14.0
       ],
@@ -9002,7 +9043,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-scroll-summary-down/#0/#0/key0/#0",
       "rect": [
         376.08,
-        570.38,
+        549.38,
         17.92,
         11.0
       ],
@@ -9023,7 +9064,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-scroll-summary-down/#1",
       "rect": [
         408.0,
-        568.38,
+        547.38,
         123.96,
         15.0
       ],
@@ -9044,7 +9085,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-scroll-summary-up",
       "rect": [
         246.0,
-        589.38,
+        568.38,
         323.98,
         15.0
       ],
@@ -9063,7 +9104,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-scroll-summary-up/#0",
       "rect": [
         246.0,
-        589.88,
+        568.88,
         152.0,
         14.0
       ],
@@ -9083,7 +9124,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-scroll-summary-up/#0/#0",
       "rect": [
         370.84,
-        589.88,
+        568.88,
         27.16,
         14.0
       ],
@@ -9103,7 +9144,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-scroll-summary-up/#0/#0/key0",
       "rect": [
         370.84,
-        589.88,
+        568.88,
         27.16,
         14.0
       ],
@@ -9123,7 +9164,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-scroll-summary-up/#0/#0/key0/#0",
       "rect": [
         374.84,
-        591.38,
+        570.38,
         19.16,
         11.0
       ],
@@ -9144,7 +9185,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-scroll-summary-up/#1",
       "rect": [
         408.0,
-        589.38,
+        568.38,
         106.97,
         15.0
       ],
@@ -9165,7 +9206,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-summary-settings",
       "rect": [
         246.0,
-        610.38,
+        589.38,
         323.98,
         15.0
       ],
@@ -9184,7 +9225,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-summary-settings/#0",
       "rect": [
         246.0,
-        610.88,
+        589.88,
         152.0,
         14.0
       ],
@@ -9204,7 +9245,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-summary-settings/#0/#0",
       "rect": [
         368.37,
-        610.88,
+        589.88,
         29.63,
         14.0
       ],
@@ -9224,7 +9265,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-summary-settings/#0/#0/key0",
       "rect": [
         368.37,
-        610.88,
+        589.88,
         29.63,
         14.0
       ],
@@ -9244,7 +9285,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-summary-settings/#0/#0/key0/#0",
       "rect": [
         372.37,
-        612.38,
+        591.38,
         21.63,
         11.0
       ],
@@ -9265,7 +9306,7 @@
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-0/help-group-summary/help-row-summary-settings/#1",
       "rect": [
         408.0,
-        610.38,
+        589.38,
         103.81,
         15.0
       ],
@@ -11239,14 +11280,14 @@
       "focusable": false,
       "focused": false,
       "inert": false,
-      "label": "Enter",
+      "label": "Enter o",
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-1/help-group-discussion/help-row-toggle-replies-or-read-citation/#0/#0",
       "rect": [
-        714.38,
+        695.94,
         410.5,
-        35.6,
+        54.04,
         14.0
       ],
       "role": "group",
@@ -11264,7 +11305,7 @@
       "opacity": 1.0,
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-1/help-group-discussion/help-row-toggle-replies-or-read-citation/#0/#0/key0",
       "rect": [
-        714.38,
+        695.94,
         410.5,
         35.6,
         14.0
@@ -11284,7 +11325,7 @@
       "opacity": 1.0,
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-1/help-group-discussion/help-row-toggle-replies-or-read-citation/#0/#0/key0/#0",
       "rect": [
-        718.38,
+        699.94,
         412.0,
         27.6,
         11.0
@@ -11292,6 +11333,47 @@
       "role": "text",
       "scale": 1.0,
       "text": "Enter"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key1",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-1/help-group-discussion/help-row-toggle-replies-or-read-citation/#0/#0/key1",
+      "rect": [
+        733.54,
+        410.5,
+        16.44,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-1/help-group-discussion/help-row-toggle-replies-or-read-citation/#0/#0/key1/#0",
+      "rect": [
+        737.54,
+        412.0,
+        8.44,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "O"
     },
     {
       "blur": 0.0,
@@ -11844,14 +11926,14 @@
       "focusable": false,
       "focused": false,
       "inert": false,
-      "label": "o",
+      "label": "⇧O",
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-1/help-group-discussion/help-row-open-in-browser/#0/#0",
       "rect": [
-        733.54,
+        721.95,
         515.5,
-        16.44,
+        28.02,
         14.0
       ],
       "role": "group",
@@ -11869,9 +11951,9 @@
       "opacity": 1.0,
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-1/help-group-discussion/help-row-open-in-browser/#0/#0/key0",
       "rect": [
-        733.54,
+        721.95,
         515.5,
-        16.44,
+        28.02,
         14.0
       ],
       "role": "group",
@@ -11889,14 +11971,14 @@
       "opacity": 1.0,
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-1/help-group-discussion/help-row-open-in-browser/#0/#0/key0/#0",
       "rect": [
-        737.54,
+        725.95,
         517.0,
-        8.44,
+        20.02,
         11.0
       ],
       "role": "text",
       "scale": 1.0,
-      "text": "O"
+      "text": "⇧O"
     },
     {
       "blur": 0.0,
@@ -12331,14 +12413,14 @@
       "focusable": false,
       "focused": false,
       "inert": false,
-      "label": "⌘?",
+      "label": "? ⌘?",
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-1/help-group-window/help-row-keyboard-shortcuts/#0/#0",
       "rect": [
-        725.28,
+        709.28,
         610.88,
-        24.7,
+        40.7,
         14.0
       ],
       "role": "group",
@@ -12355,6 +12437,47 @@
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-1/help-group-window/help-row-keyboard-shortcuts/#0/#0/key0",
+      "rect": [
+        709.28,
+        610.88,
+        14.0,
+        14.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-1/help-group-window/help-row-keyboard-shortcuts/#0/#0/key0/#0",
+      "rect": [
+        713.38,
+        612.38,
+        5.8,
+        11.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "?"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff16",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "key1",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-1/help-group-window/help-row-keyboard-shortcuts/#0/#0/key1",
       "rect": [
         725.28,
         610.88,
@@ -12374,7 +12497,7 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-1/help-group-window/help-row-keyboard-shortcuts/#0/#0/key0/#0",
+      "path": "kit-root/help-layer/help-dialog/body/#0/help-scroll/help-columns/help-column-1/help-group-window/help-row-keyboard-shortcuts/#0/#0/key1/#0",
       "rect": [
         729.28,
         612.38,

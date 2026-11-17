@@ -678,7 +678,9 @@ fn discussion(s: &Story, k: &Kit, t: tok::Theme, accent: Color, overlays: &mut V
     let rows = Rc::new(thread.rows());
     let keys = Rc::clone(&rows);
     let kit = (*k).clone();
-    list.child(col().key("discussion-rows").w_full().gap(2.0).instant_changes()
+    let mut stack = col().key("discussion-rows").w_full().gap(2.0).motion(Spring::NONE);
+    if reduced { stack = stack.instant_changes(); }
+    list.child(stack
         .growth(GrowthSpec { spring: Spring::NONE, ..GrowthSpec::default() }).virtual_rows(rows.len(), 110.0,
             move |_s: &App, i| format!("comment-{}", keys[i].id).into(),
             move |app: &App, i| app.story().map(|s| comment_row(s, rows[i].id, rows[i].depth, &kit, t, accent, false, reduced)).unwrap_or_else(el)))
@@ -811,10 +813,12 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
         .focus_ring(1.5, 0.0, accent)
         .animated_changes()
         .motion(Spring::NONE)
+        // Outgoing virtual rows would otherwise paint over the live rows closing their space.
         .transition(if depth == 0 || reduced { Transition::none() } else {
             Transition::asymmetric(Transition::opacity(), Transition::none())
                 .springs(SpringPair::new(Spring::new(0.15, 0.0), Spring::NONE))
         });
+    if depth > 0 && !reduced { r = r.fold_glide(Spring::new(0.12, 0.0)); }
     r = r.on_press(move |s: &mut App| {
         if let Some(story) = s.story_mut() {
             if !context { story.citation_focus = false; }
@@ -824,7 +828,7 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
         if let Some(story) = s.story_mut() {
             let changed = story.with_thread(|thread| thread.focus() && thread.cursor() != Some(id) && thread.select(id));
             if changed && !context { story.citation_focus = false; }
-            if changed { tx.instant(); } else { tx.live_only(); }
+            if !changed { tx.live_only(); }
         }
     });
     if selected && depth == 0 {
@@ -853,6 +857,10 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
     let action = if capped { "Continue thread" } else if folded { "Show replies" }
         else if retry_primary { "Retry replies" } else if !loaded && !loading { "Load replies" }
         else { "Hide replies" };
+    let activate = move |s: &mut App, tx: &mut Tx| {
+        if !capped { tx.keep_on_screen(format!("{}comment-{id}", if context { "source-" } else { "" })); }
+        s.activate_comment(id);
+    };
     if !readable {
         let noun = if replies == 1 { "reply" } else { "replies" };
         r = r.child(
@@ -866,7 +874,7 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
                 .self_start()
                 .focusable(true)
                 .disabled(s.pending_reply.is_some() && !loading && !loaded && !folded && !capped)
-                .on_press(move |s: &mut App| s.activate_comment(id))
+                .on_press_tx(activate)
                 .child(icon(k.glyph.chevron_down, 20.0)
                     .icon_rotation(if expanded { 0.0 } else { -FRAC_PI_2 })
                     .motion(Spring::NONE)
@@ -889,7 +897,7 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
                     .child(el().key(format!("comment-disclosure-{id}"))
                         .absolute(-4.0, -4.0).size(28.0, 28.0)
                         .role("button").label(action).focusable(true)
-                        .on_press(move |s: &mut App| s.activate_comment(id))),
+                        .on_press_tx(activate)),
             );
         } else {
             // A leaf keeps the chevron's lane, so authors line up down the thread.
@@ -924,8 +932,9 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
                     .center()
                     .radius(4.0)
                     .fill(t.control_off)
+                    .transition(Transition::none())
                     .focusable(true)
-                    .on_press(move |s: &mut App| s.activate_comment(id))
+                    .on_press_tx(activate)
                     .child(text(format!("{hidden} hidden {noun}")).font(type_::LABEL).color(t.text_secondary)),
             );
         }
@@ -1084,7 +1093,7 @@ fn source_viewer(
     on_scroll: impl Fn(rune::ScrollPos) + 'static,
 ) -> El {
     let thread = &s.thread;
-    let mut content = col().key("source-content").w_full().px(28.0).py(14.0).gap(10.0)
+    let mut content = col().key("source-content").w_full().px(28.0).py(14.0).gap(10.0).motion(Spring::NONE)
         .child(text("Discussion summary").key("source-summary-heading").font(type_::LABEL).color(t.text_secondary));
     if let Some(summary) = s.summary.readable() {
         for (index, bullet) in summary.bullets.iter().enumerate().filter(|(_, bullet)| bullet.sources.contains(&source.id)) {
@@ -1096,8 +1105,10 @@ fn source_viewer(
     let rows = Rc::new(thread.source_rows(&s.source.as_ref().unwrap().nav));
     let keys = Rc::clone(&rows);
     let kit = (*k).clone();
+    let mut stack = col().key("source-replies").w_full().gap(2.0).motion(Spring::NONE);
+    if reduced { stack = stack.instant_changes(); }
     content = content.child(el().w_full().h(1.0).my(4.0).fill(t.separator))
-        .child(col().key("source-replies").w_full().gap(2.0).instant_changes()
+        .child(stack
         .growth(GrowthSpec { spring: Spring::NONE, ..GrowthSpec::default() }).virtual_rows(rows.len(), 110.0,
             move |_app: &App, i| format!("source-comment-{}", keys[i].id).into(),
             move |app: &App, i| app.story().map(|story| comment_row(story, rows[i].id, rows[i].depth, &kit, t, accent, true, reduced)).unwrap_or_else(el)));
