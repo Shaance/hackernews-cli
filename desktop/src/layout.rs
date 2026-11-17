@@ -1,5 +1,5 @@
-//! What the window remembers between runs: its size, the inspector's width, and where the
-//! reader was in the feed.
+//! What the window remembers between runs: its size, zoom, the inspector's width, and where
+//! the reader was in the feed.
 //!
 //! The file is `$XDG_STATE_HOME/hn/desktop.json`, falling back to `~/.local/state/hn/`, which is
 //! the convention the rest of the app already uses for state that is not settings: `Config` owns
@@ -15,12 +15,16 @@ use std::path::PathBuf;
 use hn_lib::app::StoryType;
 use serde::{Deserialize, Serialize};
 
+pub(crate) const ZOOM_STEPS: [f32; 7] = [0.75, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5];
+
 /// The persisted window state. Every field is optional so an older file still loads.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Layout {
     /// The window's size in points, when the reader resized it.
     pub window: Option<(f32, f32)>,
+    /// The window's UI and article page zoom, 1.0 at actual size.
+    pub zoom: Option<f32>,
     /// The inspector's width in points, when the reader dragged the grip.
     pub inspector: Option<f32>,
     /// The feed tab that was showing.
@@ -33,6 +37,13 @@ pub struct Layout {
 }
 
 impl Layout {
+    /// Restore the nearest supported zoom, defaulting to actual size.
+    pub(crate) fn zoom_level(&self) -> f32 {
+        let value = self.zoom.unwrap_or(1.0).clamp(ZOOM_STEPS[0], ZOOM_STEPS[ZOOM_STEPS.len() - 1]);
+        *ZOOM_STEPS.iter().min_by(|a, b| (value - **a).abs().total_cmp(&(value - **b).abs()))
+            .expect("zoom steps are not empty")
+    }
+
     /// The file's path, or `None` when neither `XDG_STATE_HOME` nor `HOME` is set.
     pub fn path() -> Option<PathBuf> {
         let root = std::env::var_os("XDG_STATE_HOME")
@@ -126,6 +137,7 @@ mod tests {
         let path = dir.join("hn/desktop.json");
         let layout = Layout {
             window: Some((1280.0, 820.0)),
+            zoom: Some(1.25),
             inspector: Some(512.0),
             tab: Some(StoryType::Best),
             page: Some(3),
@@ -134,6 +146,17 @@ mod tests {
         layout.save(&path).expect("the temp directory is writable");
         assert_eq!(Layout::load(&path), layout);
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn zoom_defaults_and_snaps_to_the_nearest_step() {
+        let missing: Layout = serde_json::from_str(r#"{"window":[1100,760]}"#).unwrap();
+        assert_eq!(missing.zoom, None);
+        assert_eq!(missing.zoom_level(), 1.0);
+        for (value, expected) in [(0.3, 0.75), (0.87, 0.9), (1.18, 1.25), (2.0, 1.5)] {
+            let layout: Layout = serde_json::from_str(&format!(r#"{{"zoom":{value}}}"#)).unwrap();
+            assert_eq!(layout.zoom_level(), expected);
+        }
     }
 
     #[test]

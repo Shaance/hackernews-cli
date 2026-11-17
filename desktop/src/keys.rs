@@ -204,6 +204,12 @@ pub enum WindowKey {
     Help,
     /// `⌘\`: show or hide the inspector.
     ToggleSplit,
+    /// `⌘=` / `⌘+`: zoom in.
+    ZoomIn,
+    /// `⌘-`: zoom out.
+    ZoomOut,
+    /// `⌘0`: reset to actual size.
+    ActualSize,
     /// A key the window does not bind.
     None,
 }
@@ -225,6 +231,9 @@ pub fn window_key(ev: &KeyEvent) -> WindowKey {
         '?' => WindowKey::Help,
         '/' if m.shift => WindowKey::Help,
         '\\' => WindowKey::ToggleSplit,
+        '=' | '+' => WindowKey::ZoomIn,
+        '-' => WindowKey::ZoomOut,
+        '0' => WindowKey::ActualSize,
         _ => WindowKey::None,
     }
 }
@@ -519,6 +528,21 @@ pub const HELP: &[HelpGroup] = &[
                 keys: &["\u{2318}\\"],
                 label: "Show or hide the inspector",
                 action: HelpAction::Window(WindowKey::ToggleSplit),
+            },
+            HelpRow {
+                keys: &["\u{2318}=", "\u{2318}+"],
+                label: "Zoom in",
+                action: HelpAction::Window(WindowKey::ZoomIn),
+            },
+            HelpRow {
+                keys: &["\u{2318}-"],
+                label: "Zoom out",
+                action: HelpAction::Window(WindowKey::ZoomOut),
+            },
+            HelpRow {
+                keys: &["\u{2318}0"],
+                label: "Actual size",
+                action: HelpAction::Window(WindowKey::ActualSize),
             },
             HelpRow {
                 keys: &["Esc", "?"],
@@ -826,6 +850,10 @@ mod tests {
             "\u{2318}," => chord(',', false),
             "\u{2318}?" => chord('?', true),
             "\u{2318}\\" => chord('\\', false),
+            "\u{2318}=" => chord('=', false),
+            "\u{2318}+" => chord('+', true),
+            "\u{2318}-" => chord('-', false),
+            "\u{2318}0" => chord('0', false),
             _ => {
                 let mut chars = cap.chars();
                 match (chars.next(), chars.next()) {
@@ -949,7 +977,8 @@ mod tests {
             StoryAction::ToggleHelp,
             StoryAction::Quit,
         ];
-        let window_keys = [WindowKey::Settings, WindowKey::Help, WindowKey::ToggleSplit];
+        let window_keys = [WindowKey::Settings, WindowKey::Help, WindowKey::ToggleSplit,
+            WindowKey::ZoomIn, WindowKey::ZoomOut, WindowKey::ActualSize];
         let rows: Vec<HelpAction> = HELP
             .iter()
             .flat_map(|group| group.rows.iter().map(|row| row.action.clone()))
@@ -1003,6 +1032,26 @@ mod tests {
             }),
             WindowKey::None
         );
+    }
+
+    #[test]
+    fn zoom_chords_accept_layout_variants_without_taking_other_keys() {
+        for shift in [false, true] {
+            for (c, expected) in [
+                ('=', WindowKey::ZoomIn), ('+', WindowKey::ZoomIn),
+                ('-', WindowKey::ZoomOut), ('0', WindowKey::ActualSize),
+                ('_', WindowKey::None), ('1', WindowKey::None),
+            ] {
+                for (cmd, logo) in [(true, false), (false, true), (true, true)] {
+                    let ev = KeyEvent { key: Key::Command(c), mods: Mods { cmd, logo, shift, ..Mods::default() } };
+                    assert_eq!(window_key(&ev), expected, "{c:?} shift={shift} cmd={cmd} logo={logo}");
+                }
+            }
+        }
+        for mods in [Mods::default(), Mods { cmd: true, ctrl: true, ..Mods::default() }, Mods { cmd: true, alt: true, ..Mods::default() }] {
+            assert_eq!(window_key(&KeyEvent { key: Key::Command('='), mods }), WindowKey::None);
+        }
+        assert_eq!(window_key(&KeyEvent { key: Key::Text("=".into()), mods: Mods::default() }), WindowKey::None);
     }
 
     #[test]

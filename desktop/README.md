@@ -103,7 +103,9 @@ access and nothing outside the process can press a key or raise its window:
 
 Keys follow the terminal app with the desktop feed exception below: `j`/`k` move, `1`–`4` switch tabs and return arrow navigation to the feed, `Enter` opens a story,
 `c` opens the discussion, `s` saves, `?` shows the keyboard sheet, `M` (or `⌘,`) opens the summary
-settings, `⌘?` shows the sheet, `⌘\` toggles the inspector, `q` quits. `?` also opens the sheet
+settings, `⌘?` shows the sheet, `⌘\` toggles the inspector, `⌘=` or `⌘+` zooms in,
+`⌘-` zooms out, `⌘0` returns to actual size, and `q` quits. The zoom applies to the whole
+window and live article page, and is remembered across launches. `?` also opens the sheet
 from the discussion and citation views. The sheet is generated from
 `src/keys.rs`, so it cannot drift from what the window binds.
 
@@ -147,7 +149,7 @@ Fully cached feed windows return immediately without source requests. This sessi
 |---|---|---|
 | Summary settings (provider, key, profile) | `$XDG_CONFIG_HOME/hn/summary.json` | `hn_lib::reader::Config` — the same file the TUI writes |
 | Saved stories | `$XDG_DATA_HOME/hn/saved.json` | `hn_lib::bookmarks` |
-| Window size, inspector width, tab, page, selection | `$XDG_STATE_HOME/hn/desktop.json` | `src/layout.rs` |
+| Window size, zoom, inspector width, tab, page, selection | `$XDG_STATE_HOME/hn/desktop.json` | `src/layout.rs` |
 
 Each falls back to `~/.config`, `~/.local/share` and `~/.local/state` when the XDG variable is
 unset. The layout file is written at most every two seconds while the window moves, and once on

@@ -40,7 +40,7 @@ use crate::bridge::{Bridge, Request, StoryRequest, StoryUpdate};
 use crate::feed::{FeedModel, Fill, Filled};
 use crate::help;
 use crate::keys::{self, StoryKey, WindowKey};
-use crate::layout::Layout;
+use crate::layout::{Layout, ZOOM_STEPS};
 use crate::service::Source;
 use crate::settings::Settings;
 use crate::story::{Story, SummaryState};
@@ -160,6 +160,8 @@ pub struct App {
     settings: Option<Settings>,
     /// The keyboard sheet, when it is open.
     pub help: bool,
+    /// The supported zoom applied to the Rune view and live page.
+    zoom: f32,
     /// What the window remembers between runs, and where it writes it. A headless run has
     /// neither: a golden must not depend on the machine's window size.
     layout: Layout,
@@ -168,7 +170,7 @@ pub struct App {
     layout_written: Layout,
     /// When the layout was last written, on the frame clock, for [`LAYOUT_SECONDS`].
     layout_saved_at: f64,
-    /// The window size the last commit measured. Written by `view`, read by `poll`.
+    /// The window size in window points. Written by `view`, read by `poll`.
     window_size: Cell<Option<(f32, f32)>>,
     /// Whether the remembered window size has been asked for. `AppSpec::size` is compile-time,
     /// so the restore is one `Tx::resize_window_instant` on the first frame.
@@ -187,8 +189,7 @@ pub struct App {
     native_window: Option<WindowHandle>,
     /// The live pane's child view: whether it exists, and what it is showing.
     live: Live,
-    /// The rect the article pane's live region last reported, in window points. The child is
-    /// pinned to it.
+    /// The live region's last reported rect, converted to window points for the child.
     live_bounds: Option<[f32; 4]>,
     /// Whether the child is currently shown, so `poll` only calls `set_visible` on a change.
     live_shown: bool,
@@ -528,6 +529,7 @@ impl App {
     /// Called from `on_layout`, which runs on the UI thread — the only thread a `WKWebView` may
     /// be resized on.
     pub(crate) fn live_rect(&mut self, rect: [f32; 4]) {
+        let rect = rect.map(|value| value * self.zoom);
         self.live_bounds = Some(rect);
         if self.live_shown {
             webview::set_bounds(rect);
@@ -562,6 +564,7 @@ impl App {
                 self.live = Live::Failed { story_id, error };
                 return true;
             }
+            webview::set_zoom(self.zoom);
             self.live = Live::Ready { story_id };
             changed = true;
         }
@@ -779,6 +782,7 @@ impl App {
     fn snapshot(&self) -> Layout {
         Layout {
             window: self.window_size.get().or(self.layout.window),
+            zoom: Some(self.zoom),
             inspector: Some(self.inspector.width()),
             tab: Some(self.feed.tab),
             page: Some(self.feed.stepper()),
@@ -836,6 +840,7 @@ fn init() -> App {
         .as_deref()
         .map(Layout::load)
         .unwrap_or_default();
+    let zoom = layout.zoom_level();
     App {
         feed: FeedModel::new(),
         saved,
@@ -861,6 +866,7 @@ fn init() -> App {
         config,
         settings: None,
         help: false,
+        zoom,
         layout_written: layout.clone(),
         layout,
         layout_path,
@@ -1076,6 +1082,25 @@ fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             if s.story.is_some() {
                 s.inspector.set_open(!s.inspector.is_open());
             }
+            return true;
+        }
+        action @ (WindowKey::ZoomIn | WindowKey::ZoomOut | WindowKey::ActualSize) => {
+            let old_zoom = s.zoom;
+            let index = ZOOM_STEPS.iter().position(|&step| step == s.zoom)
+                .expect("zoom is always a supported step");
+            s.zoom = match action {
+                WindowKey::ZoomIn => ZOOM_STEPS[(index + 1).min(ZOOM_STEPS.len() - 1)],
+                WindowKey::ZoomOut => ZOOM_STEPS[index.saturating_sub(1)],
+                WindowKey::ActualSize => 1.0,
+                _ => unreachable!(),
+            };
+            webview::set_zoom(s.zoom);
+            // An unchanged view-point rect does not trigger on_layout when zoom changes.
+            if let Some(rect) = &mut s.live_bounds {
+                *rect = rect.map(|value| value * s.zoom / old_zoom);
+                if s.live_shown { webview::set_bounds(*rect); }
+            }
+            tx.instant();
             return true;
         }
         WindowKey::None => {}
@@ -1413,6 +1438,7 @@ fn thread_moved(story: &mut Story, before: Option<i32>, fold: bool, visible: Opt
 }
 
 fn view(s: &App, cx: &mut Cx<App>) -> El {
+    cx.zoom(s.zoom);
     let dark = cx.system_dark();
     if s.reduced {
         cx.reduced_motion(true);
@@ -1426,11 +1452,10 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
     // control that does not set its own ring gets the same one.
     cx.focus_ring(2.0, 1.0, accent);
 
-    // The window root, not the shell's inset card: the breakpoint is a window width. The rect
-    // is also the size `poll` remembers, so the reader's resize survives the next launch.
+    // The breakpoint is in view points; persist the same rect in window points.
     let window = cx.layout_with("window", |rect| rect);
     if let Some(rect) = window {
-        s.window_size.set(Some((rect[2], rect[3])));
+        s.window_size.set(Some((rect[2] * s.zoom, rect[3] * s.zoom)));
     }
     // Tx has no keyed visibility query; scroll observers supply offsets without view commits.
     let visible = s.story.as_ref().and_then(|story| {
@@ -2191,7 +2216,13 @@ fn flag_value(argv: &[String], flag: &str) -> Option<String> {
 }
 
 /// The window is going away: drop the child view on the thread that made it.
-fn close(_s: &mut App, _tx: &mut Tx) {
+fn close(s: &mut App, _tx: &mut Tx) {
+    if !s.headless {
+        let snapshot = s.snapshot();
+        if snapshot != s.layout_written {
+            s.write_layout(snapshot, rune::scene_clock().now);
+        }
+    }
     webview::close();
 }
 
@@ -2222,6 +2253,79 @@ pub fn spec() -> AppSpec<App> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn zoom_shortcuts_step_clamp_and_reset_in_feed_and_story() {
+        let mut rt = rune::Runtime::new(app(true, SavedView::in_memory()), view, (1100.0, 760.0), rune::Env::new(true, 2.0));
+        rt.on_key = Some(on_key);
+        rt.frame(0.0);
+        for (key, expected) in [('-', 0.9), ('-', 0.8), ('-', 0.75), ('-', 0.75),
+            ('=', 0.8), ('+', 0.9), ('=', 1.0), ('+', 1.1), ('=', 1.25), ('+', 1.5), ('=', 1.5), ('0', 1.0)] {
+            rt.key(KeyEvent { key: rune::Key::Command(key), mods: rune::Mods { cmd: true, ..Default::default() } });
+            rt.frame(0.0);
+            assert_eq!((rt.state.zoom, rt.zoom()), (expected, expected), "{key}");
+        }
+        rt.update(|s, _| scene_story(s));
+        rt.frame(0.0);
+        for (key, expected) in [('+', 1.1), ('-', 1.0), ('-', 0.9), ('0', 1.0)] {
+            rt.key(KeyEvent { key: rune::Key::Command(key), mods: rune::Mods { cmd: true, ..Default::default() } });
+            rt.frame(0.0);
+            assert_eq!((rt.state.zoom, rt.zoom()), (expected, expected), "story {key}");
+        }
+    }
+
+    #[test]
+    fn zoom_changes_feed_columns_and_persists_window_points() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request(DEFAULT_GRID, Ranking::Fresh);
+        let mut rt = rune::Runtime::new(s, view, (1100.0, 760.0), rune::Env::new(true, 2.0));
+        rt.on_key = Some(on_key);
+        rt.frame(0.0);
+        assert_eq!(rt.state.measured.get().unwrap().1, 1);
+        rt.key(KeyEvent { key: rune::Key::Command('-'), mods: rune::Mods { cmd: true, ..Default::default() } });
+        rt.frame(0.0);
+        assert_eq!(rt.zoom(), 0.9);
+        assert_eq!(rt.state.measured.get().unwrap().1, 2);
+        let size = rt.state.snapshot().window.unwrap();
+        assert!((size.0 - 1100.0).abs() < 0.01 && (size.1 - 760.0).abs() < 0.01, "{size:?}");
+
+        let dir = temp_dir("zoom-window");
+        let path = dir.join("desktop.json");
+        rt.state.layout_path = Some(path.clone());
+        rt.state.headless = false;
+        close(&mut rt.state, &mut Tx::default());
+        let saved = Layout::load(&path);
+        assert_eq!(saved.zoom_level(), 0.9);
+        let saved_size = saved.window.unwrap();
+        assert!((saved_size.0 - 1100.0).abs() < 0.01 && (saved_size.1 - 760.0).abs() < 0.01);
+        rt.state.headless = true;
+        rt.key(KeyEvent { key: rune::Key::Command('0'), mods: rune::Mods { cmd: true, ..Default::default() } });
+        rt.frame(0.0);
+        assert_eq!(rt.state.measured.get().unwrap().1, 1);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    #[cfg(target_os = "macos")]
+    fn live_region_bounds_follow_zoom_in_window_points() {
+        let mut s = app(true, SavedView::in_memory());
+        scene_story(&mut s);
+        s.headless = false;
+        let mut rt = rune::Runtime::new(s, view, (1100.0, 760.0), rune::Env::new(true, 2.0));
+        rt.on_key = Some(on_key);
+        for (key, zoom) in [('-', 0.9), ('0', 1.0), ('+', 1.1)] {
+            rt.key(KeyEvent { key: rune::Key::Command(key), mods: rune::Mods { cmd: true, ..Default::default() } });
+            rt.frame(0.0);
+            rt.frame(0.0);
+            let rect = rt.state.live_bounds.expect("live region reports layout");
+            let key = format!("article-live-{}", crate::fixtures::STORY_ID);
+            let drawn = rt.elements().into_iter().find(|e| e.key.as_deref() == Some(&key)).unwrap().rect;
+            for (actual, expected) in rect.into_iter().zip(rt.to_window(drawn)) {
+                assert!((actual - expected).abs() < 1.0, "zoom {zoom}: {rect:?}, {drawn:?}");
+            }
+            assert_eq!(rt.zoom(), zoom);
+        }
+    }
 
     fn press(s: &mut App, key: rune::Key) {
         on_key(
@@ -5363,6 +5467,7 @@ mod tests {
             config: Config::default(),
             settings: None,
             help: false,
+            zoom: 1.0,
             layout: Layout::default(),
             layout_path: None,
             pending_external: false,
@@ -5596,6 +5701,7 @@ mod tests {
         let mut s = app(true, SavedView::in_memory());
         s.layout = Layout {
             window: Some((1280.0, 820.0)),
+            zoom: Some(1.0),
             inspector: Some(512.0),
             tab: Some(StoryType::Best),
             page: Some(3),

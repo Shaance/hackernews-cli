@@ -5,8 +5,8 @@
 //! replaced by the story's own URL. The only Rune API it needs is
 //! `WindowHandle::with_raw_handle` (`crates/rune/src/window/handle.rs:133`); everything else is
 //! wry's own child-view builder. The rect comes from `El::on_layout`
-//! (`crates/rune/src/el/layout_watch.rs:33`), which reports `[x, y, w, h]` in window points with
-//! the origin at the top-left, y down — the same space wry's `Rect` uses.
+//! (`crates/rune/src/el/layout_watch.rs:33`). Under UI zoom the app converts its view points
+//! to the window points wry's `Rect` uses, with the origin at the top-left, y down.
 //!
 //! Everything here runs on the UI thread. `WKWebView` must be created, resized and dropped on
 //! the thread that owns the window, so the view lives in a thread-local and every entry point is
@@ -19,10 +19,10 @@
 //! build.
 
 #[cfg(target_os = "macos")]
-pub use macos::{close, create, ready, set_bounds, set_visible, set_waker, take_back};
+pub use macos::{close, create, ready, set_bounds, set_visible, set_waker, set_zoom, take_back};
 
 #[cfg(not(target_os = "macos"))]
-pub use stub::{close, create, ready, set_bounds, set_visible, set_waker, take_back};
+pub use stub::{close, create, ready, set_bounds, set_visible, set_waker, set_zoom, take_back};
 
 #[cfg(target_os = "macos")]
 mod macos {
@@ -143,9 +143,8 @@ mod macos {
         static WAKER: RefCell<Option<Waker>> = const { RefCell::new(None) };
     }
 
-    /// Rune's `on_layout` rect is `[x, y, w, h]` in window points with the origin at the
-    /// top-left, y down. wry's `Rect` is the same space (`window_position` flips it for AppKit),
-    /// so the rect passes through unchanged apart from a floor of one point: a zero-sized
+    /// The bounds are `[x, y, w, h]` in window points, top-left, y down. `window_position`
+    /// flips them for AppKit. Apply a floor of one point: a zero-sized
     /// `WKWebView` frame is a degenerate view, and a collapsed region should read as "tiny", not
     /// "broken".
     fn rect([x, y, w, h]: [f32; 4]) -> Rect {
@@ -203,6 +202,15 @@ mod macos {
         });
     }
 
+    /// Match the page content to the surrounding Rune UI.
+    pub fn set_zoom(zoom: f32) {
+        CHILD.with(|slot| {
+            if let Some(webview) = slot.borrow().as_ref() {
+                let _ = webview.view.zoom(f64::from(zoom));
+            }
+        });
+    }
+
     /// Hide or show without dropping the page: `WKWebView.setHidden`, so scroll position, form
     /// state and cookies survive a toggle.
     pub fn set_visible(visible: bool) {
@@ -243,6 +251,8 @@ mod stub {
     }
 
     pub fn set_bounds(_bounds: [f32; 4]) {}
+
+    pub fn set_zoom(_zoom: f32) {}
 
     pub fn set_visible(_visible: bool) {}
 
