@@ -103,6 +103,9 @@ citation and `Enter` opens its captured comment alongside the supporting summary
 current branch or its nearest open parent, and Page Up/Down scrolls. In a source, `Tab` and
 `Shift+Tab` switch citations and `Esc` returns to the same discussion position. Focus mode
 starts on and `f` toggles it; moving the pointer over a comment selects it while focus is on.
+The footer's Back control follows the same path, as does a mouse Back button over the app chrome
+or discussion. Passive shortcut hints dim with pointer use and return with keyboard navigation;
+the Back and browser actions remain visible.
 `Shift+L` lists links in the post and selected comment, or says when there are none. These
 shortcuts work when the app chrome or discussion has focus; the live page retains its own
 keyboard while focused.
@@ -112,7 +115,7 @@ Desktop feed navigation uses Left/Right to select the same row in the adjacent c
 Moving the pointer over a feed row selects it; clicking the row opens the story. The separate
 Save or Unsave action changes the saved list without opening it.
 
-An empty feed waiting for startup or a tab uses static placeholder rows in the same viewport, with its loading label in the footer. Delayed startup results rise 12 pt and fade in over about 220 ms; data ready before the first paint appears immediately. Tab results enter from the tab's direction using the same 24 pt slide and fade as pages. Placeholder graphics fade out over about 120 ms while readable content arrives. Tabs and controls respond immediately, reduced motion is instant, and refresh/page requests keep the rows already on screen. Empty feeds and load failures show their own status instead of placeholders.
+An empty feed waiting for startup or a tab uses placeholder rows in the same viewport, with its loading label in the footer. On a tab change, newly mounted placeholder rows fade in over about 200 ms. Delayed startup results rise 12 pt and fade in over about 220 ms; data ready before the first paint appears immediately. Tab results enter from the tab's direction using the same 24 pt slide and fade as pages. Placeholder graphics fade out over about 120 ms while readable content arrives. Tabs and controls respond immediately, reduced motion is instant, and refresh/page requests keep the rows already on screen. Empty feeds and load failures show their own status instead of placeholders.
 
 Refresh and uncached page requests show pending status in the footer even when rows remain
 visible. Saving reserves the marker's space so titles stay aligned. Summary folding and citation

@@ -89,6 +89,7 @@ pub fn article_pane<'a>(s: &Story, k: &Kit, t: tok::Theme, pane: Pane<'a>) -> El
                     .grow(1.0)
                     .min_h(0.0)
                     .scroll(ScrollSpec { stick_bottom: false })
+                    .on_wheel(App::pointer_wheel)
                     .scroll_edge_fade(20.0)
                     .child(
                         col()
@@ -398,12 +399,13 @@ fn expanded_summary(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: b
     col().key("summary-open").w_full().gap(10.0).px(14.0).pt(14.0).pb(20.0)
         .child(summary_header(t))
         .child(col().key("summary-scroll").role("region").label("Summary content").focusable(true)
-            .on_key(|_: &mut App, ev: &rune::KeyEvent, tx: &mut Tx| match ev.key {
-                rune::Key::PageDown => { tx.scroll_page("summary-scroll", 1); true }
-                rune::Key::PageUp => { tx.scroll_page("summary-scroll", -1); true }
+            .on_key(|s: &mut App, ev: &rune::KeyEvent, tx: &mut Tx| match ev.key {
+                rune::Key::PageDown => { s.keyboard_navigation(ev); tx.scroll_page("summary-scroll", 1); true }
+                rune::Key::PageUp => { s.keyboard_navigation(ev); tx.scroll_page("summary-scroll", -1); true }
                 _ => false,
             }).w_full().min_h(0.0).shrink()
             .max_h((max_height - 62.0).max(80.0)).scroll(ScrollSpec { stick_bottom: false }).on_scroll_offset(on_scroll)
+            .on_wheel(App::pointer_wheel)
             .chain_scroll_offset(move |at| { on_more.set(if at.max[1] > at.offset[1] + 1.0 { 1.0 } else { 0.0 }); })
             .scroll_edge_fade(12.0).child(body))
         .child(row().key("summary-more").pin(None, None, Some(14.0), Some(2.0))
@@ -632,6 +634,7 @@ fn discussion_pane(
         .grow(1.0)
         .min_h(0.0)
         .scroll(ScrollSpec { stick_bottom: false })
+        .on_wheel(App::pointer_wheel)
         .scroll_edge_fade(20.0)
         .scroll_margin(20.0)
         .on_scroll_offset(on_scroll)
@@ -832,24 +835,25 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
             if !changed { tx.live_only(); }
         }
     });
-    if selected {
+    if selected && depth == 0 {
         r = r.child(el().key(format!("focus-rail-{id}"))
-            .pin(Some(5.0 + depth as f32 * INDENT), Some(7.0), None, Some(7.0)).w(2.0).fill(accent));
+            .pin(Some(5.0), Some(7.0), None, Some(7.0)).w(2.0).fill(accent));
     }
     if replies > 0 { r = r.expanded(expanded); }
-    // One hairline per ancestor level: the threadline that says how deep this row is.
+    // Selection colors the nearest guide instead of adding a second parallel bar.
     for level in 1..=depth {
+        let active = selected && level == depth;
         r = r.child(
             el()
-                .key(format!("guide-{id}-{level}"))
+                .key(if active { format!("focus-rail-{id}") } else { format!("guide-{id}-{level}") })
                 .pin(
                     Some(14.0 + (level as f32 - 1.0) * INDENT),
                     Some(0.0),
                     None,
                     Some(0.0),
                 )
-                .w(1.0)
-                .fill(t.text_secondary.alpha(0.5)),
+                .w(if active { 2.0 } else { 1.0 })
+                .fill(if active { accent } else { t.text_secondary.alpha(0.5) }),
         );
     }
     let retry_primary = !readable && !loaded && !folded && !capped && !loading
@@ -1104,20 +1108,28 @@ fn source_viewer(
             move |app: &App, i| app.story().map(|story| comment_row(story, rows[i].id, rows[i].depth, &kit, t, accent, true, reduced)).unwrap_or_else(el)));
     col().key("source-viewer").role("region").label(format!("Comment by {}", source.author))
         .focusable(true).w_full().h_full().scroll(ScrollSpec { stick_bottom: false }).scroll_edge_fade(20.0)
+        .on_wheel(App::pointer_wheel)
         .on_scroll_offset(on_scroll).child(content)
 }
 
 /// One footer stays in the same place when the reader enters or leaves a source.
-pub fn story_footer(s: &Story, k: &Kit, t: tok::Theme) -> El {
+pub fn story_footer(s: &Story, k: &Kit, t: tok::Theme, hints: &rune::Live<f32>, reduced: bool, contrast: bool) -> El {
     let in_source = s.source.is_some();
-    let mut footer = row().key("story-footer").instant_changes().w_full().px(24.0).py(10.0).gap(18.0).flex_wrap().center_y()
-        .child(hint(k, t, &["Esc"], if in_source { "discussion" } else { "feed" }))
-        .child(hint(k, t, &["j", "k"], "move"))
-        .child(hint(k, t, &["Tab"], if in_source { "next source" } else { "citation" }));
+    let back = if in_source { "Back to discussion" } else { "Back to feed" };
+    let h = |keys: &[&str], label: &str| crate::app::passive_hint(hint(k, t, keys, label), hints, reduced, contrast);
+    let mut footer = row().key("story-footer").instant_changes().w_full().px(24.0).py(2.0).gap(18.0).flex_wrap().center_y()
+        .child(row().key("story-back").role("button").label(back).focusable(true)
+            .h(36.0).px(8.0).gap(6.0).center_y().radius(4.0)
+            .hover(k.c.hover).press(k.c.pressed).cursor(rune::Cursor::Pointer)
+            .on_press_tx(|s: &mut App, tx: &mut Tx| { s.story_back(tx); })
+            .child(Keybind::new(&["Esc"]).build(k))
+            .child(text(back).font(type_::LABEL).color(t.text)))
+        .child(h(&["j", "k"], "move"))
+        .child(h(&["Tab"], if in_source { "next source" } else { "citation" }));
     if !in_source {
-        footer = footer.child(hint(k, t, &["⇧", "S"], "summary"))
-            .child(hint(k, t, &["⇧", "J/K"], "scroll summary"))
-            .child(hint(k, t, &["r"], "refresh comments"));
+        footer = footer.child(h(&["⇧", "S"], "summary"))
+            .child(h(&["⇧", "J/K"], "scroll summary"))
+            .child(h(&["r"], "refresh comments"));
     }
     footer.child(row().key("article-open-original").role("button").label("Open in browser")
         .focusable(true).on_press(|s: &mut App| s.pending_external = true)
@@ -1175,7 +1187,7 @@ mod tests {
     fn browser_button_keeps_its_compact_accessible_target() {
         fn footer(story: &Story, cx: &mut rune::Cx<Story>) -> El {
             let dark = cx.system_dark();
-            story_footer(story, &Kit::neutral(dark), tok::theme(dark))
+            story_footer(story, &Kit::neutral(dark), tok::theme(dark), &rune::Live::new(1.0), false, false)
         }
         let story = Story::opening(fixtures::item(fixtures::STORY_INDEX, fixtures::STORY_ID), false);
         let mut rt = rune::Runtime::new(story, footer, (760.0, 100.0), rune::Env::new(true, 1.0));
@@ -1196,17 +1208,23 @@ mod tests {
     fn folded_comment_keeps_body_and_places_guide_outside_text() {
         let mut story = Story::opening(fixtures::item(fixtures::STORY_INDEX, fixtures::STORY_ID), true);
         story.thread = crate::comments::Thread::from_comments(&fixtures::thread());
-        assert!(story.thread.select(9010));
         let mut rt = rune::Runtime::new(story, nested_comment, (420.0, 250.0), rune::Env::new(true, 1.0));
         rt.frame(0.0);
-        rt.update(|story, tx| { assert!(story.thread.fold()); tx.instant(); });
+        let guide_x = rt.elements().iter().find(|e| e.key.as_deref() == Some("guide-9010-1")).unwrap().rect[0];
+        rt.update(|story, tx| {
+            assert!(story.thread.select(9010));
+            assert!(story.thread.fold());
+            tx.instant();
+        });
         rt.frame(0.0);
         let elements = rt.elements();
         let find = |key: &str| elements.iter().find(|e| e.key.as_deref() == Some(key) && !e.exiting).unwrap();
         let author = find("comment-author-9010");
         let body = find("comment-text-9010");
-        let guide = find("guide-9010-1");
+        let guide = find("focus-rail-9010");
         let control = find("comment-hidden-9010");
+        assert_eq!(guide.rect[0], guide_x, "selection shares the existing nesting guide");
+        assert!(!elements.iter().any(|e| e.key.as_deref() == Some("guide-9010-1") && !e.exiting));
         assert!((author.rect[0] - body.rect[0]).abs() < 0.5);
         assert!(guide.rect[0] + guide.rect[2] < body.rect[0]);
         assert!(control.focusable && control.rect[2] < 200.0);

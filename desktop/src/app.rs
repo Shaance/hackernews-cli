@@ -137,6 +137,8 @@ pub struct App {
     loading_since: Option<f64>,
     /// The row under the pointer, for the hover actions.
     hover: Option<i32>,
+    /// Passive shortcut hints yield visual emphasis to pointer use and return on navigation.
+    hints: rune::Live<f32>,
     /// The open story, when the split is showing one. `None` is the feed.
     story: Option<Story>,
     /// The reading viewports' scroll observers and poll share this frame-pacing state.
@@ -187,6 +189,22 @@ pub struct App {
 }
 
 impl App {
+    pub(crate) fn keyboard_navigation(&self, ev: &KeyEvent) {
+        if self.settings.is_some() || self.help || keys::parity_key(ev).is_none() { return; }
+        if matches!(ev.key, rune::Key::Tab | rune::Key::Home | rune::Key::End | rune::Key::PageUp | rune::Key::PageDown)
+            || (self.story.is_some() && keys::story_key(ev) != StoryKey::None)
+            || (self.story.is_none() && (keys::story_action(ev) != StoryAction::None
+                || matches!(ev.key, rune::Key::Left | rune::Key::Right)))
+        {
+            self.hints.snap(1.0);
+        }
+    }
+
+    pub(crate) fn pointer_wheel(s: &mut App, ev: rune::WheelEvent, _: &mut Tx) -> bool {
+        if !ev.momentum && (ev.dx != 0.0 || ev.dy != 0.0) { s.hints.set(0.3); }
+        false
+    }
+
     fn scroll_observer(&self) -> impl Fn(rune::ScrollPos) + 'static {
         let pacing = Rc::clone(&self.scroll_pacing);
         let waker = self.scroll_waker.clone();
@@ -435,6 +453,19 @@ impl App {
         self.story = None;
         self.inspector.set_open(false);
         self.bridge.cancel_story();
+    }
+
+    /// Unwind the same reading layers for Escape, the footer and the mouse Back button.
+    pub(crate) fn story_back(&mut self, tx: &mut Tx) -> bool {
+        if self.settings.is_some() || self.help { return false; }
+        let Some(story) = self.story.as_mut() else { return false; };
+        if story.close_links() { return true; }
+        if story.close_source() {
+            reveal_citation(story, tx, true);
+        } else {
+            self.close_story();
+        }
+        true
     }
 
     /// Whether this run can host a live page at all: macOS, with a real window.
@@ -789,6 +820,7 @@ fn init() -> App {
         arrival: Arrival::Initial,
         loading_since: None,
         hover: None,
+        hints: rune::Live::new(1.0),
         story: None,
         scroll_pacing: Rc::new(Cell::new(ScrollPacing::Idle)),
         scroll_waker: None,
@@ -996,6 +1028,7 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
 }
 
 fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
+    s.keyboard_navigation(ev);
     // The shell's chords work everywhere, including over a dialog, as a menu item's would.
     match keys::window_key(ev) {
         WindowKey::Settings => {
@@ -1123,6 +1156,7 @@ fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
 /// it is open, then the source viewer, then the discussion, and only then the feed.
 fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
     let key = keys::story_key(ev);
+    if matches!(key, StoryKey::Back) { return s.story_back(tx); }
     let Some(story) = s.story.as_mut() else {
         return false;
     };
@@ -1144,21 +1178,12 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
                 }
                 return true;
             }
-            StoryKey::Back => {
-                story.close_links();
-                return true;
-            }
             _ => {}
         }
     }
     // Source navigation shares the thread operations but keeps its own cursor and folds.
     if story.source.is_some() {
         match key {
-            StoryKey::Back => {
-                story.close_source();
-                reveal_citation(story, tx, true);
-                return true;
-            }
             StoryKey::NextScreen => {
                 tx.scroll_page("source-viewer", 1);
                 return true;
@@ -1195,10 +1220,7 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
         thread.cursor().and_then(|id| thread.parent_of(id)).is_some()));
     match key {
         StoryKey::None => false,
-        StoryKey::Back => {
-            s.close_story();
-            true
-        }
+        StoryKey::Back => unreachable!("back is handled before borrowing the story"),
         StoryKey::NextCitation => {
             if story.citations().is_empty() { return false; }
             story.next_citation();
@@ -1354,6 +1376,7 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
         cx.reduced_motion(true);
     }
     let reduced = cx.is_reduced_motion();
+    let contrast = cx.system_increased_contrast();
     let t = tok::theme(dark);
     let k = Kit::neutral(dark);
     let accent = tok::accent(3, dark);
@@ -1424,7 +1447,7 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
                 window.map_or(360.0, |rect| (rect[3] - 310.0).clamp(230.0, 440.0)),
                 [s.scroll_observer(), s.scroll_observer(), s.scroll_observer()]),
         ),
-        None => (feed_body(s, &k, t, accent, cols, reduced), toolbar, col()),
+        None => (feed_body(s, &k, t, accent, cols, reduced, contrast), toolbar, col()),
     };
     let shell = SplitView::new(main)
         .toolbar(toolbar)
@@ -1438,6 +1461,7 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
         .on_key(|s: &mut App, ev: &KeyEvent, tx: &mut Tx| {
             if ev.key != rune::Key::Tab || s.story.is_none() || s.settings.is_some() || s.help
                 || s.story.as_ref().is_some_and(|story| story.links.is_some()) { return false; }
+            s.keyboard_navigation(ev);
             let handled = on_story_key(s, ev, tx);
             if handled {
                 let target = if s.story.as_ref().is_some_and(|story| story.source.is_some()) { "source-viewer" } else { "summary-scroll" };
@@ -1447,7 +1471,7 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
         })
         .child(shell.grow(1.0).min_h(0.0));
     if let Some(story) = &s.story {
-        base = base.child(el().w_full().h(1.0).fill(t.separator)).child(story_view::story_footer(story, &k, t));
+        base = base.child(el().w_full().h(1.0).fill(t.separator)).child(story_view::story_footer(story, &k, t, &s.hints, reduced, contrast));
     }
     if let Some(notice) = &s.toast {
         overlays.push(
@@ -1468,6 +1492,13 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
         help::view(&k, t, accent, true, &mut overlays);
     }
     rune_kit::root(base, overlays)
+        .on_key(|s: &mut App, ev: &KeyEvent, _: &mut Tx| { s.keyboard_navigation(ev); false })
+        .on_pointer_move_local(|s: &mut App, _, tx| { s.hints.set(0.3); tx.live_only(); })
+        .on_wheel(App::pointer_wheel)
+        .pointer_buttons([rune::PointerButton::Back])
+        .on_background_press_tx(|s: &mut App, tx: &mut Tx| {
+            if tx.button() == rune::PointerButton::Back { s.story_back(tx); }
+        })
 }
 
 /// The split's motion: `MORPH`'s spring, scaled by the pane's width so a narrow window does not
@@ -1492,7 +1523,7 @@ fn story_main(story: &Story, k: &Kit, t: tok::Theme, pane: Pane<'_>) -> El {
         )
 }
 
-fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize, reduced: bool) -> El {
+fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize, reduced: bool, contrast: bool) -> El {
     let mut body = col().w_full().h_full();
     if let Some(error) = s.saved.error() {
         body = body.child(banner(error, t, accent));
@@ -1503,6 +1534,7 @@ fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize, reduce
     }
     body.child(
         feed_list(s, t, accent, cols, reduced)
+            .on_wheel(App::pointer_wheel)
             .scroll(ScrollSpec {
                 stick_bottom: false,
             })
@@ -1511,7 +1543,7 @@ fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize, reduce
             .min_h(0.0),
     )
     .child(el().w_full().h(1.0).fill(t.separator))
-    .child(footer(s, k, t, accent))
+    .child(footer(s, k, t, accent, reduced, contrast))
 }
 
 /// Column-major: story `c * rows + r`, so the left column fills first and `j` walks straight
@@ -1717,7 +1749,8 @@ fn act(label: &str, color: Color, t: tok::Theme, on_press: impl Fn(&mut App) + '
         .child(text(label).font(type_::LABEL).color(color))
 }
 
-fn footer(s: &App, k: &Kit, t: tok::Theme, accent: Color) -> El {
+fn footer(s: &App, k: &Kit, t: tok::Theme, accent: Color, reduced: bool, contrast: bool) -> El {
+    let h = |keys: &[&str], label: &str| passive_hint(hint(k, t, keys, label), &s.hints, reduced, contrast);
     let mut f = row()
         .key("feed-footer")
         .motion(Spring::NONE)
@@ -1729,11 +1762,9 @@ fn footer(s: &App, k: &Kit, t: tok::Theme, accent: Color) -> El {
         .py(12.0)
         .gap(18.0)
         .center_y()
-        .child(hint(k, t, &["j", "k"], "move"))
-        .child(hint(k, t, &["←", "→"], "column / page"))
-        .child(hint(
-            k,
-            t,
+        .child(h(&["j", "k"], "move"))
+        .child(h(&["←", "→"], "column / page"))
+        .child(h(
             &["s"],
             if s.feed.tab == StoryType::Saved {
                 "unsave"
@@ -1741,8 +1772,8 @@ fn footer(s: &App, k: &Kit, t: tok::Theme, accent: Color) -> El {
                 "save"
             },
         ))
-        .child(hint(k, t, &["n", "p"], "page"))
-        .child(hint(k, t, &["1", "4"], "tabs"))
+        .child(h(&["n", "p"], "page"))
+        .child(h(&["1", "4"], "tabs"))
         .child(el().grow(1.0));
     if !s.feed.status.loading && s.feed.exhausted(s.cells()) {
         f = f.child(
@@ -1773,6 +1804,12 @@ fn hint(k: &Kit, t: tok::Theme, keys: &[&str], label: &str) -> El {
         .center_y()
         .child(Keybind::new(keys).build(k))
         .child(text(label).font(type_::LABEL).color(t.text_secondary))
+}
+
+pub(crate) fn passive_hint(hint: El, hints: &rune::Live<f32>, reduced: bool, contrast: bool) -> El {
+    if contrast { hint } else {
+        hint.live_opacity(hints.smooth(if reduced { Spring::NONE } else { Spring::new(0.20, 0.0) }))
+    }
 }
 
 /// `‹ N ›` — the current page only. The HN API reports no total, so there is no "of N" to show.
@@ -1900,11 +1937,13 @@ fn feed_error(error: &str, t: tok::Theme, accent: Color) -> El {
 /// Decorative rows occupy the same viewport and lanes as the feed, with one status owner.
 fn feed_skeleton(s: &App, t: tok::Theme, cols: usize, reduced: bool) -> El {
     let rows = s.measured.get().unwrap_or(DEFAULT_GRID).0;
-    let exit = if reduced { Transition::none() } else {
-        Transition::asymmetric(Transition::none(), Transition::opacity())
-            .springs(SpringPair::new(Spring::NONE, Spring::new(0.12, 0.0)))
+    let transition = if reduced { Transition::none() } else {
+        let mut transition = Transition::asymmetric(Transition::opacity(), Transition::opacity())
+            .springs(SpringPair::new(Spring::new(0.20, 0.0), Spring::new(0.12, 0.0)));
+        transition.insertion.opacity = 0.35;
+        transition
     };
-    let mut skeleton = col().key("feed-placeholder").transition(exit).instant_changes().motion(Spring::NONE).w_full().gap(if cols == 2 { 0.0 } else { 2.0 }).a11y_hidden();
+    let mut skeleton = col().key("feed-placeholder").transition(transition).instant_changes().motion(Spring::NONE).w_full().gap(if cols == 2 { 0.0 } else { 2.0 }).a11y_hidden();
     for r in 0..rows {
         let mut line = row().w_full().h(ROW_HEIGHT);
         for c in 0..cols {
@@ -2569,6 +2608,96 @@ mod tests {
     }
 
     #[test]
+    fn switching_tabs_fades_the_loading_shell_and_reduced_motion_lands_it() {
+        for reduced in [false, true] {
+            let mut s = app(true, SavedView::in_memory());
+            s.request((11, 1), Ranking::Fresh);
+            s.headless = false;
+            s.source = Arc::new(Source::Fake(crate::service::FakeService::fixture()
+                .with_delay(Duration::from_millis(100))));
+            let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+            rt.set_system_reduced_motion(reduced);
+            rt.on_key = Some(on_key);
+            rt.frame(0.0);
+            rt.key(KeyEvent { key: rune::Key::Text("2".into()), mods: Default::default() });
+            rt.frame(0.0);
+            let opacity = |rt: &rune::Runtime<App>| rt.elements().into_iter()
+                .find(|e| e.key.as_deref() == Some("feed-placeholder") && !e.exiting).unwrap().opacity;
+            let start = opacity(&rt);
+            rt.frame(0.05);
+            let at_50 = opacity(&rt);
+            rt.frame(0.05);
+            let at_100 = opacity(&rt);
+            if reduced { assert_eq!((start, at_50, at_100), (1.0, 1.0, 1.0)); }
+            else { assert!(start < at_50 && at_50 < at_100 && at_100 < 1.0,
+                "the placeholder must still be entering: {start}, {at_50}, {at_100}"); }
+            rt.key(KeyEvent { key: rune::Key::Text("1".into()), mods: Default::default() });
+            rt.frame(0.0);
+            assert!(opacity(&rt) >= at_100, "a rapid reversal keeps the visible placeholder");
+            assert_eq!(rt.state.feed.tab, StoryType::Top);
+            rt.frame(0.5);
+            assert_eq!(opacity(&rt), 1.0);
+            let deadline = std::time::Instant::now() + Duration::from_secs(2);
+            while rt.state.bridge.is_pending() { assert!(std::time::Instant::now() < deadline); std::thread::yield_now(); }
+            rt.poll = Some(poll);
+            while rt.state.feed.status.loading { rt.frame(0.0); assert!(std::time::Instant::now() < deadline); }
+            assert_eq!(rt.state.feed.stories[0].id, 1, "only the latest tab's response is shown");
+        }
+    }
+
+    #[test]
+    fn tab_response_can_land_before_or_during_the_loading_entrance() {
+        for before_frame in [true, false] {
+            let mut s = app(true, SavedView::in_memory());
+            s.request((11, 1), Ranking::Fresh);
+            s.headless = false;
+            let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+            rt.on_key = Some(on_key);
+            rt.frame(0.0);
+            let key = KeyEvent { key: rune::Key::Text("2".into()), mods: Default::default() };
+            let deadline = std::time::Instant::now() + Duration::from_secs(2);
+            if before_frame {
+                rt.update(|s, tx| {
+                    on_key(s, &key, tx);
+                    while s.bridge.is_pending() { assert!(std::time::Instant::now() < deadline); std::thread::yield_now(); }
+                    poll(s, 0.0, tx);
+                });
+            } else {
+                rt.key(key);
+                rt.frame(0.05);
+                assert!(rt.elements().iter().any(|e| e.key.as_deref() == Some("feed-placeholder") && e.opacity < 1.0));
+                while rt.state.bridge.is_pending() { assert!(std::time::Instant::now() < deadline); std::thread::yield_now(); }
+                rt.poll = Some(poll);
+                while rt.state.feed.status.loading { rt.frame(0.0); assert!(std::time::Instant::now() < deadline); }
+            }
+            rt.frame(0.05);
+            assert_eq!(rt.state.feed.stories[0].id, 101);
+            assert!(rt.elements().iter().any(|e| e.key.as_deref() == Some("feed-page-1") && !e.exiting));
+            assert!(!rt.elements().iter().any(|e| e.key.as_deref() == Some("feed-placeholder") && !e.exiting));
+        }
+    }
+
+    #[test]
+    fn loading_shell_entrance_survives_a_new_keyed_parent() {
+        fn stage(s: &App, cx: &mut Cx<App>) -> El {
+            let child = if s.feed.status.loading {
+                col().key("new-parent").w_full().child(feed_skeleton(s, tok::theme(cx.system_dark()), 1, false))
+            } else { col().key("old-parent").w_full() };
+            col().w_full().h_full().child(child)
+        }
+        let mut rt = rune::Runtime::new(app(true, SavedView::in_memory()), stage, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.frame(0.0);
+        rt.update(|s, tx| { s.feed.status.loading = true; tx.animated(); });
+        rt.frame(0.05);
+        let opacity = |rt: &rune::Runtime<App>| rt.elements().into_iter()
+            .find(|e| e.key.as_deref() == Some("feed-placeholder") && !e.exiting).unwrap().opacity;
+        let at_50 = opacity(&rt);
+        rt.frame(0.05);
+        let at_100 = opacity(&rt);
+        assert!(at_50 < at_100 && at_100 < 1.0, "new parent must carry the entrance: {at_50}, {at_100}");
+    }
+
+    #[test]
     fn retained_feed_rows_show_one_busy_status_until_settled_or_timed_out() {
         let mut s = app(true, SavedView::in_memory());
         s.measured.set(Some((11, 1)));
@@ -2719,6 +2848,125 @@ mod tests {
         assert!(s.story.as_ref().unwrap().source.is_none());
         press(&mut s, rune::Key::Escape);
         assert!(s.story.is_none(), "default focus mode does not consume back");
+    }
+
+    #[test]
+    fn pointer_back_unwinds_source_then_story_and_preserves_discussion() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((11, 1), Ranking::Fresh);
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        s.load_replies(901, false);
+        let thread = &mut s.story.as_mut().unwrap().thread;
+        thread.select(901);
+        thread.fold();
+        let before = (thread.cursor(), thread.root(), thread.is_folded(901));
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.frame(0.0);
+        rt.update(|s, _| s.open_citation(0));
+        rt.frame(0.3);
+        let button = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("story-back")).unwrap();
+        assert_eq!(button.label.as_deref(), Some("Back to discussion"));
+        assert!(button.focusable && button.rect[2] >= 36.0 && button.rect[3] >= 36.0);
+        let [x, y, w, h] = button.rect;
+        rt.pointer_move(x + w / 2.0, y + h / 2.0);
+        rt.frame(0.1);
+        assert!(rt.elements().iter().find(|e| e.key.as_deref() == Some("story-back")).unwrap().hover > 0.0);
+        rt.pointer_down(x + w / 2.0, y + h / 2.0);
+        rt.pointer_up(x + w / 2.0, y + h / 2.0);
+        rt.frame(0.3);
+        let story = rt.state.story.as_ref().unwrap();
+        assert!(story.source.is_none() && story.citation_focus);
+        assert_eq!((story.thread.cursor(), story.thread.root(), story.thread.is_folded(901)), before);
+        assert!(rt.elements().iter().any(|e| e.key.as_deref() == Some("summary-scroll") && e.focused));
+        assert_eq!(rt.elements().iter().find(|e| e.key.as_deref() == Some("story-back")).unwrap().label.as_deref(), Some("Back to feed"));
+
+        rt.update(|s, _| s.open_citation(0));
+        rt.frame(0.3);
+        let [x, y, w, h] = rt.elements().iter().find(|e| e.key.as_deref() == Some("source-comment-901")).unwrap().visible;
+        let (x, y) = (x + w / 2.0, y + h / 2.0);
+        for button in [rune::PointerButton::Forward, rune::PointerButton::Middle, rune::PointerButton::Secondary] {
+            rt.button_down(x, y, button);
+            rt.button_up(x, y, button);
+            rt.frame(0.0);
+            assert!(rt.state.story.as_ref().unwrap().source.is_some());
+        }
+        rt.button_down(x, y, rune::PointerButton::Back);
+        rt.button_up(x, y, rune::PointerButton::Back);
+        rt.frame(0.3);
+        assert!(rt.state.story.as_ref().unwrap().source.is_none());
+        let [x, y, w, h] = rt.elements().iter().find(|e| e.key.as_deref() == Some("article-open-original")).unwrap().rect;
+        rt.button_down(x + w / 2.0, y + h / 2.0, rune::PointerButton::Back);
+        rt.button_up(x + w / 2.0, y + h / 2.0, rune::PointerButton::Back);
+        rt.frame(0.3);
+        assert!(rt.state.story.is_none());
+        rt.update(|s, _| s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID)));
+        rt.frame(0.3);
+        let [x, y, w, h] = rt.elements().iter().find(|e| e.key.as_deref() == Some("comment-load-901-false")).unwrap().visible;
+        rt.button_down(x + w / 2.0, y + h / 2.0, rune::PointerButton::Back);
+        rt.button_up(x + w / 2.0, y + h / 2.0, rune::PointerButton::Back);
+        rt.frame(0.3);
+        assert!(rt.state.story.is_none(), "Back over a disclosure returns to the feed");
+    }
+
+    #[test]
+    fn passive_hints_follow_pointer_and_keyboard_without_dimming_actions() {
+        for (reduced, contrast) in [(false, false), (true, false), (false, true)] {
+            let mut s = app(true, SavedView::in_memory());
+            s.request((11, 1), Ranking::Fresh);
+            let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+            rt.set_system_reduced_motion(reduced);
+            rt.set_system_increased_contrast(contrast);
+            rt.on_key = Some(on_key);
+            rt.frame(0.0);
+            let hint = |rt: &rune::Runtime<App>| rt.elements().into_iter()
+                .find(|e| e.text.as_deref() == Some("move") && e.path.contains("footer")).unwrap().opacity;
+            rt.pointer_move(100.0, 100.0);
+            rt.frame(0.05);
+            if contrast { assert_eq!(hint(&rt), 1.0); }
+            else if reduced { assert!((hint(&rt) - 0.3).abs() < 0.01); }
+            else { assert!(hint(&rt) < 1.0 && hint(&rt) > 0.3); }
+            rt.key(KeyEvent { key: rune::Key::Down, mods: Default::default() });
+            rt.frame(0.0);
+            assert_eq!(hint(&rt), 1.0, "keyboard navigation immediately restores hints");
+            assert_eq!(rt.state.feed.selected, 1);
+            rt.pointer_down(10.0, 10.0);
+            rt.pointer_up(10.0, 10.0);
+            rt.frame(0.5);
+            if !contrast { assert!((hint(&rt) - 0.3).abs() < 0.01, "a stationary click counts as pointer use"); }
+
+            rt.update(|s, _| {
+                s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+                s.story.as_mut().unwrap().article_summary = crate::story::ArticleSummaryState::Done("Scrollable summary. ".repeat(150));
+            });
+            rt.frame(1.0);
+            rt.key(KeyEvent { key: rune::Key::Text("j".into()), mods: Default::default() });
+            rt.frame(0.0);
+            assert_eq!(hint(&rt), 1.0, "discussion navigation restores hints");
+            let elements = rt.elements();
+            let [x, y, w, h] = elements.iter().find(|e| e.key.as_deref() == Some("summary-scroll")).unwrap().rect;
+            let before = elements.iter().find(|e| e.key.as_deref() == Some("article-summary")).unwrap().rect[1];
+            rt.wheel_xy(x + w / 2.0, y + h / 2.0, 0.0, -80.0);
+            rt.frame(0.5);
+            let after = rt.elements();
+            assert!(after.iter().find(|e| e.key.as_deref() == Some("article-summary")).unwrap().rect[1] < before);
+            if !contrast { assert!((hint(&rt) - 0.3).abs() < 0.01, "wheel use dims the passive hints"); }
+            for key in ["story-back", "article-open-original"] {
+                assert_eq!(after.iter().find(|e| e.key.as_deref() == Some(key)).unwrap().opacity, 1.0);
+            }
+            rt.update(|_, tx| tx.focus("summary-scroll", true));
+            rt.frame(0.0);
+            rt.key(KeyEvent { key: rune::Key::Tab, mods: Default::default() });
+            rt.frame(0.0);
+            assert_eq!(hint(&rt), 1.0, "citation Tab restores hints");
+            rt.wheel_xy(x + w / 2.0, y + h / 2.0, 0.0, 80.0);
+            rt.frame(0.5);
+            if !contrast { assert!((hint(&rt) - 0.3).abs() < 0.01); }
+            rt.update(|_, tx| tx.focus("summary-scroll", true));
+            rt.frame(0.0);
+            rt.key(KeyEvent { key: rune::Key::PageUp, mods: Default::default() });
+            rt.frame(0.0);
+            assert_eq!(hint(&rt), 1.0, "a viewport-consumed Page Up restores hints");
+        }
     }
 
     #[test]
@@ -2970,11 +3218,39 @@ mod tests {
         rt.frame(0.0);
         route(&mut rt, rune::Key::Text("L".into()));
         assert!(rt.state.story.as_ref().unwrap().links.is_some());
+        let [x, y, w, h] = rt.elements().iter().find(|e| e.key.as_deref() == Some("link-0")).unwrap().visible;
+        rt.pointer_move(x + w / 2.0, y + h / 2.0);
+        rt.frame(0.3);
+        assert_eq!(rt.state.hints.get(), 0.3);
         route(&mut rt, rune::Key::Tab);
+        assert_eq!(rt.state.hints.get(), 1.0, "Tab in the chooser restores hints");
         let story = rt.state.story.as_ref().unwrap();
         assert!(story.links.is_some());
         assert!(!story.citation_focus, "the chooser owns Tab, not the summary behind it");
         assert!(!rt.elements().iter().any(|e| e.key.as_deref() == Some("summary-scroll") && e.focused));
+    }
+
+    #[test]
+    fn mouse_back_respects_the_chooser_and_modal_scope() {
+        let mut s = app(true, SavedView::in_memory());
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        s.story.as_mut().unwrap().thread.select(905);
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.frame(0.0);
+        rt.update(|s, _| s.choose_links());
+        rt.frame(0.3);
+        let [x, y, w, h] = rt.elements().iter().find(|e| e.key.as_deref() == Some("link-0")).unwrap().visible;
+        rt.button_down(x + w / 2.0, y + h / 2.0, rune::PointerButton::Back);
+        rt.button_up(x + w / 2.0, y + h / 2.0, rune::PointerButton::Back);
+        rt.frame(0.3);
+        assert!(rt.state.story.as_ref().unwrap().links.is_none());
+        rt.update(|s, _| s.open_summary_settings());
+        rt.frame(0.3);
+        let [x, y, w, h] = rt.elements().iter().find(|e| e.key.as_deref() == Some("settings-dialog")).unwrap().rect;
+        rt.button_down(x + w / 2.0, y + h / 2.0, rune::PointerButton::Back);
+        rt.button_up(x + w / 2.0, y + h / 2.0, rune::PointerButton::Back);
+        rt.frame(0.0);
+        assert!(rt.state.settings.is_some() && rt.state.story.is_some(), "the modal keeps background navigation blocked");
     }
 
     #[test]
@@ -3080,8 +3356,10 @@ mod tests {
         let y = anchor.rect[1];
         rt.update(|s, _| s.open_citation(0));
         rt.frame(0.0);
-        rt.update(|s, _| { s.story.as_mut().unwrap().close_source(); });
-        rt.frame(0.0);
+        let [x, button_y, w, h] = rt.elements().iter().find(|e| e.key.as_deref() == Some("story-back")).unwrap().rect;
+        rt.pointer_down(x + w / 2.0, button_y + h / 2.0);
+        rt.pointer_up(x + w / 2.0, button_y + h / 2.0);
+        rt.frame(0.3);
         let after = rt.elements();
         let restored = after.iter().find(|e| e.key.as_deref() == Some(&key)).unwrap();
         assert!((restored.rect[1] - y).abs() < 2.0, "same passage returns at the same position");
@@ -3291,6 +3569,17 @@ mod tests {
             }
             poll(s, now, tx)
         }
+        fn tab_loading(s: &mut App, now: f64, tx: &mut Tx) -> bool {
+            if now < 0.2 { return false; }
+            if s.feed.tab == StoryType::Top {
+                on_key(s, &KeyEvent { key: rune::Key::Text("2".into()), mods: Default::default() }, tx);
+                wait_worker(s);
+                tx.animated();
+                return true;
+            }
+            if now < 0.8 { return false; }
+            poll(s, now, tx)
+        }
         let out = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("target/ux-motion/skeleton-handoff/arrivals");
         std::fs::create_dir_all(&out).unwrap();
         for (name, init, poller, group, reduced) in [
@@ -3300,8 +3589,13 @@ mod tests {
             ("saved-empty", saved, poll, "feed-page-1", false),
             ("reduced-page", reduced, page, "feed-page-1", true),
             ("reduced-initial", reduced_loading, initial, "feed-page-0", true),
+            ("tab-loading", loaded, tab_loading, "feed-placeholder", false),
+            ("reduced-tab-loading", reduced, tab_loading, "feed-placeholder", true),
         ] {
-            let captures = if name == "tab" {
+            let captures = if name == "tab-loading" {
+                vec![("1180x760", "dark", "0.25"), ("1180x760", "dark", "0.3"),
+                     ("1180x760", "dark", "0.6"), ("1600x900", "light", "0.3")]
+            } else if name == "tab" {
                 vec![("1180x760", "dark", "0.25"), ("1180x760", "dark", "0.3"),
                      ("1180x760", "light", "0.25"), ("1180x760", "light", "0.3"),
                      ("1600x900", "dark", "0.25"), ("1600x900", "dark", "0.3"),
@@ -4305,6 +4599,7 @@ mod tests {
             arrival: Arrival::Initial,
             loading_since: None,
             hover: None,
+            hints: rune::Live::new(1.0),
             story: None,
             scroll_pacing: Rc::new(Cell::new(ScrollPacing::Idle)),
             scroll_waker: None,

@@ -150,7 +150,7 @@ for reduced in [False, True]:
                     verify_navigation(frames, source_x, rest_x)
                     if theme == "dark":
                         mutant = copy.deepcopy(frames[0])
-                        next(e for e in mutant if e.get("text") == "discussion" and "/story-footer/" in e.get("path", ""))["rect"][2] -= 12
+                        next(e for e in mutant if e.get("text") == "Back to discussion" and "/story-footer/" in e.get("path", ""))["rect"][2] -= 12
                         rejects_mutation("moving-footer-label", mutant, lambda value: verify_footer(value, opened))
                         mutant = copy.deepcopy(frames[0])
                         ghost = copy.deepcopy(next(e for e in resting if e.get("text") == "refresh comments"))
@@ -247,7 +247,7 @@ assert "/story-footer/" in button["path"], button["path"]
 assert not visible(story, "story-toolbar-title")
 assert not visible(story, "story-toolbar-meta")
 assert not visible(story, "summary-pill")
-assert any(e.get("text") == "feed" and "/story-footer/" in e.get("path", "") for e in story)
+assert any(e.get("text") == "Back to feed" and "/story-footer/" in e.get("path", "") for e in story)
 title = one(story, "article-title")
 assert sum(e.get("text") == title["text"] for e in story) == 1
 assert abs(one(story, "main-pane")["rect"][1] - one(story, "summary-card")["rect"][1]) < .5

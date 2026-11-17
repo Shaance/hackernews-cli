@@ -8,6 +8,9 @@
     ],
     "children": [
       {
+        "actions": [
+          "click"
+        ],
         "bounds": [
           0.0,
           0.0,

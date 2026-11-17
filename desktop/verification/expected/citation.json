@@ -8,6 +8,9 @@
     ],
     "children": [
       {
+        "actions": [
+          "click"
+        ],
         "bounds": [
           0.0,
           0.0,
@@ -28,7 +31,7 @@
                   0.0,
                   0.0,
                   1180.0,
-                  724.0
+                  719.0
                 ],
                 "children": [
                   {
@@ -36,7 +39,7 @@
                       0.0,
                       0.0,
                       1180.0,
-                      724.0
+                      719.0
                     ],
                     "children": [
                       {
@@ -44,7 +47,7 @@
                           0.0,
                           0.0,
                           1180.0,
-                          724.0
+                          719.0
                         ],
                         "children": [
                           {
@@ -124,7 +127,7 @@
                               0.0,
                               48.0,
                               1180.0,
-                              676.0
+                              671.0
                             ],
                             "children": [
                               {
@@ -132,7 +135,7 @@
                                   8.0,
                                   48.0,
                                   629.0,
-                                  668.0
+                                  663.0
                                 ],
                                 "children": [
                                   {
@@ -140,7 +143,7 @@
                                       8.0,
                                       48.0,
                                       629.0,
-                                      668.0
+                                      663.0
                                     ],
                                     "children": [
                                       {
@@ -148,7 +151,7 @@
                                           8.0,
                                           48.0,
                                           629.0,
-                                          668.0
+                                          663.0
                                         ],
                                         "children": [
                                           {
@@ -233,7 +236,7 @@
                                               8.0,
                                               152.3,
                                               629.0,
-                                              563.8
+                                              558.8
                                             ],
                                             "children": [
                                               {
@@ -523,7 +526,7 @@
                                             "scroll": [
                                               0.0,
                                               0.0,
-                                              205.6
+                                              210.6
                                             ],
                                             "states": [
                                               "clips"
@@ -546,7 +549,7 @@
                                   637.0,
                                   48.0,
                                   543.0,
-                                  676.0
+                                  671.0
                                 ],
                                 "children": [
                                   {
@@ -554,7 +557,7 @@
                                       637.0,
                                       48.0,
                                       543.0,
-                                      676.0
+                                      671.0
                                     ],
                                     "children": [
                                       {
@@ -562,7 +565,7 @@
                                           637.0,
                                           48.0,
                                           543.0,
-                                          676.0
+                                          671.0
                                         ],
                                         "children": [
                                           {
@@ -570,7 +573,7 @@
                                               637.0,
                                               48.0,
                                               543.0,
-                                              676.0
+                                              671.0
                                             ],
                                             "children": [
                                               {
@@ -584,7 +587,7 @@
                                                   637.0,
                                                   48.0,
                                                   543.0,
-                                                  676.0
+                                                  671.0
                                                 ],
                                                 "children": [
                                                   {
@@ -1407,7 +1410,7 @@
                                       637.0,
                                       48.0,
                                       6.0,
-                                      676.0
+                                      671.0
                                     ],
                                     "key": "inspector-grip",
                                     "name": "Resize inspector",
@@ -1443,35 +1446,52 @@
               {
                 "bounds": [
                   0.0,
-                  725.0,
+                  720.0,
                   1180.0,
-                  35.0
+                  40.0
                 ],
                 "children": [
                   {
+                    "actions": [
+                      "click",
+                      "focus"
+                    ],
                     "bounds": [
                       24.0,
-                      735.5,
-                      26.9,
-                      14.0
+                      722.0,
+                      156.3,
+                      36.0
                     ],
-                    "name": "Esc",
-                    "role": "group"
+                    "children": [
+                      {
+                        "bounds": [
+                          32.0,
+                          733.0,
+                          26.9,
+                          14.0
+                        ],
+                        "name": "Esc",
+                        "role": "group"
+                      },
+                      {
+                        "bounds": [
+                          64.9,
+                          732.5,
+                          107.4,
+                          15.0
+                        ],
+                        "name": "Back to discussion",
+                        "role": "label"
+                      }
+                    ],
+                    "key": "story-back",
+                    "name": "Back to discussion",
+                    "role": "button"
                   },
                   {
                     "bounds": [
-                      56.9,
-                      735.0,
-                      61.5,
-                      15.0
-                    ],
-                    "name": "discussion",
-                    "role": "label"
-                  },
-                  {
-                    "bounds": [
-                      136.4,
-                      735.5,
+                      198.3,
+                      733.0,
                       31.9,
                       14.0
                     ],
@@ -1480,8 +1500,8 @@
                   },
                   {
                     "bounds": [
-                      174.3,
-                      735.0,
+                      236.2,
+                      732.5,
                       31.4,
                       15.0
                     ],
@@ -1490,8 +1510,8 @@
                   },
                   {
                     "bounds": [
-                      223.7,
-                      735.5,
+                      285.6,
+                      733.0,
                       27.4,
                       14.0
                     ],
@@ -1500,8 +1520,8 @@
                   },
                   {
                     "bounds": [
-                      257.1,
-                      735.0,
+                      319.0,
+                      732.5,
                       67.5,
                       15.0
                     ],
@@ -1514,16 +1534,16 @@
                       "focus"
                     ],
                     "bounds": [
-                      342.6,
-                      735.0,
+                      404.5,
+                      732.5,
                       82.0,
                       15.0
                     ],
                     "children": [
                       {
                         "bounds": [
-                          342.6,
-                          735.5,
+                          404.5,
+                          733.0,
                           16.4,
                           14.0
                         ],
@@ -1532,8 +1552,8 @@
                       },
                       {
                         "bounds": [
-                          365.0,
-                          735.0,
+                          427.0,
+                          732.5,
                           59.5,
                           15.0
                         ],
@@ -1632,7 +1652,7 @@
         0.0,
         0.0,
         1180.0,
-        724.0
+        719.0
       ],
       "role": "group",
       "scale": 1.0
@@ -1652,7 +1672,7 @@
         0.0,
         0.0,
         1180.0,
-        724.0
+        719.0
       ],
       "role": "group",
       "scale": 1.0
@@ -1672,7 +1692,7 @@
         0.0,
         0.0,
         1180.0,
-        724.0
+        719.0
       ],
       "role": "group",
       "scale": 1.0
@@ -1854,7 +1874,7 @@
         0.0,
         48.0,
         1180.0,
-        676.0
+        671.0
       ],
       "role": "group",
       "scale": 1.0
@@ -1874,7 +1894,7 @@
         8.0,
         48.0,
         629.0,
-        668.0
+        663.0
       ],
       "role": "main",
       "scale": 1.0
@@ -1894,7 +1914,7 @@
         8.0,
         48.0,
         629.0,
-        668.0
+        663.0
       ],
       "role": "group",
       "scale": 1.0
@@ -1914,7 +1934,7 @@
         8.0,
         48.0,
         629.0,
-        668.0
+        663.0
       ],
       "role": "group",
       "scale": 1.0
@@ -2078,7 +2098,7 @@
         8.0,
         152.25,
         629.0,
-        563.75
+        558.75
       ],
       "role": "group",
       "scale": 1.0
@@ -2678,7 +2698,7 @@
         637.0,
         48.0,
         543.0,
-        676.0
+        671.0
       ],
       "role": "region",
       "scale": 1.0
@@ -2698,7 +2718,7 @@
         637.0,
         48.0,
         543.0,
-        676.0
+        671.0
       ],
       "role": "group",
       "scale": 1.0
@@ -2718,7 +2738,7 @@
         637.0,
         48.0,
         543.0,
-        676.0
+        671.0
       ],
       "role": "group",
       "scale": 1.0
@@ -2738,7 +2758,7 @@
         637.0,
         48.0,
         543.0,
-        676.0
+        671.0
       ],
       "role": "group",
       "scale": 1.0
@@ -2758,7 +2778,7 @@
         621.0,
         48.0,
         543.0,
-        676.0
+        671.0
       ],
       "role": "group",
       "scale": 1.0,
@@ -2766,7 +2786,7 @@
         637.0,
         48.0,
         543.0,
-        676.0
+        671.0
       ]
     },
     {
@@ -2784,7 +2804,7 @@
         621.0,
         48.0,
         543.0,
-        676.0
+        671.0
       ],
       "role": "group",
       "scale": 1.0,
@@ -2792,7 +2812,7 @@
         637.0,
         48.0,
         543.0,
-        676.0
+        671.0
       ]
     },
     {
@@ -3661,7 +3681,7 @@
         635.0,
         306.75,
         515.0,
-        405.25
+        400.25
       ],
       "role": "group",
       "scale": 1.0,
@@ -3669,7 +3689,7 @@
         651.0,
         306.75,
         515.0,
-        405.25
+        400.25
       ]
     },
     {
@@ -6539,7 +6559,7 @@
         637.0,
         48.0,
         543.0,
-        676.0
+        671.0
       ],
       "role": "region",
       "scale": 1.0
@@ -7874,7 +7894,7 @@
         637.0,
         48.0,
         6.0,
-        676.0
+        671.0
       ],
       "role": "separator",
       "scale": 1.0
@@ -7891,7 +7911,7 @@
       "path": "kit-root/window/#1",
       "rect": [
         0.0,
-        724.0,
+        719.0,
         1180.0,
         1.0
       ],
@@ -7911,9 +7931,9 @@
       "path": "kit-root/window/story-footer",
       "rect": [
         0.0,
-        725.0,
+        720.0,
         1180.0,
-        35.0
+        40.0
       ],
       "role": "group",
       "scale": 1.0
@@ -7922,19 +7942,21 @@
       "blur": 0.0,
       "fill": "#00000000",
       "focusVisible": false,
-      "focusable": false,
+      "focusable": true,
       "focused": false,
       "inert": false,
+      "key": "story-back",
+      "label": "Back to discussion",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/story-footer/#0",
+      "path": "kit-root/window/story-footer/story-back",
       "rect": [
         24.0,
-        735.0,
-        94.38,
-        15.0
+        722.0,
+        156.32,
+        36.0
       ],
-      "role": "group",
+      "role": "button",
       "scale": 1.0
     },
     {
@@ -7947,10 +7969,10 @@
       "label": "Esc",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/story-footer/#0/#0",
+      "path": "kit-root/window/story-footer/story-back/#0",
       "rect": [
-        24.0,
-        735.5,
+        32.0,
+        733.0,
         26.91,
         14.0
       ],
@@ -7967,10 +7989,10 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/story-footer/#0/#0/key0",
+      "path": "kit-root/window/story-footer/story-back/#0/key0",
       "rect": [
-        24.0,
-        735.5,
+        32.0,
+        733.0,
         26.91,
         14.0
       ],
@@ -7987,10 +8009,10 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/story-footer/#0/#0/key0/#0",
+      "path": "kit-root/window/story-footer/story-back/#0/key0/#0",
       "rect": [
-        28.0,
-        737.0,
+        36.0,
+        734.5,
         18.91,
         11.0
       ],
@@ -8000,7 +8022,7 @@
     },
     {
       "blur": 0.0,
-      "color": "#a2a5aaff",
+      "color": "#eff0f2ff",
       "fill": "#00000000",
       "focusVisible": false,
       "focusable": false,
@@ -8008,16 +8030,16 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/story-footer/#0/#1",
+      "path": "kit-root/window/story-footer/story-back/#1",
       "rect": [
-        56.91,
-        735.0,
-        61.47,
+        64.91,
+        732.5,
+        107.41,
         15.0
       ],
       "role": "text",
       "scale": 1.0,
-      "text": "discussion"
+      "text": "Back to discussion"
     },
     {
       "blur": 0.0,
@@ -8030,8 +8052,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/story-footer/#1",
       "rect": [
-        136.38,
-        735.0,
+        198.32,
+        732.5,
         69.29,
         15.0
       ],
@@ -8050,8 +8072,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/story-footer/#1/#0",
       "rect": [
-        136.38,
-        735.5,
+        198.32,
+        733.0,
         31.89,
         14.0
       ],
@@ -8070,8 +8092,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/story-footer/#1/#0/key0",
       "rect": [
-        136.38,
-        735.5,
+        198.32,
+        733.0,
         14.33,
         14.0
       ],
@@ -8090,8 +8112,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/story-footer/#1/#0/key0/#0",
       "rect": [
-        140.38,
-        737.0,
+        202.32,
+        734.5,
         6.33,
         11.0
       ],
@@ -8111,8 +8133,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/story-footer/#1/#0/key1",
       "rect": [
-        152.7,
-        735.5,
+        214.65,
+        733.0,
         15.56,
         14.0
       ],
@@ -8131,8 +8153,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/story-footer/#1/#0/key1/#0",
       "rect": [
-        156.7,
-        737.0,
+        218.65,
+        734.5,
         7.56,
         11.0
       ],
@@ -8152,8 +8174,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/story-footer/#1/#1",
       "rect": [
-        174.27,
-        735.0,
+        236.21,
+        732.5,
         31.4,
         15.0
       ],
@@ -8172,8 +8194,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/story-footer/#2",
       "rect": [
-        223.66,
-        735.0,
+        285.61,
+        732.5,
         100.93,
         15.0
       ],
@@ -8192,8 +8214,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/story-footer/#2/#0",
       "rect": [
-        223.66,
-        735.5,
+        285.61,
+        733.0,
         27.42,
         14.0
       ],
@@ -8212,8 +8234,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/story-footer/#2/#0/key0",
       "rect": [
-        223.66,
-        735.5,
+        285.61,
+        733.0,
         27.42,
         14.0
       ],
@@ -8232,8 +8254,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/story-footer/#2/#0/key0/#0",
       "rect": [
-        227.66,
-        737.0,
+        289.61,
+        734.5,
         19.42,
         11.0
       ],
@@ -8253,8 +8275,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/story-footer/#2/#1",
       "rect": [
-        257.09,
-        735.0,
+        319.03,
+        732.5,
         67.51,
         15.0
       ],
@@ -8275,8 +8297,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/story-footer/article-open-original",
       "rect": [
-        342.59,
-        735.0,
+        404.54,
+        732.5,
         81.95,
         15.0
       ],
@@ -8295,8 +8317,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/story-footer/article-open-original/#0",
       "rect": [
-        342.59,
-        735.5,
+        404.54,
+        733.0,
         16.44,
         14.0
       ],
@@ -8315,8 +8337,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/story-footer/article-open-original/#0/key0",
       "rect": [
-        342.59,
-        735.5,
+        404.54,
+        733.0,
         16.44,
         14.0
       ],
@@ -8335,8 +8357,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/story-footer/article-open-original/#0/key0/#0",
       "rect": [
-        346.59,
-        737.0,
+        408.54,
+        734.5,
         8.44,
         11.0
       ],
@@ -8356,8 +8378,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/story-footer/article-open-original/#1",
       "rect": [
-        365.03,
-        735.0,
+        426.98,
+        732.5,
         59.52,
         15.0
       ],
