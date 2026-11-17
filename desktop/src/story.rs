@@ -209,9 +209,9 @@ impl Story {
             return false;
         }
         let story_id = filled.story_id;
-        self.land_update(StoryUpdate::Article { story_id, article: filled.article });
+        self.land_update(StoryUpdate::Article { story_id, article: filled.article, summary_skipped: false });
         self.land_update(StoryUpdate::ArticleSummary { story_id, summary: filled.article_summary });
-        self.land_update(StoryUpdate::Discussion { story_id, comments: filled.comments, sources: filled.sources.clone() });
+        self.land_update(StoryUpdate::Discussion { story_id, comments: filled.comments, sources: filled.sources.clone(), summary_skipped: false });
         self.land_update(StoryUpdate::Summary { story_id, summary: filled.summary, sources: filled.sources });
         true
     }
@@ -220,7 +220,8 @@ impl Story {
     /// the comment tree, or a reply the reader has opened since the discussion arrived.
     pub fn land_update(&mut self, update: StoryUpdate) -> bool {
         match update {
-            StoryUpdate::Article { story_id, article } if story_id == self.id() => {
+            StoryUpdate::Article { story_id, article, summary_skipped } if story_id == self.id() => {
+                if summary_skipped { self.stop_summary(true); }
                 self.article = match article {
                     Ok((text, partial)) => ArticleState::Ready { text, partial },
                     Err(message) => {
@@ -235,7 +236,8 @@ impl Story {
                 if !matches!(self.article_summary, ArticleSummaryState::Generating { .. }) { return false; }
                 self.land_article_summary(summary);
             }
-            StoryUpdate::Discussion { story_id, comments, sources } if story_id == self.id() => {
+            StoryUpdate::Discussion { story_id, comments, sources, summary_skipped } if story_id == self.id() => {
+                if summary_skipped { self.stop_summary(false); }
                 if matches!(self.discussion, Some(Ok(()))) {
                     // A newer comments refresh may have arrived before this initial capture.
                     if let Err(message) = comments && self.summary.is_generating() {
@@ -505,11 +507,13 @@ impl Story {
     }
 
     /// Stop pending summaries after the key is cleared, retaining already paid-for results.
-    pub(crate) fn stop_summaries(&mut self) {
-        if let SummaryState::Generating { previous } = &mut self.summary {
+    pub(crate) fn stop_summaries(&mut self) { self.stop_summary(true); self.stop_summary(false); }
+
+    fn stop_summary(&mut self, article: bool) {
+        if !article && let SummaryState::Generating { previous } = &mut self.summary {
             self.summary = previous.take().map_or(SummaryState::Unconfigured, |summary| SummaryState::Done(*summary));
         }
-        if let ArticleSummaryState::Generating { previous } = &mut self.article_summary {
+        if article && let ArticleSummaryState::Generating { previous } = &mut self.article_summary {
             self.article_summary = previous.take().map_or(ArticleSummaryState::Unconfigured, ArticleSummaryState::Done);
         }
     }
@@ -608,6 +612,7 @@ mod tests {
                 story_id: story.id(),
                 comments: if fails { Err("initial capture failed".into()) } else { Ok(older) },
                 sources: old_capture,
+                summary_skipped: false,
             });
             assert_eq!(story.discussion, Some(Ok(())));
             assert_eq!(story.thread.node(newer[0].id).unwrap().text, "newer comment");

@@ -65,6 +65,11 @@ session, leaving and reopening a story reuses its captures, summaries, citation 
 in-flight work. `r` refreshes comments without regenerating summaries; explicitly regenerating
 starts new paid summary requests. Closing the app clears this session cache.
 
+Turn off Automatic summaries to keep loading articles and comments without starting new
+automatic summary requests. Submitted summaries can finish; Regenerate summary still works
+when automatic generation is off.
+Stories opened with it off keep their manual state until you regenerate their summaries.
+
 Two consequences of a native child view, both worth knowing before you use it:
 
 - **The page owns its own keyboard while it has focus.** Clicking into the page gives the

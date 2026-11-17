@@ -377,22 +377,22 @@ fn expanded_summary(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: b
             _ => {}
         }
         body = body
-            .child(col().w_full().gap(6.0)
+            .children((!matches!(s.article_summary, ArticleSummaryState::Unconfigured)).then(|| col().w_full().gap(6.0)
             .child(text("Article").key("article-summary-heading").role("heading").level(3).font(type_::SECTION).color(t.text_secondary))
             .child(col().key("article-summary-body").w_full().child_exit(Transition::none())
                 .child(col().key("article-summary-result").w_full().transition(Transition::none()).animated_changes()
                     .motion(Spring::NONE).opacity(if article_waiting && !reduced { 0.4 } else { 1.0 })
                     .offset(0.0, if article_waiting && !reduced { 8.0 } else { 0.0 })
                     .opacity_motion(article_motion).offset_motion(article_motion).child(article))
-                .children(article_waiting.then(|| generating(k, t, "Reading the article…")))))
-            .child(col().w_full().gap(6.0)
+                .children(article_waiting.then(|| generating(k, t, "Reading the article…"))))))
+            .children((!matches!(s.summary, SummaryState::Unconfigured)).then(|| col().w_full().gap(6.0)
             .child(text("Discussion").key("discussion-summary-heading").role("heading").level(3).font(type_::SECTION).color(t.text_secondary))
             .child(col().key("discussion-summary-body").w_full().child_exit(Transition::none())
                 .child(col().key("discussion-summary-result").w_full().transition(Transition::none()).animated_changes()
                     .motion(Spring::NONE).opacity(if discussion_waiting && !reduced { 0.4 } else { 1.0 })
                     .offset(0.0, if discussion_waiting && !reduced { 8.0 } else { 0.0 })
                     .opacity_motion(discussion_motion).offset_motion(discussion_motion).child(discussion))
-                .children(discussion_waiting.then(|| generating(k, t, "Reading the discussion…")))));
+                .children(discussion_waiting.then(|| generating(k, t, "Reading the discussion…"))))));
     }
     let more = rune::Live::new(0.0_f32);
     let on_more = more.clone();

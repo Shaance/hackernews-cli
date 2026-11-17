@@ -100,14 +100,14 @@ pub struct StoryFilled {
 
 /// A result that can be shown without waiting for the other story work.
 pub enum StoryUpdate {
-    Article { story_id: i32, article: Result<(String, bool), String> },
-    Discussion { story_id: i32, comments: Result<Vec<Comment>, String>, sources: Vec<CapturedSource> },
+    Article { story_id: i32, article: Result<(String, bool), String>, summary_skipped: bool },
+    Discussion { story_id: i32, comments: Result<Vec<Comment>, String>, sources: Vec<CapturedSource>, summary_skipped: bool },
     ArticleSummary { story_id: i32, summary: Result<Article, SummaryError> },
     Summary { story_id: i32, summary: Result<Discussion, SummaryError>, sources: Vec<CapturedSource> },
 }
 
 enum ArticlePhase {
-    Captured { source: Arc<Source>, request: StoryRequest, article: Result<(String, bool), String> },
+    Captured { source: Arc<Source>, request: StoryRequest, article: Result<(String, bool), String>, manual: bool },
     Summary { story_id: i32, summary: Result<Article, SummaryError> },
 }
 
@@ -117,6 +117,7 @@ enum StoryPhase {
         request: StoryRequest,
         comments: Result<Vec<Comment>, String>,
         sources: Vec<CapturedSource>,
+        manual: bool,
     },
     Summary { story_id: i32, summary: Result<Discussion, SummaryError>, sources: Vec<CapturedSource> },
 }
@@ -211,12 +212,12 @@ impl Bridge {
         let article_request = request.clone();
         self.article = Some(self.handle.spawn(async move {
             let article = article_source.article(&article_request.story).await;
-            ArticlePhase::Captured { source: article_source, request: article_request, article }
+            ArticlePhase::Captured { source: article_source, request: article_request, article, manual: false }
         }));
         self.story = Some(self.handle.spawn(async move {
             let comments = source.thread(request.story.id).await.map_err(|e| e.to_string());
             let sources = comments.as_ref().map(|comments| source.capture(comments)).unwrap_or_default();
-            StoryPhase::Captured { source, request, comments, sources }
+            StoryPhase::Captured { source, request, comments, sources, manual: false }
         }));
         // Input dispatch may run after the frame's poll; schedule one to register these tasks.
         if let Some(waker) = &self.waker { waker.wake_by_ref(); }
@@ -235,7 +236,7 @@ impl Bridge {
                 },
                 None => {
                     let article = article_source.article(&article_request.story).await;
-                    ArticlePhase::Captured { source: article_source, request: article_request, article }
+                    ArticlePhase::Captured { source: article_source, request: article_request, article, manual: true }
                 }
             }
         }));
@@ -248,7 +249,7 @@ impl Bridge {
                 None => {
                     let comments = source.thread(request.story.id).await.map_err(|e| e.to_string());
                     let sources = comments.as_ref().map(|comments| source.capture(comments)).unwrap_or_default();
-                    StoryPhase::Captured { source, request, comments, sources }
+                    StoryPhase::Captured { source, request, comments, sources, manual: true }
                 }
             }
         }));
@@ -301,9 +302,9 @@ impl Bridge {
     pub fn take_story(&mut self, config: &Config, summarize_article: bool, summarize_discussion: bool) -> Option<StoryUpdate> {
         if let Some(phase) = take_task(&mut self.article, self.waker.as_ref()) {
             return Some(match phase {
-                ArticlePhase::Captured { source, request, article } => {
+                ArticlePhase::Captured { source, request, article, manual } => {
                     let story_id = request.story.id;
-                    if let Ok(captured) = &article && summarize_article && (!source.is_live() || !config.key().is_empty()) {
+                    if let Ok(captured) = &article && (manual || config.automatic) && summarize_article && (!source.is_live() || !config.key().is_empty()) {
                         let captured = captured.clone();
                         let config = config.clone();
                         self.article = Some(self.handle.spawn(async move {
@@ -311,15 +312,15 @@ impl Bridge {
                             ArticlePhase::Summary { story_id, summary }
                         }));
                     }
-                    StoryUpdate::Article { story_id, article }
+                    StoryUpdate::Article { story_id, article, summary_skipped: !manual && !config.automatic }
                 }
                 ArticlePhase::Summary { story_id, summary } => StoryUpdate::ArticleSummary { story_id, summary },
             });
         }
         match take_task(&mut self.story, self.waker.as_ref())? {
-            StoryPhase::Captured { source, request, comments, sources } => {
+            StoryPhase::Captured { source, request, comments, sources, manual } => {
                 let story_id = request.story.id;
-                if comments.is_ok() && summarize_discussion && (!source.is_live() || !config.key().is_empty()) {
+                if comments.is_ok() && (manual || config.automatic) && summarize_discussion && (!source.is_live() || !config.key().is_empty()) {
                     let captured = sources.clone();
                     let config = config.clone();
                     self.story = Some(self.handle.spawn(async move {
@@ -327,7 +328,7 @@ impl Bridge {
                         StoryPhase::Summary { story_id, summary, sources: captured }
                     }));
                 }
-                Some(StoryUpdate::Discussion { story_id, comments, sources })
+                Some(StoryUpdate::Discussion { story_id, comments, sources, summary_skipped: !manual && !config.automatic })
             }
             StoryPhase::Summary { story_id, summary, sources } => Some(StoryUpdate::Summary { story_id, summary, sources }),
         }
@@ -427,6 +428,7 @@ async fn run_story(source: &Source, request: StoryRequest) -> StoryFilled {
     let ((article, article_summary), (comments, sources, summary)) = tokio::join!(async {
         let article = source.article(&request.story).await;
         let summary = match &article {
+            Ok(_) if !request.config.automatic => Err(SummaryError::new("Automatic summaries are off", false)),
             Ok(captured) => source.article_summary(&request.config, &request.story, captured).await,
             Err(message) => Err(SummaryError::new(message.clone(), false)),
         };
@@ -435,6 +437,7 @@ async fn run_story(source: &Source, request: StoryRequest) -> StoryFilled {
         let comments = source.thread(story_id).await.map_err(|e| e.to_string());
         let sources = comments.as_ref().map(|comments| source.capture(comments)).unwrap_or_default();
         let summary = match &comments {
+            Ok(_) if !request.config.automatic => Err(SummaryError::new("Automatic summaries are off", false)),
             Ok(_) => source.summary(&request.config, &request.story, &sources).await,
             Err(message) => Err(SummaryError::new(format!("Discussion unavailable: {message}"), false)),
         };
@@ -670,11 +673,11 @@ mod tests {
             let article_source = source.clone();
             let article_request = request.clone();
             bridge.article = Some(bridge.handle.spawn(async move { ArticlePhase::Captured {
-                source: article_source, request: article_request, article: Ok(("captured article".into(), false)),
+                source: article_source, request: article_request, article: Ok(("captured article".into(), false)), manual: false,
             }}));
             let discussion_source = source.clone();
             bridge.story = Some(bridge.handle.spawn(async move { StoryPhase::Captured {
-                source: discussion_source, request, comments: Ok(comments), sources,
+                source: discussion_source, request, comments: Ok(comments), sources, manual: false,
             }}));
             bridge.park_story(1);
             bridge.resume_story(1);

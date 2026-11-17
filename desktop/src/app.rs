@@ -394,7 +394,7 @@ impl App {
             reading.story = story;
             self.story = Some(reading);
         } else {
-            self.story = Some(Story::opening(story.clone(), self.configured()));
+            self.story = Some(Story::opening(story.clone(), self.configured() && self.config.automatic));
             self.request_story(story);
         }
     }
@@ -5120,6 +5120,121 @@ mod tests {
         assert_eq!(story.sources.iter().map(|source| (source.id, source.text.clone())).collect::<Vec<_>>(), sources);
         let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
         assert_eq!((*fake.article_summary_requests.lock().unwrap(), *fake.summary_requests.lock().unwrap()), (2, 2));
+    }
+
+    #[test]
+    fn automatic_off_keeps_captures_without_provider_calls_until_regenerated() {
+        for headless in [false, true] {
+            let mut s = app(headless, SavedView::in_memory());
+            s.config.api_key = "fixture".into();
+            s.config.automatic = false;
+            let item = crate::fixtures::item(0, 1);
+            s.open_story(item.clone());
+            poll_until(&mut s, |s| !s.bridge.is_story_pending());
+            let story = s.story.as_ref().unwrap();
+            assert!(matches!(story.article, crate::story::ArticleState::Ready { .. }));
+            assert_eq!(story.discussion, Some(Ok(())));
+            assert_eq!(story.article_summary, crate::story::ArticleSummaryState::Unconfigured);
+            assert_eq!(story.summary, SummaryState::Unconfigured);
+            s.refresh_comments();
+            poll_until(&mut s, |s| !s.story.as_ref().unwrap().refreshing_comments);
+            let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+            assert_eq!((*fake.article_summary_requests.lock().unwrap(), *fake.summary_requests.lock().unwrap()), (0, 0));
+            s.retry_summary();
+            poll_until(&mut s, |s| !s.bridge.is_story_pending());
+            let story = s.story.as_ref().unwrap();
+            assert!(matches!(story.article_summary, crate::story::ArticleSummaryState::Done(_)));
+            assert!(matches!(story.summary, SummaryState::Done(_)));
+            s.close_story();
+            s.open_story(item);
+            let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+            assert_eq!((*fake.article_summary_requests.lock().unwrap(), *fake.summary_requests.lock().unwrap()), (1, 1));
+        }
+    }
+
+    #[test]
+    fn turning_automatic_off_skips_parked_capture_but_keeps_submitted_summary() {
+        use std::sync::Mutex;
+        use tokio::sync::oneshot;
+        let (article_release, article_gate) = oneshot::channel();
+        let (summary_release, summary_gate) = oneshot::channel();
+        let article_gate = Mutex::new(Some(article_gate));
+        let summary_gate = Mutex::new(Some(summary_gate));
+        let mut fake = crate::service::FakeService::fixture();
+        fake.article = Arc::new(move |_| {
+            let gate = article_gate.lock().unwrap().take().unwrap();
+            Box::pin(async move { gate.await.unwrap(); Ok(("captured".into(), false)) })
+        });
+        fake.summary = Arc::new(move |_| {
+            let gate = summary_gate.lock().unwrap().take().unwrap();
+            Box::pin(async move { gate.await.unwrap(); Ok(crate::fixtures::summary()) })
+        });
+        let mut s = app(false, SavedView::in_memory());
+        s.source = Arc::new(Source::Fake(fake));
+        s.config.api_key = "fixture".into();
+        let item = crate::fixtures::item(0, 1);
+        s.open_story(item.clone());
+        poll_until(&mut s, |s| {
+            let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+            *fake.summary_requests.lock().unwrap() == 1
+        });
+        s.close_story();
+        let dir = temp_dir("automatic-off-parked");
+        let mut settings = Settings::open(&s.config, Some(dir.join("summary.json")), false);
+        settings.toggle_automatic();
+        s.settings = Some(settings); s.apply_settings(false);
+        assert!(s.settings.is_none() && !s.config.automatic);
+        std::fs::remove_dir_all(dir).unwrap();
+        article_release.send(()).unwrap();
+        summary_release.send(()).unwrap();
+        s.open_story(item);
+        poll_until(&mut s, |s| !s.bridge.is_story_pending());
+        let story = s.story.as_ref().unwrap();
+        assert!(matches!(story.article, crate::story::ArticleState::Ready { .. }));
+        assert_eq!(story.article_summary, crate::story::ArticleSummaryState::Unconfigured);
+        assert!(matches!(story.summary, SummaryState::Done(_)), "submitted work remains visible");
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        assert_eq!((*fake.article_summary_requests.lock().unwrap(), *fake.summary_requests.lock().unwrap()), (0, 1));
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0)); rt.frame(0.0);
+        let elements = rt.elements();
+        assert!(elements.iter().any(|e| e.key.as_deref() == Some("discussion-summary-heading")) && elements.iter().any(|e| e.key.as_deref() == Some("summary-text-0")));
+        assert!(!elements.iter().any(|e| e.key.as_deref() == Some("article-summary-heading")));
+        rt.update(|s, _| { let story = s.story.as_mut().unwrap(); story.summary = SummaryState::Unconfigured; story.article_summary = crate::story::ArticleSummaryState::Done("Article result".into()); }); rt.frame(0.0);
+        let elements = rt.elements();
+        assert!(elements.iter().any(|e| e.key.as_deref() == Some("article-summary-heading")) && !elements.iter().any(|e| e.key.as_deref() == Some("discussion-summary-heading")));
+    }
+
+    #[test]
+    fn manual_regeneration_while_capture_is_pending_works_with_automatic_off() {
+        use std::sync::{Mutex, atomic::{AtomicUsize, Ordering}};
+        use tokio::sync::oneshot;
+        let (release, gate) = oneshot::channel();
+        let gate = Mutex::new(Some(gate));
+        let started = Arc::new(AtomicUsize::new(0));
+        let captures = started.clone();
+        let mut fake = crate::service::FakeService::fixture();
+        fake.article = Arc::new(move |_| {
+            let gate = gate.lock().unwrap().take();
+            captures.fetch_add(1, Ordering::SeqCst);
+            Box::pin(async move { if let Some(gate) = gate { gate.await.unwrap(); } Ok(("captured".into(), false)) })
+        });
+        let mut s = app(false, SavedView::in_memory());
+        s.source = Arc::new(Source::Fake(fake));
+        s.config.api_key = "fixture".into();
+        s.config.automatic = false;
+        s.open_story(crate::fixtures::item(0, 1));
+        let deadline = std::time::Instant::now() + Duration::from_secs(2);
+        while started.load(Ordering::SeqCst) == 0 {
+            assert!(std::time::Instant::now() < deadline); std::thread::yield_now();
+        }
+        assert!(s.story.as_ref().unwrap().discussion.is_none());
+        s.retry_summary();
+        poll_until(&mut s, |s| !s.bridge.is_story_pending());
+        assert!(matches!(s.story.as_ref().unwrap().article_summary, crate::story::ArticleSummaryState::Done(_)));
+        assert!(matches!(s.story.as_ref().unwrap().summary, SummaryState::Done(_)));
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        assert_eq!((*fake.article_summary_requests.lock().unwrap(), *fake.summary_requests.lock().unwrap()), (1, 1));
+        release.send(()).unwrap();
     }
 
     #[test]
