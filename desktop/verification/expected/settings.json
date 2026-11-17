@@ -386,20 +386,6 @@
                                   "focus"
                                 ],
                                 "bounds": [
-                                  376.0,
-                                  512.1,
-                                  155.2,
-                                  24.0
-                                ],
-                                "name": "Regenerate summary",
-                                "role": "button"
-                              },
-                              {
-                                "actions": [
-                                  "click",
-                                  "focus"
-                                ],
-                                "bounds": [
                                   668.7,
                                   512.1,
                                   67.2,
@@ -5170,58 +5156,16 @@
       "blur": 0.0,
       "fill": "#00000000",
       "focusVisible": false,
-      "focusable": true,
+      "focusable": false,
       "focused": false,
       "inert": false,
-      "label": "Regenerate summary",
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#0",
       "rect": [
         376.0,
-        512.13,
-        155.15,
-        24.0
-      ],
-      "role": "button",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "key": "label",
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#0/label",
-      "rect": [
-        388.0,
-        514.13,
-        131.15,
-        20.0
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "Regenerate summary"
-    },
-    {
-      "blur": 0.0,
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#1",
-      "rect": [
-        539.15,
         524.13,
-        121.56,
+        284.71,
         0.0
       ],
       "role": "group",
@@ -5237,7 +5181,7 @@
       "label": "Cancel",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#2",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#1",
       "rect": [
         668.71,
         512.13,
@@ -5258,7 +5202,7 @@
       "key": "label",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#2/label",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#1/label",
       "rect": [
         680.71,
         514.13,
@@ -5279,7 +5223,7 @@
       "label": "Apply",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#3",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#2",
       "rect": [
         743.87,
         512.13,
@@ -5300,7 +5244,7 @@
       "key": "label",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#3/label",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#2/label",
       "rect": [
         755.87,
         514.13,

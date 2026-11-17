@@ -33,7 +33,7 @@ use rune::{
     TextStyle, Transition, Tx, Waker, WindowHandle,
 };
 use rune_kit::shell::PaneMotion;
-use rune_kit::{Keybind, Kit, PaneState, SplitView, Toast, ToastRegion, Toolbar};
+use rune_kit::{Button, ButtonVariant, ControlSize, Keybind, Kit, PaneState, SplitView, Toast, ToastRegion, Toolbar};
 
 use crate::bookmarks::SavedView;
 use crate::bridge::{Bridge, Request, StoryRequest, StoryUpdate};
@@ -1487,8 +1487,9 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
     let reduced = cx.is_reduced_motion();
     let contrast = cx.system_increased_contrast();
     let t = tok::theme(dark);
-    let k = Kit::neutral(dark);
     let accent = tok::accent(3, dark);
+    let mut k = Kit::neutral(dark);
+    k.c.border_focus = accent;
     // DESIGN.md's focus affordance is amber, not AppKit's blue: the view-wide default, so every
     // control that does not set its own ring gets the same one.
     cx.focus_ring(2.0, 1.0, accent);
@@ -1597,7 +1598,7 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
     }
     // The dialogs are the last layer, so they sit over the toast and the split.
     if let Some(settings) = &s.settings {
-        settings.view(&k, t, accent, true, &mut overlays);
+        settings.view(&k, t, accent, true, s.story.is_some(), &mut overlays);
     }
     if s.help {
         help::view(&k, t, accent, true, &mut overlays);
@@ -1618,6 +1619,10 @@ fn brand(t: tok::Theme) -> El {
             .fill(rune::color::hex("#ff6600").expect("the brand color is valid"))
             .child(text("HN").font(TextStyle::new(10.0, 700.0)).color(Color::WHITE).a11y_hidden()))
         .child(text("Hacker News").font(TextStyle::new(13.0, 500.0)).color(t.text_secondary).a11y_hidden())
+}
+
+pub(crate) fn quiet_button(label: impl Into<String>) -> Button {
+    Button::new(label).variant(ButtonVariant::GhostMuted).control_size(ControlSize::Small)
 }
 
 fn feed_tabs(s: &App, k: &Kit, t: tok::Theme, accent: Color, reduced: bool) -> El {
@@ -1670,11 +1675,11 @@ fn story_main(story: &Story, k: &Kit, t: tok::Theme, pane: Pane<'_>) -> El {
 fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize, reduced: bool, contrast: bool, height: f32) -> El {
     let mut body = col().w_full().h_full();
     if let Some(error) = s.saved.error() {
-        body = body.child(banner(error, t, accent));
+        body = body.child(banner(error, k, t));
     }
     // A failed ranking or window is a state with a retry, never a blank list.
     if let Some(error) = s.feed.status.error.as_deref() {
-        body = body.child(feed_error(error, t, accent));
+        body = body.child(feed_error(error, k, t));
     }
     body.child(
         feed_list(s, t, accent, cols, reduced, height)
@@ -2019,7 +2024,7 @@ fn chev(glyph: &str, label: &str, t: tok::Theme, on_press: impl Fn(&mut App) + '
 }
 
 /// The corrupt-file banner: the list is not silently empty, and Reload is one press away.
-fn banner(error: &str, t: tok::Theme, accent: Color) -> El {
+fn banner(error: &str, k: &Kit, t: tok::Theme) -> El {
     row()
         .key("saved-banner")
         .role("alert")
@@ -2042,27 +2047,18 @@ fn banner(error: &str, t: tok::Theme, accent: Color) -> El {
         )
         .child(el().grow(1.0))
         .child(
-            row()
-                .key("saved-reload")
-                .role("button")
-                .label("Reload")
-                .focusable(true)
-                .h(20.0)
-                .px(8.0)
-                .center()
-                .radius(4.0)
-                .fill(t.control_off)
+            quiet_button("Reload")
                 .on_press(|s: &mut App| {
                     s.saved.reload();
                     s.refresh();
                 })
-                .child(text("Reload").font(type_::LABEL).color(accent)),
+                .build(k).key("saved-reload").cursor(rune::Cursor::Pointer),
         )
 }
 
 /// The feed's own failure: the ranking or the window could not be loaded. It is a state with a
 /// retry, never a blank list.
-fn feed_error(error: &str, t: tok::Theme, accent: Color) -> El {
+fn feed_error(error: &str, k: &Kit, t: tok::Theme) -> El {
     row()
         .key("feed-error")
         .role("alert")
@@ -2085,18 +2081,9 @@ fn feed_error(error: &str, t: tok::Theme, accent: Color) -> El {
         )
         .child(el().grow(1.0))
         .child(
-            row()
-                .key("feed-retry")
-                .role("button")
-                .label("Retry")
-                .focusable(true)
-                .h(20.0)
-                .px(8.0)
-                .center()
-                .radius(4.0)
-                .fill(t.control_off)
+            quiet_button("Retry")
                 .on_press(|s: &mut App| s.refresh())
-                .child(text("Retry").font(type_::LABEL).color(accent)),
+                .build(k).key("feed-retry").cursor(rune::Cursor::Pointer),
         )
 }
 
@@ -2342,6 +2329,114 @@ pub fn spec() -> AppSpec<App> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn kit_button_focus_ring_is_amber_in_both_themes() {
+        for dark in [false, true] {
+            let mut s = app(true, SavedView::in_memory());
+            scene_story(&mut s);
+            let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(dark, 1.0));
+            rt.frame(0.0);
+            rt.update(|_, tx| tx.focus("discussion-focus", true));
+            rt.frame(0.0);
+            let tree = rt.elements();
+            let button = tree.iter().find(|e| e.key.as_deref() == Some("discussion-focus")).unwrap();
+            assert!(button.focused && button.focus_visible);
+            let [x, y, w, h] = button.rect;
+            let amber = tok::accent(3, dark).premul(1.0);
+            assert!(rt.instances.iter().any(|i| i.border == amber &&
+                i.rect[0] <= x && i.rect[1] <= y && i.rect[2] >= w && i.rect[3] >= h),
+                "focused kit button must paint an amber ring");
+        }
+    }
+
+    #[test]
+    fn quiet_control_and_disclosure_respond_to_hover() {
+        let mut s = app(true, SavedView::in_memory());
+        scene_story(&mut s);
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.frame(0.0);
+        for key in ["discussion-focus", "comment-disclosure-901"] {
+            rt.pointer_move(0.0, 0.0);
+            rt.frame(0.3);
+            let before = rt.elements().iter().find(|e| e.key.as_deref() == Some(key)).unwrap().clone();
+            let paint = |rt: &rune::Runtime<App>| rt.instances.iter()
+                .filter(|i| i.rect.iter().zip(before.rect).all(|(a, b)| (*a - b).abs() <= 1.0) && i.fill[3] > 0.0)
+                .map(|i| i.fill).collect::<Vec<_>>();
+            let before_paint = paint(&rt);
+            let [x, y, w, h] = before.visible;
+            rt.pointer_move(x + w / 2.0, y + h / 2.0);
+            rt.frame(0.0);
+            rt.frame(0.3);
+            let after = rt.elements().iter().find(|e| e.key.as_deref() == Some(key)).unwrap().hover;
+            assert!(after > before.hover, "{key} must receive hover");
+            assert_eq!(rt.cursor(), rune::Cursor::Pointer, "{key} must show a pointer cursor");
+            assert_ne!(paint(&rt), before_paint, "{key} must visibly respond to hover");
+        }
+    }
+
+    fn button_style(elements: &[rune::ElementInfo], label: &str) -> (f32, Color, Color) {
+        let (index, button) = elements.iter().enumerate().find(|(_, e)| e.label.as_deref() == Some(label)).unwrap();
+        let ink = elements.iter().find(|e| e.parent == Some(index) && e.key.as_deref() == Some("label"))
+            .unwrap().text_color.unwrap();
+        (button.rect[3], button.fill, ink)
+    }
+
+    #[test]
+    fn retry_controls_share_quiet_style_except_primary_summary_retry() {
+        let mut feed = app(true, SavedView::in_memory());
+        feed.feed.status.error = Some("offline".into());
+        let mut rt = rune::Runtime::new(feed, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.frame(0.0);
+        let quiet = button_style(&rt.elements(), "Retry");
+
+        let mut s = app(true, SavedView::in_memory());
+        scene_story(&mut s);
+        let story = s.story.as_mut().unwrap();
+        story.article_summary = crate::story::ArticleSummaryState::Failed { message: "offline".into(), auth: false, previous: None };
+        story.summary = SummaryState::Failed { message: "offline".into(), auth: false, previous: None };
+        story.discussion = Some(Err("offline".into()));
+        let mut comments = crate::fixtures::thread();
+        comments.iter_mut().find(|c| c.id == 901).unwrap().child_ids.push(987655);
+        story.thread = crate::comments::Thread::from_comments(&comments);
+        story.thread.merge_replies(901, &[987655], Err("offline".into()));
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.frame(0.0);
+        let elements = rt.elements();
+        for label in ["Retry summaries", "Retry discussion", "Retry replies (1)"] {
+            assert_eq!(button_style(&elements, label), quiet, "{label}");
+        }
+        assert_ne!(button_style(&elements, "Retry").1, quiet.1, "summary retry is primary");
+    }
+
+    #[test]
+    fn regenerate_is_only_available_with_an_open_story() {
+        for has_story in [false, true] {
+            let mut s = app(true, SavedView::in_memory());
+            if has_story { scene_story(&mut s); }
+            scene_settings(&mut s);
+            let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+            rt.frame(0.0);
+            assert_eq!(rt.elements().iter().any(|e| e.label.as_deref() == Some("Regenerate summary")), has_story);
+        }
+    }
+
+    #[test]
+    fn quiet_button_text_meets_contrast_on_rendered_surfaces() {
+        for dark in [false, true] {
+            let mut s = app(true, SavedView::in_memory());
+            scene_story(&mut s);
+            let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(dark, 1.0));
+            rt.frame(0.0);
+            let elements = rt.elements();
+            let ink = button_style(&elements, "Hide summary").2.luminance();
+            for key in ["summary-card", "discussion-header"] {
+                let bg = elements.iter().find(|e| e.key.as_deref() == Some(key)).unwrap().fill.luminance();
+                let ratio = (ink.max(bg) + 0.05) / (ink.min(bg) + 0.05);
+                assert!(ratio >= 4.5, "{key} dark={dark}: {ratio:.2}:1");
+            }
+        }
+    }
 
     #[test]
     fn feed_story_handoffs_remove_outgoing_paint_in_both_motion_modes() {

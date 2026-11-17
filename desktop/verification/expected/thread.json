@@ -646,22 +646,10 @@
                                                                       "focus"
                                                                     ],
                                                                     "bounds": [
-                                                                      1125.6,
-                                                                      62.6,
-                                                                      26.4,
-                                                                      15.0
-                                                                    ],
-                                                                    "children": [
-                                                                      {
-                                                                        "bounds": [
-                                                                          1125.6,
-                                                                          62.6,
-                                                                          26.4,
-                                                                          15.0
-                                                                        ],
-                                                                        "name": "Hide",
-                                                                        "role": "label"
-                                                                      }
+                                                                      1109.6,
+                                                                      62.1,
+                                                                      42.4,
+                                                                      16.0
                                                                     ],
                                                                     "name": "Hide summary",
                                                                     "role": "button"
@@ -1107,7 +1095,7 @@
                                                                     "bounds": [
                                                                       653.0,
                                                                       312.8,
-                                                                      450.8,
+                                                                      435.6,
                                                                       15.0
                                                                     ],
                                                                     "children": [
@@ -1313,25 +1301,10 @@
                                                                       "scroll-into-view"
                                                                     ],
                                                                     "bounds": [
-                                                                      1111.8,
-                                                                      312.8,
-                                                                      52.2,
-                                                                      15.0
-                                                                    ],
-                                                                    "children": [
-                                                                      {
-                                                                        "actions": [
-                                                                          "scroll-into-view"
-                                                                        ],
-                                                                        "bounds": [
-                                                                          1111.8,
-                                                                          312.8,
-                                                                          52.2,
-                                                                          15.0
-                                                                        ],
-                                                                        "name": "Focus on",
-                                                                        "role": "label"
-                                                                      }
+                                                                      1096.6,
+                                                                      310.3,
+                                                                      67.4,
+                                                                      20.0
                                                                     ],
                                                                     "key": "discussion-focus",
                                                                     "name": "Turn focus mode off",
@@ -2161,35 +2134,14 @@
                     ],
                     "bounds": [
                       601.8,
-                      732.5,
-                      103.6,
-                      15.0
-                    ],
-                    "children": [
-                      {
-                        "bounds": [
-                          601.8,
-                          733.0,
-                          38.0,
-                          14.0
-                        ],
-                        "name": "⇧ O",
-                        "role": "group"
-                      },
-                      {
-                        "bounds": [
-                          645.8,
-                          732.5,
-                          59.5,
-                          15.0
-                        ],
-                        "name": "browser ↗",
-                        "role": "label"
-                      }
+                      730.0,
+                      118.1,
+                      20.0
                     ],
                     "key": "article-open-original",
                     "name": "Open in browser",
-                    "role": "button"
+                    "role": "button",
+                    "shortcut": "⇧O"
                   }
                 ],
                 "key": "story-footer",
@@ -3607,7 +3559,7 @@
       "rect": [
         733.3,
         70.13,
-        384.27,
+        368.27,
         0.0
       ],
       "role": "group",
@@ -3625,10 +3577,10 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/summary-card/summary-open/summary-header/#2",
       "rect": [
-        1125.57,
-        62.63,
-        26.43,
-        15.0
+        1109.57,
+        62.13,
+        42.43,
+        16.0
       ],
       "role": "button",
       "scale": 1.0
@@ -3641,11 +3593,12 @@
       "focusable": false,
       "focused": false,
       "inert": false,
+      "key": "label",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/summary-card/summary-open/summary-header/#2/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/summary-card/summary-open/summary-header/#2/label",
       "rect": [
-        1125.57,
+        1117.57,
         62.63,
         26.43,
         15.0
@@ -4245,7 +4198,7 @@
       "rect": [
         653.0,
         312.75,
-        450.84,
+        435.56,
         15.0
       ],
       "role": "region",
@@ -4538,10 +4491,10 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/discussion-focus",
       "rect": [
-        1111.84,
-        312.75,
-        52.16,
-        15.0
+        1096.56,
+        310.25,
+        67.44,
+        20.0
       ],
       "role": "button",
       "scale": 1.0
@@ -4554,14 +4507,15 @@
       "focusable": false,
       "focused": false,
       "inert": false,
+      "key": "label",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/discussion-focus/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/discussion-focus/label",
       "rect": [
-        1111.84,
-        312.75,
-        52.16,
-        15.0
+        1106.56,
+        314.25,
+        47.44,
+        12.0
       ],
       "role": "text",
       "scale": 1.0,
@@ -6393,11 +6347,30 @@
       "path": "kit-root/window/story-footer/article-open-original",
       "rect": [
         601.73,
-        732.5,
-        103.55,
-        15.0
+        730.0,
+        118.11,
+        20.0
       ],
       "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/story-footer/article-open-original/#0",
+      "rect": [
+        611.73,
+        733.0,
+        98.11,
+        14.0
+      ],
+      "role": "group",
       "scale": 1.0
     },
     {
@@ -6410,9 +6383,9 @@
       "label": "⇧ O",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/story-footer/article-open-original/#0",
+      "path": "kit-root/window/story-footer/article-open-original/#0/#0",
       "rect": [
-        601.73,
+        611.73,
         733.0,
         38.03,
         14.0
@@ -6430,9 +6403,9 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/story-footer/article-open-original/#0/key0",
+      "path": "kit-root/window/story-footer/article-open-original/#0/#0/key0",
       "rect": [
-        601.73,
+        611.73,
         733.0,
         19.59,
         14.0
@@ -6450,9 +6423,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/story-footer/article-open-original/#0/key0/#0",
+      "path": "kit-root/window/story-footer/article-open-original/#0/#0/key0/#0",
       "rect": [
-        605.73,
+        615.73,
         734.5,
         11.59,
         11.0
@@ -6471,9 +6444,9 @@
       "key": "key1",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/story-footer/article-open-original/#0/key1",
+      "path": "kit-root/window/story-footer/article-open-original/#0/#0/key1",
       "rect": [
-        623.33,
+        633.33,
         733.0,
         16.44,
         14.0
@@ -6491,9 +6464,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/story-footer/article-open-original/#0/key1/#0",
+      "path": "kit-root/window/story-footer/article-open-original/#0/#0/key1/#0",
       "rect": [
-        627.33,
+        637.33,
         734.5,
         8.44,
         11.0
@@ -6512,12 +6485,12 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/story-footer/article-open-original/#1",
+      "path": "kit-root/window/story-footer/article-open-original/#0/#1",
       "rect": [
-        645.77,
-        732.5,
-        59.52,
-        15.0
+        655.77,
+        734.0,
+        54.08,
+        12.0
       ],
       "role": "text",
       "scale": 1.0,

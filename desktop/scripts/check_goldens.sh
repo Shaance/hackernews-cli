@@ -17,12 +17,13 @@
 #   HN_TREES_ONLY=1   skip the PNG comparison (Linux/Windows CI)
 #   HN_SKIP_BUILD=1   use the binary already in target/debug
 #   HN_EXACT_TREES=0  force the semantic tree comparison (the non-macOS default)
+#   HN_GOLDEN_ACTUAL  choose where rendered comparison artifacts are written
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
 EXPECTED=verification/expected
-ACTUAL=verification/actual
+ACTUAL=${HN_GOLDEN_ACTUAL:-verification/actual}
 BIN=target/debug/hn-desktop
 TREES_ONLY=${HN_TREES_ONLY:-0}
 # A frame is at rest once the last scripted event has settled. The resize script's last
@@ -487,7 +488,7 @@ fi
 
 # The cap: 901000 draws at depth 3 with five replies, so its children are behind a label that
 # counts every reply under it, not just the ones that would have been rows.
-cont=$(jq -r '[.elements[] | select((.path // "") | endswith("comment-continue-901000/#0")) | .text][0] // ""' "$ACTUAL/comments.json")
+cont=$(jq -r '[.elements[] | select((.path // "") | endswith("comment-continue-901000/label")) | .text][0] // ""' "$ACTUAL/comments.json")
 cont_label=$(jq -r '[.elements[] | select((.key // "") == "comment-continue-901000") | .label][0] // ""' "$ACTUAL/comments.json")
 if [ "$cont" = "continue thread → 5 replies" ] && [ "$cont_label" = "Continue thread, 5 replies" ]; then
   pass "comments cap ('$cont')"
@@ -751,10 +752,10 @@ else
   bad "settings choices (provider '$provider', profile '$profile', model '$model', duplicate labels '$duplicate_labels')"
 fi
 
-# Every control in the dialog is a named, focusable role: the switch and the three buttons.
+# Feed-opened settings has the switch and common buttons, but no story action.
 controls=$(sq '[.accessibility | .. | objects | select(.role == "switch" or .role == "button")
   | .name] | join(",")')
-if [ "$controls" = "Close,Automatic summaries,Regenerate summary,Cancel,Apply" ]; then
+if [ "$controls" = "Close,Automatic summaries,Cancel,Apply" ]; then
   pass "settings controls ($controls)"
 else
   bad "settings controls (got '$controls')"
@@ -800,10 +801,11 @@ step "settings and help (interactive: the keys and the presses, not just the pic
 opened=$(jq '[.elements[] | select((.key // "") == "settings-dialog")] | length' "$ACTUAL/settings-open.json")
 closed=$(jq '[.elements[] | select((.key // "") == "settings-dialog")] | length' "$ACTUAL/settings-closed.json")
 kept=$(jq '[.elements[] | select((.key // "") | test("^comment-[0-9]+$"))] | length' "$ACTUAL/settings-closed.json")
-if [ "$opened" = 1 ] && [ "$closed" = 0 ] && [ "$kept" -ge 1 ]; then
-  pass "M opens the dialog, Esc closes it and the discussion stays ($kept rows)"
+regenerate=$(jq '[.elements[] | select(.role == "button" and .label == "Regenerate summary" and .focusable and (.inert | not))] | length' "$ACTUAL/settings-open.json")
+if [ "$opened" = 1 ] && [ "$closed" = 0 ] && [ "$kept" -ge 1 ] && [ "$regenerate" = 1 ]; then
+  pass "M opens settings with Regenerate, Esc closes it and the discussion stays ($kept rows)"
 else
-  bad "M/Esc ($opened dialogs open, $closed after Esc, $kept comment rows)"
+  bad "M/Esc ($opened dialogs open, $closed after Esc, $kept comment rows, $regenerate Regenerate buttons)"
 fi
 
 # The dialog is a form, not a picture: a press on the Anthropic radio and on the Thorough segment

@@ -1158,23 +1158,8 @@
                                                                 "bounds": [
                                                                   738.0,
                                                                   505.5,
-                                                                  173.0,
+                                                                  162.6,
                                                                   20.0
-                                                                ],
-                                                                "children": [
-                                                                  {
-                                                                    "actions": [
-                                                                      "scroll-into-view"
-                                                                    ],
-                                                                    "bounds": [
-                                                                      746.0,
-                                                                      508.0,
-                                                                      157.0,
-                                                                      15.0
-                                                                    ],
-                                                                    "name": "continue thread → 5 replies",
-                                                                    "role": "label"
-                                                                  }
                                                                 ],
                                                                 "key": "comment-continue-901000",
                                                                 "name": "Continue thread, 5 replies",
@@ -1552,35 +1537,14 @@
                     ],
                     "bounds": [
                       404.5,
-                      732.5,
-                      103.6,
-                      15.0
-                    ],
-                    "children": [
-                      {
-                        "bounds": [
-                          404.5,
-                          733.0,
-                          38.0,
-                          14.0
-                        ],
-                        "name": "⇧ O",
-                        "role": "group"
-                      },
-                      {
-                        "bounds": [
-                          448.6,
-                          732.5,
-                          59.5,
-                          15.0
-                        ],
-                        "name": "browser ↗",
-                        "role": "label"
-                      }
+                      730.0,
+                      118.1,
+                      20.0
                     ],
                     "key": "article-open-original",
                     "name": "Open in browser",
-                    "role": "button"
+                    "role": "button",
+                    "shortcut": "⇧O"
                   }
                 ],
                 "key": "story-footer",
@@ -3034,7 +2998,7 @@
       "rect": [
         717.3,
         70.13,
-        384.27,
+        368.27,
         0.0
       ],
       "role": "group",
@@ -3042,7 +3006,7 @@
       "target": [
         733.3,
         70.13,
-        384.27,
+        368.27,
         0.0
       ]
     },
@@ -3058,18 +3022,18 @@
       "opacity": 0.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/summary-card/summary-open/summary-header/#2",
       "rect": [
-        1109.57,
-        62.63,
-        26.43,
-        15.0
+        1093.57,
+        62.13,
+        42.43,
+        16.0
       ],
       "role": "button",
       "scale": 1.0,
       "target": [
-        1125.57,
-        62.63,
-        26.43,
-        15.0
+        1109.57,
+        62.13,
+        42.43,
+        16.0
       ]
     },
     {
@@ -3080,11 +3044,12 @@
       "focusable": false,
       "focused": false,
       "inert": true,
+      "key": "label",
       "loopPhase": null,
       "opacity": 0.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/summary-card/summary-open/summary-header/#2/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/summary-card/summary-open/summary-header/#2/label",
       "rect": [
-        1109.57,
+        1101.57,
         62.63,
         26.43,
         15.0
@@ -3092,7 +3057,7 @@
       "role": "text",
       "scale": 1.0,
       "target": [
-        1125.57,
+        1117.57,
         62.63,
         26.43,
         15.0
@@ -3856,7 +3821,7 @@
       "rect": [
         637.0,
         313.06,
-        450.84,
+        435.56,
         14.38
       ],
       "role": "group",
@@ -3864,7 +3829,7 @@
       "target": [
         653.0,
         313.06,
-        450.84,
+        435.56,
         14.38
       ]
     },
@@ -3908,18 +3873,18 @@
       "opacity": 0.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/discussion-focus",
       "rect": [
-        1095.84,
-        312.75,
-        52.16,
-        15.0
+        1080.56,
+        310.25,
+        67.44,
+        20.0
       ],
       "role": "button",
       "scale": 1.0,
       "target": [
-        1111.84,
-        312.75,
-        52.16,
-        15.0
+        1096.56,
+        310.25,
+        67.44,
+        20.0
       ]
     },
     {
@@ -3930,22 +3895,23 @@
       "focusable": false,
       "focused": false,
       "inert": true,
+      "key": "label",
       "loopPhase": null,
       "opacity": 0.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/discussion-focus/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/discussion-focus/label",
       "rect": [
-        1095.84,
-        312.75,
-        52.16,
-        15.0
+        1090.56,
+        314.25,
+        47.44,
+        12.0
       ],
       "role": "text",
       "scale": 1.0,
       "target": [
-        1111.84,
-        312.75,
-        52.16,
-        15.0
+        1106.56,
+        314.25,
+        47.44,
+        12.0
       ],
       "text": "Focus on"
     },
@@ -5132,7 +5098,7 @@
     },
     {
       "blur": 0.0,
-      "fill": "#ffffff16",
+      "fill": "#00000000",
       "focusVisible": false,
       "focusable": false,
       "focused": false,
@@ -5145,7 +5111,7 @@
       "rect": [
         708.0,
         692.75,
-        173.03,
+        162.61,
         20.0
       ],
       "role": "button",
@@ -5153,34 +5119,35 @@
       "target": [
         724.0,
         692.75,
-        173.03,
+        162.61,
         20.0
       ]
     },
     {
       "blur": 0.0,
-      "color": "#f48d2fff",
+      "color": "#a2a5aaff",
       "fill": "#00000000",
       "focusVisible": false,
       "focusable": false,
       "focused": false,
       "inert": true,
+      "key": "label",
       "loopPhase": null,
       "opacity": 0.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-continue-901000/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-continue-901000/label",
       "rect": [
-        716.0,
-        695.25,
-        157.03,
-        15.0
+        718.0,
+        696.75,
+        142.61,
+        12.0
       ],
       "role": "text",
       "scale": 1.0,
       "target": [
-        732.0,
-        695.25,
-        157.03,
-        15.0
+        734.0,
+        696.75,
+        142.61,
+        12.0
       ],
       "text": "continue thread → 5 replies"
     },
@@ -8017,7 +7984,7 @@
     },
     {
       "blur": 0.0,
-      "fill": "#ffffff16",
+      "fill": "#00000000",
       "focusVisible": false,
       "focusable": true,
       "focused": false,
@@ -8030,7 +7997,7 @@
       "rect": [
         738.0,
         505.5,
-        173.03,
+        162.61,
         20.0
       ],
       "role": "button",
@@ -8038,20 +8005,21 @@
     },
     {
       "blur": 0.0,
-      "color": "#f48d2fff",
+      "color": "#a2a5aaff",
       "fill": "#00000000",
       "focusVisible": false,
       "focusable": false,
       "focused": false,
       "inert": false,
+      "key": "label",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/source-viewer/source-content/source-replies/source-comment-901000/comment-continue-901000/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/source-viewer/source-content/source-replies/source-comment-901000/comment-continue-901000/label",
       "rect": [
-        746.0,
-        508.0,
-        157.03,
-        15.0
+        748.0,
+        509.5,
+        142.61,
+        12.0
       ],
       "role": "text",
       "scale": 1.0,
@@ -8869,11 +8837,30 @@
       "path": "kit-root/window/story-footer/article-open-original",
       "rect": [
         404.54,
-        732.5,
-        103.55,
-        15.0
+        730.0,
+        118.11,
+        20.0
       ],
       "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/story-footer/article-open-original/#0",
+      "rect": [
+        414.54,
+        733.0,
+        98.11,
+        14.0
+      ],
+      "role": "group",
       "scale": 1.0
     },
     {
@@ -8886,9 +8873,9 @@
       "label": "⇧ O",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/story-footer/article-open-original/#0",
+      "path": "kit-root/window/story-footer/article-open-original/#0/#0",
       "rect": [
-        404.54,
+        414.54,
         733.0,
         38.03,
         14.0
@@ -8906,9 +8893,9 @@
       "key": "key0",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/story-footer/article-open-original/#0/key0",
+      "path": "kit-root/window/story-footer/article-open-original/#0/#0/key0",
       "rect": [
-        404.54,
+        414.54,
         733.0,
         19.59,
         14.0
@@ -8926,9 +8913,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/story-footer/article-open-original/#0/key0/#0",
+      "path": "kit-root/window/story-footer/article-open-original/#0/#0/key0/#0",
       "rect": [
-        408.54,
+        418.54,
         734.5,
         11.59,
         11.0
@@ -8947,9 +8934,9 @@
       "key": "key1",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/story-footer/article-open-original/#0/key1",
+      "path": "kit-root/window/story-footer/article-open-original/#0/#0/key1",
       "rect": [
-        426.13,
+        436.13,
         733.0,
         16.44,
         14.0
@@ -8967,9 +8954,9 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/story-footer/article-open-original/#0/key1/#0",
+      "path": "kit-root/window/story-footer/article-open-original/#0/#0/key1/#0",
       "rect": [
-        430.13,
+        440.13,
         734.5,
         8.44,
         11.0
@@ -8988,12 +8975,12 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/story-footer/article-open-original/#1",
+      "path": "kit-root/window/story-footer/article-open-original/#0/#1",
       "rect": [
-        448.57,
-        732.5,
-        59.52,
-        15.0
+        458.57,
+        734.0,
+        54.08,
+        12.0
       ],
       "role": "text",
       "scale": 1.0,

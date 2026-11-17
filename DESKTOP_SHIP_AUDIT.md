@@ -98,6 +98,7 @@ Status: fixed in run A — Feed and discussion keyboard selection land immediate
 - What the user experiences: two focus colours in one window; the blue one looks like a stock widget.
 - Fix: build the `Kit` with `border_focus` set to the accent (`Kit::neutral(dark)` then override
   `k.c.border_focus = accent` in `view`, `app.rs:1448-1449`), so every kit control inherits amber. Size S.
+Status: fixed in run C — The main kit uses the amber accent; the settings kit already did.
 
 ### P4. "Regenerate summary" is offered with no story open
 - Severity: nice-to-have. Lens: polish. Screen: settings opened from the feed. Verified: rendered + code.
@@ -106,6 +107,7 @@ Status: fixed in run A — Feed and discussion keyboard selection land immediate
 - What the user experiences: a button that, from the feed, has nothing to regenerate.
 - Fix: build it only when a story is open (the dialog already takes `open`/context from `app.rs`), or label it
   for the open story ("Regenerate this story's summary"). Size S.
+Status: fixed in run C — Regenerate appears only when settings has an open story.
 
 ### P5. At zoom 1.5 (and at 1040 pt) the article pane is narrower than the inspector
 - Severity: should-fix. Lens: polish. Screen: story split under zoom / narrow windows. Verified: rendered
@@ -182,6 +184,7 @@ Status: fixed in run B — Resize and zoom keep the selected story; Saved may cl
   justified; fill it with a surface token (`k.c.layer_01`/`k.c.hover`) or an accent tint
   (`accent.alpha(0.12)`), keep accent text, and check ≥4.5:1 in both themes. Or use rune-kit's
   `Button::variant(ButtonVariant::GhostMuted)` that settings already uses. Size S.
+Status: fixed in run C — Quiet kit buttons use legible neutral text on both light and dark surfaces.
 
 ### M4. The save toast vanishes in one frame, and the saved dot has no `POP`
 - Severity: nice-to-have. Lens: motion. Screen: feed, `s`. Verified: rendered (tree samples with
@@ -261,6 +264,7 @@ Status: fixed in run A — The toast clears the measured footer and removal noti
 - Fix: route text-buttons through rune-kit `Button` (`ButtonVariant::GhostMuted` for quiet actions,
   `Submit` for the one primary retry), which brings hover, press, cursor and the focus ring (see P3) for
   free; that also replaces the P8 chips. Size M (mechanical, many call sites).
+Status: fixed in run C — Kit buttons unify recovery actions with pointer cursors; compact disclosures gain hover and press feedback.
 
 ### K1. There is no app icon, so the Dock, Finder and ⌘-Tab show the generic one
 - Severity: ship-blocker. Lens: packaging. Screen: the app itself. Verified: code

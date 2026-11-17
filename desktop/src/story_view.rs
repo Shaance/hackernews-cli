@@ -20,9 +20,9 @@ use std::rc::Rc;
 use hn_lib::reader::Source as CapturedSource;
 use rune::tok::{self, radius, type_};
 use rune::{Color, El, GrowthSpec, Link, LinkPaint, ScrollSpec, Span, Spring, SpringPair, TextStyle, Transition, Tx, col, el, icon, row, text};
-use rune_kit::{Keybind, Kit, Markdown, Placement, Popover, Spinner};
+use rune_kit::{Button, ButtonVariant, ControlSize, Keybind, Kit, Markdown, Placement, Popover, Spinner};
 
-use crate::app::App;
+use crate::app::{App, quiet_button};
 use crate::comments::{INDENT, MAX_DEPTH};
 use crate::story::{ArticleState, ArticleSummaryState, Story, Summary, SummaryState};
 
@@ -321,7 +321,7 @@ fn summary_card(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: bool,
     let content = if s.summary_open {
         expanded_summary(s, k, t, accent, reduced, max_height, on_scroll)
     } else {
-        folded_summary(t)
+        folded_summary(k, t)
     };
     col()
         .key("summary-card")
@@ -346,7 +346,7 @@ fn expanded_summary(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: b
     if matches!(s.article_summary, ArticleSummaryState::Unconfigured)
         && matches!(s.summary, SummaryState::Unconfigured)
     {
-        body = body.child(unconfigured(t, accent));
+        body = body.child(unconfigured(k, t));
     } else {
         let article_waiting = matches!(&s.article_summary, ArticleSummaryState::Generating { previous: None });
         let article_motion = if reduced || article_waiting { Spring::NONE } else { Spring::new(0.20, 0.0) };
@@ -359,8 +359,7 @@ fn expanded_summary(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: b
             ArticleSummaryState::Generating { previous } if previous.is_none() => {},
             ArticleSummaryState::Generating { .. } => article = article.child(text("Updating article summary…").role("status").font(type_::LABEL).color(t.text_secondary)),
             ArticleSummaryState::Failed { message, .. } => article = article.child(text(format!("Article summary unavailable: {message}")).role("alert").font(type_::LABEL).color(t.text_secondary).wrap())
-                .child(row().role("button").label("Retry summaries").focusable(true).on_press(|s: &mut App| s.retry_summary())
-                    .child(text("Retry summaries").font(type_::LABEL).color(t.text))),
+                .child(quiet_button("Retry summaries").on_press(|s: &mut App| s.retry_summary()).build(k).cursor(rune::Cursor::Pointer).self_start()),
             _ => {}
         }
         let discussion_waiting = matches!(&s.summary, SummaryState::Generating { previous: None });
@@ -373,7 +372,7 @@ fn expanded_summary(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: b
         match &s.summary {
             SummaryState::Generating { previous } if previous.is_none() => {},
             SummaryState::Generating { .. } => discussion = discussion.child(text("Updating discussion summary…").role("status").font(type_::LABEL).color(t.text_secondary)),
-            SummaryState::Failed { message, auth, .. } => discussion = discussion.child(failure(message, *auth, t, accent)),
+            SummaryState::Failed { message, auth, .. } => discussion = discussion.child(failure(message, *auth, k, t)),
             _ => {}
         }
         body = body
@@ -397,7 +396,7 @@ fn expanded_summary(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: b
     let more = rune::Live::new(0.0_f32);
     let on_more = more.clone();
     col().key("summary-open").w_full().gap(10.0).px(14.0).pt(14.0).pb(20.0)
-        .child(summary_header(t))
+        .child(summary_header(k, t))
         .child(col().key("summary-scroll").role("region").label("Summary content").focusable(true)
             .on_key(|s: &mut App, ev: &rune::KeyEvent, tx: &mut Tx| match ev.key {
                 rune::Key::PageDown => { s.keyboard_navigation(ev); tx.scroll_page("summary-scroll", 1); true }
@@ -413,7 +412,7 @@ fn expanded_summary(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: b
             .child(text("More below ↓").font(type_::LABEL).color(t.text_secondary)))
 }
 
-fn summary_header(t: tok::Theme) -> El {
+fn summary_header(k: &Kit, t: tok::Theme) -> El {
     row()
         .key("summary-header")
         .w_full()
@@ -426,9 +425,10 @@ fn summary_header(t: tok::Theme) -> El {
                 .color(t.text),
         )
         .child(el().grow(1.0))
-        .child(row().role("button").label("Hide summary").focusable(true)
+        .child(quiet_button("Hide").control_size(ControlSize::Mini)
+            .label_with(|_, ink| text("Hide").key("label").font(type_::LABEL).color(ink))
             .on_press(|s: &mut App| { if let Some(story) = s.story_mut() { story.toggle_summary(); } })
-            .child(text("Hide").font(type_::LABEL).color(t.text_secondary)))
+            .build(k).cursor(rune::Cursor::Pointer).label("Hide summary"))
 }
 
 /// Each source reference is a pressable inline range in the point it supports.
@@ -504,7 +504,7 @@ fn skeleton_line(n: usize, t: tok::Theme) -> El {
         .opacity(0.35 + 0.5 * width)
 }
 
-fn failure(message: &str, auth: bool, t: tok::Theme, accent: Color) -> El {
+fn failure(message: &str, auth: bool, k: &Kit, t: tok::Theme) -> El {
     col()
         .key("summary-failed")
         .role("alert")
@@ -526,41 +526,19 @@ fn failure(message: &str, auth: bool, t: tok::Theme, accent: Color) -> El {
             row()
                 .gap(8.0)
                 .child(
-                    row()
-                        .key("summary-retry")
-                        .role("button")
-                        .label("Retry")
-                        .h(22.0)
-                        .px(10.0)
-                        .center()
-                        .radius(4.0)
-                        .fill(accent)
-                        .focusable(true)
+                    Button::new("Retry").variant(ButtonVariant::Submit)
                         .on_press(|s: &mut App| s.retry_summary())
-                        .child(text("Retry").font(type_::LABEL).color(t.bg)),
+                        .build(k).key("summary-retry").cursor(rune::Cursor::Pointer),
                 )
                 .child(
-                    row()
-                        .key("summary-settings")
-                        .role("button")
-                        .label(if auth { "Add API key" } else { "Change provider" })
-                        .h(22.0)
-                        .px(10.0)
-                        .center()
-                        .radius(4.0)
-                        .fill(t.control_off)
-                        .focusable(true)
+                    quiet_button(if auth { "Add API key" } else { "Change provider" })
                         .on_press(|s: &mut App| s.open_summary_settings())
-                        .child(
-                            text(if auth { "Add API key" } else { "Change provider" })
-                                .font(type_::LABEL)
-                                .color(t.text_secondary),
-                        ),
+                        .build(k).key("summary-settings").cursor(rune::Cursor::Pointer),
                 ),
         )
 }
 
-fn unconfigured(t: tok::Theme, accent: Color) -> El {
+fn unconfigured(k: &Kit, t: tok::Theme) -> El {
     col()
         .key("summary-unconfigured")
         .w_full()
@@ -578,27 +556,19 @@ fn unconfigured(t: tok::Theme, accent: Color) -> El {
                 .wrap(),
         )
         .child(
-            row()
-                .key("summary-settings")
-                .role("button")
-                .label("Open settings")
-                .h(22.0)
-                .px(10.0)
-                .center()
-                .radius(4.0)
-                .fill(accent)
-                .focusable(true)
+            quiet_button("Open settings")
                 .on_press(|s: &mut App| s.open_summary_settings())
-                .child(text("Open settings").font(type_::LABEL).color(t.bg)),
+                .build(k).key("summary-settings").cursor(rune::Cursor::Pointer).self_start(),
         )
 }
 
 /// A compact, clickable control returns the space to the summary.
-fn folded_summary(t: tok::Theme) -> El {
+fn folded_summary(k: &Kit, t: tok::Theme) -> El {
     row()
         .key("summary-folded")
         .role("button").label("Show summary").focusable(true)
         .on_press(|s: &mut App| { if let Some(story) = s.story_mut() { story.toggle_summary(); } })
+        .hover(k.c.hover).press(k.c.pressed).cursor(rune::Cursor::Pointer)
         .w_full()
         .gap(8.0)
         .px(14.0)
@@ -663,17 +633,16 @@ fn discussion(s: &Story, k: &Kit, t: tok::Theme, accent: Color, overlays: &mut V
         };
         list = list.child(text(message).key("discussion-empty").font(type_::LABEL).color(t.text_secondary));
         if matches!(s.discussion, Some(Err(_))) {
-            list = list.child(row().key("discussion-retry").role("button").label("Retry discussion")
-                .focusable(true).on_press(|s: &mut App| s.refresh_comments())
-                .child(text("Retry discussion").font(type_::LABEL).color(accent)));
+            list = list.child(quiet_button("Retry discussion").on_press(|s: &mut App| s.refresh_comments())
+                .build(k).key("discussion-retry").cursor(rune::Cursor::Pointer).self_start());
         }
         return list;
     }
     if let Some(Err(message)) = &s.discussion {
         list = list.child(text(message.clone()).role("alert").font(type_::LABEL).color(t.text_secondary))
-            .child(row().role("button").label("Retry discussion").focusable(true)
+            .child(quiet_button("Retry discussion")
                 .on_press(|s: &mut App| s.refresh_comments())
-                .child(text("Retry discussion").font(type_::LABEL).color(accent)));
+                .build(k).cursor(rune::Cursor::Pointer).self_start());
     }
     let rows = Rc::new(thread.rows());
     let keys = Rc::clone(&rows);
@@ -697,7 +666,7 @@ fn discussion_header(
     let thread = &s.thread;
     let trail = thread.trail();
     let leading = if trail.len() > 1 {
-        trail_strip(s, &trail, t)
+        trail_strip(s, &trail, k, t)
     } else {
         row().child(text("Discussion").font(type_::SECTION).color(t.text_secondary))
     };
@@ -712,10 +681,10 @@ fn discussion_header(
         .sticky_top(0.0)
         .instant_changes()
         .child(leading.grow(1.0).shrink().min_w(0.0));
-    header = header.child(row().key("discussion-focus").role("button")
-        .label(if thread.focus() { "Turn focus mode off" } else { "Turn focus mode on" })
-        .focusable(true).on_press(|s: &mut App| { if let Some(story) = s.story_mut() { story.thread.toggle_focus(); } })
-        .child(text(if thread.focus() { "Focus on" } else { "Focus off" }).font(type_::LABEL).color(t.text_secondary)));
+    header = header.child(quiet_button(if thread.focus() { "Focus on" } else { "Focus off" })
+        .on_press(|s: &mut App| { if let Some(story) = s.story_mut() { story.thread.toggle_focus(); } })
+        .build(k).key("discussion-focus").cursor(rune::Cursor::Pointer)
+        .label(if thread.focus() { "Turn focus mode off" } else { "Turn focus mode on" }));
     let has_links = !s.story.links.is_empty() || thread.cursor().and_then(|id| thread.node(id)).is_some_and(|node| !node.links.is_empty());
     if has_links { header = header.child(link_chooser(s, k, t, accent, overlays)); }
     header
@@ -723,7 +692,7 @@ fn discussion_header(
 
 /// The ancestor trail: `tptacek › kstrauser › jmillikin`, held to the top of the discussion's
 /// viewport so "where am I" never scrolls away. Every segment but the last re-roots there.
-fn trail_strip(s: &Story, trail: &[i32], t: tok::Theme) -> El {
+fn trail_strip(s: &Story, trail: &[i32], k: &Kit, t: tok::Theme) -> El {
     let last = trail.len() - 1;
     let mut strip = row()
         .key("trail")
@@ -763,6 +732,7 @@ fn trail_strip(s: &Story, trail: &[i32], t: tok::Theme) -> El {
                     .shrink().min_w(0.0)
                     .radius(3.0)
                     .focusable(true)
+                    .hover(k.c.hover).press(k.c.pressed).cursor(rune::Cursor::Pointer)
                     .on_press(move |s: &mut App| {
                         if let Some(story) = s.story_mut() {
                             story.thread.reroot(target);
@@ -877,6 +847,7 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
                 .self_start()
                 .focusable(true)
                 .disabled(s.pending_reply.is_some() && !loading && !loaded && !folded && !capped)
+                .radius(4.0).hover(k.c.hover).press(k.c.pressed).cursor(rune::Cursor::Pointer)
                 .on_press_tx(activate)
                 .child(icon(k.glyph.chevron_down, 20.0)
                     .icon_rotation(if expanded { 0.0 } else { -FRAC_PI_2 })
@@ -900,6 +871,7 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
                     .child(el().key(format!("comment-disclosure-{id}"))
                         .absolute(-4.0, -4.0).size(28.0, 28.0)
                         .role("button").label(action).focusable(true)
+                        .radius(4.0).hover(k.c.hover).press(k.c.pressed).cursor(rune::Cursor::Pointer)
                         .on_press_tx(activate)),
             );
         } else {
@@ -926,19 +898,11 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
             let hidden = if context { thread.hidden_count_at(id, depth) } else { thread.hidden_count(id) }.max(replies);
             let noun = if hidden == 1 { "reply" } else { "replies" };
             who = who.child(
-                row()
-                    .key(format!("comment-hidden-{id}"))
-                    .role("button")
-                    .label(format!("Show {hidden} hidden {noun}"))
-                    .h(18.0)
-                    .px(6.0)
-                    .center()
-                    .radius(4.0)
-                    .fill(t.control_off)
-                    .transition(Transition::none())
-                    .focusable(true)
+                quiet_button(format!("{hidden} hidden {noun}"))
                     .on_press_tx(activate)
-                    .child(text(format!("{hidden} hidden {noun}")).font(type_::LABEL).color(t.text_secondary)),
+                    .build(k).key(format!("comment-hidden-{id}")).cursor(rune::Cursor::Pointer)
+                    .label(format!("Show {hidden} hidden {noun}"))
+                    .transition(Transition::none()),
             );
         }
         r = r.child(who.child(el().grow(1.0)))
@@ -954,26 +918,13 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
     if capped && readable {
         let behind = thread.reply_count(id).max(replies);
         r = r.child(
-            row()
-                .key(format!("comment-continue-{id}"))
-                .role("button")
-                .label(format!("Continue thread, {behind} replies"))
-                .h(20.0)
-                .ml(26.0)
-                .px(8.0)
-                .center_y()
-                .self_start()
-                .radius(4.0)
-                .fill(t.control_off)
-                .focusable(true)
+            quiet_button(format!("continue thread \u{2192} {behind} replies"))
                 .on_press(move |s: &mut App| {
                     s.activate_comment(id);
                 })
-                .child(
-                    text(format!("continue thread \u{2192} {behind} replies"))
-                        .font(type_::LABEL)
-                        .color(accent),
-                ),
+                .build(k).key(format!("comment-continue-{id}")).cursor(rune::Cursor::Pointer)
+                .label(format!("Continue thread, {behind} replies"))
+                .ml(26.0).self_start(),
         );
     }
     if !folded && !capped && replies > 0 {
@@ -988,10 +939,9 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
                 if count == 0 { continue; }
                 let label = if !retry && !thread.children_of(id).is_empty() { "Load more replies" } else { label };
                 let label = format!("{label} ({count})");
-                r = r.child(row().key(format!("comment-load-{id}-{retry}"))
-                    .ml(indent).self_start().role("button").label(label.clone()).focusable(true).disabled(s.pending_reply.is_some())
+                r = r.child(quiet_button(label).disabled(s.pending_reply.is_some())
                     .on_press(move |s: &mut App| s.load_replies(id, retry))
-                    .child(text(label).font(type_::LABEL).color(accent)));
+                    .build(k).key(format!("comment-load-{id}-{retry}")).cursor(rune::Cursor::Pointer).ml(indent).self_start());
             }
             if let Some(crate::comments::BranchStatus::Failed { message, .. }) = node.map(|node| &node.branch) {
                 r = r.child(text(message.clone()).ml(indent).role("status").font(type_::LABEL).color(t.text_secondary));
@@ -1139,10 +1089,13 @@ pub fn story_footer(s: &Story, k: &Kit, t: tok::Theme, hints: &rune::Live<f32>, 
         footer = footer.child(h(&["⇧", "S"], "summary"))
             .child(h(&["r"], "refresh comments"));
     }
-    footer.child(row().key("article-open-original").role("button").label("Open in browser")
-        .focusable(true).on_press(|s: &mut App| s.pending_external = true)
-        .gap(6.0).center_y().child(Keybind::new(&["⇧", "O"]).build(k))
-        .child(text("browser ↗").font(type_::LABEL).color(t.text_secondary)))
+    let kit = k.clone();
+    footer.child(quiet_button("Open in browser")
+        .label_with(move |font, ink| row().gap(6.0).center_y()
+            .child(Keybind::new(&["⇧", "O"]).build(&kit))
+            .child(text("browser ↗").font(font).color(ink)))
+        .on_press(|s: &mut App| s.pending_external = true)
+        .build(k).key("article-open-original").cursor(rune::Cursor::Pointer).shortcut_hint("⇧O"))
 }
 
 fn hint(k: &Kit, t: tok::Theme, keys: &[&str], label: &str) -> El {
@@ -1205,6 +1158,8 @@ mod tests {
         assert_eq!(button.label.as_deref(), Some("Open in browser"));
         assert!(button.focusable);
         assert!(button.rect[2] < 130.0);
+        assert!(rt.accessibility_tree().nodes.iter().any(|(_, node)|
+            node.label() == Some("Open in browser") && node.keyboard_shortcut() == Some("⇧O")));
     }
 
     fn nested_comment(story: &Story, cx: &mut rune::Cx<Story>) -> El {

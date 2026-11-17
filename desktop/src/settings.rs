@@ -136,7 +136,7 @@ impl Settings {
 
     /// The dialog, in the overlay layer. `open` is the app's flag; `on_close` is what `Esc`,
     /// the close button and a click outside all run.
-    pub fn view(&self, k: &Kit, t: tok::Theme, accent: Color, open: bool, layer: &mut Vec<El>) {
+    pub fn view(&self, k: &Kit, t: tok::Theme, accent: Color, open: bool, has_story: bool, layer: &mut Vec<El>) {
         let mut kit = k.clone();
         kit.c.bg_accent = accent;
         kit.c.border_focus = accent;
@@ -280,12 +280,12 @@ impl Settings {
                 .w_full()
                 .gap(8.0)
                 .center_y()
-                .child(
+                .children(has_story.then(||
                     Button::new("Regenerate summary")
                         .variant(ButtonVariant::GhostMuted)
                         .on_press(|s: &mut crate::app::App| s.apply_settings(true))
-                        .build(k),
-                )
+                        .build(k)
+                ))
                 .child(el().grow(1.0))
                 .child(
                     Button::new("Cancel")
