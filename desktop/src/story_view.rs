@@ -18,7 +18,7 @@ use std::f32::consts::FRAC_PI_2;
 use std::rc::Rc;
 
 use hn_lib::reader::Source as CapturedSource;
-use rune::tok::{self, motion, radius, type_};
+use rune::tok::{self, radius, type_};
 use rune::{Color, El, GrowthSpec, Link, LinkPaint, ScrollSpec, Span, Spring, SpringPair, TextStyle, Transition, Tx, col, el, icon, row, text};
 use rune_kit::{Keybind, Kit, Markdown, Placement, Popover, Spinner};
 
@@ -638,10 +638,10 @@ fn discussion_pane(
         .scroll_edge_fade(20.0)
         .scroll_margin(20.0)
         .on_scroll_offset(on_scroll)
-        .child(discussion(s, k, t, accent, overlays, reduced).motion(motion::DEFAULT))
+        .child(discussion(s, k, t, accent, overlays, reduced).motion(Spring::NONE))
 }
 
-/// The discussion: the header, the sticky ancestor trail, then the tree's visible rows.
+/// The discussion: one sticky header holding its ancestor trail, then the visible rows.
 fn discussion(s: &Story, k: &Kit, t: tok::Theme, accent: Color, overlays: &mut Vec<El>, reduced: bool) -> El {
     let thread = &s.thread;
     let mut list = col()
@@ -675,16 +675,10 @@ fn discussion(s: &Story, k: &Kit, t: tok::Theme, accent: Color, overlays: &mut V
                 .on_press(|s: &mut App| s.refresh_comments())
                 .child(text("Retry discussion").font(type_::LABEL).color(accent)));
     }
-    // The trail is the cursor's ancestor chain, so it only has something to say once the cursor
-    // is below the top level: one segment is the comment itself, and the row already says that.
-    let trail = thread.trail();
-    if trail.len() > 1 {
-        list = list.child(trail_strip(s, &trail, t));
-    }
     let rows = Rc::new(thread.rows());
     let keys = Rc::clone(&rows);
     let kit = (*k).clone();
-    list.child(col().key("discussion-rows").w_full().gap(2.0)
+    list.child(col().key("discussion-rows").w_full().gap(2.0).instant_changes()
         .growth(GrowthSpec { spring: Spring::NONE, ..GrowthSpec::default() }).virtual_rows(rows.len(), 110.0,
             move |_s: &App, i| format!("comment-{}", keys[i].id).into(),
             move |app: &App, i| app.story().map(|s| comment_row(s, rows[i].id, rows[i].depth, &kit, t, accent, false, reduced)).unwrap_or_else(el)))
@@ -699,23 +693,27 @@ fn discussion_header(
     overlays: &mut Vec<El>,
 ) -> El {
     let thread = &s.thread;
+    let trail = thread.trail();
+    let leading = if trail.len() > 1 {
+        trail_strip(s, &trail, t)
+    } else {
+        row().child(text("Discussion").font(type_::SECTION).color(t.text_secondary))
+    };
     let mut header = row()
         .key("discussion-header")
         .w_full()
+        .h(27.0)
         .px(2.0)
-        .py(6.0)
         .gap(8.0)
         .center_y()
-        .child(
-            text("Discussion")
-                .font(type_::SECTION)
-                .color(t.text_secondary),
-        );
+        .fill(t.bg)
+        .sticky_top(0.0)
+        .instant_changes()
+        .child(leading.grow(1.0).shrink().min_w(0.0));
     header = header.child(row().key("discussion-focus").role("button")
         .label(if thread.focus() { "Turn focus mode off" } else { "Turn focus mode on" })
         .focusable(true).on_press(|s: &mut App| { if let Some(story) = s.story_mut() { story.thread.toggle_focus(); } })
         .child(text(if thread.focus() { "Focus on" } else { "Focus off" }).font(type_::LABEL).color(t.text_secondary)));
-    header = header.child(el().grow(1.0));
     let has_links = !s.story.links.is_empty() || thread.cursor().and_then(|id| thread.node(id)).is_some_and(|node| !node.links.is_empty());
     if has_links { header = header.child(link_chooser(s, k, t, accent, overlays)); }
     header
@@ -731,15 +729,8 @@ fn trail_strip(s: &Story, trail: &[i32], t: tok::Theme) -> El {
         .label("Thread trail")
         .w_full()
         .gap(6.0)
-        .px(2.0)
-        .py(6.0)
         .center_y()
-        // Opaque, so the rows scroll under the trail rather than through it.
-        .fill(t.bg)
-        // A segment added or removed is SNAP on the strip's width; the strip itself does not
-        // move, it follows the scroll offset.
-        .motion(motion::SNAP)
-        .sticky_top(0.0);
+        .motion(Spring::NONE);
     for (at, id) in trail.iter().enumerate() {
         if at > 0 {
             strip = strip.child(
@@ -756,6 +747,7 @@ fn trail_strip(s: &Story, trail: &[i32], t: tok::Theme) -> El {
             strip = strip.child(
                 text(author)
                     .key(format!("trail-{id}"))
+                    .shrink().min_w(0.0).truncate()
                     .font(type_::LABEL)
                     .color(t.text),
             );
@@ -766,8 +758,7 @@ fn trail_strip(s: &Story, trail: &[i32], t: tok::Theme) -> El {
                     .key(format!("trail-{id}"))
                     .role("button")
                     .label(format!("Back to {author}"))
-                    .px(4.0)
-                    .py(1.0)
+                    .shrink().min_w(0.0)
                     .radius(3.0)
                     .focusable(true)
                     .on_press(move |s: &mut App| {
@@ -775,7 +766,7 @@ fn trail_strip(s: &Story, trail: &[i32], t: tok::Theme) -> El {
                             story.thread.reroot(target);
                         }
                     })
-                    .child(text(author).font(type_::LABEL).color(t.text_secondary)),
+                    .child(text(author).shrink().min_w(0.0).truncate().font(type_::LABEL).color(t.text_secondary)),
             );
         }
     }
@@ -818,6 +809,7 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
         .focusable(true)
         .focus_selected(selected)
         .focus_ring(1.5, 0.0, accent)
+        .animated_changes()
         .motion(Spring::NONE)
         .transition(if depth == 0 || reduced { Transition::none() } else {
             Transition::asymmetric(Transition::opacity(), Transition::none())
@@ -832,7 +824,7 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
         if let Some(story) = s.story_mut() {
             let changed = story.with_thread(|thread| thread.focus() && thread.cursor() != Some(id) && thread.select(id));
             if changed && !context { story.citation_focus = false; }
-            if !changed { tx.live_only(); }
+            if changed { tx.instant(); } else { tx.live_only(); }
         }
     });
     if selected && depth == 0 {
@@ -868,14 +860,14 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
                 .key(format!("comment-group-{id}"))
                 .role("button")
                 .label(format!("{action}: {replies} {noun}"))
-                .h(20.0)
+                .h(28.0)
                 .gap(6.0)
                 .center_y()
                 .self_start()
                 .focusable(true)
                 .disabled(s.pending_reply.is_some() && !loading && !loaded && !folded && !capped)
                 .on_press(move |s: &mut App| s.activate_comment(id))
-                .child(icon(k.glyph.chevron_down, 12.0)
+                .child(icon(k.glyph.chevron_down, 20.0)
                     .icon_rotation(if expanded { 0.0 } else { -FRAC_PI_2 })
                     .motion(Spring::NONE)
                     .color(t.text_secondary))
@@ -889,16 +881,19 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
             .center_y();
         if replies > 0 || capped {
             who = who.child(
-                icon(k.glyph.chevron_down, 12.0)
-                    .icon_rotation(if expanded { 0.0 } else { -FRAC_PI_2 })
-                    .motion(motion::SNAP)
-                    .color(t.text_secondary)
-                    .role("button").label(action).focusable(true)
-                    .on_press(move |s: &mut App| s.activate_comment(id)),
+                row().size(20.0, 20.0)
+                    .child(icon(k.glyph.chevron_down, 20.0).key(format!("comment-chevron-{id}"))
+                        .icon_rotation(if expanded { 0.0 } else { -FRAC_PI_2 })
+                        .motion(if reduced { Spring::NONE } else { Spring::new(0.12, 0.0) })
+                        .color(t.text_secondary).a11y_hidden())
+                    .child(el().key(format!("comment-disclosure-{id}"))
+                        .absolute(-4.0, -4.0).size(28.0, 28.0)
+                        .role("button").label(action).focusable(true)
+                        .on_press(move |s: &mut App| s.activate_comment(id))),
             );
         } else {
             // A leaf keeps the chevron's lane, so authors line up down the thread.
-            who = who.child(el().size(12.0, 12.0));
+            who = who.child(el().size(20.0, 20.0));
         }
         who = who
             .child(
@@ -938,7 +933,7 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
             .child(
                 text(body.to_string())
                     .key(if captured.is_some() { "source-comment-text".to_string() } else { format!("comment-text-{id}") })
-                    .ml(18.0)
+                    .ml(26.0)
                     .font(type_::BODY)
                     .color(if !focus || selected { t.text } else { t.text_secondary })
                     .wrap_anywhere(),
@@ -952,7 +947,7 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
                 .role("button")
                 .label(format!("Continue thread, {behind} replies"))
                 .h(20.0)
-                .ml(18.0)
+                .ml(26.0)
                 .px(8.0)
                 .center_y()
                 .self_start()
@@ -970,7 +965,7 @@ fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: C
         );
     }
     if !folded && !capped && replies > 0 {
-        let indent = if readable { 18.0 } else { 0.0 };
+        let indent = if readable { 26.0 } else { 0.0 };
         if loading {
             r = r.child(text("Loading replies…").ml(indent).role("status").busy(true)
                 .transition(Transition::none()).font(type_::LABEL).color(t.text_secondary));
@@ -1102,7 +1097,7 @@ fn source_viewer(
     let keys = Rc::clone(&rows);
     let kit = (*k).clone();
     content = content.child(el().w_full().h(1.0).my(4.0).fill(t.separator))
-        .child(col().key("source-replies").w_full().gap(2.0)
+        .child(col().key("source-replies").w_full().gap(2.0).instant_changes()
         .growth(GrowthSpec { spring: Spring::NONE, ..GrowthSpec::default() }).virtual_rows(rows.len(), 110.0,
             move |_app: &App, i| format!("source-comment-{}", keys[i].id).into(),
             move |app: &App, i| app.story().map(|story| comment_row(story, rows[i].id, rows[i].depth, &kit, t, accent, true, reduced)).unwrap_or_else(el)));

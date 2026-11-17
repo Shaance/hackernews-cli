@@ -110,10 +110,23 @@
                               },
                               {
                                 "bounds": [
-                                  1168.0,
-                                  24.0,
-                                  0.0,
-                                  0.0
+                                  1055.3,
+                                  12.0,
+                                  112.7,
+                                  24.0
+                                ],
+                                "children": [
+                                  {
+                                    "bounds": [
+                                      1055.3,
+                                      12.0,
+                                      112.7,
+                                      24.0
+                                    ],
+                                    "key": "brand",
+                                    "name": "Hacker News",
+                                    "role": "group"
+                                  }
                                 ],
                                 "key": "trailing",
                                 "role": "group"
@@ -1073,7 +1086,7 @@
                                                               651.0,
                                                               306.8,
                                                               515.0,
-                                                              498.8
+                                                              490.3
                                                             ],
                                                             "children": [
                                                               {
@@ -1093,12 +1106,205 @@
                                                                     ],
                                                                     "bounds": [
                                                                       653.0,
-                                                                      313.1,
-                                                                      61.1,
-                                                                      14.4
+                                                                      312.8,
+                                                                      450.8,
+                                                                      15.0
                                                                     ],
-                                                                    "name": "Discussion",
-                                                                    "role": "label"
+                                                                    "children": [
+                                                                      {
+                                                                        "actions": [
+                                                                          "click",
+                                                                          "focus",
+                                                                          "scroll-into-view"
+                                                                        ],
+                                                                        "bounds": [
+                                                                          653.0,
+                                                                          312.8,
+                                                                          43.2,
+                                                                          15.0
+                                                                        ],
+                                                                        "children": [
+                                                                          {
+                                                                            "actions": [
+                                                                              "scroll-into-view"
+                                                                            ],
+                                                                            "bounds": [
+                                                                              653.0,
+                                                                              312.8,
+                                                                              43.2,
+                                                                              15.0
+                                                                            ],
+                                                                            "name": "tptacek",
+                                                                            "role": "label"
+                                                                          }
+                                                                        ],
+                                                                        "key": "trail-901",
+                                                                        "name": "Back to tptacek",
+                                                                        "role": "button"
+                                                                      },
+                                                                      {
+                                                                        "actions": [
+                                                                          "scroll-into-view"
+                                                                        ],
+                                                                        "bounds": [
+                                                                          702.2,
+                                                                          312.8,
+                                                                          4.8,
+                                                                          15.0
+                                                                        ],
+                                                                        "name": "›",
+                                                                        "role": "label"
+                                                                      },
+                                                                      {
+                                                                        "actions": [
+                                                                          "click",
+                                                                          "focus",
+                                                                          "scroll-into-view"
+                                                                        ],
+                                                                        "bounds": [
+                                                                          713.0,
+                                                                          312.8,
+                                                                          54.0,
+                                                                          15.0
+                                                                        ],
+                                                                        "children": [
+                                                                          {
+                                                                            "actions": [
+                                                                              "scroll-into-view"
+                                                                            ],
+                                                                            "bounds": [
+                                                                              713.0,
+                                                                              312.8,
+                                                                              54.0,
+                                                                              15.0
+                                                                            ],
+                                                                            "name": "kstrauser",
+                                                                            "role": "label"
+                                                                          }
+                                                                        ],
+                                                                        "key": "trail-9010",
+                                                                        "name": "Back to kstrauser",
+                                                                        "role": "button"
+                                                                      },
+                                                                      {
+                                                                        "actions": [
+                                                                          "scroll-into-view"
+                                                                        ],
+                                                                        "bounds": [
+                                                                          773.0,
+                                                                          312.8,
+                                                                          4.8,
+                                                                          15.0
+                                                                        ],
+                                                                        "name": "›",
+                                                                        "role": "label"
+                                                                      },
+                                                                      {
+                                                                        "actions": [
+                                                                          "click",
+                                                                          "focus",
+                                                                          "scroll-into-view"
+                                                                        ],
+                                                                        "bounds": [
+                                                                          783.8,
+                                                                          312.8,
+                                                                          44.6,
+                                                                          15.0
+                                                                        ],
+                                                                        "children": [
+                                                                          {
+                                                                            "actions": [
+                                                                              "scroll-into-view"
+                                                                            ],
+                                                                            "bounds": [
+                                                                              783.8,
+                                                                              312.8,
+                                                                              44.6,
+                                                                              15.0
+                                                                            ],
+                                                                            "name": "simonw",
+                                                                            "role": "label"
+                                                                          }
+                                                                        ],
+                                                                        "key": "trail-90100",
+                                                                        "name": "Back to simonw",
+                                                                        "role": "button"
+                                                                      },
+                                                                      {
+                                                                        "actions": [
+                                                                          "scroll-into-view"
+                                                                        ],
+                                                                        "bounds": [
+                                                                          834.3,
+                                                                          312.8,
+                                                                          4.8,
+                                                                          15.0
+                                                                        ],
+                                                                        "name": "›",
+                                                                        "role": "label"
+                                                                      },
+                                                                      {
+                                                                        "actions": [
+                                                                          "click",
+                                                                          "focus",
+                                                                          "scroll-into-view"
+                                                                        ],
+                                                                        "bounds": [
+                                                                          845.2,
+                                                                          312.8,
+                                                                          28.9,
+                                                                          15.0
+                                                                        ],
+                                                                        "children": [
+                                                                          {
+                                                                            "actions": [
+                                                                              "scroll-into-view"
+                                                                            ],
+                                                                            "bounds": [
+                                                                              845.2,
+                                                                              312.8,
+                                                                              28.9,
+                                                                              15.0
+                                                                            ],
+                                                                            "name": "dang",
+                                                                            "role": "label"
+                                                                          }
+                                                                        ],
+                                                                        "key": "trail-901000",
+                                                                        "name": "Back to dang",
+                                                                        "role": "button"
+                                                                      },
+                                                                      {
+                                                                        "actions": [
+                                                                          "scroll-into-view"
+                                                                        ],
+                                                                        "bounds": [
+                                                                          880.1,
+                                                                          312.8,
+                                                                          4.8,
+                                                                          15.0
+                                                                        ],
+                                                                        "name": "›",
+                                                                        "role": "label"
+                                                                      },
+                                                                      {
+                                                                        "actions": [
+                                                                          "scroll-into-view"
+                                                                        ],
+                                                                        "bounds": [
+                                                                          890.8,
+                                                                          312.8,
+                                                                          43.2,
+                                                                          15.0
+                                                                        ],
+                                                                        "key": "trail-9010000",
+                                                                        "name": "tptacek",
+                                                                        "role": "label"
+                                                                      }
+                                                                    ],
+                                                                    "key": "trail",
+                                                                    "name": "Thread trail",
+                                                                    "role": "region"
                                                                   },
                                                                   {
                                                                     "actions": [
@@ -1107,7 +1313,7 @@
                                                                       "scroll-into-view"
                                                                     ],
                                                                     "bounds": [
-                                                                      722.1,
+                                                                      1111.8,
                                                                       312.8,
                                                                       52.2,
                                                                       15.0
@@ -1118,7 +1324,7 @@
                                                                           "scroll-into-view"
                                                                         ],
                                                                         "bounds": [
-                                                                          722.1,
+                                                                          1111.8,
                                                                           312.8,
                                                                           52.2,
                                                                           15.0
@@ -1143,213 +1349,7 @@
                                                                   651.0,
                                                                   335.8,
                                                                   515.0,
-                                                                  29.0
-                                                                ],
-                                                                "children": [
-                                                                  {
-                                                                    "actions": [
-                                                                      "click",
-                                                                      "focus",
-                                                                      "scroll-into-view"
-                                                                    ],
-                                                                    "bounds": [
-                                                                      653.0,
-                                                                      341.8,
-                                                                      51.2,
-                                                                      17.0
-                                                                    ],
-                                                                    "children": [
-                                                                      {
-                                                                        "actions": [
-                                                                          "scroll-into-view"
-                                                                        ],
-                                                                        "bounds": [
-                                                                          657.0,
-                                                                          342.8,
-                                                                          43.2,
-                                                                          15.0
-                                                                        ],
-                                                                        "name": "tptacek",
-                                                                        "role": "label"
-                                                                      }
-                                                                    ],
-                                                                    "key": "trail-901",
-                                                                    "name": "Back to tptacek",
-                                                                    "role": "button"
-                                                                  },
-                                                                  {
-                                                                    "actions": [
-                                                                      "scroll-into-view"
-                                                                    ],
-                                                                    "bounds": [
-                                                                      710.2,
-                                                                      342.8,
-                                                                      4.8,
-                                                                      15.0
-                                                                    ],
-                                                                    "name": "›",
-                                                                    "role": "label"
-                                                                  },
-                                                                  {
-                                                                    "actions": [
-                                                                      "click",
-                                                                      "focus",
-                                                                      "scroll-into-view"
-                                                                    ],
-                                                                    "bounds": [
-                                                                      721.0,
-                                                                      341.8,
-                                                                      62.0,
-                                                                      17.0
-                                                                    ],
-                                                                    "children": [
-                                                                      {
-                                                                        "actions": [
-                                                                          "scroll-into-view"
-                                                                        ],
-                                                                        "bounds": [
-                                                                          725.0,
-                                                                          342.8,
-                                                                          54.0,
-                                                                          15.0
-                                                                        ],
-                                                                        "name": "kstrauser",
-                                                                        "role": "label"
-                                                                      }
-                                                                    ],
-                                                                    "key": "trail-9010",
-                                                                    "name": "Back to kstrauser",
-                                                                    "role": "button"
-                                                                  },
-                                                                  {
-                                                                    "actions": [
-                                                                      "scroll-into-view"
-                                                                    ],
-                                                                    "bounds": [
-                                                                      789.0,
-                                                                      342.8,
-                                                                      4.8,
-                                                                      15.0
-                                                                    ],
-                                                                    "name": "›",
-                                                                    "role": "label"
-                                                                  },
-                                                                  {
-                                                                    "actions": [
-                                                                      "click",
-                                                                      "focus",
-                                                                      "scroll-into-view"
-                                                                    ],
-                                                                    "bounds": [
-                                                                      799.8,
-                                                                      341.8,
-                                                                      52.6,
-                                                                      17.0
-                                                                    ],
-                                                                    "children": [
-                                                                      {
-                                                                        "actions": [
-                                                                          "scroll-into-view"
-                                                                        ],
-                                                                        "bounds": [
-                                                                          803.8,
-                                                                          342.8,
-                                                                          44.6,
-                                                                          15.0
-                                                                        ],
-                                                                        "name": "simonw",
-                                                                        "role": "label"
-                                                                      }
-                                                                    ],
-                                                                    "key": "trail-90100",
-                                                                    "name": "Back to simonw",
-                                                                    "role": "button"
-                                                                  },
-                                                                  {
-                                                                    "actions": [
-                                                                      "scroll-into-view"
-                                                                    ],
-                                                                    "bounds": [
-                                                                      858.3,
-                                                                      342.8,
-                                                                      4.8,
-                                                                      15.0
-                                                                    ],
-                                                                    "name": "›",
-                                                                    "role": "label"
-                                                                  },
-                                                                  {
-                                                                    "actions": [
-                                                                      "click",
-                                                                      "focus",
-                                                                      "scroll-into-view"
-                                                                    ],
-                                                                    "bounds": [
-                                                                      869.2,
-                                                                      341.8,
-                                                                      36.9,
-                                                                      17.0
-                                                                    ],
-                                                                    "children": [
-                                                                      {
-                                                                        "actions": [
-                                                                          "scroll-into-view"
-                                                                        ],
-                                                                        "bounds": [
-                                                                          873.2,
-                                                                          342.8,
-                                                                          28.9,
-                                                                          15.0
-                                                                        ],
-                                                                        "name": "dang",
-                                                                        "role": "label"
-                                                                      }
-                                                                    ],
-                                                                    "key": "trail-901000",
-                                                                    "name": "Back to dang",
-                                                                    "role": "button"
-                                                                  },
-                                                                  {
-                                                                    "actions": [
-                                                                      "scroll-into-view"
-                                                                    ],
-                                                                    "bounds": [
-                                                                      912.1,
-                                                                      342.8,
-                                                                      4.8,
-                                                                      15.0
-                                                                    ],
-                                                                    "name": "›",
-                                                                    "role": "label"
-                                                                  },
-                                                                  {
-                                                                    "actions": [
-                                                                      "scroll-into-view"
-                                                                    ],
-                                                                    "bounds": [
-                                                                      922.8,
-                                                                      342.8,
-                                                                      43.2,
-                                                                      15.0
-                                                                    ],
-                                                                    "key": "trail-9010000",
-                                                                    "name": "tptacek",
-                                                                    "role": "label"
-                                                                  }
-                                                                ],
-                                                                "key": "trail",
-                                                                "name": "Thread trail",
-                                                                "role": "region"
-                                                              },
-                                                              {
-                                                                "actions": [
-                                                                  "scroll-into-view"
-                                                                ],
-                                                                "bounds": [
-                                                                  651.0,
-                                                                  366.8,
-                                                                  515.0,
-                                                                  438.8
+                                                                  461.3
                                                                 ],
                                                                 "children": [
                                                                   {
@@ -1361,9 +1361,9 @@
                                                                     ],
                                                                     "bounds": [
                                                                       651.0,
-                                                                      366.8,
+                                                                      335.8,
                                                                       515.0,
-                                                                      85.0
+                                                                      88.8
                                                                     ],
                                                                     "children": [
                                                                       {
@@ -1372,9 +1372,9 @@
                                                                         ],
                                                                         "bounds": [
                                                                           659.0,
-                                                                          374.8,
+                                                                          343.8,
                                                                           497.0,
-                                                                          16.3
+                                                                          20.0
                                                                         ],
                                                                         "children": [
                                                                           {
@@ -1384,11 +1384,12 @@
                                                                               "scroll-into-view"
                                                                             ],
                                                                             "bounds": [
-                                                                              659.0,
-                                                                              376.9,
-                                                                              12.0,
-                                                                              12.0
+                                                                              655.0,
+                                                                              339.8,
+                                                                              28.0,
+                                                                              28.0
                                                                             ],
+                                                                            "key": "comment-disclosure-901000",
                                                                             "name": "Hide replies",
                                                                             "role": "button"
                                                                           },
@@ -1397,8 +1398,8 @@
                                                                               "scroll-into-view"
                                                                             ],
                                                                             "bounds": [
-                                                                              677.0,
-                                                                              374.8,
+                                                                              685.0,
+                                                                              345.6,
                                                                               31.7,
                                                                               16.3
                                                                             ],
@@ -1411,8 +1412,8 @@
                                                                               "scroll-into-view"
                                                                             ],
                                                                             "bounds": [
-                                                                              714.7,
-                                                                              375.4,
+                                                                              722.7,
+                                                                              346.3,
                                                                               88.5,
                                                                               15.0
                                                                             ],
@@ -1429,9 +1430,9 @@
                                                                           "scroll-into-view"
                                                                         ],
                                                                         "bounds": [
-                                                                          677.0,
-                                                                          395.0,
-                                                                          479.0,
+                                                                          685.0,
+                                                                          367.8,
+                                                                          471.0,
                                                                           48.8
                                                                         ],
                                                                         "key": "comment-text-901000",
@@ -1457,9 +1458,9 @@
                                                                     ],
                                                                     "bounds": [
                                                                       651.0,
-                                                                      453.8,
+                                                                      426.5,
                                                                       515.0,
-                                                                      68.8
+                                                                      72.5
                                                                     ],
                                                                     "children": [
                                                                       {
@@ -1468,9 +1469,9 @@
                                                                         ],
                                                                         "bounds": [
                                                                           665.0,
-                                                                          453.8,
+                                                                          426.5,
                                                                           2.0,
-                                                                          68.8
+                                                                          72.5
                                                                         ],
                                                                         "key": "focus-rail-9010000",
                                                                         "role": "group"
@@ -1481,9 +1482,9 @@
                                                                         ],
                                                                         "bounds": [
                                                                           672.0,
-                                                                          461.8,
+                                                                          434.5,
                                                                           484.0,
-                                                                          16.3
+                                                                          20.0
                                                                         ],
                                                                         "children": [
                                                                           {
@@ -1493,11 +1494,12 @@
                                                                               "scroll-into-view"
                                                                             ],
                                                                             "bounds": [
-                                                                              672.0,
-                                                                              463.9,
-                                                                              12.0,
-                                                                              12.0
+                                                                              668.0,
+                                                                              430.5,
+                                                                              28.0,
+                                                                              28.0
                                                                             ],
+                                                                            "key": "comment-disclosure-9010000",
                                                                             "name": "Hide replies",
                                                                             "role": "button"
                                                                           },
@@ -1506,8 +1508,8 @@
                                                                               "scroll-into-view"
                                                                             ],
                                                                             "bounds": [
-                                                                              690.0,
-                                                                              461.8,
+                                                                              698.0,
+                                                                              436.4,
                                                                               47.5,
                                                                               16.3
                                                                             ],
@@ -1520,8 +1522,8 @@
                                                                               "scroll-into-view"
                                                                             ],
                                                                             "bounds": [
-                                                                              743.5,
-                                                                              462.4,
+                                                                              751.5,
+                                                                              437.0,
                                                                               89.3,
                                                                               15.0
                                                                             ],
@@ -1538,9 +1540,9 @@
                                                                           "scroll-into-view"
                                                                         ],
                                                                         "bounds": [
-                                                                          690.0,
-                                                                          482.0,
-                                                                          466.0,
+                                                                          698.0,
+                                                                          458.5,
+                                                                          458.0,
                                                                           32.5
                                                                         ],
                                                                         "key": "comment-text-9010000",
@@ -1565,9 +1567,9 @@
                                                                     ],
                                                                     "bounds": [
                                                                       651.0,
-                                                                      524.5,
+                                                                      501.0,
                                                                       515.0,
-                                                                      68.8
+                                                                      72.5
                                                                     ],
                                                                     "children": [
                                                                       {
@@ -1576,9 +1578,9 @@
                                                                         ],
                                                                         "bounds": [
                                                                           665.0,
-                                                                          524.5,
+                                                                          501.0,
                                                                           1.0,
-                                                                          68.8
+                                                                          72.5
                                                                         ],
                                                                         "key": "guide-90100000-1",
                                                                         "role": "group"
@@ -1589,9 +1591,9 @@
                                                                         ],
                                                                         "bounds": [
                                                                           678.0,
-                                                                          524.5,
+                                                                          501.0,
                                                                           1.0,
-                                                                          68.8
+                                                                          72.5
                                                                         ],
                                                                         "key": "guide-90100000-2",
                                                                         "role": "group"
@@ -1602,9 +1604,9 @@
                                                                         ],
                                                                         "bounds": [
                                                                           685.0,
-                                                                          532.5,
+                                                                          509.0,
                                                                           471.0,
-                                                                          16.3
+                                                                          20.0
                                                                         ],
                                                                         "children": [
                                                                           {
@@ -1612,8 +1614,8 @@
                                                                               "scroll-into-view"
                                                                             ],
                                                                             "bounds": [
-                                                                              703.0,
-                                                                              532.5,
+                                                                              711.0,
+                                                                              510.9,
                                                                               59.6,
                                                                               16.3
                                                                             ],
@@ -1626,8 +1628,8 @@
                                                                               "scroll-into-view"
                                                                             ],
                                                                             "bounds": [
-                                                                              768.6,
-                                                                              533.1,
+                                                                              776.6,
+                                                                              511.5,
                                                                               89.1,
                                                                               15.0
                                                                             ],
@@ -1644,9 +1646,9 @@
                                                                           "scroll-into-view"
                                                                         ],
                                                                         "bounds": [
-                                                                          703.0,
-                                                                          552.8,
-                                                                          453.0,
+                                                                          711.0,
+                                                                          533.0,
+                                                                          445.0,
                                                                           32.5
                                                                         ],
                                                                         "key": "comment-text-90100000",
@@ -1668,9 +1670,9 @@
                                                                     ],
                                                                     "bounds": [
                                                                       651.0,
-                                                                      595.3,
+                                                                      575.5,
                                                                       515.0,
-                                                                      68.8
+                                                                      72.5
                                                                     ],
                                                                     "children": [
                                                                       {
@@ -1679,9 +1681,9 @@
                                                                         ],
                                                                         "bounds": [
                                                                           665.0,
-                                                                          595.3,
+                                                                          575.5,
                                                                           1.0,
-                                                                          68.8
+                                                                          72.5
                                                                         ],
                                                                         "key": "guide-90100001-1",
                                                                         "role": "group"
@@ -1692,9 +1694,9 @@
                                                                         ],
                                                                         "bounds": [
                                                                           678.0,
-                                                                          595.3,
+                                                                          575.5,
                                                                           1.0,
-                                                                          68.8
+                                                                          72.5
                                                                         ],
                                                                         "key": "guide-90100001-2",
                                                                         "role": "group"
@@ -1705,9 +1707,9 @@
                                                                         ],
                                                                         "bounds": [
                                                                           685.0,
-                                                                          603.3,
+                                                                          583.5,
                                                                           471.0,
-                                                                          16.3
+                                                                          20.0
                                                                         ],
                                                                         "children": [
                                                                           {
@@ -1715,8 +1717,8 @@
                                                                               "scroll-into-view"
                                                                             ],
                                                                             "bounds": [
-                                                                              703.0,
-                                                                              603.3,
+                                                                              711.0,
+                                                                              585.4,
                                                                               49.0,
                                                                               16.3
                                                                             ],
@@ -1729,8 +1731,8 @@
                                                                               "scroll-into-view"
                                                                             ],
                                                                             "bounds": [
-                                                                              758.0,
-                                                                              603.9,
+                                                                              766.0,
+                                                                              586.0,
                                                                               88.6,
                                                                               15.0
                                                                             ],
@@ -1747,9 +1749,9 @@
                                                                           "scroll-into-view"
                                                                         ],
                                                                         "bounds": [
-                                                                          703.0,
-                                                                          623.5,
-                                                                          453.0,
+                                                                          711.0,
+                                                                          607.5,
+                                                                          445.0,
                                                                           32.5
                                                                         ],
                                                                         "key": "comment-text-90100001",
@@ -1771,9 +1773,9 @@
                                                                     ],
                                                                     "bounds": [
                                                                       651.0,
-                                                                      666.0,
+                                                                      650.0,
                                                                       515.0,
-                                                                      68.8
+                                                                      72.5
                                                                     ],
                                                                     "children": [
                                                                       {
@@ -1782,9 +1784,9 @@
                                                                         ],
                                                                         "bounds": [
                                                                           665.0,
-                                                                          666.0,
+                                                                          650.0,
                                                                           1.0,
-                                                                          68.8
+                                                                          72.5
                                                                         ],
                                                                         "key": "guide-9010001-1",
                                                                         "role": "group"
@@ -1795,9 +1797,9 @@
                                                                         ],
                                                                         "bounds": [
                                                                           672.0,
-                                                                          674.0,
+                                                                          658.0,
                                                                           484.0,
-                                                                          16.3
+                                                                          20.0
                                                                         ],
                                                                         "children": [
                                                                           {
@@ -1805,8 +1807,8 @@
                                                                               "scroll-into-view"
                                                                             ],
                                                                             "bounds": [
-                                                                              690.0,
-                                                                              674.0,
+                                                                              698.0,
+                                                                              659.9,
                                                                               47.5,
                                                                               16.3
                                                                             ],
@@ -1819,8 +1821,8 @@
                                                                               "scroll-into-view"
                                                                             ],
                                                                             "bounds": [
-                                                                              743.5,
-                                                                              674.6,
+                                                                              751.5,
+                                                                              660.5,
                                                                               88.8,
                                                                               15.0
                                                                             ],
@@ -1837,9 +1839,9 @@
                                                                           "scroll-into-view"
                                                                         ],
                                                                         "bounds": [
-                                                                          690.0,
-                                                                          694.3,
-                                                                          466.0,
+                                                                          698.0,
+                                                                          682.0,
+                                                                          458.0,
                                                                           32.5
                                                                         ],
                                                                         "key": "comment-text-9010001",
@@ -1861,9 +1863,9 @@
                                                                     ],
                                                                     "bounds": [
                                                                       651.0,
-                                                                      736.8,
+                                                                      724.5,
                                                                       515.0,
-                                                                      68.8
+                                                                      72.5
                                                                     ],
                                                                     "children": [
                                                                       {
@@ -1872,9 +1874,9 @@
                                                                         ],
                                                                         "bounds": [
                                                                           665.0,
-                                                                          736.8,
+                                                                          724.5,
                                                                           1.0,
-                                                                          68.8
+                                                                          72.5
                                                                         ],
                                                                         "key": "guide-9010002-1",
                                                                         "role": "group"
@@ -1885,9 +1887,9 @@
                                                                         ],
                                                                         "bounds": [
                                                                           672.0,
-                                                                          744.8,
+                                                                          732.5,
                                                                           484.0,
-                                                                          16.3
+                                                                          20.0
                                                                         ],
                                                                         "children": [
                                                                           {
@@ -1895,8 +1897,8 @@
                                                                               "scroll-into-view"
                                                                             ],
                                                                             "bounds": [
-                                                                              690.0,
-                                                                              744.8,
+                                                                              698.0,
+                                                                              734.4,
                                                                               31.7,
                                                                               16.3
                                                                             ],
@@ -1909,8 +1911,8 @@
                                                                               "scroll-into-view"
                                                                             ],
                                                                             "bounds": [
-                                                                              727.7,
-                                                                              745.4,
+                                                                              735.7,
+                                                                              735.0,
                                                                               88.6,
                                                                               15.0
                                                                             ],
@@ -1927,9 +1929,9 @@
                                                                           "scroll-into-view"
                                                                         ],
                                                                         "bounds": [
-                                                                          690.0,
-                                                                          765.0,
-                                                                          466.0,
+                                                                          698.0,
+                                                                          756.5,
+                                                                          458.0,
                                                                           32.5
                                                                         ],
                                                                         "key": "comment-text-9010002",
@@ -1958,7 +1960,7 @@
                                                         "scroll": [
                                                           0.0,
                                                           0.0,
-                                                          98.5
+                                                          90.0
                                                         ],
                                                         "states": [
                                                           "clips"
@@ -2477,7 +2479,7 @@
       "rect": [
         130.52,
         24.0,
-        1029.48,
+        916.78,
         0.0
       ],
       "role": "group",
@@ -2495,13 +2497,95 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/toolbar/trailing",
       "rect": [
-        1168.0,
-        24.0,
-        0.0,
-        0.0
+        1055.3,
+        12.0,
+        112.7,
+        24.0
       ],
       "role": "group",
       "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "brand",
+      "label": "Hacker News",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/trailing/brand",
+      "rect": [
+        1055.3,
+        12.0,
+        112.7,
+        24.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ff6600ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/trailing/brand/#0",
+      "rect": [
+        1055.3,
+        12.0,
+        24.0,
+        24.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#ffffffff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/trailing/brand/#0/#0",
+      "rect": [
+        1059.77,
+        17.75,
+        15.05,
+        12.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "HN"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/toolbar/trailing/brand/#1",
+      "rect": [
+        1085.3,
+        15.88,
+        82.7,
+        16.25
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Hacker News"
     },
     {
       "blur": 0.0,
@@ -4141,14 +4225,14 @@
         651.0,
         306.75,
         515.0,
-        498.75
+        490.25
       ],
       "role": "group",
       "scale": 1.0
     },
     {
       "blur": 0.0,
-      "fill": "#00000000",
+      "fill": "#121314ff",
       "focusVisible": false,
       "focusable": false,
       "focused": false,
@@ -4168,6 +4252,48 @@
     },
     {
       "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "trail",
+      "label": "Thread trail",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/trail",
+      "rect": [
+        653.0,
+        312.75,
+        450.84,
+        15.0
+      ],
+      "role": "region",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": true,
+      "focused": false,
+      "inert": false,
+      "key": "trail-901",
+      "label": "Back to tptacek",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/trail/trail-901",
+      "rect": [
+        653.0,
+        312.75,
+        43.15,
+        15.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
       "color": "#a2a5aaff",
       "fill": "#00000000",
       "focusVisible": false,
@@ -4176,16 +4302,248 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/trail/trail-901/#0",
       "rect": [
         653.0,
-        313.06,
-        61.05,
-        14.38
+        312.75,
+        43.15,
+        15.0
       ],
       "role": "text",
       "scale": 1.0,
-      "text": "Discussion"
+      "text": "tptacek"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/trail/#1",
+      "rect": [
+        702.15,
+        312.75,
+        4.8,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "›"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": true,
+      "focused": false,
+      "inert": false,
+      "key": "trail-9010",
+      "label": "Back to kstrauser",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/trail/trail-9010",
+      "rect": [
+        712.95,
+        312.75,
+        54.03,
+        15.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/trail/trail-9010/#0",
+      "rect": [
+        712.95,
+        312.75,
+        54.03,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "kstrauser"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/trail/#3",
+      "rect": [
+        772.98,
+        312.75,
+        4.8,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "›"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": true,
+      "focused": false,
+      "inert": false,
+      "key": "trail-90100",
+      "label": "Back to simonw",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/trail/trail-90100",
+      "rect": [
+        783.79,
+        312.75,
+        44.56,
+        15.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/trail/trail-90100/#0",
+      "rect": [
+        783.79,
+        312.75,
+        44.56,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "simonw"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/trail/#5",
+      "rect": [
+        834.35,
+        312.75,
+        4.8,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "›"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": true,
+      "focused": false,
+      "inert": false,
+      "key": "trail-901000",
+      "label": "Back to dang",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/trail/trail-901000",
+      "rect": [
+        845.16,
+        312.75,
+        28.89,
+        15.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/trail/trail-901000/#0",
+      "rect": [
+        845.16,
+        312.75,
+        28.89,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "dang"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/trail/#7",
+      "rect": [
+        880.05,
+        312.75,
+        4.8,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "›"
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "trail-9010000",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/trail/trail-9010000",
+      "rect": [
+        890.85,
+        312.75,
+        43.15,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "tptacek"
     },
     {
       "blur": 0.0,
@@ -4200,7 +4558,7 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/discussion-focus",
       "rect": [
-        722.05,
+        1111.84,
         312.75,
         52.16,
         15.0
@@ -4220,7 +4578,7 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/discussion-focus/#0",
       "rect": [
-        722.05,
+        1111.84,
         312.75,
         52.16,
         15.0
@@ -4236,329 +4594,15 @@
       "focusable": false,
       "focused": false,
       "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/#2",
-      "rect": [
-        782.22,
-        320.25,
-        381.78,
-        0.0
-      ],
-      "role": "group",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "fill": "#121314ff",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "key": "trail",
-      "label": "Thread trail",
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/trail",
-      "rect": [
-        651.0,
-        335.75,
-        515.0,
-        29.0
-      ],
-      "role": "region",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": true,
-      "focused": false,
-      "inert": false,
-      "key": "trail-901",
-      "label": "Back to tptacek",
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/trail/trail-901",
-      "rect": [
-        653.0,
-        341.75,
-        51.15,
-        17.0
-      ],
-      "role": "button",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/trail/trail-901/#0",
-      "rect": [
-        657.0,
-        342.75,
-        43.15,
-        15.0
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "tptacek"
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/trail/#1",
-      "rect": [
-        710.15,
-        342.75,
-        4.8,
-        15.0
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "›"
-    },
-    {
-      "blur": 0.0,
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": true,
-      "focused": false,
-      "inert": false,
-      "key": "trail-9010",
-      "label": "Back to kstrauser",
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/trail/trail-9010",
-      "rect": [
-        720.95,
-        341.75,
-        62.03,
-        17.0
-      ],
-      "role": "button",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/trail/trail-9010/#0",
-      "rect": [
-        724.95,
-        342.75,
-        54.03,
-        15.0
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "kstrauser"
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/trail/#3",
-      "rect": [
-        788.98,
-        342.75,
-        4.8,
-        15.0
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "›"
-    },
-    {
-      "blur": 0.0,
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": true,
-      "focused": false,
-      "inert": false,
-      "key": "trail-90100",
-      "label": "Back to simonw",
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/trail/trail-90100",
-      "rect": [
-        799.79,
-        341.75,
-        52.56,
-        17.0
-      ],
-      "role": "button",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/trail/trail-90100/#0",
-      "rect": [
-        803.79,
-        342.75,
-        44.56,
-        15.0
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "simonw"
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/trail/#5",
-      "rect": [
-        858.35,
-        342.75,
-        4.8,
-        15.0
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "›"
-    },
-    {
-      "blur": 0.0,
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": true,
-      "focused": false,
-      "inert": false,
-      "key": "trail-901000",
-      "label": "Back to dang",
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/trail/trail-901000",
-      "rect": [
-        869.16,
-        341.75,
-        36.89,
-        17.0
-      ],
-      "role": "button",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/trail/trail-901000/#0",
-      "rect": [
-        873.16,
-        342.75,
-        28.89,
-        15.0
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "dang"
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/trail/#7",
-      "rect": [
-        912.05,
-        342.75,
-        4.8,
-        15.0
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "›"
-    },
-    {
-      "blur": 0.0,
-      "color": "#eff0f2ff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "key": "trail-9010000",
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/trail/trail-9010000",
-      "rect": [
-        922.85,
-        342.75,
-        43.15,
-        15.0
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "tptacek"
-    },
-    {
-      "blur": 0.0,
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
       "key": "discussion-rows",
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows",
       "rect": [
         651.0,
-        366.75,
+        335.75,
         515.0,
-        438.75
+        461.25
       ],
       "role": "group",
       "scale": 1.0
@@ -4579,9 +4623,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000",
       "rect": [
         651.0,
-        366.75,
+        335.75,
         515.0,
-        85.0
+        88.75
       ],
       "role": "article",
       "scale": 1.0
@@ -4599,9 +4643,28 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-who-901000",
       "rect": [
         659.0,
-        374.75,
+        343.75,
         497.0,
-        16.25
+        20.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-who-901000/#0",
+      "rect": [
+        659.0,
+        343.75,
+        20.0,
+        20.0
       ],
       "role": "group",
       "scale": 1.0
@@ -4611,18 +4674,39 @@
       "color": "#a2a5aaff",
       "fill": "#00000000",
       "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-chevron-901000",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-who-901000/#0/comment-chevron-901000",
+      "rect": [
+        659.0,
+        343.75,
+        20.0,
+        20.0
+      ],
+      "role": "icon",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
       "focusable": true,
       "focused": false,
       "inert": false,
+      "key": "comment-disclosure-901000",
       "label": "Hide replies",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-who-901000/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-who-901000/#0/comment-disclosure-901000",
       "rect": [
-        659.0,
-        376.88,
-        12.0,
-        12.0
+        655.0,
+        339.75,
+        28.0,
+        28.0
       ],
       "role": "button",
       "scale": 1.0
@@ -4640,8 +4724,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-who-901000/comment-author-901000",
       "rect": [
-        677.0,
-        374.75,
+        685.0,
+        345.63,
         31.66,
         16.25
       ],
@@ -4662,8 +4746,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-who-901000/comment-age-901000",
       "rect": [
-        714.66,
-        375.38,
+        722.66,
+        346.25,
         88.48,
         15.0
       ],
@@ -4682,9 +4766,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-who-901000/#3",
       "rect": [
-        809.14,
-        382.88,
-        346.86,
+        817.14,
+        353.75,
+        338.86,
         0.0
       ],
       "role": "group",
@@ -4703,9 +4787,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-text-901000",
       "rect": [
-        677.0,
-        395.0,
-        479.0,
+        685.0,
+        367.75,
+        471.0,
         48.75
       ],
       "role": "text",
@@ -4729,9 +4813,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010000",
       "rect": [
         651.0,
-        453.75,
+        426.5,
         515.0,
-        68.75
+        72.5
       ],
       "role": "article",
       "scale": 1.0
@@ -4749,9 +4833,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010000/focus-rail-9010000",
       "rect": [
         665.0,
-        453.75,
+        426.5,
         2.0,
-        68.75
+        72.5
       ],
       "role": "group",
       "scale": 1.0
@@ -4769,9 +4853,28 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010000/comment-who-9010000",
       "rect": [
         672.0,
-        461.75,
+        434.5,
         484.0,
-        16.25
+        20.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010000/comment-who-9010000/#0",
+      "rect": [
+        672.0,
+        434.5,
+        20.0,
+        20.0
       ],
       "role": "group",
       "scale": 1.0
@@ -4781,18 +4884,39 @@
       "color": "#a2a5aaff",
       "fill": "#00000000",
       "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "comment-chevron-9010000",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010000/comment-who-9010000/#0/comment-chevron-9010000",
+      "rect": [
+        672.0,
+        434.5,
+        20.0,
+        20.0
+      ],
+      "role": "icon",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
       "focusable": true,
       "focused": false,
       "inert": false,
+      "key": "comment-disclosure-9010000",
       "label": "Hide replies",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010000/comment-who-9010000/#0",
+      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010000/comment-who-9010000/#0/comment-disclosure-9010000",
       "rect": [
-        672.0,
-        463.88,
-        12.0,
-        12.0
+        668.0,
+        430.5,
+        28.0,
+        28.0
       ],
       "role": "button",
       "scale": 1.0
@@ -4810,8 +4934,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010000/comment-who-9010000/comment-author-9010000",
       "rect": [
-        690.0,
-        461.75,
+        698.0,
+        436.38,
         47.48,
         16.25
       ],
@@ -4832,8 +4956,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010000/comment-who-9010000/comment-age-9010000",
       "rect": [
-        743.48,
-        462.38,
+        751.48,
+        437.0,
         89.25,
         15.0
       ],
@@ -4852,9 +4976,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010000/comment-who-9010000/#3",
       "rect": [
-        838.73,
-        469.88,
-        317.27,
+        846.73,
+        444.5,
+        309.27,
         0.0
       ],
       "role": "group",
@@ -4873,9 +4997,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010000/comment-text-9010000",
       "rect": [
-        690.0,
-        482.0,
-        466.0,
+        698.0,
+        458.5,
+        458.0,
         32.5
       ],
       "role": "text",
@@ -4897,9 +5021,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100000",
       "rect": [
         651.0,
-        524.5,
+        501.0,
         515.0,
-        68.75
+        72.5
       ],
       "role": "article",
       "scale": 1.0
@@ -4917,9 +5041,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100000/guide-90100000-1",
       "rect": [
         665.0,
-        524.5,
+        501.0,
         1.0,
-        68.75
+        72.5
       ],
       "role": "group",
       "scale": 1.0
@@ -4937,9 +5061,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100000/guide-90100000-2",
       "rect": [
         678.0,
-        524.5,
+        501.0,
         1.0,
-        68.75
+        72.5
       ],
       "role": "group",
       "scale": 1.0
@@ -4957,9 +5081,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100000/comment-who-90100000",
       "rect": [
         685.0,
-        532.5,
+        509.0,
         471.0,
-        16.25
+        20.0
       ],
       "role": "group",
       "scale": 1.0
@@ -4976,9 +5100,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100000/comment-who-90100000/#0",
       "rect": [
         685.0,
-        534.63,
-        12.0,
-        12.0
+        509.0,
+        20.0,
+        20.0
       ],
       "role": "group",
       "scale": 1.0
@@ -4996,8 +5120,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100000/comment-who-90100000/comment-author-90100000",
       "rect": [
-        703.0,
-        532.5,
+        711.0,
+        510.88,
         59.59,
         16.25
       ],
@@ -5018,8 +5142,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100000/comment-who-90100000/comment-age-90100000",
       "rect": [
-        768.59,
-        533.13,
+        776.59,
+        511.5,
         89.12,
         15.0
       ],
@@ -5038,9 +5162,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100000/comment-who-90100000/#3",
       "rect": [
-        863.7,
-        540.63,
-        292.3,
+        871.7,
+        519.0,
+        284.3,
         0.0
       ],
       "role": "group",
@@ -5059,9 +5183,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100000/comment-text-90100000",
       "rect": [
-        703.0,
-        552.75,
-        453.0,
+        711.0,
+        533.0,
+        445.0,
         32.5
       ],
       "role": "text",
@@ -5083,9 +5207,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100001",
       "rect": [
         651.0,
-        595.25,
+        575.5,
         515.0,
-        68.75
+        72.5
       ],
       "role": "article",
       "scale": 1.0
@@ -5103,9 +5227,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100001/guide-90100001-1",
       "rect": [
         665.0,
-        595.25,
+        575.5,
         1.0,
-        68.75
+        72.5
       ],
       "role": "group",
       "scale": 1.0
@@ -5123,9 +5247,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100001/guide-90100001-2",
       "rect": [
         678.0,
-        595.25,
+        575.5,
         1.0,
-        68.75
+        72.5
       ],
       "role": "group",
       "scale": 1.0
@@ -5143,9 +5267,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100001/comment-who-90100001",
       "rect": [
         685.0,
-        603.25,
+        583.5,
         471.0,
-        16.25
+        20.0
       ],
       "role": "group",
       "scale": 1.0
@@ -5162,9 +5286,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100001/comment-who-90100001/#0",
       "rect": [
         685.0,
-        605.38,
-        12.0,
-        12.0
+        583.5,
+        20.0,
+        20.0
       ],
       "role": "group",
       "scale": 1.0
@@ -5182,8 +5306,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100001/comment-who-90100001/comment-author-90100001",
       "rect": [
-        703.0,
-        603.25,
+        711.0,
+        585.38,
         49.03,
         16.25
       ],
@@ -5204,8 +5328,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100001/comment-who-90100001/comment-age-90100001",
       "rect": [
-        758.03,
-        603.88,
+        766.03,
+        586.0,
         88.57,
         15.0
       ],
@@ -5224,9 +5348,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100001/comment-who-90100001/#3",
       "rect": [
-        852.6,
-        611.38,
-        303.4,
+        860.6,
+        593.5,
+        295.4,
         0.0
       ],
       "role": "group",
@@ -5245,9 +5369,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100001/comment-text-90100001",
       "rect": [
-        703.0,
-        623.5,
-        453.0,
+        711.0,
+        607.5,
+        445.0,
         32.5
       ],
       "role": "text",
@@ -5269,9 +5393,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010001",
       "rect": [
         651.0,
-        666.0,
+        650.0,
         515.0,
-        68.75
+        72.5
       ],
       "role": "article",
       "scale": 1.0
@@ -5289,9 +5413,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010001/guide-9010001-1",
       "rect": [
         665.0,
-        666.0,
+        650.0,
         1.0,
-        68.75
+        72.5
       ],
       "role": "group",
       "scale": 1.0
@@ -5309,9 +5433,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010001/comment-who-9010001",
       "rect": [
         672.0,
-        674.0,
+        658.0,
         484.0,
-        16.25
+        20.0
       ],
       "role": "group",
       "scale": 1.0
@@ -5328,9 +5452,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010001/comment-who-9010001/#0",
       "rect": [
         672.0,
-        676.13,
-        12.0,
-        12.0
+        658.0,
+        20.0,
+        20.0
       ],
       "role": "group",
       "scale": 1.0
@@ -5348,8 +5472,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010001/comment-who-9010001/comment-author-9010001",
       "rect": [
-        690.0,
-        674.0,
+        698.0,
+        659.88,
         47.48,
         16.25
       ],
@@ -5370,8 +5494,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010001/comment-who-9010001/comment-age-9010001",
       "rect": [
-        743.48,
-        674.63,
+        751.48,
+        660.5,
         88.77,
         15.0
       ],
@@ -5390,9 +5514,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010001/comment-who-9010001/#3",
       "rect": [
-        838.24,
-        682.13,
-        317.76,
+        846.24,
+        668.0,
+        309.76,
         0.0
       ],
       "role": "group",
@@ -5411,9 +5535,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010001/comment-text-9010001",
       "rect": [
-        690.0,
-        694.25,
-        466.0,
+        698.0,
+        682.0,
+        458.0,
         32.5
       ],
       "role": "text",
@@ -5435,9 +5559,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010002",
       "rect": [
         651.0,
-        736.75,
+        724.5,
         515.0,
-        68.75
+        72.5
       ],
       "role": "article",
       "scale": 1.0
@@ -5455,9 +5579,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010002/guide-9010002-1",
       "rect": [
         665.0,
-        736.75,
+        724.5,
         1.0,
-        68.75
+        72.5
       ],
       "role": "group",
       "scale": 1.0
@@ -5475,9 +5599,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010002/comment-who-9010002",
       "rect": [
         672.0,
-        744.75,
+        732.5,
         484.0,
-        16.25
+        20.0
       ],
       "role": "group",
       "scale": 1.0
@@ -5494,9 +5618,9 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010002/comment-who-9010002/#0",
       "rect": [
         672.0,
-        746.88,
-        12.0,
-        12.0
+        732.5,
+        20.0,
+        20.0
       ],
       "role": "group",
       "scale": 1.0
@@ -5514,8 +5638,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010002/comment-who-9010002/comment-author-9010002",
       "rect": [
-        690.0,
-        744.75,
+        698.0,
+        734.38,
         31.66,
         16.25
       ],
@@ -5536,8 +5660,8 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010002/comment-who-9010002/comment-age-9010002",
       "rect": [
-        727.66,
-        745.38,
+        735.66,
+        735.0,
         88.58,
         15.0
       ],
@@ -5556,9 +5680,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010002/comment-who-9010002/#3",
       "rect": [
-        822.24,
-        752.88,
-        333.76,
+        830.24,
+        742.5,
+        325.76,
         0.0
       ],
       "role": "group",
@@ -5577,9 +5701,9 @@
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010002/comment-text-9010002",
       "rect": [
-        690.0,
-        765.0,
-        466.0,
+        698.0,
+        756.5,
+        458.0,
         32.5
       ],
       "role": "text",

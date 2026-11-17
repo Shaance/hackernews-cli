@@ -553,10 +553,15 @@ done
 trail_top=$(jq '[.elements[] | select((.key // "") == "trail") | .rect[1]][0] // -1' "$ACTUAL/trail-top.json")
 trail_after=$(jq '[.elements[] | select((.key // "") == "trail") | .rect[1]][0] // -2' "$ACTUAL/trail-scrolled.json")
 viewport=$(jq '[.elements[] | select((.key // "") == "discussion-scroll") | .rect[1]][0] // -3' "$ACTUAL/trail-scrolled.json")
+header=$(jq '[.elements[] | select((.key // "") == "discussion-header") | .rect][0] // [-1,-1,0,0]' "$ACTUAL/trail-scrolled.json")
+header_y=$(jq '.[1]' <<<"$header")
+header_bottom=$(jq '.[1] + .[3]' <<<"$header")
 row_top=$(jq '[.elements[] | select((.key // "") == "comment-901000") | .rect[1]][0] // -1' "$ACTUAL/trail-top.json")
 row_after=$(jq '[.elements[] | select((.key // "") == "comment-901000") | .rect[1]][0] // -2' "$ACTUAL/trail-scrolled.json")
-if [ "$trail_after" = "$viewport" ] && awk -v a="$row_top" -v b="$row_after" 'BEGIN { exit !(b < a) }'; then
-  pass "sticky trail (pinned at the viewport top y=$trail_after, rows $row_top -> $row_after)"
+if [ "$header_y" = "$viewport" ] && [ "$trail_top" = "$trail_after" ] \
+  && awk -v a="$row_top" -v b="$row_after" -v t="$trail_after" -v h="$header_y" -v end="$header_bottom" \
+    'BEGIN { exit !(b < a && t >= h && t < end) }'; then
+  pass "sticky trail (inside pinned header y=$header_y, trail y=$trail_after, rows $row_top -> $row_after)"
 else
   bad "sticky trail (trail $trail_top -> $trail_after, viewport $viewport, rows $row_top -> $row_after)"
 fi

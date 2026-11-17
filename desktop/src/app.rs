@@ -29,10 +29,10 @@ use hn_lib::HNCLIItem;
 use rune::tok::{self, radius, type_};
 use rune::{
     col, el, row, text, AppSpec, Color, Cx, El, KeyEvent, ScrollSpec, Spring, SpringPair,
-    Transition, Tx, Waker, WindowHandle,
+    TextStyle, Transition, Tx, Waker, WindowHandle,
 };
 use rune_kit::shell::PaneMotion;
-use rune_kit::{Keybind, Kit, PaneState, SegmentedControl, SplitView, Toast, ToastRegion, Toolbar};
+use rune_kit::{Keybind, Kit, PaneState, SplitView, Toast, ToastRegion, Toolbar};
 
 use crate::bookmarks::SavedView;
 use crate::bridge::{Bridge, Request, StoryRequest, StoryUpdate};
@@ -51,7 +51,9 @@ const ROW_HEIGHT: f32 = 56.0;
 /// Window width at which the feed becomes two columns (DESIGN.md's table).
 const BREAKPOINT: f32 = 1400.0;
 /// The grid the first request asks for: the 1180×760 default window, one column.
-const DEFAULT_GRID: (usize, usize) = (11, 1);
+const DEFAULT_GRID: (usize, usize) = (10, 1);
+const FEED_GUTTER: f32 = 20.0;
+const DEFAULT_FEED_HEIGHT: f32 = 661.0;
 /// How long the save confirmation stays.
 const TOAST_SECONDS: f64 = 2.4;
 /// How long a request may stay in flight before the feed says so and offers a retry. Without
@@ -930,11 +932,6 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
             changed |= landed;
         }
     }
-    // A reveal the trail's removal aborted, asked again now that the layout has no trail.
-    if let Some(id) = s.story.as_mut().and_then(|open| open.pending_reveal.take()) {
-        tx.scroll_into_view_in("discussion-scroll", format!("comment-{id}"));
-        changed = true;
-    }
     // `O` / "Open in browser": the real page, in the system browser, via the TUI's safe
     // opener (scheme-checked, HN item-page fallback). Headless runs never open anything.
     if std::mem::take(&mut s.pending_external) {
@@ -1217,8 +1214,7 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
         }
     }
     let in_source = story.source.is_some();
-    let (root, cursor, had_trail) = story.with_thread(|thread| (thread.root(), thread.cursor(),
-        thread.cursor().and_then(|id| thread.parent_of(id)).is_some()));
+    let (root, cursor) = story.with_thread(|thread| (thread.root(), thread.cursor()));
     match key {
         StoryKey::None => false,
         StoryKey::Back => unreachable!("back is handled before borrowing the story"),
@@ -1245,7 +1241,7 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             let can_activate = id.is_some_and(|id| story.thread.has_children(id));
             if let Some(id) = id { s.activate_comment(id); }
             if can_activate {
-                if let Some(story) = s.story.as_mut() { thread_moved(story, root, had_trail, tx); }
+                if let Some(story) = s.story.as_mut() { thread_moved(story, root, tx); }
             }
             true
         }
@@ -1286,7 +1282,7 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
                 StoryKey::PopTrail if cursor != source_root => thread.pop_trail(),
                 _ => false,
             });
-            if changed { thread_moved(story, root, had_trail, tx); }
+            if changed { thread_moved(story, root, tx); }
             true
         }
         StoryKey::Unfold => {
@@ -1295,7 +1291,7 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             let retry = id.is_some_and(|id| story.thread.children_of(id).is_empty()
                 && story.thread.reply_batch(id, false).is_empty()
                 && !story.thread.reply_batch(id, true).is_empty());
-            if story.with_thread(|thread| thread.unfold()) { thread_moved(story, root, had_trail, tx); }
+            if story.with_thread(|thread| thread.unfold()) { thread_moved(story, root, tx); }
             if let Some(id) = id { s.load_replies(id, retry); }
             true
         }
@@ -1348,7 +1344,7 @@ fn reveal_citation(story: &Story, tx: &mut Tx, focus: bool) {
 /// A transition that re-roots the tree glides the viewport to the new root on `GLIDE` — the
 /// rows crossfade in place, so the offset is the only thing that travels. Anything else just
 /// reveals the row the cursor landed on.
-fn thread_moved(story: &mut Story, before: Option<i32>, had_trail: bool, tx: &mut Tx) {
+fn thread_moved(story: &mut Story, before: Option<i32>, tx: &mut Tx) {
     if let Some(source) = &story.source {
         if source.nav.root != before {
             tx.scroll_to_y("source-viewer", 0.0);
@@ -1358,16 +1354,9 @@ fn thread_moved(story: &mut Story, before: Option<i32>, had_trail: bool, tx: &mu
         return;
     }
     if story.thread.root() != before {
-        story.pending_reveal = None;
         tx.scroll_to("discussion-scroll", 0.0, 0.0);
     } else if let Some(id) = story.thread.cursor() {
         tx.scroll_into_view_in("discussion-scroll", format!("comment-{id}"));
-        // The trail is sticky, and a sticky element that leaves the tree in the same commit
-        // aborts the reveal asked for that commit: the row lands where the trail's removal
-        // left it. With no ancestors left there is no trail, so ask again next frame, when
-        // the layout no longer holds one.
-        let no_trail = story.thread.parent_of(id).is_none();
-        story.pending_reveal = ((had_trail || story.pending_reveal.is_some()) && no_trail).then_some(id);
     }
 }
 
@@ -1395,33 +1384,14 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
     let cols = if wide { 2 } else { 1 };
     // The feed's grid is only measurable while the feed is on screen: a story open must not
     // overwrite it with the default and make `poll` re-request the wrong window.
+    let feed_height = cx.layout_with("feed-list", |rect| rect[3]).unwrap_or(DEFAULT_FEED_HEIGHT);
     if s.story.is_none() {
-        let rows = cx
-            .layout_with("feed-list", |rect| {
-                (rect[3] / ROW_HEIGHT).floor().max(0.0) as usize
-            })
-            .filter(|rows| *rows > 0)
-            .unwrap_or(DEFAULT_GRID.0);
+        let gap = if cols == 2 { 0.0 } else { 2.0 };
+        let rows = ((feed_height - 2.0 * FEED_GUTTER + gap) / (ROW_HEIGHT + gap)).floor().max(1.0) as usize;
         s.measured.set(Some((rows, cols)));
     }
 
-    let tabs = SegmentedControl::new(
-        &["Top", "New", "Best", "Saved"],
-        Some(tab_index(s.feed.tab)),
-    )
-    .label("Feed")
-    .fit()
-    .on_pick(|s: &mut App, picked: usize, _tx: &mut Tx| {
-        let tab = tab_at(picked);
-        if tab != s.feed.tab {
-            let state = s.feed.state();
-            let action = feed_state::switch_tab(&state, tab);
-            s.apply(action);
-        }
-    })
-    .build(&k);
-
-    let mut toolbar = Toolbar::new().leading(tabs);
+    let mut toolbar = Toolbar::new().leading(feed_tabs(s, &k, t, accent, reduced));
     if s.feed.tab == StoryType::Saved {
         toolbar = toolbar.trailing(
             text(s.saved.path_label())
@@ -1430,6 +1400,7 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
                 .truncate_middle(),
         );
     }
+    toolbar = toolbar.trailing(brand(t));
 
     // One window, one `SplitView`: the feed is this window with the inspector collapsed, so the
     // inspector's slot exists before a story opens and its width can spring out from 0.
@@ -1443,12 +1414,12 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
                 t,
                 accent,
                 s.saved.contains(story.id()),
-            )),
+            )).trailing(brand(t)),
             story_view::inspector_pane(story, &k, t, accent, &mut overlays, reduced,
                 window.map_or(360.0, |rect| (rect[3] - 310.0).clamp(230.0, 440.0)),
                 [s.scroll_observer(), s.scroll_observer(), s.scroll_observer()]),
         ),
-        None => (feed_body(s, &k, t, accent, cols, reduced, contrast), toolbar, col()),
+        None => (feed_body(s, &k, t, accent, cols, reduced, contrast, feed_height), toolbar, col()),
     };
     let shell = SplitView::new(main)
         .toolbar(toolbar)
@@ -1502,6 +1473,39 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
         })
 }
 
+fn brand(t: tok::Theme) -> El {
+    row().key("brand").role("group").label("Hacker News").gap(6.0).center_y()
+        .child(row().size(24.0, 24.0).center().radius(4.0)
+            .fill(rune::color::hex("#ff6600").expect("the brand color is valid"))
+            .child(text("HN").font(TextStyle::new(10.0, 700.0)).color(Color::WHITE).a11y_hidden()))
+        .child(text("Hacker News").font(TextStyle::new(13.0, 500.0)).color(t.text_secondary).a11y_hidden())
+}
+
+fn feed_tabs(s: &App, k: &Kit, t: tok::Theme, accent: Color, reduced: bool) -> El {
+    let selected = tab_index(s.feed.tab);
+    let indicator = col().key("indicator").h(36.0).grid_cell(selected).radius(7.0).fill(k.c.bg_base)
+        .box_shadow(rune::Shadow { spread: 0.5, color: k.c.border_strong, ..Default::default() })
+        .motion(if reduced { Spring::NONE } else { Spring::new(0.18, 0.0) }).a11y_hidden()
+        .child(row().pin(Some(0.0), None, Some(0.0), Some(3.0)).h(2.0).center()
+            .child(el().w(16.0).h(2.0).radius(1.0).fill(accent)));
+    let mut tabs = row().key("feed-tabs").role("radiogroup").label("Feed").focus_group()
+        .equal_columns(4).h(36.0).center_y().radius(7.0).fill(k.c.layer_01).child(indicator);
+    for (i, label) in ["Top", "New", "Best", "Saved"].into_iter().enumerate() {
+        tabs = tabs.child(row().key(format!("segment{i}")).grid_cell(i).role("radio").label(label)
+            .position_in_set(i + 1, 4).focusable(true).focus_selected(i == selected)
+            .focus_ring(2.0, 1.0, accent).h(36.0).px(16.0).center().radius(7.0)
+            .hover(k.c.hover).press(k.c.pressed)
+            .on_press_tx(move |s: &mut App, tx: &mut Tx| {
+                // Pointer selection returns arrows to the feed; an accessibility-focused tab keeps them.
+                if !tx.by_keys() && !tx.focus_visible() { tx.blur(); }
+                let tab = tab_at(i);
+                if tab != s.feed.tab { s.apply(feed_state::switch_tab(&s.feed.state(), tab)); }
+            })
+            .child(text(label).font(type_::TITLE).color(if i == selected { t.text } else { t.text_secondary }).a11y_hidden()));
+    }
+    tabs
+}
+
 /// The split's motion: `MORPH`'s spring, scaled by the pane's width so a narrow window does not
 /// feel twitchy, with the tail fade DESIGN.md asks for.
 fn pane_motion() -> PaneMotion {
@@ -1524,7 +1528,7 @@ fn story_main(story: &Story, k: &Kit, t: tok::Theme, pane: Pane<'_>) -> El {
         )
 }
 
-fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize, reduced: bool, contrast: bool) -> El {
+fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize, reduced: bool, contrast: bool, height: f32) -> El {
     let mut body = col().w_full().h_full();
     if let Some(error) = s.saved.error() {
         body = body.child(banner(error, t, accent));
@@ -1534,7 +1538,7 @@ fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize, reduce
         body = body.child(feed_error(error, t, accent));
     }
     body.child(
-        feed_list(s, t, accent, cols, reduced)
+        feed_list(s, t, accent, cols, reduced, height)
             .on_wheel(App::pointer_wheel)
             .scroll(ScrollSpec {
                 stick_bottom: false,
@@ -1550,12 +1554,12 @@ fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize, reduce
 /// Column-major: story `c * rows + r`, so the left column fills first and `j` walks straight
 /// down it. One scroll viewport for both columns; every cell keeps its own key, so
 /// `Tx::scroll_into_view` reaches a story whichever column it is in.
-fn feed_list(s: &App, t: tok::Theme, accent: Color, cols: usize, reduced: bool) -> El {
+fn feed_list(s: &App, t: tok::Theme, accent: Color, cols: usize, reduced: bool, height: f32) -> El {
     let shown = s.feed.stories.len();
     let per_column = shown.div_ceil(cols.max(1));
     // Keep the scroll viewport stable; only a completed page turn remounts this group.
     if s.feed.status.loading && s.feed.stories.is_empty() && s.feed.status.error.is_none() {
-        return feed_skeleton(s, t, cols, reduced);
+        return feed_skeleton(s, t, cols, reduced, height);
     }
     let mut transition = Transition::none();
     if !reduced && s.arrival != Arrival::None {
@@ -1573,12 +1577,15 @@ fn feed_list(s: &App, t: tok::Theme, accent: Color, cols: usize, reduced: bool) 
         .transition(transition)
         .instant_changes()
         .w_full()
+        .pt(feed_gutter(height, per_column, cols,
+            s.feed.tab != StoryType::Saved && per_column >= s.measured.get().unwrap_or(DEFAULT_GRID).0))
+        .pb(FEED_GUTTER)
         .gap(if cols == 2 { 0.0 } else { 2.0 });
     if shown == 0 && s.feed.status.error.is_none() {
         let label = if s.feed.tab == StoryType::Saved { "No saved stories yet" } else { "No stories to show" };
-        list = list.h_full().center().role("status").label(label)
+        list = list.px(24.0).role("status").label(label)
             .child(text(label).font(type_::BODY).color(t.text_secondary).a11y_hidden());
-        return col().key("feed-list").w_full().h_full().child(list.grow(1.0));
+        return col().key("feed-list").w_full().child(list);
     }
     for r in 0..per_column {
         let mut line = row().key(format!("line-{r}")).w_full().h(ROW_HEIGHT);
@@ -1597,6 +1604,12 @@ fn feed_list(s: &App, t: tok::Theme, accent: Color, cols: usize, reduced: bool) 
         list = list.child(line);
     }
     col().key("feed-list").w_full().child(list)
+}
+
+fn feed_gutter(height: f32, rows: usize, cols: usize, full: bool) -> f32 {
+    let gap = if cols == 2 { 0.0 } else { 2.0 };
+    let content = rows as f32 * ROW_HEIGHT + rows.saturating_sub(1) as f32 * gap;
+    if full { ((height - content) / 2.0).max(FEED_GUTTER) } else { FEED_GUTTER }
 }
 
 fn story_row(s: &App, i: usize, t: tok::Theme, accent: Color, reduced: bool) -> El {
@@ -1936,7 +1949,7 @@ fn feed_error(error: &str, t: tok::Theme, accent: Color) -> El {
 }
 
 /// Decorative rows occupy the same viewport and lanes as the feed, with one status owner.
-fn feed_skeleton(s: &App, t: tok::Theme, cols: usize, reduced: bool) -> El {
+fn feed_skeleton(s: &App, t: tok::Theme, cols: usize, reduced: bool, height: f32) -> El {
     let rows = s.measured.get().unwrap_or(DEFAULT_GRID).0;
     let transition = if reduced { Transition::none() } else {
         let mut transition = Transition::asymmetric(Transition::opacity(), Transition::opacity())
@@ -1944,7 +1957,9 @@ fn feed_skeleton(s: &App, t: tok::Theme, cols: usize, reduced: bool) -> El {
         transition.insertion.opacity = 0.35;
         transition
     };
-    let mut skeleton = col().key("feed-placeholder").transition(transition).instant_changes().motion(Spring::NONE).w_full().gap(if cols == 2 { 0.0 } else { 2.0 }).a11y_hidden();
+    let mut skeleton = col().key("feed-placeholder").transition(transition).instant_changes().motion(Spring::NONE).w_full()
+        .pt(feed_gutter(height, rows, cols, true)).pb(FEED_GUTTER)
+        .gap(if cols == 2 { 0.0 } else { 2.0 }).a11y_hidden();
     for r in 0..rows {
         let mut line = row().w_full().h(ROW_HEIGHT);
         for c in 0..cols {
@@ -2550,7 +2565,7 @@ mod tests {
             assert!(std::time::Instant::now() < deadline, "fake fill must land");
             std::thread::yield_now();
         }
-        assert_eq!(s.feed.display_cursor, 11);
+        assert_eq!(s.feed.display_cursor, DEFAULT_GRID.0);
         assert_eq!(s.feed_revision, 1);
         assert!(s.pending_arrival.is_none());
         poll(&mut s, 0.0, &mut Tx::default());
@@ -2585,7 +2600,7 @@ mod tests {
             assert!(std::time::Instant::now() < deadline, "fake fill must land");
             std::thread::yield_now();
         }
-        assert_eq!(s.feed.display_cursor, 11, "the page fill still lands");
+        assert_eq!(s.feed.display_cursor, DEFAULT_GRID.0, "the page fill still lands");
         press(&mut s, rune::Key::Escape);
         assert!(s.story.is_none());
         assert_eq!(s.feed_revision, 0, "returning to the feed must not replay the fade");
@@ -2682,7 +2697,7 @@ mod tests {
     fn loading_shell_entrance_survives_a_new_keyed_parent() {
         fn stage(s: &App, cx: &mut Cx<App>) -> El {
             let child = if s.feed.status.loading {
-                col().key("new-parent").w_full().child(feed_skeleton(s, tok::theme(cx.system_dark()), 1, false))
+                col().key("new-parent").w_full().child(feed_skeleton(s, tok::theme(cx.system_dark()), 1, false, 760.0))
             } else { col().key("old-parent").w_full() };
             col().w_full().h_full().child(child)
         }
@@ -2749,7 +2764,7 @@ mod tests {
         assert_eq!(rt.accessibility_tree().nodes.iter().filter(|(_, node)| node.is_busy()).count(), 1);
         assert_eq!(rt.state.feed.stories[0].id, 1);
         poll_until(&mut rt.state, |s| !s.feed.status.loading);
-        assert_eq!(rt.state.feed.stories[0].id, 12);
+        assert_eq!(rt.state.feed.stories[0].id, 1 + DEFAULT_GRID.0 as i32);
         press(&mut rt.state, rune::Key::Text("p".into()));
         assert!(!rt.state.feed.status.loading, "cached return settles before a frame can show busy");
         rt.update(|_, tx| tx.instant());
@@ -3083,6 +3098,84 @@ mod tests {
     }
 
     #[test]
+    fn hovering_across_a_root_reply_boundary_keeps_rows_under_the_pointer() {
+        let mut s = app(true, SavedView::in_memory());
+        scene_comments(&mut s);
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.frame(0.0);
+        let row = |rt: &rune::Runtime<App>, key: &str| rt.elements().into_iter()
+            .find(|e| e.key.as_deref() == Some(key) && !e.exiting).unwrap();
+        let before_root = row(&rt, "comment-901");
+        let before_reply = row(&rt, "comment-9010");
+        let x = before_reply.rect[0] + before_reply.rect[2] / 2.0;
+        let boundary = before_reply.rect[1];
+        rt.pointer_move(x, before_root.rect[1] + before_root.rect[3] - 1.0);
+        rt.frame(0.05);
+        for dy in [1.0, 2.0, 1.0, 2.0] {
+            rt.pointer_move(x, boundary + dy);
+            rt.frame(0.05);
+            assert_eq!(rt.state.story.as_ref().unwrap().thread.cursor(), Some(9010), "1 pt movement must stay on the reply");
+            let root = row(&rt, "comment-901");
+            let reply = row(&rt, "comment-9010");
+            assert_eq!(root.rect, before_root.rect, "hover must not move the root row");
+            assert_eq!(reply.rect, before_reply.rect, "hover must not move the reply row");
+            assert_eq!(reply.scrolled, before_reply.scrolled, "hover must not scroll the discussion");
+        }
+    }
+
+    #[test]
+    fn hovering_between_equal_depths_with_different_ancestors_keeps_geometry() {
+        let mut s = app(true, SavedView::in_memory());
+        scene_comments(&mut s);
+        let comments: Vec<_> = crate::fixtures::thread().into_iter()
+            .filter(|c| [901, 9010, 903, 9030].contains(&c.id)).collect();
+        s.story.as_mut().unwrap().thread = crate::comments::Thread::from_comments(&comments);
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.frame(0.0);
+        let row = |rt: &rune::Runtime<App>, key: &str| rt.elements().into_iter()
+            .find(|e| e.key.as_deref() == Some(key) && !e.exiting).unwrap();
+        let first = row(&rt, "comment-9010").visible;
+        rt.pointer_move(first[0] + first[2] / 2.0, first[1] + first[3] / 2.0);
+        rt.frame(0.5);
+        let before = row(&rt, "comment-9030");
+        let [x, y, w, h] = before.visible;
+        assert!(w > 0.0 && h > 0.0);
+        rt.pointer_move(x + w / 2.0, y + h / 2.0);
+        rt.frame(0.05);
+        assert_eq!(rt.state.story.as_ref().unwrap().thread.cursor(), Some(9030));
+        assert_eq!(row(&rt, "comment-9030").rect, before.rect);
+        assert_eq!(row(&rt, "comment-9030").scrolled, before.scrolled);
+    }
+
+    #[test]
+    fn disclosure_edge_click_folds_without_slow_row_reflow() {
+        for (source, reduced) in [(false, false), (true, false), (false, true)] {
+            let mut s = app(true, SavedView::in_memory());
+            scene_comments(&mut s);
+            if source { s.open_citation(0); }
+            let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+            rt.set_system_reduced_motion(reduced);
+            rt.frame(0.0);
+            let elements = rt.elements();
+            let button = elements.iter().find(|e| e.key.as_deref() == Some("comment-disclosure-901") && !e.inert).unwrap();
+            assert_eq!((button.rect[2], button.rect[3]), (28.0, 28.0));
+            let [x, y, _, _] = button.rect;
+            rt.pointer_down(x + 1.0, y + 1.0);
+            rt.pointer_up(x + 1.0, y + 1.0);
+            rt.frame(0.0);
+            let story = rt.state.story.as_ref().unwrap();
+            assert!(if source { story.source.as_ref().unwrap().nav.folded.contains(&901) } else { story.thread.is_folded(901) });
+            let reply = if source { "source-comment-9010" } else { "comment-9010" };
+            assert!(!rt.elements().iter().any(|e| e.key.as_deref() == Some(reply)));
+            let next = if source { "source-comment-901" } else { "comment-902" };
+            let y0 = rt.elements().iter().find(|e| e.key.as_deref() == Some(next) && !e.inert).unwrap().rect[1];
+            rt.frame(0.15);
+            let y1 = rt.elements().iter().find(|e| e.key.as_deref() == Some(next) && !e.inert).unwrap().rect[1];
+            assert!((y0 - y1).abs() < 0.5, "folded rows must not drift after the response: source={source} reduced={reduced} {y0} -> {y1}");
+        }
+    }
+
+    #[test]
     fn arriving_replies_fade_once_and_respect_reduced_motion() {
         for reduced in [false, true] {
             let mut s = app(true, SavedView::in_memory());
@@ -3386,6 +3479,71 @@ mod tests {
     }
 
     #[test]
+    fn full_feed_has_balanced_gutters_and_pointer_tabs_return_navigation_to_rows() {
+        for size in [(800.0, 640.0), (1180.0, 760.0), (1600.0, 900.0)] {
+            let mut s = app(true, saved_store());
+            s.request(DEFAULT_GRID, Ranking::Fresh);
+            let mut rt = rune::Runtime::new(s, view, size, rune::Env::new(true, 1.0));
+            rt.on_key = Some(on_key);
+            rt.frame(0.0);
+            for _ in 0..2 {
+                rt.update(|s, tx| { s.request(s.measured.get().unwrap_or(DEFAULT_GRID), Ranking::Fresh); tx.instant(); });
+                rt.frame(0.0);
+            }
+            let elements = rt.elements();
+            let viewport = elements.iter().find(|e| e.key.as_deref() == Some("feed-list")).unwrap().rect;
+            let first = elements.iter().find(|e| e.key.as_deref() == Some("story-1")).unwrap().rect;
+            let (rows, cols) = rt.state.measured.get().unwrap();
+            let last_id = rt.state.feed.stories[(rows - 1).min(rt.state.feed.stories.len() - 1)].id;
+            let last = elements.iter().find(|e| e.key.as_deref() == Some(&format!("story-{last_id}"))).unwrap().rect;
+            let top = first[1] - viewport[1];
+            let bottom = viewport[1] + viewport[3] - last[1] - last[3];
+            assert!(top >= FEED_GUTTER && (top - bottom).abs() < 1.0, "{size:?}: {top} vs {bottom}");
+            assert_eq!(cols, if size.0 >= BREAKPOINT { 2 } else { 1 });
+            let brand = elements.iter().find(|e| e.key.as_deref() == Some("brand")).unwrap();
+            assert_eq!(brand.label.as_deref(), Some("Hacker News"));
+            assert!(!brand.focusable);
+            let new = elements.iter().find(|e| e.key.as_deref() == Some("segment1")).unwrap();
+            assert_eq!((new.role, new.rect[3]), ("radio", 36.0));
+            let [x, y, w, h] = new.rect;
+            rt.key(KeyEvent { key: rune::Key::Tab, mods: Default::default() });
+            rt.frame(0.0);
+            rt.pointer_down(x + w / 2.0, y + h / 2.0);
+            rt.pointer_up(x + w / 2.0, y + h / 2.0);
+            rt.frame(0.0);
+            rt.key(KeyEvent { key: rune::Key::Down, mods: Default::default() });
+            rt.frame(0.0);
+            assert_eq!((rt.state.feed.tab, rt.state.feed.selected), (StoryType::New, 1));
+            rt.key(KeyEvent { key: rune::Key::Text("4".into()), mods: Default::default() });
+            rt.frame(0.0);
+            let saved = rt.elements();
+            let viewport = saved.iter().find(|e| e.key.as_deref() == Some("feed-list")).unwrap().rect;
+            let first = saved.iter().find(|e| e.key.as_deref() == Some("story-11")).unwrap().rect;
+            assert!((first[1] - viewport[1] - FEED_GUTTER).abs() < 0.5, "short Saved stays top-aligned");
+            rt.state.headless = false;
+            rt.key(KeyEvent { key: rune::Key::Text("1".into()), mods: Default::default() });
+            rt.frame(0.0);
+            let loading = rt.elements();
+            let viewport = loading.iter().find(|e| e.key.as_deref() == Some("feed-list")).unwrap().rect;
+            let line = loading.iter().find(|e| e.path.ends_with("feed-placeholder/#0")).unwrap().rect;
+            assert!((line[1] - viewport[1] - feed_gutter(viewport[3], rows, cols, true)).abs() < 0.5);
+            rt.state.headless = true;
+            rt.poll = Some(poll);
+            rt.set_viewport(if cols == 1 { (1600.0, 900.0) } else { (800.0, 640.0) }, 1.0);
+            for _ in 0..4 { rt.frame(0.25); }
+            let (rows, new_cols) = rt.state.measured.get().unwrap();
+            assert_ne!(cols, new_cols, "resize crosses the column breakpoint");
+            let elements = rt.elements();
+            let viewport = elements.iter().find(|e| e.key.as_deref() == Some("feed-list")).unwrap().rect;
+            let first = elements.iter().find(|e| e.key.as_deref() == Some("story-1")).unwrap().rect;
+            let last_id = rt.state.feed.stories[rows - 1].id;
+            let last = elements.iter().find(|e| e.key.as_deref() == Some(&format!("story-{last_id}"))).unwrap().rect;
+            assert!(((first[1] - viewport[1]) - (viewport[1] + viewport[3] - last[1] - last[3])).abs() < 1.0,
+                "resized full pages retain balanced gutters: {size:?} {rows} {new_cols} {viewport:?} {first:?} {last:?}");
+        }
+    }
+
+    #[test]
     fn intentionally_focused_tab_radios_keep_their_arrow_navigation() {
         let mut s = app(true, SavedView::in_memory());
         s.request((11, 1), Ranking::Fresh);
@@ -3401,6 +3559,23 @@ mod tests {
         route(&mut rt, rune::Key::Text("3".into()));
         assert_eq!(rt.state.feed.tab, StoryType::New, "dialog input must not switch feeds");
         assert!(rt.state.settings.is_some());
+    }
+
+    #[test]
+    fn accessibility_click_keeps_tab_group_keyboard_navigation() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request(DEFAULT_GRID, Ranking::Fresh);
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.frame(0.0);
+        assert!(rt.accessibility_action("segment1", rune::accesskit::Action::Focus, None));
+        rt.frame(0.0);
+        assert!(rt.accessibility_action("segment1", rune::accesskit::Action::Click, None));
+        rt.frame(0.0);
+        assert_eq!(rt.state.feed.tab, StoryType::New);
+        assert!(rt.elements().iter().any(|e| e.key.as_deref() == Some("segment1") && e.focused));
+        route(&mut rt, rune::Key::Down);
+        assert_eq!(rt.state.feed.tab, StoryType::Best);
     }
 
     #[test]
@@ -3769,13 +3944,13 @@ mod tests {
 
         let viewport = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("discussion-scroll")).unwrap().rect;
         let point = (viewport[0] + viewport[2] / 2.0, viewport[1] + viewport[3] / 2.0);
-        let header_y = |rt: &rune::Runtime<App>| rt.elements().iter()
-            .find(|e| e.key.as_deref() == Some("discussion-header")).unwrap().rect[1];
-        let before = header_y(&rt);
+        let scroll_y = |rt: &rune::Runtime<App>| rt.elements().iter()
+            .find(|e| e.key.as_deref() == Some("discussion-header")).unwrap().scrolled[1];
+        let before = scroll_y(&rt);
         let commits = rt.stats.commits;
         rt.wheel(point.0, point.1, -5.0);
         rt.frame(1.0 / 120.0);
-        assert!(header_y(&rt) < before, "the real discussion viewport scrolled");
+        assert!(scroll_y(&rt) > before, "the real discussion viewport scrolled");
         assert_eq!(rt.state.scroll_pacing.get(), ScrollPacing::Moved);
         assert_eq!(wakes.load(Ordering::Relaxed), 1, "the first movement wakes poll");
         assert_eq!(rt.stats.commits, commits, "the moving offset callback does not rebuild the view");
@@ -4105,28 +4280,29 @@ mod tests {
     }
 
     #[test]
-    fn discussion_retries_reveal_only_when_a_trail_disappears() {
-        let mut s = app(true, SavedView::in_memory());
-        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
-        press(&mut s, rune::Key::Text("j".into()));
-        assert_eq!(s.story.as_ref().unwrap().thread.cursor(), Some(902));
-        assert_eq!(s.story.as_ref().unwrap().pending_reveal, None, "root-to-root needs no retry");
-        press(&mut s, rune::Key::Text("k".into()));
-        s.activate_comment(901);
-        press(&mut s, rune::Key::Text("j".into()));
-        assert_eq!(s.story.as_ref().unwrap().thread.cursor(), Some(9010));
-        press(&mut s, rune::Key::Text("u".into()));
-        assert_eq!(s.story.as_ref().unwrap().pending_reveal, Some(901), "removing the trail needs a retry");
-        press(&mut s, rune::Key::Text("j".into()));
-        assert_eq!(s.story.as_ref().unwrap().pending_reveal, None, "restoring the trail cancels the retry");
-        press(&mut s, rune::Key::Text("u".into()));
-        // A second key before the next poll must reveal the new root, not the old one.
-        press(&mut s, rune::Key::Text("]".into()));
-        assert_eq!(s.story.as_ref().unwrap().pending_reveal, Some(902));
-        assert!(poll(&mut s, 0.0, &mut Tx::default()));
-        assert_eq!(s.story.as_ref().unwrap().pending_reveal, None);
-        press(&mut s, rune::Key::Enter);
-        assert_eq!(s.story.as_ref().unwrap().pending_reveal, None, "Enter on a leaf is a no-op");
+    fn keyboard_return_to_root_then_pointer_selection_keeps_the_visible_row() {
+        for reduced in [false, true] {
+            let mut s = app(true, SavedView::in_memory());
+            scene_comments(&mut s);
+            let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+            rt.set_system_reduced_motion(reduced);
+            rt.on_key = Some(on_key);
+            rt.poll = Some(poll);
+            rt.frame(0.0);
+            route(&mut rt, rune::Key::Text("j".into()));
+            route(&mut rt, rune::Key::Text("u".into()));
+            assert_eq!(rt.state.story.as_ref().unwrap().thread.cursor(), Some(901));
+            let root = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("comment-901")).unwrap();
+            assert!(root.visible[3] > 0.0, "the returned parent is revealed");
+            let reply = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("comment-9010")).unwrap();
+            let [x, y, w, h] = reply.visible;
+            rt.pointer_move(x + w / 2.0, y + h / 2.0);
+            rt.frame(0.05);
+            rt.frame(0.1);
+            assert_eq!(rt.state.story.as_ref().unwrap().thread.cursor(), Some(9010));
+            let after = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("comment-9010")).unwrap();
+            assert_eq!(after.scrolled, reply.scrolled, "the pointer must not trigger a stale reveal");
+        }
     }
 
     #[test]
@@ -4138,9 +4314,9 @@ mod tests {
         rt.update(|_, tx| tx.scroll_to_y("discussion-scroll", 1000.0));
         for _ in 0..40 { rt.frame(1.0 / 60.0); }
         let y = |rt: &rune::Runtime<App>| rt.elements().iter()
-            .find(|e| e.key.as_deref() == Some("discussion-header")).unwrap().rect[1];
+            .find(|e| e.key.as_deref() == Some("discussion-header")).unwrap().scrolled[1];
         let before = y(&rt);
-        assert!(before < 0.0, "the reader scrolled away from the first comment");
+        assert!(before > 0.0, "the reader scrolled away from the first comment");
         route(&mut rt, rune::Key::Text("k".into()));
         for _ in 0..20 { rt.frame(1.0 / 60.0); }
         assert!((y(&rt) - before).abs() < 0.5, "a boundary key must not reveal the unchanged cursor");

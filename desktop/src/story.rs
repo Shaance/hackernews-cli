@@ -167,10 +167,6 @@ pub struct Story {
     pub(crate) source: Option<SourceView>,
     /// `L`'s chooser, when it is open.
     pub links: Option<LinkChooser>,
-    /// A comment the next frame must scroll into view again. A sticky element that leaves the
-    /// tree in the same commit aborts the reveal asked for that commit, so the trail's last
-    /// segment asks once more, when the layout no longer holds it.
-    pub pending_reveal: Option<i32>,
 }
 
 impl Story {
@@ -200,7 +196,6 @@ impl Story {
             citation_focus: false,
             source: None,
             links: None,
-            pending_reveal: None,
         }
     }
 
