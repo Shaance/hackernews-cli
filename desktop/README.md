@@ -83,12 +83,15 @@ Two consequences of a native child view, both worth knowing before you use it:
 ## Run it
 
 ```sh
-cargo run --release --manifest-path desktop/Cargo.toml   # the window
-cargo install --path desktop                            # `hn-desktop` on PATH
+cd desktop
+cargo run --release      # the window
+cargo install --path .   # `hn-desktop` on PATH
 ```
 
 The crate is its own workspace root with its own `rust-toolchain.toml` (1.99.1, which Rune
-needs; the repo root pins 1.88 for the TUI). `--locked` works: `desktop/Cargo.lock` is committed.
+needs; the repo root pins 1.88 for the TUI). Run these from inside `desktop/`: rustup picks the
+toolchain from the current directory, not from `--manifest-path`, so running them from the repo
+root builds with 1.88 and fails. `--locked` works: `desktop/Cargo.lock` is committed.
 
 Two launch flags exist for the GUI proof below, because this machine denies osascript assistive
 access and nothing outside the process can press a key or raise its window:
