@@ -55,7 +55,7 @@ const BREAKPOINT: f32 = 1200.0;
 const DEFAULT_GRID: (usize, usize) = (11, 1);
 const FEED_GUTTER: f32 = 8.0;
 const DEFAULT_FEED_HEIGHT: f32 = 661.0;
-/// How long the save confirmation stays.
+/// How long a transient notice stays.
 const TOAST_SECONDS: f64 = 2.4;
 /// How long a request may stay in flight before the feed says so and offers a retry. Without
 /// it a dropped answer leaves the feed loading forever, and every page turn is refused.
@@ -72,7 +72,7 @@ const INSPECTOR_WIDTH: f32 = 543.0;
 const INSPECTOR_MIN: f32 = 360.0;
 const INSPECTOR_MAX: f32 = 640.0;
 
-/// The transient save confirmation. `until` is on the frame clock, so `poll` expires it.
+/// A transient notice. `until` is on the frame clock, so `poll` expires it.
 struct Notice {
     message: String,
     until: f64,
@@ -201,6 +201,40 @@ pub struct App {
 }
 
 impl App {
+    fn window_action(&mut self, action: WindowKey, tx: &mut Tx) -> bool {
+        match action {
+            WindowKey::Settings => self.open_summary_settings(),
+            WindowKey::Help => self.help = !self.help,
+            WindowKey::ToggleSplit => if self.story.is_some() {
+                self.inspector.set_open(!self.inspector.is_open());
+            },
+            WindowKey::ZoomIn | WindowKey::ZoomOut | WindowKey::ActualSize => {
+                let old_zoom = self.zoom;
+                let index = ZOOM_STEPS.iter().position(|&step| step == self.zoom)
+                    .expect("zoom is always a supported step");
+                self.zoom = match action {
+                    WindowKey::ZoomIn => ZOOM_STEPS[(index + 1).min(ZOOM_STEPS.len() - 1)],
+                    WindowKey::ZoomOut => ZOOM_STEPS[index.saturating_sub(1)],
+                    WindowKey::ActualSize => 1.0,
+                    _ => unreachable!(),
+                };
+                webview::set_zoom(self.zoom);
+                // An unchanged view-point rect does not trigger on_layout when zoom changes.
+                if let Some(rect) = &mut self.live_bounds {
+                    *rect = rect.map(|value| value * self.zoom / old_zoom);
+                    if self.live_shown { webview::set_bounds(*rect); }
+                }
+                if self.zoom != old_zoom || action == WindowKey::ActualSize {
+                    self.toast = Some(Notice { message: format!("{:.0}%", self.zoom * 100.0),
+                        until: f64::INFINITY, show_dot: false });
+                }
+                tx.instant();
+            }
+            WindowKey::None => return false,
+        }
+        true
+    }
+
     pub(crate) fn keyboard_navigation(&mut self, ev: &KeyEvent) {
         if self.settings.is_some() || self.help || keys::parity_key(ev).is_none() { return; }
         if matches!(ev.key, rune::Key::Tab | rune::Key::Home | rune::Key::End | rune::Key::PageUp | rune::Key::PageDown)
@@ -1087,43 +1121,8 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
 
 fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
     s.keyboard_navigation(ev);
-    // The shell's chords work everywhere, including over a dialog, as a menu item's would.
-    match keys::window_key(ev) {
-        WindowKey::Settings => {
-            s.open_summary_settings();
-            return true;
-        }
-        WindowKey::Help => {
-            s.help = !s.help;
-            return true;
-        }
-        WindowKey::ToggleSplit => {
-            if s.story.is_some() {
-                s.inspector.set_open(!s.inspector.is_open());
-            }
-            return true;
-        }
-        action @ (WindowKey::ZoomIn | WindowKey::ZoomOut | WindowKey::ActualSize) => {
-            let old_zoom = s.zoom;
-            let index = ZOOM_STEPS.iter().position(|&step| step == s.zoom)
-                .expect("zoom is always a supported step");
-            s.zoom = match action {
-                WindowKey::ZoomIn => ZOOM_STEPS[(index + 1).min(ZOOM_STEPS.len() - 1)],
-                WindowKey::ZoomOut => ZOOM_STEPS[index.saturating_sub(1)],
-                WindowKey::ActualSize => 1.0,
-                _ => unreachable!(),
-            };
-            webview::set_zoom(s.zoom);
-            // An unchanged view-point rect does not trigger on_layout when zoom changes.
-            if let Some(rect) = &mut s.live_bounds {
-                *rect = rect.map(|value| value * s.zoom / old_zoom);
-                if s.live_shown { webview::set_bounds(*rect); }
-            }
-            tx.instant();
-            return true;
-        }
-        WindowKey::None => {}
-    }
+    // AppKit consumes native menu equivalents first; this also handles headless and layout variants.
+    if s.window_action(keys::window_key(ev), tx) { return true; }
     // A dialog owns the keys while it is open: the feed behind it must not move. `Esc` never
     // reaches here — the runtime dismisses the modal first — and `?` closes the sheet.
     if s.settings.is_some() {
@@ -2203,6 +2202,26 @@ fn scene_help(s: &mut App) {
     s.help = true;
 }
 
+#[cfg(target_os = "macos")]
+const WINDOW_MENUS: [(&str, Option<&str>, &str, fn(&mut App, &mut Tx)); 6] = [
+    ("Settings…", None, "cmd+,", |s, tx| { s.window_action(WindowKey::Settings, tx); }),
+    ("Zoom In", Some("View"), "cmd+=", |s, tx| { s.window_action(WindowKey::ZoomIn, tx); }),
+    ("Zoom Out", Some("View"), "cmd+-", |s, tx| { s.window_action(WindowKey::ZoomOut, tx); }),
+    ("Actual Size", Some("View"), "cmd+0", |s, tx| { s.window_action(WindowKey::ActualSize, tx); }),
+    ("Show/Hide Inspector", Some("View"), "cmd+\\", |s, tx| { s.window_action(WindowKey::ToggleSplit, tx); }),
+    ("Keyboard Shortcuts", Some("Help"), "cmd+shift+/", |s, tx| { s.window_action(WindowKey::Help, tx); }),
+];
+
+#[cfg(target_os = "macos")]
+fn native_menus(mut app: rune::App<App>) -> rune::App<App> {
+    for (title, menu, shortcut, action) in WINDOW_MENUS {
+        let mut item = rune::MenuItem::new(title, action).key_equivalent(shortcut.parse().expect("valid menu shortcut"));
+        if let Some(menu) = menu { item = item.menu(menu); }
+        app = app.menu_item(item);
+    }
+    app.standard_menus()
+}
+
 /// Run the window.
 ///
 /// `on_window` is where the live pane's child view gets its platform handle: Rune lends it for
@@ -2221,6 +2240,8 @@ pub fn run() {
     let _ = OPEN_STORY.set(flag_value(&argv, "--open-story").and_then(|id| id.parse().ok()));
     let on_top = argv.iter().any(|arg| arg == "--on-top");
     let mut app = rune::App::new(spec());
+    #[cfg(target_os = "macos")]
+    { app = native_menus(app); }
     if on_top {
         app = app.window_options(rune::WindowOptions {
             always_on_top: true,
@@ -2442,6 +2463,61 @@ mod tests {
             rt.frame(0.0);
             assert_eq!((rt.state.zoom, rt.zoom()), (expected, expected), "story {key}");
         }
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn command_equal_menu_action_steps_once_headlessly() {
+        for (_, _, chord, _) in WINDOW_MENUS { chord.parse::<rune::Shortcut>().unwrap(); }
+        let (_, menu, chord, action) = WINDOW_MENUS.iter().find(|(title, ..)| *title == "Zoom In").unwrap();
+        assert_eq!((*menu, *chord), (Some("View"), "cmd+="));
+        let shortcut: rune::Shortcut = chord.parse().unwrap();
+        assert_eq!(shortcut.physical_key(), rune::PhysicalKeyCode::Equal);
+        assert!(shortcut.modifiers().cmd && !shortcut.modifiers().shift);
+        let mut rt = rune::Runtime::new(app(true, SavedView::in_memory()), view, (1100.0, 760.0), rune::Env::new(true, 2.0));
+        rt.update(|s, tx| action(s, tx));
+        rt.frame(0.0);
+        assert_eq!((rt.state.zoom, rt.zoom()), (1.1, 1.1));
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn menu_actions_operate_on_the_same_window_state() {
+        let mut s = app(true, SavedView::in_memory());
+        let run = |title: &str, s: &mut App| {
+            let (_, _, _, action) = WINDOW_MENUS.iter().find(|(name, ..)| *name == title).unwrap();
+            action(s, &mut Tx::default());
+        };
+        run("Settings…", &mut s);
+        assert!(s.settings.is_some());
+        run("Keyboard Shortcuts", &mut s);
+        assert!(s.help);
+        scene_story(&mut s);
+        let open = s.inspector.is_open();
+        run("Show/Hide Inspector", &mut s);
+        assert_ne!(s.inspector.is_open(), open);
+        run("Zoom Out", &mut s);
+        assert_eq!(s.zoom, 0.9);
+        run("Actual Size", &mut s);
+        assert_eq!((s.zoom, s.toast.as_ref().unwrap().message.as_str()), (1.0, "100%"));
+    }
+
+    #[test]
+    fn zoom_toast_shows_percentage_and_expires() {
+        let mut rt = rune::Runtime::new(app(true, SavedView::in_memory()), view, (1100.0, 760.0), rune::Env::new(true, 2.0));
+        rt.on_key = Some(on_key);
+        rt.key(KeyEvent { key: rune::Key::Command('='), mods: rune::Mods { cmd: true, ..Default::default() } });
+        rt.frame(0.0);
+        assert_eq!(rt.state.zoom, 1.1);
+        let notice = rt.state.toast.as_ref().unwrap();
+        assert_eq!(notice.message, "110%");
+        assert!(!notice.show_dot);
+        poll(&mut rt.state, 0.0, &mut Tx::default());
+        poll(&mut rt.state, TOAST_SECONDS + 0.1, &mut Tx::default());
+        assert!(rt.state.toast.is_none());
+        rt.key(KeyEvent { key: rune::Key::Command('0'), mods: rune::Mods { cmd: true, ..Default::default() } });
+        rt.frame(0.0);
+        assert_eq!(rt.state.toast.as_ref().unwrap().message, "100%");
     }
 
     #[test]

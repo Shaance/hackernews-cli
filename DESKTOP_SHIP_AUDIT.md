@@ -291,6 +291,7 @@ Status: fixed in run A — The toast clears the measured footer and removal noti
   There is also no visible feedback of the current zoom level after ⌘=/⌘- (`tx.instant()`, `app.rs:1103`).
 - Fix: register `rune::MenuItem`s (`native_menu/mod.rs:52-83`, `.menu("View")`, `.key_equivalent(...)`)
   that call the same `App` methods the key handler calls; show a short "125%" toast on zoom change. Size S–M.
+Status: fixed in run E — Native menu actions share window shortcuts and zoom changes show a transient percentage.
 
 ## Where the code differs from DESIGN.md's motion spec
 
