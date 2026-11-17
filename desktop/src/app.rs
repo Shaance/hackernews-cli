@@ -50,7 +50,7 @@ use crate::webview;
 /// One feed row, in points. The measured row count is the viewport height over this.
 const ROW_HEIGHT: f32 = 56.0;
 /// Window width at which the feed becomes two columns (DESIGN.md's table).
-const BREAKPOINT: f32 = 1400.0;
+const BREAKPOINT: f32 = 1200.0;
 /// The grid the first request asks for: the 1180×760 default window, one column.
 const DEFAULT_GRID: (usize, usize) = (11, 1);
 const FEED_GUTTER: f32 = 8.0;

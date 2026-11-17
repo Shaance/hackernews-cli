@@ -207,7 +207,7 @@ for row in "${SCENES[@]}"; do
   IFS='|' read -r name _ size _ want <<<"$row"
   tree="$ACTUAL/$name.json"
 
-  # Column x-positions: one column below the 1400pt breakpoint, two at or above it.
+  # Column x-positions: one column below the 1200pt breakpoint, two at or above it.
   cols=$(jq '[.elements[] | select((.key // "") | startswith("story-")) | .rect[0]] | unique | length' "$tree")
   if [ "$cols" = "$want" ]; then
     pass "$name columns ($cols at $size)"

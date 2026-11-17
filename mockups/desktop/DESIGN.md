@@ -94,7 +94,7 @@ Two consequences worth stating, because they are the cost of a native child view
 | --- | --- | --- |
 | 01 | Story split (hero) | The story's live page on the left, discussion right, summary pinned at the top of the inspector. The page is a `WKWebView` child view under a Rune header (eyebrow, title, byline, `open original ↗`); the extracted Markdown at a 66ch measure is the fallback, under a banner. Drag the grip to resize; double-click resets to 54/46; below the minimum the inspector collapses. `Esc` returns to the feed, `⌘\` collapses the split. See *The article pane is the live page*. |
 | 02 | Feed, one column | `SegmentedControl` for Top/New/Best/Saved — the toolbar holds nothing else. Rows carry rank, title, points/author/comments, a saved dot beside the rank, and a hover-revealed save action. Moving over a row selects it; clicking opens it. Selection is a card fill plus an amber edge, not reverse video. |
-| 03 | Feed, two columns | The same list at ≥1400pt: two columns, **column-major** — the left column fills first, then the right. One shared scroll, a hairline divider, and enough pages fetched to fill the visible grid. See *Responsive feed*. |
+| 03 | Feed, two columns | The same list at ≥1200pt: two columns, **column-major** — the left column fills first, then the right. One shared scroll, a hairline divider, and enough pages fetched to fill the visible grid. See *Responsive feed*. |
 | 04 | Summary states | *Generating* (skeleton rows that grow and fade in as tokens arrive, with "2 of 3 sources captured"), *done* (numbered citations, `Tab` to select, `Enter` to read), *failed* (provider error + Retry, the old summary still readable underneath), *citation source* (the excerpt sent to the model, the extra captured text, the article dimmed to 0.55). |
 | 05 | Comments | The discussion with the summary folded to one line. A guide rail per depth level, a hover target that folds the parent thread, hover-revealed save / links / collapse. `L` opens the link chooser as a popover. See *Comments*. |
 | 06 | Comments overview | The trail at the top of the viewport, a folded thread stating "3 replies hidden · Enter expands", and a chain past the depth cap ending in "continue thread → 6 replies". |
@@ -112,7 +112,7 @@ window could hold.
 
 | | One column | Two columns |
 | --- | --- | --- |
-| Window width | < 1400pt | ≥ 1400pt |
+| Window width | < 1200pt | ≥ 1200pt |
 | Order | `i` | `c * rows + r` — column-major: the left column fills first |
 | Scroll | one list | one list, shared by both columns |
 | Page size | 30 | 30 (unchanged — the page is a page, not a screenful) |
@@ -399,7 +399,7 @@ Reuse `hn_lib` unchanged; the desktop app is a second front end over the same co
 | Step | Days | Work |
 | --- | --- | --- |
 | Shell + feed | 2 | `SplitView` with the inspector collapsed, `SegmentedControl` tabs, rows from `hn_client.rs:15` `HackerNewsItem`. Paging and `j`/`k`/`g`/`G` port from `src/app.rs`; the saved dot reads `bookmarks.rs:21` `load`. |
-| Two-column feed | 1 | `equal_columns(2)` above 1400pt, `c * rows + r` index mapping, `pages_needed()` on resize, `scroll_into_view` resolving row → column. Pure layout; no new state. |
+| Two-column feed | 1 | `equal_columns(2)` above 1200pt, `c * rows + r` index mapping, `pages_needed()` on resize, `scroll_into_view` resolving row → column. Pure layout; no new state. |
 | Story split | 3 | The story's live page in a `WKWebView` child view pinned to the pane's rect (`WindowHandle::with_raw_handle` + `El::on_layout`), with the extracted Markdown as the fallback; comment tree into `Tree`; drag grip + `PaneState` persistence. |
 | Comments | 3 | `TreeModel` over the comment tree, the sticky trail, `MAX_DEPTH` + continue-thread re-root, focus mode. The cap and the trail are the two that need real use to tune. |
 | Summary panel | 3 | The job lifecycle in `src/reader/jobs.rs` and prompts in `src/reader/summary_prompts.rs` are already provider-agnostic; swap the TUI's repaint for `growth`/`streaming` rows. Citation chips map to `src/reader/sources.rs`. |
@@ -412,7 +412,7 @@ periodic rebases.
 
 ## Now and future
 
-**Now** — in this pass, and proven in `prototypes/rune-mocks/`: two-column feed at ≥1400pt,
+**Now** — in this pass, and proven in `prototypes/rune-mocks/`: two-column feed at ≥1200pt,
 column-major, one scroll, filled to the visible grid (`el/layout.rs:246`); saved dot + transient
 toast with nothing on the right edge (`toast.rs:7,114`); minimal `‹ N ›` stepper with no total
 (`shell/split.rs:383`); the discussion trail, depth cap and focus mode (`el/sticky.rs:42`,
