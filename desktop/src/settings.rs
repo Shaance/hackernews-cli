@@ -283,7 +283,7 @@ impl Settings {
                 .gap(8.0)
                 .center_y()
                 .child(
-                    Button::new("Refresh sources & summary")
+                    Button::new("Regenerate summary")
                         .variant(ButtonVariant::Neutral)
                         .on_press(|s: &mut crate::app::App| s.apply_settings(true))
                         .build(k),

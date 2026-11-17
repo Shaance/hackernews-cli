@@ -10,8 +10,8 @@
 //!   replies is [`Thread::capped`]: its children are not rows, and the row says
 //!   `continue thread → N replies` instead. `Enter` re-roots there, so depth beyond the cap is
 //!   carried by the trail rather than by whitespace.
-//! - **focus mode** — [`Thread::dimmed`]: every row that is neither an ancestor of the cursor
-//!   nor in its subtree dims to [`DIMMED`]. Nothing is hidden, so nothing has to be found again.
+//! - **focus mode** — [`Thread::dimmed`]: rows outside the focused chain use secondary ink.
+//!   Nothing is hidden, so nothing has to be found again.
 //! - **collapsed counts** — [`Thread::hidden_count`], derived from the tree so it cannot drift
 //!   from the rows it describes.
 //!
@@ -45,9 +45,6 @@ pub const MAX_DEPTH: u32 = 4;
 
 /// Points each indent level steps in (DESIGN.md: "every indent level costs 13pt").
 pub const INDENT: f32 = 13.0;
-
-/// What a row outside the focused chain dims to in focus mode.
-pub const DIMMED: f32 = 0.35;
 
 /// How much of a comment the tree draws.
 ///
@@ -103,7 +100,7 @@ pub struct Thread {
 impl Thread {
     /// An empty thread: a story whose discussion has not landed.
     pub fn empty() -> Thread {
-        Thread::default()
+        Thread { focus: true, ..Thread::default() }
     }
 
     /// Build the tree from the comments a capture holds.
@@ -157,11 +154,49 @@ impl Thread {
             folded: HashSet::new(),
             cursor: None,
             root: None,
-            focus: false,
+            focus: true,
         };
         thread.prune_unreadable();
         thread.cursor = thread.rows().first().map(|row| row.id);
         thread
+    }
+
+    /// Refresh known nodes and add roots without disturbing the tree being read.
+    pub fn merge_comments(&mut self, roots: &[Comment], descendants: &[Comment]) {
+        let selected_row = self.cursor.and_then(|id| self.visible_row(id));
+        let fresh = Thread::from_comments(roots);
+        let fresh_roots = fresh.roots;
+        let loaded = Thread::from_comments(descendants);
+        for (is_root, node) in fresh.nodes.into_iter().map(|node| (true, node))
+            .chain(loaded.nodes.into_iter().map(|node| (false, node))) {
+            if let Some(&at) = self.index.get(&node.id) {
+                let old = &mut self.nodes[at];
+                old.readable = node.readable;
+                old.author = node.author;
+                old.time_ago = node.time_ago;
+                old.text = node.text;
+                old.links = node.links;
+                for id in node.known_children {
+                    if !old.known_children.contains(&id) { old.known_children.push(id); }
+                }
+            } else if is_root && fresh_roots.contains(&node.id) {
+                self.roots.push(node.id);
+                self.index.insert(node.id, self.nodes.len());
+                self.nodes.push(node);
+            }
+        }
+        self.prune_unreadable();
+        if self.root.is_some_and(|id| !self.displayable(id)) { self.root = None; }
+        if self.cursor.is_none_or(|id| !self.displayable(id)) {
+            let rows = self.rows();
+            let index = selected_row.unwrap_or(0).min(rows.len().saturating_sub(1));
+            self.cursor = rows.get(index).map(|row| row.id);
+        }
+    }
+
+    /// Loaded descendants, including folded branches, but excluding unfetched reply IDs.
+    pub fn loaded_reply_ids(&self) -> Vec<i32> {
+        self.roots.iter().flat_map(|id| self.subtree(*id).into_iter().skip(1)).collect()
     }
 
     /// Known, potentially readable direct replies. Unfetched IDs count until resolved.
@@ -597,11 +632,6 @@ impl Thread {
         true
     }
 
-    /// `Esc` in focus mode: leave it, and say whether it was on.
-    pub fn leave_focus(&mut self) -> bool {
-        std::mem::replace(&mut self.focus, false)
-    }
-
     // Tree helpers --------------------------------------------------------------------------
 
     pub fn parent_of(&self, id: i32) -> Option<i32> {
@@ -928,13 +958,12 @@ mod tests {
     }
 
     #[test]
-    fn focus_mode_keeps_the_chain_and_dims_the_rest() {
+    fn focus_mode_starts_on_and_keeps_the_chain_distinct() {
         let mut thread = thread();
         // 9010000 is behind the cap, so the tree has to be re-rooted at its parent first.
         assert!(thread.reroot(901000));
         assert!(thread.select(9010000));
-        assert!(!thread.dimmed(9010001), "focus mode is off");
-        assert!(thread.toggle_focus());
+        assert!(thread.focus(), "focus mode starts on");
         // The chain: the cursor, its ancestors, and its subtree.
         for on_chain in [901, 9010, 90100, 901000, 9010000, 90100000, 90100001] {
             assert!(thread.in_chain(on_chain), "{on_chain} is on the chain");
@@ -944,10 +973,9 @@ mod tests {
         for off_chain in [9010001, 9010002] {
             assert!(thread.dimmed(off_chain), "{off_chain} dims");
         }
-        assert!(thread.leave_focus());
+        assert!(thread.toggle_focus());
         assert!(!thread.focus());
         assert!(!thread.dimmed(9010001));
-        assert!(!thread.leave_focus(), "leaving twice is not a transition");
     }
 
     #[test]

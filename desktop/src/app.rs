@@ -42,7 +42,7 @@ use crate::keys::{self, StoryKey, WindowKey};
 use crate::layout::Layout;
 use crate::service::Source;
 use crate::settings::Settings;
-use crate::story::{Story, SummaryState, STAGES};
+use crate::story::{Story, SummaryState};
 use crate::story_view::{self, Pane};
 use crate::webview;
 
@@ -139,7 +139,7 @@ pub struct App {
     hover: Option<i32>,
     /// The open story, when the split is showing one. `None` is the feed.
     story: Option<Story>,
-    /// The discussion's scroll observer and poll share this frame-pacing state.
+    /// The reading viewports' scroll observers and poll share this frame-pacing state.
     scroll_pacing: Rc<Cell<ScrollPacing>>,
     scroll_waker: Option<Waker>,
     /// The inspector's width and open state. Opening a story opens it; `Esc` closes it.
@@ -169,7 +169,7 @@ pub struct App {
     /// Headless runs use the fake service and an in-memory Saved store, so a golden never
     /// depends on the network or on the machine's `saved.json`.
     headless: bool,
-    /// Set by `O` or the article header's "Open in browser" button; drained in `poll`,
+    /// Set by `o`/`O` or the footer's browser action; drained in `poll`,
     /// which opens the real page in the system browser (no-op when headless).
     pub(crate) pending_external: bool,
     /// The window handle Rune lent in `on_window`, for building the live pane's child view.
@@ -187,7 +187,7 @@ pub struct App {
 }
 
 impl App {
-    fn discussion_scroll_observer(&self) -> impl Fn(rune::ScrollPos) + 'static {
+    fn scroll_observer(&self) -> impl Fn(rune::ScrollPos) + 'static {
         let pacing = Rc::clone(&self.scroll_pacing);
         let waker = self.scroll_waker.clone();
         let previous = Cell::new(0.0);
@@ -195,8 +195,8 @@ impl App {
         // The offset observer wakes poll without a handler commit or a live-only event.
         move |at| {
             if previous.replace(at.offset[1]) == at.offset[1] { return; }
-            if pacing.replace(ScrollPacing::Moved) == ScrollPacing::Idle {
-                if let Some(waker) = &waker { waker(); }
+            if pacing.replace(ScrollPacing::Moved) == ScrollPacing::Idle && let Some(waker) = &waker {
+                waker();
             }
         }
     }
@@ -550,6 +550,27 @@ impl App {
         }
     }
 
+    /// Opening a citation also starts the first reply batch without moving the discussion cursor.
+    pub(crate) fn open_citation(&mut self, index: usize) {
+        if self.story.as_mut().is_some_and(|story| story.select_citation(index)) {
+            self.load_source_replies();
+        }
+    }
+
+    fn load_source_replies(&mut self) {
+        let id = self.story.as_ref().and_then(|story| {
+            let id = story.source?;
+            (story.thread.children_of(id).is_empty() && !story.thread.reply_batch(id, false).is_empty()).then_some(id)
+        });
+        if let Some(id) = id { self.load_replies(id, false); }
+    }
+
+    pub(crate) fn choose_links(&mut self) {
+        if !self.story.as_mut().is_some_and(|story| story.open_links()) {
+            self.toast = Some(Notice { message: "No links in this post or selected comment".to_string(), until: f64::INFINITY });
+        }
+    }
+
     pub(crate) fn activate_comment(&mut self, id: i32) {
         let Some(story) = self.story.as_mut() else { return; };
         story.thread.select(id);
@@ -574,7 +595,8 @@ impl App {
     fn auth_failed(&self) -> bool {
         self.story
             .as_ref()
-            .is_some_and(|story| matches!(&story.summary, SummaryState::Failed { auth: true, .. }))
+            .is_some_and(|story| matches!(&story.summary, SummaryState::Failed { auth: true, .. })
+                || matches!(&story.article_summary, crate::story::ArticleSummaryState::Failed { auth: true, .. }))
     }
 
     /// The summary card's settings button, and `M`: the dialog, asking for a key when the
@@ -583,14 +605,51 @@ impl App {
         self.open_settings(self.auth_failed());
     }
 
-    /// The summary card's Retry: ask for the story again with the current config.
+    /// Retry or regenerate summaries from the current captures, keeping the thread in place.
     pub(crate) fn retry_summary(&mut self) {
         let configured = self.configured();
         if let Some(story) = self.story.as_mut() {
-            let item = story.story.clone();
+            let request = StoryRequest { story: story.story.clone(), config: self.config.clone() };
+            let article = match &story.article {
+                crate::story::ArticleState::Ready { text, partial } => Some((text.clone(), *partial)),
+                _ => None,
+            };
+            let sources = matches!(story.discussion, Some(Ok(()))).then(|| story.current_sources.clone());
             story.retry(configured);
-            self.request_story(item);
+            if !configured { return; }
+            self.bridge.request_summaries(self.source.clone(), request, article, sources);
+            if self.headless {
+                while self.bridge.is_story_pending() {
+                    if let Some(update) = self.bridge.take_story(true) {
+                        if let Some(story) = self.story.as_mut() { story.land_update(update); }
+                    } else {
+                        std::thread::yield_now();
+                    }
+                }
+            }
         }
+    }
+
+    /// Refresh roots and loaded replies without regenerating summaries.
+    pub(crate) fn refresh_comments(&mut self) {
+        let Some(story) = self.story.as_mut() else { return; };
+        story.refreshing_comments = true;
+        story.refresh_error = None;
+        let story_id = story.id();
+        let loaded = story.thread.loaded_reply_ids();
+        if self.headless {
+            let result = self.bridge.refresh_now(&self.source, story_id, loaded);
+            self.land_comment_refresh(result);
+        } else {
+            self.bridge.request_refresh(self.source.clone(), story_id, loaded);
+        }
+    }
+
+    fn land_comment_refresh(&mut self, result: crate::bridge::CommentsRefreshed) -> bool {
+        let Some(story) = self.story.as_mut().filter(|story| story.id() == result.story_id) else { return false; };
+        let sources = result.comments.as_ref().map(|comments| self.source.capture(comments)).unwrap_or_default();
+        story.land_refresh(result, sources);
+        true
     }
 
     /// `M` / `⌘,`: the summary settings dialog, on a copy of the reader's config.
@@ -608,7 +667,7 @@ impl App {
         self.settings = None;
     }
 
-    /// `Apply`, and `Refresh sources & summary`. A save failure keeps the dialog open with the
+    /// `Apply`, and `Regenerate summary`. A save failure keeps the dialog open with the
     /// message; a success closes it, adopts the config and says so.
     pub(crate) fn apply_settings(&mut self, refresh: bool) {
         let Some(settings) = self.settings.as_mut() else {
@@ -624,14 +683,14 @@ impl App {
             until: f64::INFINITY,
         });
         if refresh {
-            let configured = self.configured();
-            if let Some(story) = self.story.as_mut() {
-                let item = story.story.clone();
-                story.retry(configured);
-                self.request_story(item);
+            if self.story.is_some() {
+                self.retry_summary();
             } else {
                 self.refresh();
             }
+        } else if !self.configured() && let Some(story) = self.story.as_mut() {
+            // Captures may still finish, but clearing the key ends both summary attempts.
+            story.retry(false);
         }
     }
 
@@ -766,6 +825,7 @@ fn setup(s: &mut App, waker: Waker) {
 fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
     let mut changed = false;
     let mut feed_arrived = false;
+    let mut summary_arrived = false;
     match s.scroll_pacing.get() {
         ScrollPacing::Moved => {
             s.scroll_pacing.set(ScrollPacing::Until(now + SCROLL_PACING_SECONDS));
@@ -780,16 +840,28 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
         changed |= landed;
         if landed { feed_arrived = s.accept_arrival(); }
     }
-    while let Some(update) = s.bridge.take_story() {
+    while let Some(update) = s.bridge.take_story(s.configured()) {
         let summary_finished = matches!(&update,
             StoryUpdate::Summary { .. } | StoryUpdate::Discussion { comments: Err(_), .. });
+        let visible = s.inspector.is_open() && s.settings.is_none() && !s.help;
         // A landing for a story that is no longer open is dropped by `Story::land_update`.
         let landed = s.story.as_mut().map(|open| {
+            let first_result = match &update {
+                StoryUpdate::ArticleSummary { summary: Ok(_), .. } => matches!(
+                    open.article_summary, crate::story::ArticleSummaryState::Generating { previous: None }),
+                StoryUpdate::Summary { summary: Ok(_), .. } => matches!(
+                    open.summary, SummaryState::Generating { previous: None }),
+                _ => false,
+            };
+            let show = visible && open.summary_open && open.source.is_none();
+            let visible_success = show && matches!(&update, StoryUpdate::Summary { summary: Ok(_), .. });
             let landed = open.land_update(update);
-            (landed, (landed && summary_finished).then(|| open.summary_notice()).flatten())
+            (landed, landed && first_result && show,
+                (landed && summary_finished && !visible_success).then(|| open.summary_notice()).flatten())
         });
-        if let Some((landed, notice)) = landed {
+        if let Some((landed, arrival, notice)) = landed {
             changed |= landed;
+            summary_arrived |= arrival;
             // The card is in the inspector and may be folded or scrolled away, so the summary's
             // outcome is confirmed where the reader is looking.
             if let Some(message) = notice {
@@ -799,6 +871,9 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
                 });
             }
         }
+    }
+    if let Some(result) = s.bridge.take_refresh() {
+        changed |= s.land_comment_refresh(result);
     }
     if let Some(filled) = s.bridge.take_replies() {
         changed |= s.story.as_mut().is_some_and(|story| story.land_replies(filled));
@@ -892,7 +967,7 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
         }
     }
     if changed {
-        if feed_arrived && !s.reduced {
+        if (feed_arrived || summary_arrived) && !s.reduced {
             tx.animated();
         } else {
             tx.instant();
@@ -934,7 +1009,7 @@ fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
     }
     // `O` (capital) always opens the real page in the system browser — the TUI's
     // `reader_actions.rs:42,74` distinction — never the extracted article split.
-    if keys::is_open_external(ev) {
+    if keys::is_open_external(ev) || (s.story.is_some() && keys::is_reading_external(ev)) {
         s.pending_external = true;
         return true;
     }
@@ -1061,6 +1136,7 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
         match key {
             StoryKey::Back => {
                 story.close_source();
+                reveal_citation(story, tx, true);
                 return true;
             }
             StoryKey::NextComment | StoryKey::NextScreen => {
@@ -1081,13 +1157,22 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             }
             StoryKey::NextCitation => {
                 story.next_citation();
+                tx.scroll_to_y("source-viewer", 0.0);
+                s.load_source_replies();
                 return true;
             }
             StoryKey::PrevCitation => {
                 story.prev_citation();
+                tx.scroll_to_y("source-viewer", 0.0);
+                s.load_source_replies();
                 return true;
             }
-            _ => {}
+            StoryKey::Links => {
+                s.toast = Some(Notice { message: "Open links from the discussion".to_string(), until: f64::INFINITY });
+                return true;
+            }
+            StoryKey::ToggleSummary | StoryKey::Focus => return true,
+            _ => return false,
         }
     }
     let root = story.thread.root();
@@ -1095,25 +1180,26 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
     match key {
         StoryKey::None => false,
         StoryKey::Back => {
-            // Esc leaves focus mode before it leaves the story, as DESIGN.md's table says.
-            if story.thread.leave_focus() {
-                return true;
-            }
             s.close_story();
             true
         }
         StoryKey::NextCitation => {
+            if story.citations().is_empty() { return false; }
             story.next_citation();
+            reveal_citation(story, tx, false);
             true
         }
         StoryKey::PrevCitation => {
+            if story.citations().is_empty() { return false; }
             story.prev_citation();
+            reveal_citation(story, tx, false);
             true
         }
         StoryKey::Enter => {
             // A selected citation is what Enter reads; otherwise it is the thread's own expand,
             // which re-roots on a `continue thread` row.
             if story.open_source() {
+                s.load_source_replies();
                 return true;
             }
             let id = story.thread.cursor();
@@ -1121,8 +1207,6 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             if let Some(id) = id { s.activate_comment(id); }
             if can_activate {
                 if let Some(story) = s.story.as_mut() { thread_moved(story, root, had_trail, tx); }
-            } else {
-                tx.live_only();
             }
             true
         }
@@ -1131,14 +1215,14 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             true
         }
         StoryKey::Refresh => {
-            s.retry_summary();
+            s.refresh_comments();
             true
         }
         StoryKey::Settings => {
             s.open_summary_settings();
             true
         }
-        StoryKey::Links => story.open_links(),
+        StoryKey::Links => { s.choose_links(); true },
         StoryKey::ToggleSaved => {
             let id = story.id();
             s.toggle_saved_id(id);
@@ -1159,7 +1243,7 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
                 StoryKey::PopTrail => story.thread.pop_trail(),
                 _ => unreachable!(),
             };
-            if changed { thread_moved(story, root, had_trail, tx); } else { tx.live_only(); }
+            if changed { thread_moved(story, root, had_trail, tx); }
             true
         }
         StoryKey::Unfold => {
@@ -1179,9 +1263,37 @@ fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             tx.scroll_page("discussion-scroll", -1);
             true
         }
+        StoryKey::NextSummaryScreen => {
+            tx.scroll_page("summary-scroll", 1);
+            true
+        }
+        StoryKey::PrevSummaryScreen => {
+            tx.scroll_page("summary-scroll", -1);
+            true
+        }
         StoryKey::Focus => {
             story.thread.toggle_focus();
             true
+        }
+    }
+}
+
+fn reveal_citation(story: &Story, tx: &mut Tx, focus: bool) {
+    // A replacement can remove every citation while its old source is still open.
+    if focus {
+        tx.focus("summary-scroll", true);
+        if !story.citation_focus { tx.announce("Back to summary", rune::LiveRegion::Polite); }
+    }
+    if !story.citation_focus { return; }
+    let Some(id) = story.citations().get(story.citation).copied() else { return; };
+    let Some(index) = story.summary.readable().and_then(|summary| summary.bullets.iter().position(|point| point.sources.contains(&id))) else { return; };
+    let key = format!("summary-text-{index}");
+    tx.scroll_into_view_in("summary-scroll", key.clone());
+    if focus {
+        // Rune's inline links are accessibility nodes inside one text element, so the
+        // viewport is the focusable return target; the selected reference stays visible.
+        if let Some(source) = story.sources.iter().find(|source| source.id == id) {
+            tx.announce(format!("Back to summary, comment by {} selected", source.author), rune::LiveRegion::Polite);
         }
     }
 }
@@ -1274,12 +1386,13 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
         Some(story) => (
             story_main(story, &k, t, s.pane()),
             Toolbar::new().leading(story_view::story_toolbar(
-                &k,
                 t,
                 accent,
                 s.saved.contains(story.id()),
             )),
-            story_view::inspector_pane(story, &k, t, accent, &mut overlays, reduced, s.discussion_scroll_observer()),
+            story_view::inspector_pane(story, &k, t, accent, &mut overlays, reduced,
+                window.map_or(320.0, |rect| (rect[3] * 0.45).min(320.0)),
+                [s.scroll_observer(), s.scroll_observer(), s.scroll_observer()]),
         ),
         None => (feed_body(s, &k, t, accent, cols, reduced), toolbar, col()),
     };
@@ -1291,7 +1404,10 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
         .reduced_motion(reduced)
         .build(&k);
 
-    let base = col().key("window").w_full().h_full().fill(t.bg).child(shell);
+    let mut base = col().key("window").w_full().h_full().fill(t.bg).child(shell.grow(1.0).min_h(0.0));
+    if let Some(story) = &s.story {
+        base = base.child(el().w_full().h(1.0).fill(t.separator)).child(story_view::story_footer(story, &k, t));
+    }
     if let Some(notice) = &s.toast {
         overlays.push(
             ToastRegion::new()
@@ -1322,7 +1438,7 @@ fn pane_motion() -> PaneMotion {
         .fade_tail(0.15)
 }
 
-/// The main pane while a story is open: the article, then the story's own footer.
+/// The main pane while a story is open.
 fn story_main(story: &Story, k: &Kit, t: tok::Theme, pane: Pane<'_>) -> El {
     col()
         .key("story-main")
@@ -1333,8 +1449,6 @@ fn story_main(story: &Story, k: &Kit, t: tok::Theme, pane: Pane<'_>) -> El {
                 .grow(1.0)
                 .min_h(0.0),
         )
-        .child(el().w_full().h(1.0).fill(t.separator))
-        .child(story_view::story_footer(k, t))
 }
 
 fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize, reduced: bool) -> El {
@@ -1827,27 +1941,25 @@ fn scene_story(s: &mut App) {
 }
 
 /// The discussion as it opens: the tree at the story's top level, the cursor on the first
-/// comment, no re-root and no focus mode.
+/// comment, no re-root, with focus mode on.
 fn scene_comments(s: &mut App) {
     scene_story(s);
 }
 
 /// A thread you did not start: re-rooted at the comment that hit the depth cap, the cursor on
-/// its first reply, focus mode on. The trail carries the four ancestors above it.
+/// its first reply. The trail carries the four ancestors above it.
 fn scene_thread(s: &mut App) {
     scene_story(s);
     if let Some(story) = &mut s.story {
         story.thread.reroot(901000);
         story.thread.select(9010000);
-        story.thread.toggle_focus();
     }
 }
 
-/// The citation source viewer: `Tab` twice selects the second citation, `Enter` reads it.
+/// The citation source viewer: the first citation has replies to inspect.
 fn scene_citation(s: &mut App) {
     scene_story(s);
     if let Some(story) = &mut s.story {
-        story.next_citation();
         story.next_citation();
         story.open_source();
     }
@@ -1858,8 +1970,7 @@ fn scene_summary_generating(s: &mut App) {
     scene_story(s);
     if let Some(story) = &mut s.story {
         story.summary = SummaryState::Generating {
-            captured: 2,
-            of: STAGES,
+            previous: None,
         };
     }
 }
@@ -2103,7 +2214,7 @@ mod tests {
         });
         let story = s.story.as_ref().unwrap();
         assert_eq!(story.article, ArticleState::Loading);
-        assert!(matches!(story.summary, SummaryState::Generating { captured: 1, .. }));
+        assert!(matches!(story.summary, SummaryState::Generating { .. }));
         assert!(story.thread.node(901).is_some(), "roots arrive before article and summary");
 
         // Mount the actual inspector while both gated requests are still pending.
@@ -2116,7 +2227,7 @@ mod tests {
 
         assert!(article_tx.send(Ok(("extracted article".to_string(), false))).is_ok());
         poll_until(&mut rt.state, |s| matches!(s.story.as_ref().unwrap().article, ArticleState::Ready { .. }));
-        assert!(matches!(rt.state.story.as_ref().unwrap().summary, SummaryState::Generating { captured: 2, .. }));
+        assert!(matches!(rt.state.story.as_ref().unwrap().summary, SummaryState::Generating { .. }));
         assert!(failure_tx.send(Err(SummaryError::new("provider failed", false))).is_ok());
         poll_until(&mut rt.state, |s| s.story.as_ref().unwrap().summary.is_failed());
         let story = rt.state.story.as_ref().unwrap();
@@ -2145,10 +2256,10 @@ mod tests {
             SummaryState::Done(summary) if summary.overview == "current summary 2"));
         assert!(matches!(rt.state.story.as_ref().unwrap().article, ArticleState::Loading));
         assert!(matches!(&rt.state.story.as_ref().unwrap().summary,
-            SummaryState::Done(summary) if summary.captured == 2));
+            SummaryState::Done(_)));
         assert!(other_article_tx.send(Ok(("second article".to_string(), false))).is_ok());
-        poll_until(&mut rt.state, |s| matches!(&s.story.as_ref().unwrap().summary,
-            SummaryState::Done(summary) if summary.captured == 3));
+        poll_until(&mut rt.state, |s| matches!(&s.story.as_ref().unwrap().article,
+            ArticleState::Ready { .. }));
         let mut stale = crate::fixtures::summary();
         stale.overview = "obsolete story".into();
         assert!(old_story_tx.send(Ok(stale)).is_ok());
@@ -2496,6 +2607,103 @@ mod tests {
     fn route(rt: &mut rune::Runtime<App>, key: rune::Key) {
         rt.key(KeyEvent { key, mods: Default::default() });
         rt.frame(0.3);
+    }
+
+    #[test]
+    fn source_keys_keep_discussion_state_and_load_reply_context() {
+        let mut s = app(true, SavedView::in_memory());
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        let story = s.story.as_ref().unwrap();
+        assert!(story.thread.focus());
+        let cursor = story.thread.cursor();
+        let root = story.thread.root();
+        let folded = story.thread.is_folded(901);
+        press(&mut s, rune::Key::Tab);
+        press(&mut s, rune::Key::Enter);
+        assert_eq!(s.story.as_ref().unwrap().source, Some(901));
+        assert_eq!(s.story.as_ref().unwrap().thread.children_of(901), vec![9010, 9011]);
+        for key in [rune::Key::Enter, rune::Key::Text("h".into()), rune::Key::Text("l".into()), rune::Key::Text("u".into())] {
+            press(&mut s, key);
+        }
+        let story = s.story.as_ref().unwrap();
+        assert_eq!((story.thread.cursor(), story.thread.root(), story.thread.is_folded(901)), (cursor, root, folded));
+        press(&mut s, rune::Key::Escape);
+        assert!(s.story.as_ref().unwrap().source.is_none());
+        press(&mut s, rune::Key::Escape);
+        assert!(s.story.is_none(), "default focus mode does not consume back");
+    }
+
+    #[test]
+    fn inline_citation_keyboard_opens_and_returns_to_its_reference() {
+        let mut s = app(true, SavedView::in_memory());
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.frame(0.0);
+        let cite = rt.elements().iter().find(|e| e.key.as_deref() == Some("cite-0")).unwrap().clone();
+        assert!(cite.focusable && cite.role == "button" && cite.label.as_deref() == Some("Read comment by tptacek"));
+        route(&mut rt, rune::Key::Tab);
+        route(&mut rt, rune::Key::Enter);
+        assert_eq!(rt.state.story.as_ref().unwrap().source, Some(901));
+        assert!(rt.elements().iter().find(|e| e.key.as_deref() == Some("discussion-scroll")).unwrap().inert);
+        assert!(!rt.accessibility_json().to_string().contains("Summary content"), "the hidden inspector leaves the accessibility tree");
+        route(&mut rt, rune::Key::Escape);
+        assert!(rt.state.story.as_ref().unwrap().source.is_none());
+        assert!(rt.state.story.as_ref().unwrap().citation_focus);
+        assert_eq!(rt.state.story.as_ref().unwrap().citation, 0);
+        assert!(rt.elements().iter().any(|e| e.key.as_deref() == Some("summary-scroll") && e.focused), "native focus returns to the summary");
+        route(&mut rt, rune::Key::Enter);
+        assert_eq!(rt.state.story.as_ref().unwrap().source, Some(901), "Enter reopens the returned citation");
+    }
+
+    #[test]
+    fn summary_overflow_remains_keyboard_scrollable_and_leaves_discussion_room() {
+        let mut s = app(true, SavedView::in_memory());
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        s.story.as_mut().unwrap().article_summary = crate::story::ArticleSummaryState::Done("A long article synopsis. ".repeat(100));
+        let mut rt = rune::Runtime::new(s, view, (1040.0, 640.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.frame(0.0);
+        let before = rt.elements();
+        let summary = before.iter().find(|e| e.key.as_deref() == Some("summary-scroll")).unwrap();
+        let discussion = before.iter().find(|e| e.key.as_deref() == Some("discussion-scroll")).unwrap();
+        assert!(summary.focusable && summary.rect[3] <= 260.0);
+        assert!(discussion.rect[3] > 200.0, "discussion remains usable");
+        let y = before.iter().find(|e| e.key.as_deref() == Some("article-summary")).unwrap().rect[1];
+        route(&mut rt, rune::Key::Text("J".into()));
+        let moved = rt.elements().iter().find(|e| e.key.as_deref() == Some("article-summary")).unwrap().rect[1];
+        assert!(moved < y, "Shift+J scrolls the summary");
+        rt.update(|_, tx| tx.focus("summary-scroll", true));
+        rt.frame(0.0);
+        route(&mut rt, rune::Key::PageUp);
+        let restored = rt.elements().iter().find(|e| e.key.as_deref() == Some("article-summary")).unwrap().rect[1];
+        assert!(restored > moved, "Page Up in the summary scrolls that viewport");
+    }
+
+    #[test]
+    fn source_return_keeps_the_visible_passage_when_replies_arrive_above_it() {
+        let mut s = app(true, SavedView::in_memory());
+        if let Source::Fake(fake) = s.source.as_ref() {
+            let mut comments = fake.comments.lock().unwrap();
+            let template = comments.iter().find(|comment| comment.id == 902).unwrap().clone();
+            comments.extend((10000..10020).map(|id| { let mut comment = template.clone(); comment.id = id; comment }));
+        }
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.frame(0.0);
+        rt.update(|_, tx| tx.scroll_to_instant("discussion-scroll", 0.0, 700.0));
+        rt.frame(0.0);
+        let before = rt.elements();
+        let anchor = before.iter().find(|e| e.key.as_deref().is_some_and(|key| key.starts_with("comment-100")) && e.visible[3] > 30.0).unwrap();
+        let key = anchor.key.clone().unwrap();
+        let y = anchor.rect[1];
+        rt.update(|s, _| s.open_citation(0));
+        rt.frame(0.0);
+        rt.update(|s, _| { s.story.as_mut().unwrap().close_source(); });
+        rt.frame(0.0);
+        let after = rt.elements();
+        let restored = after.iter().find(|e| e.key.as_deref() == Some(&key)).unwrap();
+        assert!((restored.rect[1] - y).abs() < 2.0, "same passage returns at the same position");
     }
 
     #[test]
@@ -2919,6 +3127,275 @@ mod tests {
     }
 
     #[test]
+    fn summary_and_source_scroll_return_to_idle() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        for source in [false, true] {
+            let mut s = app(true, SavedView::in_memory());
+            scene_story(&mut s);
+            let story = s.story.as_mut().unwrap();
+            if source {
+                story.sources[0].text = "A captured comment with enough text to scroll. ".repeat(120);
+                s.open_citation(0);
+            } else {
+                story.article_summary = crate::story::ArticleSummaryState::Done("A long article summary. ".repeat(120));
+            }
+            let wakes = Arc::new(AtomicUsize::new(0));
+            let count = Arc::clone(&wakes);
+            s.scroll_waker = Some(Arc::new(move || { count.fetch_add(1, Ordering::Relaxed); }));
+            let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+            rt.poll = Some(poll);
+            for _ in 0..120 { rt.frame(1.0 / 60.0); }
+            assert_eq!(rt.state.scroll_pacing.get(), ScrollPacing::Idle);
+            let viewport = if source { "source-viewer" } else { "summary-scroll" };
+            let content = if source { "source-content" } else { "article-summary" };
+            let elements = rt.elements();
+            let [x, y, w, h] = elements.iter().find(|e| e.key.as_deref() == Some(viewport)).unwrap().rect;
+            let before = elements.iter().find(|e| e.key.as_deref() == Some(content)).unwrap().rect[1];
+            rt.wheel(x + w / 2.0, y + h / 2.0, -10.0);
+            rt.frame(1.0 / 120.0);
+            let after = rt.elements().iter().find(|e| e.key.as_deref() == Some(content)).unwrap().rect[1];
+            assert!(after < before, "{viewport} must actually scroll");
+            assert_eq!(rt.state.scroll_pacing.get(), ScrollPacing::Moved);
+            assert!(wakes.load(Ordering::Relaxed) > 0, "{viewport} wakes the frame clock");
+            for _ in 0..20 { rt.frame(1.0 / 120.0); }
+            assert_eq!(rt.state.scroll_pacing.get(), ScrollPacing::Idle);
+            assert!(rt.wake_deadline().is_none() && !rt.live_pending(), "{viewport} returns to idle");
+        }
+    }
+
+    fn gated_summary_fixture() -> (App, tokio::sync::oneshot::Sender<()>, tokio::sync::oneshot::Sender<()>) {
+        use std::sync::Mutex;
+        use tokio::sync::oneshot;
+
+        let (article_tx, article_rx) = oneshot::channel::<()>();
+        let (discussion_tx, discussion_rx) = oneshot::channel::<()>();
+        let article_rx = Mutex::new(Some(article_rx));
+        let discussion_rx = Mutex::new(Some(discussion_rx));
+        let mut fake = crate::service::FakeService::fixture();
+        fake.article_summary = Arc::new(move |_| {
+            let gate = article_rx.lock().unwrap().take().unwrap();
+            Box::pin(async move {
+                gate.await.unwrap();
+                Ok(hn_lib::reader::Article { text: "The article summary arrived.".into() })
+            })
+        });
+        fake.summary = Arc::new(move |_| {
+            let gate = discussion_rx.lock().unwrap().take().unwrap();
+            Box::pin(async move { gate.await.unwrap(); Ok(crate::fixtures::summary()) })
+        });
+        let mut s = app(false, SavedView::in_memory());
+        s.source = Arc::new(Source::Fake(fake));
+        s.config.api_key = "fixture".into();
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        poll_until(&mut s, |s| {
+            let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+            *fake.article_summary_requests.lock().unwrap() == 1 && *fake.summary_requests.lock().unwrap() == 1
+        });
+        s.live = Live::Failed { story_id: crate::fixtures::STORY_ID, error: "fixture".into() };
+        (s, article_tx, discussion_tx)
+    }
+
+    #[test]
+    fn independent_summary_arrivals_move_only_the_ready_section() {
+        for reduced in [false, true] {
+            let (s, article_tx, discussion_tx) = gated_summary_fixture();
+            let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+            rt.poll = Some(poll);
+            rt.set_system_reduced_motion(reduced);
+            rt.frame(0.0);
+
+            let element = |rt: &rune::Runtime<App>, key: &str| rt.elements().into_iter()
+                .find(|e| e.key.as_deref() == Some(key) && !e.exiting).unwrap();
+            let wait_for = |rt: &mut rune::Runtime<App>, article: bool| {
+                let deadline = std::time::Instant::now() + Duration::from_secs(3);
+                while if article {
+                    !matches!(rt.state.story.as_ref().unwrap().article_summary, crate::story::ArticleSummaryState::Done(_))
+                } else {
+                    !matches!(rt.state.story.as_ref().unwrap().summary, SummaryState::Done(_))
+                } {
+                    rt.frame(0.0);
+                    assert!(std::time::Instant::now() < deadline, "summary result did not land");
+                    std::thread::yield_now();
+                }
+            };
+            article_tx.send(()).unwrap();
+            wait_for(&mut rt, true);
+            rt.frame(0.05);
+            let article_50 = element(&rt, "article-summary-result");
+            let discussion = element(&rt, "discussion-summary-result");
+            rt.frame(0.05);
+            let article_100 = element(&rt, "article-summary-result");
+            if reduced {
+                assert_eq!((article_50.opacity, article_100.opacity), (1.0, 1.0));
+                assert_eq!(article_50.rect, article_50.target);
+            } else {
+                assert!(0.4 < article_50.opacity && article_50.opacity < article_100.opacity && article_100.opacity < 1.0,
+                    "article at 50/100ms: {} {}", article_50.opacity, article_100.opacity);
+                assert!(discussion.opacity < 1.0, "pending discussion must not enter with the article");
+            }
+            assert!(!rt.elements().iter().any(|e| e.exiting && e.text.is_some() && e.opacity > 0.001
+                && e.path.contains("summary-scroll")), "outgoing loading text must not overlap");
+
+            discussion_tx.send(()).unwrap();
+            wait_for(&mut rt, false);
+            assert!(rt.state.toast.is_none(), "a visible discussion result needs no toast");
+            rt.frame(0.05);
+            let discussion_50 = element(&rt, "discussion-summary-result");
+            rt.frame(0.05);
+            let discussion_100 = element(&rt, "discussion-summary-result");
+            if reduced {
+                assert_eq!((discussion_50.opacity, discussion_100.opacity), (1.0, 1.0));
+                assert_eq!(discussion_50.rect, discussion_50.target);
+            } else {
+                assert!(0.4 < discussion_50.opacity && discussion_50.opacity < discussion_100.opacity && discussion_100.opacity < 1.0,
+                    "discussion at 50/100ms: {} {}", discussion_50.opacity, discussion_100.opacity);
+            }
+        }
+    }
+
+    #[test]
+    fn returning_to_a_replacement_without_citations_restores_summary_focus() {
+        let mut s = app(true, SavedView::in_memory());
+        scene_story(&mut s);
+        s.open_citation(0);
+        let story = s.story.as_mut().unwrap();
+        story.retry(true);
+        let mut replacement = crate::fixtures::summary();
+        for point in &mut replacement.points { point.sources.clear(); }
+        story.land_update(StoryUpdate::Summary {
+            story_id: story.id(), summary: Ok(replacement), sources: story.sources.clone(),
+        });
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.frame(0.0);
+        route(&mut rt, rune::Key::Escape);
+        assert!(rt.state.story.as_ref().unwrap().source.is_none());
+        assert!(rt.elements().iter().any(|e| e.key.as_deref() == Some("summary-scroll") && e.focused));
+    }
+
+    #[test]
+    fn a_folded_summary_still_announces_its_result() {
+        let (mut s, article, discussion) = gated_summary_fixture();
+        s.story.as_mut().unwrap().summary_open = false;
+        discussion.send(()).unwrap();
+        poll_until(&mut s, |s| matches!(s.story.as_ref().unwrap().summary, SummaryState::Done(_)));
+        assert_eq!(s.toast.as_ref().map(|notice| notice.message.as_str()), Some("Discussion summary ready"));
+        drop(s);
+        drop(article);
+    }
+
+    #[test]
+    #[ignore = "Explicit Metal-backed captures of the actual async summary handoff"]
+    fn render_summary_arrival_frames() {
+        use std::cell::RefCell;
+        use tokio::sync::oneshot::Sender;
+
+        thread_local! {
+            static GATES: RefCell<[Option<Sender<()>>; 2]> = const { RefCell::new([None, None]) };
+        }
+        fn initial() -> App {
+            let (s, article, discussion) = gated_summary_fixture();
+            GATES.with(|gates| *gates.borrow_mut() = [Some(article), Some(discussion)]);
+            s
+        }
+        fn reduced() -> App { let mut s = initial(); s.reduced = true; s }
+        fn gated_poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
+            let gate = GATES.with(|gates| {
+                let mut gates = gates.borrow_mut();
+                if now >= 0.7 && gates[1].is_some() { gates[1].take().map(|g| (g, false)) }
+                else if now >= 0.2 && gates[0].is_some() { gates[0].take().map(|g| (g, true)) }
+                else { None }
+            });
+            if let Some((gate, article)) = gate {
+                gate.send(()).unwrap();
+                let deadline = std::time::Instant::now() + Duration::from_secs(3);
+                let mut changed = false;
+                loop {
+                    changed |= poll(s, now, tx);
+                    let story = s.story.as_ref().unwrap();
+                    let done = if article { matches!(story.article_summary, crate::story::ArticleSummaryState::Done(_)) }
+                        else { matches!(story.summary, SummaryState::Done(_)) };
+                    if done { return changed; }
+                    assert!(std::time::Instant::now() < deadline, "gated result did not land");
+                    std::thread::yield_now();
+                }
+            }
+            poll(s, now, tx)
+        }
+        let out = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("target/ux-motion/reading-arrivals");
+        std::fs::create_dir_all(&out).unwrap();
+        for (name, init, is_reduced) in [("normal", initial as fn() -> App, false), ("reduced", reduced, true)] {
+            for theme in ["dark", "light"] {
+                for (section, at) in [("article", "0.25"), ("article", "0.30"), ("discussion", "0.75"), ("discussion", "0.80")] {
+                    let stem = out.join(format!("{section}-{name}-{theme}-{}", at.replace('.', "")));
+                    let args = rune::tooling::Args::parse_from(vec!["reading-arrival".into(),
+                        "--size".into(), "1180x760".into(), "--scale".into(), "1".into(),
+                        "--theme".into(), theme.into(), "--at".into(), at.into(),
+                        "--snap".into(), stem.with_extension("png").display().to_string(),
+                        "--tree".into(), stem.with_extension("json").display().to_string(),
+                        "--trace".into(), stem.with_extension("jsonl").display().to_string()]);
+                    let mut spec = AppSpec::new("Hacker News", (1180.0, 760.0), init, view);
+                    spec.poll = Some(gated_poll);
+                    rune::tooling::headless(rune::App::new(spec), args);
+                    let tree: serde_json::Value = serde_json::from_slice(&std::fs::read(stem.with_extension("json")).unwrap()).unwrap();
+                    let key = format!("{section}-summary-result");
+                    let node = tree["elements"].as_array().unwrap().iter().find(|e| e["key"] == key).unwrap();
+                    let opacity = node["opacity"].as_f64().unwrap();
+                    if is_reduced { assert_eq!(opacity, 1.0); }
+                    else { assert!(opacity > 0.4 && opacity < 1.0, "{section} {at}: {opacity}"); }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn citation_navigation_moves_as_one_surface_and_preserves_discussion() {
+        for reduced in [false, true] {
+            let mut s = app(true, SavedView::in_memory());
+            scene_story(&mut s);
+            let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+            rt.on_key = Some(on_key);
+            rt.set_system_reduced_motion(reduced);
+            rt.frame(0.0);
+            route(&mut rt, rune::Key::Tab);
+            rt.key(KeyEvent { key: rune::Key::Enter, mods: Default::default() });
+            rt.frame(0.0);
+            rt.frame(0.05);
+            let find = |rt: &rune::Runtime<App>, key: &str| rt.elements().into_iter()
+                .find(|e| e.key.as_deref() == Some(key) && !e.exiting).unwrap();
+            let source_50 = find(&rt, "source-viewer");
+            let hidden = find(&rt, "inspector");
+            assert_eq!(hidden.opacity, 0.0);
+            assert!(hidden.inert);
+            rt.frame(0.05);
+            let source_100 = find(&rt, "source-viewer");
+            if reduced {
+                assert_eq!(source_50.opacity, 1.0);
+                assert_eq!(source_50.rect, source_50.target);
+            } else {
+                assert!(source_50.rect[0] > source_100.rect[0] && source_100.rect[0] > source_100.target[0] + 1.0,
+                    "source should still move at 100ms: {} {} {}", source_50.rect[0], source_100.rect[0], source_100.target[0]);
+                assert!(source_50.opacity < source_100.opacity && source_100.opacity < 1.0);
+            }
+            rt.key(KeyEvent { key: rune::Key::Escape, mods: Default::default() });
+            rt.frame(0.0);
+            rt.frame(0.05);
+            let back_50 = find(&rt, "inspector");
+            rt.frame(0.05);
+            let back_100 = find(&rt, "inspector");
+            assert!(!rt.elements().iter().any(|e| e.key.as_deref() == Some("source-viewer") && e.opacity > 0.001));
+            if reduced {
+                assert_eq!(back_50.opacity, 1.0);
+                assert_eq!(back_50.rect, back_50.target);
+            } else {
+                assert!(back_50.rect[0] < back_100.rect[0] && back_100.rect[0] < back_100.target[0] - 1.0);
+                assert!(back_50.opacity < back_100.opacity && back_100.opacity < 1.0);
+            }
+        }
+    }
+
+    #[test]
     fn unavailable_reply_group_retries_from_pointer_and_keyboard() {
         for activation in [None, Some(rune::Key::Enter), Some(rune::Key::Right)] {
             let mut s = app(true, SavedView::in_memory());
@@ -3157,11 +3634,234 @@ mod tests {
         assert!(fake.comment_requests.lock().unwrap().is_empty());
         assert_eq!(*fake.summary_requests.lock().unwrap(), 1);
         fake.comments.lock().unwrap().clear();
-        s.retry_summary();
+        s.refresh_comments();
         let story = s.story.as_ref().unwrap();
+        assert_eq!(story.discussion, Some(Ok(())));
+        assert_eq!(story.thread.roots(), 244, "refresh retains previously loaded roots");
+        assert_eq!(story.sources.len(), 244, "refresh preserves summary citations");
+        let mut empty = app(true, SavedView::in_memory());
+        let Source::Fake(fake) = empty.source.as_ref() else { unreachable!() };
+        fake.comments.lock().unwrap().clear();
+        empty.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        let story = empty.story.as_ref().unwrap();
         assert_eq!(story.discussion, Some(Ok(())));
         assert!(story.thread.is_empty());
         assert!(story.sources.is_empty());
+    }
+
+    #[test]
+    fn refresh_adds_roots_and_replies_without_replacing_summary_or_reading_position() {
+        let mut s = app(true, SavedView::in_memory());
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        s.activate_comment(901);
+        let story = s.story.as_mut().unwrap();
+        assert!(story.thread.reroot(901));
+        assert!(story.thread.select(9010));
+        assert!(story.thread.fold());
+        let before = story.summary.readable().unwrap().clone();
+        let sources: Vec<_> = story.sources.iter().map(|s| (s.id, s.text.clone())).collect();
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        let discussions = *fake.summary_requests.lock().unwrap();
+        let articles = *fake.article_summary_requests.lock().unwrap();
+        let mut new_root = crate::fixtures::comments().remove(0);
+        new_root.id = 987654;
+        new_root.child_ids.clear();
+        let mut comments = fake.comments.lock().unwrap();
+        comments.iter_mut().find(|c| c.id == 901).unwrap().child_ids.push(987655);
+        comments.push(new_root);
+        drop(comments);
+        s.refresh_comments();
+        let story = s.story.as_ref().unwrap();
+        assert!(story.thread.node(987654).is_some());
+        assert_eq!(story.thread.children_of(901), &[9010, 9011]);
+        assert!(story.thread.reply_batch(901, false).contains(&987655));
+        assert_eq!(story.thread.cursor(), Some(9010));
+        assert_eq!(story.thread.root(), Some(901));
+        assert!(story.thread.focus());
+        assert!(story.thread.is_folded(9010));
+        assert_eq!(story.summary.readable(), Some(&before));
+        assert_eq!(story.sources.iter().map(|s| (s.id, s.text.clone())).collect::<Vec<_>>(), sources);
+        assert!(story.current_sources.iter().any(|s| s.id == 987654));
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        assert_eq!(*fake.summary_requests.lock().unwrap(), discussions);
+        assert_eq!(*fake.article_summary_requests.lock().unwrap(), articles);
+        s.retry_summary();
+        let story = s.story.as_ref().unwrap();
+        assert_eq!(story.thread.cursor(), Some(9010));
+        assert_eq!(story.thread.children_of(901), &[9010, 9011]);
+        assert!(matches!(story.article_summary, crate::story::ArticleSummaryState::Done(_)));
+        assert!(matches!(story.summary, SummaryState::Done(_)));
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        assert_eq!(*fake.summary_requests.lock().unwrap(), discussions + 1);
+        assert_eq!(*fake.article_summary_requests.lock().unwrap(), articles + 1);
+    }
+
+    #[test]
+    fn failed_comment_refresh_leaves_the_existing_tree_and_summaries_readable() {
+        let mut s = app(true, SavedView::in_memory());
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        s.activate_comment(901);
+        let before = s.story.as_ref().unwrap().summary.readable().unwrap().clone();
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        let calls = *fake.summary_requests.lock().unwrap();
+        fake.failing_comments.lock().unwrap().insert(crate::fixtures::STORY_ID);
+        s.refresh_comments();
+        let story = s.story.as_ref().unwrap();
+        assert!(!story.refreshing_comments);
+        assert!(story.refresh_error.is_some());
+        assert_eq!(story.thread.children_of(901), &[9010, 9011]);
+        assert_eq!(story.summary.readable(), Some(&before));
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        assert_eq!(*fake.summary_requests.lock().unwrap(), calls);
+    }
+
+    #[test]
+    fn refresh_updates_loaded_nested_replies_and_keeps_new_children_lazy() {
+        let mut s = app(true, SavedView::in_memory());
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        s.activate_comment(901);
+        s.activate_comment(9010);
+        let story = s.story.as_mut().unwrap();
+        assert!(story.thread.select(90100));
+        assert!(story.thread.fold());
+        let pending = story.request_replies(90100, false).unwrap();
+        let before = story.summary.readable().unwrap().clone();
+        let sources: Vec<_> = story.sources.iter().map(|source| (source.id, source.text.clone())).collect();
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        let summaries = *fake.summary_requests.lock().unwrap();
+        let mut comments = fake.comments.lock().unwrap();
+        let nested = comments.iter_mut().find(|comment| comment.id == 90100).unwrap();
+        nested.text = "Updated nested reply".into();
+        nested.child_ids.push(987655);
+        drop(comments);
+
+        s.refresh_comments();
+        let story = s.story.as_mut().unwrap();
+        assert_eq!(story.thread.node(90100).unwrap().text, "Updated nested reply");
+        assert_eq!(story.pending_reply.as_ref(), Some(&pending));
+        assert_eq!(story.thread.cursor(), Some(90100));
+        assert!(story.thread.is_folded(90100));
+        assert_eq!(story.summary.readable(), Some(&before));
+        assert_eq!(story.sources.iter().map(|source| (source.id, source.text.clone())).collect::<Vec<_>>(), sources);
+        let replies = crate::fixtures::replies(&pending.ids);
+        assert!(story.land_replies(crate::bridge::ReplyFilled { request: pending, comments: Ok(replies) }));
+        assert_eq!(story.thread.children_of(90100), &[901000]);
+        assert_eq!(story.thread.reply_batch(90100, false), vec![987655]);
+        assert!(story.thread.node(987655).is_none());
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        let requests = fake.comment_requests.lock().unwrap();
+        let refreshed = requests.last().unwrap();
+        assert!(refreshed.contains(&90100));
+        assert!(!refreshed.contains(&901000) && !refreshed.contains(&987655), "unloaded replies stay lazy");
+        assert_eq!(*fake.summary_requests.lock().unwrap(), summaries);
+    }
+
+    #[test]
+    fn partial_comment_refresh_keeps_failed_nodes_and_applies_successes() {
+        let mut s = app(true, SavedView::in_memory());
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        s.activate_comment(901);
+        let original = s.story.as_ref().unwrap().thread.node(9010).unwrap().text.clone();
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        {
+            let mut comments = fake.comments.lock().unwrap();
+            comments.iter_mut().find(|comment| comment.id == 9010).unwrap().text = "Unavailable update".into();
+            comments.iter_mut().find(|comment| comment.id == 9011).unwrap().text = "Available update".into();
+        }
+        fake.failing_comments.lock().unwrap().insert(9010);
+        s.refresh_comments();
+        let story = s.story.as_ref().unwrap();
+        assert_eq!(story.thread.node(9010).unwrap().text, original);
+        assert_eq!(story.thread.node(9011).unwrap().text, "Available update");
+        assert!(story.refresh_error.as_deref().unwrap().contains("1 loaded reply"));
+
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        fake.failing_comments.lock().unwrap().clear();
+        fake.failing_comments.lock().unwrap().insert(crate::fixtures::STORY_ID);
+        s.refresh_comments();
+        let story = s.story.as_ref().unwrap();
+        assert_eq!(story.thread.node(9010).unwrap().text, "Unavailable update", "loaded replies can refresh even when roots fail");
+        assert!(story.refresh_error.is_some(), "the root failure remains visible");
+        assert_eq!(story.discussion, Some(Ok(())));
+    }
+
+    #[test]
+    fn article_summary_arrives_before_discussion_and_survives_a_refresh_during_generation() {
+        use std::sync::Mutex;
+        use tokio::sync::oneshot;
+        let (release, gate) = oneshot::channel();
+        let gate = Mutex::new(Some(gate));
+        let mut fake = crate::service::FakeService::fixture();
+        fake.summary = Arc::new(move |_| {
+            let gate = gate.lock().unwrap().take().unwrap();
+            Box::pin(async move { let _ = gate.await; Ok(crate::fixtures::summary()) })
+        });
+        let mut s = app(false, SavedView::in_memory());
+        s.source = Arc::new(Source::Fake(fake));
+        s.config.api_key = "fixture".into();
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        poll_until(&mut s, |s| matches!(s.story.as_ref().unwrap().article_summary, crate::story::ArticleSummaryState::Done(_))
+            && matches!(s.story.as_ref().unwrap().summary, SummaryState::Generating { .. }));
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        let mut new_root = crate::fixtures::comments().remove(0);
+        new_root.id = 987654;
+        new_root.child_ids.clear();
+        fake.comments.lock().unwrap().push(new_root);
+        s.refresh_comments();
+        poll_until(&mut s, |s| s.story.as_ref().unwrap().thread.node(987654).is_some());
+        release.send(()).unwrap();
+        poll_until(&mut s, |s| matches!(s.story.as_ref().unwrap().summary, SummaryState::Done(_)));
+        let story = s.story.as_ref().unwrap();
+        assert!(story.thread.node(987654).is_some());
+        assert!(story.current_sources.iter().any(|source| source.id == 987654));
+        assert!(!story.sources.iter().any(|source| source.id == 987654), "summary retains its original capture");
+    }
+
+    #[test]
+    fn clearing_the_key_blocks_old_results_and_deferred_provider_calls() {
+        use std::sync::Mutex;
+        use tokio::sync::oneshot;
+        for regenerate in [false, true] {
+            let (article_release, article_gate) = oneshot::channel();
+            let article_gate = Mutex::new(Some(article_gate));
+            let (summary_release, summary_gate) = oneshot::channel();
+            let summary_gate = Mutex::new(Some(summary_gate));
+            let mut fake = crate::service::FakeService::fixture();
+            fake.article = Arc::new(move |_| {
+                let gate = article_gate.lock().unwrap().take().unwrap();
+                Box::pin(async move { let _ = gate.await; Ok(("captured".into(), false)) })
+            });
+            fake.summary = Arc::new(move |_| {
+                let gate = summary_gate.lock().unwrap().take().unwrap();
+                Box::pin(async move { let _ = gate.await; Ok(crate::fixtures::summary()) })
+            });
+            let mut s = app(false, SavedView::in_memory());
+            s.source = Arc::new(Source::Fake(fake));
+            s.config.api_key = "fixture".into();
+            s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+            poll_until(&mut s, |s| {
+                let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+                *fake.summary_requests.lock().unwrap() == 1
+            });
+            let dir = temp_dir("clear-key-during-capture");
+            let mut settings = Settings::open(&s.config, Some(dir.join("hn/summary.json")), false);
+            settings.set_key("");
+            s.settings = Some(settings);
+            s.apply_settings(regenerate);
+            assert!(s.settings.is_none(), "the actual Apply path must save and close");
+            assert!(!s.configured());
+            std::fs::remove_dir_all(dir).unwrap();
+            article_release.send(()).unwrap();
+            poll_until(&mut s, |s| matches!(s.story.as_ref().unwrap().article, crate::story::ArticleState::Ready { .. }));
+            let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+            assert_eq!(*fake.article_summary_requests.lock().unwrap(), 0);
+            summary_release.send(()).unwrap();
+            poll_until(&mut s, |s| !s.bridge.is_story_pending());
+            let story = s.story.as_ref().unwrap();
+            assert_eq!(story.summary, SummaryState::Unconfigured);
+            assert_eq!(story.article_summary, crate::story::ArticleSummaryState::Unconfigured);
+            assert!(!story.thread.is_empty());
+        }
     }
 
     #[test]
@@ -3171,6 +3871,7 @@ mod tests {
         fake.failing_comments.lock().unwrap().insert(crate::fixtures::STORY_ID);
         s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
         assert!(matches!(s.story.as_ref().unwrap().discussion, Some(Err(_))));
+        assert_eq!(s.story.as_ref().unwrap().summary_notice().as_deref(), Some("Discussion unavailable · press r to retry comments"));
         let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
         assert_eq!(*fake.summary_requests.lock().unwrap(), 0);
         fake.failing_comments.lock().unwrap().clear();

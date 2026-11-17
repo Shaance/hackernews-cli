@@ -20,7 +20,7 @@ use std::task::{Context, Poll, Wake, Waker as TaskWaker};
 
 use anyhow::Result;
 use hn_lib::app::Comment;
-use hn_lib::reader::{Config, Discussion, Source as CapturedSource};
+use hn_lib::reader::{Article, Config, Discussion, Source as CapturedSource};
 use hn_lib::HNCLIItem;
 use rune::{Latest, Waker};
 use tokio::runtime::{Handle, Runtime};
@@ -51,8 +51,9 @@ pub struct Bridge {
     runtime: Runtime,
     handle: Handle,
     latest: Latest<Filled>,
-    article: Option<JoinHandle<StoryUpdate>>,
+    article: Option<JoinHandle<ArticlePhase>>,
     story: Option<JoinHandle<StoryPhase>>,
+    refresh: Latest<CommentsRefreshed>,
     waker: Option<TaskWaker>,
     replies: Latest<ReplyFilled>,
 }
@@ -76,6 +77,7 @@ fn take_task<T>(task: &mut Option<JoinHandle<T>>, waker: Option<&TaskWaker>) -> 
 ///
 /// The `Config` is the reader's own, loaded once at launch; it is never logged, printed or
 /// written into a tree.
+#[derive(Clone)]
 pub struct StoryRequest {
     pub story: HNCLIItem,
     pub config: Config,
@@ -87,6 +89,7 @@ pub struct StoryRequest {
 pub struct StoryFilled {
     pub story_id: i32,
     pub article: Result<(String, bool), String>,
+    pub article_summary: Result<Article, SummaryError>,
     /// The discussion as a tree: the top-level comments and their replies, level by level.
     pub comments: Result<Vec<Comment>, String>,
     pub sources: Vec<CapturedSource>,
@@ -97,7 +100,13 @@ pub struct StoryFilled {
 pub enum StoryUpdate {
     Article { story_id: i32, article: Result<(String, bool), String> },
     Discussion { story_id: i32, comments: Result<Vec<Comment>, String>, sources: Vec<CapturedSource> },
-    Summary { story_id: i32, summary: Result<Discussion, SummaryError> },
+    ArticleSummary { story_id: i32, summary: Result<Article, SummaryError> },
+    Summary { story_id: i32, summary: Result<Discussion, SummaryError>, sources: Vec<CapturedSource> },
+}
+
+enum ArticlePhase {
+    Captured { source: Arc<Source>, request: StoryRequest, article: Result<(String, bool), String> },
+    Summary { story_id: i32, summary: Result<Article, SummaryError> },
 }
 
 enum StoryPhase {
@@ -107,7 +116,14 @@ enum StoryPhase {
         comments: Result<Vec<Comment>, String>,
         sources: Vec<CapturedSource>,
     },
-    Summary { story_id: i32, summary: Result<Discussion, SummaryError> },
+    Summary { story_id: i32, summary: Result<Discussion, SummaryError>, sources: Vec<CapturedSource> },
+}
+
+pub struct CommentsRefreshed {
+    pub story_id: i32,
+    pub comments: Result<Vec<Comment>, String>,
+    pub descendants: Vec<Comment>,
+    pub warning: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -157,6 +173,7 @@ impl Bridge {
             latest: Latest::default(),
             article: None,
             story: None,
+            refresh: Latest::default(),
             waker: None,
             replies: Latest::default(),
         })
@@ -166,6 +183,7 @@ impl Bridge {
     pub fn set_waker(&mut self, waker: Waker) {
         self.latest.set_waker(waker.clone());
         self.replies.set_waker(waker.clone());
+        self.refresh.set_waker(waker.clone());
         let task_waker = TaskWaker::from(Arc::new(StoryWaker(waker)));
         self.waker = Some(task_waker.clone());
         if self.article.is_some() || self.story.is_some() {
@@ -185,12 +203,12 @@ impl Bridge {
     /// Ask for one story open, superseding both parts of any earlier open or retry.
     pub fn request_story(&mut self, source: Arc<Source>, request: StoryRequest) {
         self.replies.cancel();
-        let story = request.story.clone();
+        self.refresh.cancel();
         let article_source = source.clone();
+        let article_request = request.clone();
         self.article = Some(self.handle.spawn(async move {
-            let story_id = story.id;
-            let article = article_source.article(&story).await;
-            StoryUpdate::Article { story_id, article }
+            let article = article_source.article(&article_request.story).await;
+            ArticlePhase::Captured { source: article_source, request: article_request, article }
         }));
         self.story = Some(self.handle.spawn(async move {
             let comments = source.thread(request.story.id).await.map_err(|e| e.to_string());
@@ -200,6 +218,52 @@ impl Bridge {
         // Input dispatch may run after the frame's poll; schedule one to register these tasks.
         if let Some(waker) = &self.waker { waker.wake_by_ref(); }
     }
+
+    /// Re-run summaries on the current captures without replacing the discussion tree.
+    pub fn request_summaries(&mut self, source: Arc<Source>, request: StoryRequest,
+        article: Option<(String, bool)>, sources: Option<Vec<CapturedSource>>) {
+        let article_source = source.clone();
+        let article_request = request.clone();
+        self.article = Some(self.handle.spawn(async move {
+            match article {
+                Some(article) => ArticlePhase::Summary {
+                    story_id: article_request.story.id,
+                    summary: article_source.article_summary(&article_request.config, &article_request.story, &article).await,
+                },
+                None => {
+                    let article = article_source.article(&article_request.story).await;
+                    ArticlePhase::Captured { source: article_source, request: article_request, article }
+                }
+            }
+        }));
+        self.story = Some(self.handle.spawn(async move {
+            match sources {
+                Some(sources) => {
+                    let summary = source.summary(&request.config, &request.story, &sources).await;
+                    StoryPhase::Summary { story_id: request.story.id, summary, sources }
+                }
+                None => {
+                    let comments = source.thread(request.story.id).await.map_err(|e| e.to_string());
+                    let sources = comments.as_ref().map(|comments| source.capture(comments)).unwrap_or_default();
+                    StoryPhase::Captured { source, request, comments, sources }
+                }
+            }
+        }));
+        if let Some(waker) = &self.waker { waker.wake_by_ref(); }
+    }
+
+    pub fn request_refresh(&self, source: Arc<Source>, story_id: i32, loaded: Vec<i32>) {
+        let handle = self.handle.clone();
+        self.refresh.request((story_id, loaded), move |(story_id, loaded)| {
+            handle.block_on(run_refresh(source.as_ref(), story_id, loaded))
+        });
+    }
+
+    pub fn refresh_now(&self, source: &Source, story_id: i32, loaded: Vec<i32>) -> CommentsRefreshed {
+        self.runtime.block_on(run_refresh(source, story_id, loaded))
+    }
+
+    pub fn take_refresh(&self) -> Option<CommentsRefreshed> { self.refresh.take() }
 
     /// The same request, run to completion on this thread. Headless scenes and tests use it so
     /// the first frame already has its rows.
@@ -231,23 +295,36 @@ impl Bridge {
 
     /// Take a ready story result. Once the discussion lands, start its summary using the
     /// same owner; article extraction never holds up the discussion.
-    pub fn take_story(&mut self) -> Option<StoryUpdate> {
-        if let Some(article) = take_task(&mut self.article, self.waker.as_ref()) {
-            return Some(article);
+    pub fn take_story(&mut self, summarize: bool) -> Option<StoryUpdate> {
+        if let Some(phase) = take_task(&mut self.article, self.waker.as_ref()) {
+            return Some(match phase {
+                ArticlePhase::Captured { source, request, article } => {
+                    let story_id = request.story.id;
+                    if let Ok(captured) = &article && summarize && (!source.is_live() || !request.config.key().is_empty()) {
+                        let captured = captured.clone();
+                        self.article = Some(self.handle.spawn(async move {
+                            let summary = source.article_summary(&request.config, &request.story, &captured).await;
+                            ArticlePhase::Summary { story_id, summary }
+                        }));
+                    }
+                    StoryUpdate::Article { story_id, article }
+                }
+                ArticlePhase::Summary { story_id, summary } => StoryUpdate::ArticleSummary { story_id, summary },
+            });
         }
         match take_task(&mut self.story, self.waker.as_ref())? {
             StoryPhase::Captured { source, request, comments, sources } => {
                 let story_id = request.story.id;
-                if comments.is_ok() {
+                if comments.is_ok() && summarize && (!source.is_live() || !request.config.key().is_empty()) {
                     let captured = sources.clone();
                     self.story = Some(self.handle.spawn(async move {
                         let summary = source.summary(&request.config, &request.story, &captured).await;
-                        StoryPhase::Summary { story_id, summary }
+                        StoryPhase::Summary { story_id, summary, sources: captured }
                     }));
                 }
                 Some(StoryUpdate::Discussion { story_id, comments, sources })
             }
-            StoryPhase::Summary { story_id, summary } => Some(StoryUpdate::Summary { story_id, summary }),
+            StoryPhase::Summary { story_id, summary, sources } => Some(StoryUpdate::Summary { story_id, summary, sources }),
         }
     }
 
@@ -258,8 +335,7 @@ impl Bridge {
 
     /// Whether a story open is still in flight.
     pub fn is_story_pending(&self) -> bool {
-        self.article.as_ref().is_some_and(|task| !task.is_finished())
-            || self.story.as_ref().is_some_and(|task| !task.is_finished())
+        self.article.is_some() || self.story.is_some()
     }
 
     /// Drop the story open and any answer not yet taken, leaving the feed's request alone.
@@ -267,6 +343,7 @@ impl Bridge {
         self.article = None;
         self.story = None;
         self.replies.cancel();
+        self.refresh.cancel();
     }
 
     /// Drop only the feed request when a held window settles synchronously.
@@ -323,10 +400,17 @@ async fn run(source: &Source, request: Request) -> Filled {
 /// article extractor. A failed article does not stop the discussion.
 ///
 /// The discussion is fetched as a tree, because the inspector draws one; the summary is written
-/// from the top-level comments only, which is the capture the card's coverage line describes.
+/// from the top-level comments only; the capture stays paired with its summary citations.
 async fn run_story(source: &Source, request: StoryRequest) -> StoryFilled {
     let story_id = request.story.id;
-    let (article, (comments, sources, summary)) = tokio::join!(source.article(&request.story), async {
+    let ((article, article_summary), (comments, sources, summary)) = tokio::join!(async {
+        let article = source.article(&request.story).await;
+        let summary = match &article {
+            Ok(captured) => source.article_summary(&request.config, &request.story, captured).await,
+            Err(message) => Err(SummaryError::new(message.clone(), false)),
+        };
+        (article, summary)
+    }, async {
         let comments = source.thread(story_id).await.map_err(|e| e.to_string());
         let sources = comments.as_ref().map(|comments| source.capture(comments)).unwrap_or_default();
         let summary = match &comments {
@@ -338,6 +422,7 @@ async fn run_story(source: &Source, request: StoryRequest) -> StoryFilled {
     StoryFilled {
         story_id,
         article,
+        article_summary,
         comments,
         sources,
         summary,
@@ -347,6 +432,27 @@ async fn run_story(source: &Source, request: StoryRequest) -> StoryFilled {
 async fn run_replies(source: &Source, request: ReplyRequest) -> ReplyFilled {
     let comments = source.children(&request.ids, request.depth).await.map_err(|e| e.to_string());
     ReplyFilled { request, comments }
+}
+
+/// Refresh only roots and metadata for replies the reader has already loaded.
+async fn run_refresh(source: &Source, story_id: i32, loaded: Vec<i32>) -> CommentsRefreshed {
+    let descendants = async {
+        if loaded.is_empty() { return (Vec::new(), None); }
+        match source.children(&loaded, 1).await {
+            Ok(comments) => {
+                let found: std::collections::HashSet<_> = comments.iter().map(|comment| comment.id).collect();
+                let missing = loaded.iter().filter(|id| !found.contains(id)).count();
+                let warning = (missing > 0).then(|| {
+                    let noun = if missing == 1 { "reply" } else { "replies" };
+                    format!("{missing} loaded {noun} could not be refreshed")
+                });
+                (comments, warning)
+            }
+            Err(error) => (Vec::new(), Some(format!("Loaded replies could not be refreshed: {error}"))),
+        }
+    };
+    let (comments, (descendants, warning)) = tokio::join!(source.thread(story_id), descendants);
+    CommentsRefreshed { story_id, comments: comments.map_err(|error| error.to_string()), descendants, warning }
 }
 
 #[cfg(test)]
@@ -481,10 +587,10 @@ mod tests {
     fn wait_for_story(bridge: &mut Bridge) -> Vec<StoryUpdate> {
         let mut updates = Vec::new();
         for _ in 0..600 {
-            while let Some(update) = bridge.take_story() {
+            while let Some(update) = bridge.take_story(true) {
                 updates.push(update);
             }
-            if updates.len() == 3 {
+            if updates.len() == 4 {
                 return updates;
             }
             std::thread::sleep(Duration::from_millis(5));
@@ -495,6 +601,7 @@ mod tests {
     fn update_id(update: &StoryUpdate) -> i32 {
         match update {
             StoryUpdate::Article { story_id, .. }
+            | StoryUpdate::ArticleSummary { story_id, .. }
             | StoryUpdate::Discussion { story_id, .. }
             | StoryUpdate::Summary { story_id, .. } => *story_id,
         }
@@ -517,10 +624,10 @@ mod tests {
         });
         bridge.request_story(Arc::new(Source::Fake(fake)), story_request(0, 1));
         wakes.recv_timeout(Duration::from_secs(2)).expect("request schedules registration poll");
-        assert!(bridge.take_story().is_none());
+        assert!(bridge.take_story(true).is_none());
         gate.add_permits(1);
         wakes.recv_timeout(Duration::from_secs(2)).expect("completed task wakes the UI");
-        assert!(matches!(bridge.take_story(), Some(StoryUpdate::Article { story_id: 1, .. })));
+        assert!(matches!(bridge.take_story(true), Some(StoryUpdate::Article { story_id: 1, .. })));
         bridge.cancel_story();
     }
 
@@ -571,7 +678,7 @@ mod tests {
         );
         let landed = wait_for_story(&mut bridge);
         assert!(landed.iter().all(|update| update_id(update) == crate::fixtures::STORY_ID));
-        assert!(bridge.take_story().is_none(), "each answer lands once");
+        assert!(bridge.take_story(true).is_none(), "each answer lands once");
     }
 
     #[test]
@@ -584,8 +691,19 @@ mod tests {
         );
         bridge.cancel_story();
         std::thread::sleep(Duration::from_millis(120));
-        assert!(bridge.take_story().is_none());
+        assert!(bridge.take_story(true).is_none());
         assert!(!bridge.is_story_pending());
+    }
+
+    #[test]
+    fn reopening_the_same_story_discards_its_older_refresh() {
+        let mut bridge = Bridge::new().unwrap();
+        let slow = Arc::new(Source::Fake(crate::service::FakeService::fixture().with_delay(Duration::from_millis(150))));
+        bridge.request_refresh(slow, 1, Vec::new());
+        bridge.request_story(Arc::new(Source::fake()), story_request(0, 1));
+        assert!(wait_for_story(&mut bridge).iter().all(|update| update_id(update) == 1));
+        std::thread::sleep(Duration::from_millis(200));
+        assert!(bridge.take_refresh().is_none());
     }
 
     #[test]
@@ -598,7 +716,7 @@ mod tests {
         bridge.request_story(source, story_request(crate::fixtures::STORY_INDEX, 2));
         let landed = wait_for_story(&mut bridge);
         assert!(landed.iter().all(|update| update_id(update) == 2));
-        assert!(bridge.take_story().is_none());
+        assert!(bridge.take_story(true).is_none());
     }
 
     #[test]

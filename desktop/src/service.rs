@@ -24,7 +24,7 @@ use async_trait::async_trait;
 use hn_lib::app::{Comment, StoryType};
 use hn_lib::hn_client::{HackerNewsClient, HackerNewsClientImpl};
 use hn_lib::reader::{
-    self, Config, Discussion, DiscussionCapture, Network, Source as CapturedSource,
+    self, Article, ArticleCapture, Config, Discussion, DiscussionCapture, Network, Source as CapturedSource,
 };
 use hn_lib::{HNCLIItem, HackerNewsCliService, HackerNewsCliServiceImpl};
 
@@ -96,6 +96,33 @@ impl Source {
                 .await
                 .map_err(|failure| failure.message),
             Source::Fake(fake) => (fake.article)(story.id).await,
+        }
+    }
+
+    /// Summarize the same extracted text the fallback article pane uses.
+    pub async fn article_summary(
+        &self,
+        config: &Config,
+        story: &HNCLIItem,
+        article: &(String, bool),
+    ) -> std::result::Result<Article, SummaryError> {
+        match self {
+            Source::Live { network, .. } => {
+                if config.key().is_empty() {
+                    return Err(SummaryError::new("No summary API key. M opens settings.", true));
+                }
+                let capture = ArticleCapture {
+                    title: reader::sources::clean(&story.title),
+                    text: article.0.clone(),
+                    partial: article.1,
+                };
+                network.article(config.provider, config.key(), config.profile, &capture).await
+                    .map_err(|failure| SummaryError::new(failure.message.clone(), failure.is_auth()))
+            }
+            Source::Fake(fake) => {
+                *fake.article_summary_requests.lock().unwrap() += 1;
+                (fake.article_summary)(story.id).await
+            }
         }
     }
 
@@ -183,6 +210,7 @@ impl Source {
 }
 
 type FakeArticle = dyn Fn(i32) -> Pin<Box<dyn Future<Output = std::result::Result<(String, bool), String>> + Send>> + Send + Sync;
+type FakeArticleSummary = dyn Fn(i32) -> Pin<Box<dyn Future<Output = std::result::Result<Article, SummaryError>> + Send>> + Send + Sync;
 type FakeSummary = dyn Fn(i32) -> Pin<Box<dyn Future<Output = std::result::Result<Discussion, SummaryError>> + Send>> + Send + Sync;
 
 /// A deterministic `HackerNewsCliService`: fixed rankings, fixed items, optional failures and
@@ -198,7 +226,9 @@ pub struct FakeService {
     pub failing_comments: Mutex<HashSet<i32>>,
     pub comment_requests: Mutex<Vec<Vec<i32>>>,
     pub summary_requests: Mutex<usize>,
+    pub article_summary_requests: Mutex<usize>,
     pub(crate) article: Arc<FakeArticle>,
+    pub(crate) article_summary: Arc<FakeArticleSummary>,
     pub(crate) summary: Arc<FakeSummary>,
 }
 
@@ -231,7 +261,9 @@ impl FakeService {
             failing_comments: Mutex::new(HashSet::new()),
             comment_requests: Mutex::new(Vec::new()),
             summary_requests: Mutex::new(0),
+            article_summary_requests: Mutex::new(0),
             article: Arc::new(|_| Box::pin(async { Ok((fixtures::ARTICLE.to_string(), false)) })),
+            article_summary: Arc::new(|_| Box::pin(async { Ok(Article { text: "The article describes Libghostty and its design.".to_string() }) })),
             summary: Arc::new(|_| Box::pin(async { Ok(fixtures::summary()) })),
         }
     }
@@ -249,7 +281,9 @@ impl FakeService {
             failing_comments: Mutex::new(HashSet::new()),
             comment_requests: Mutex::new(Vec::new()),
             summary_requests: Mutex::new(0),
+            article_summary_requests: Mutex::new(0),
             article: Arc::new(|_| Box::pin(async { Ok((fixtures::ARTICLE.to_string(), false)) })),
+            article_summary: Arc::new(|_| Box::pin(async { Ok(Article { text: "The article describes Libghostty and its design.".to_string() }) })),
             summary: Arc::new(|_| Box::pin(async { Ok(fixtures::summary()) })),
         }
     }

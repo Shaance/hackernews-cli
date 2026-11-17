@@ -137,12 +137,12 @@
   {
     "t": 9.6,
     "type": "key",
-    "name": "Escape"
+    "name": "f"
   },
   {
     "t": 9.95,
     "type": "mark",
-    "name": "esc"
+    "name": "focus3"
   },
   {
     "t": 10.3,

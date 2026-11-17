@@ -452,14 +452,13 @@ for name in story comments summary-generating; do
     bad "$name summary pinned (card at pane top / above first comment = '$pinned')"
   fi
 
-  # The discussion is a tree, not a flat list: a reply draws at a deeper level than its parent,
-  # and the header counts loaded readable comments rather than mounted rows.
+  # The discussion is a tree, and focus mode starts enabled.
   deep=$(q '[.elements[] | select((.key // "") | test("^comment-[0-9]+$")) | select(.level > 1)] | length')
-  count=$(q '[.elements[] | select((.key // "") == "discussion-count") | .text][0] // ""')
-  if [ "$deep" -ge 1 ] && [ "$count" = "17 loaded" ]; then
-    pass "$name discussion (tree, $deep rows below the top level, '$count')"
+  focus=$(q '[.elements[] | select((.key // "") == "discussion-focus") | .label][0] // ""')
+  if [ "$deep" -ge 1 ] && [ "$focus" = "Turn focus mode off" ]; then
+    pass "$name discussion (tree, $deep deeper rows, focus mode on)"
   else
-    bad "$name discussion ($deep rows below the top level, count '$count')"
+    bad "$name discussion ($deep deeper rows, focus '$focus')"
   fi
 done
 
@@ -526,17 +525,14 @@ else
   bad "thread re-root (trail y=$trail_y, root row y=$first_y at level $root_level)"
 fi
 
-# Focus mode: the pill is on, the chain keeps full contrast, and the two sibling replies under the
-# re-rooted comment dim to 0.35. Nothing is hidden, so nothing has to be found again.
-pill=$(jq '[.elements[] | select((.key // "") == "discussion-focus")] | length' "$ACTUAL/thread.json")
-dim=$(jq -r '[.elements[] | select((.key // "") | test("^comment-[0-9]+$"))
-    | select(.opacity < 0.99) | .key] | sort | join(",")' "$ACTUAL/thread.json")
-dim_op=$(jq -r '[.elements[] | select((.key // "") == "comment-9010001") | .opacity][0] // 0' "$ACTUAL/thread.json")
-chain_op=$(jq -r '[.elements[] | select((.key // "") == "comment-9010000") | .opacity][0] // 0' "$ACTUAL/thread.json")
-if [ "$pill" = 1 ] && [ "$dim" = "comment-9010001,comment-9010002" ] && [ "$dim_op" = "0.3499999940395355" ] && [ "$chain_op" = "1.0" ]; then
-  pass "thread focus (pill on, $dim dimmed to $dim_op, chain at $chain_op)"
+# Focus marks the selected comment without dimming the remaining discussion.
+focus=$(jq -r '[.elements[] | select((.key // "") == "discussion-focus") | .label][0] // ""' "$ACTUAL/thread.json")
+rail=$(jq -r '[.elements[] | select((.key // "") | startswith("focus-rail-")) | .key] | join(",")' "$ACTUAL/thread.json")
+dim=$(jq '[.elements[] | select((.key // "") | test("^comment-[0-9]+$")) | select(.opacity < 0.99)] | length' "$ACTUAL/thread.json")
+if [ "$focus" = "Turn focus mode off" ] && [ "$rail" = "focus-rail-9010000" ] && [ "$dim" = 0 ]; then
+  pass "thread focus (selected rail, all comments readable)"
 else
-  bad "thread focus (pill $pill, dimmed '$dim' at $dim_op, chain at $chain_op)"
+  bad "thread focus (label '$focus', rail '$rail', $dim dimmed comments)"
 fi
 
 # The focused comment is the selected row, and it is the one the trail ends on.
@@ -569,7 +565,7 @@ step "thread keys (j [ ] u h l f Enter ⌫ Esc L Tab S, asserted after each)"
 # One render per mark in scripts/thread-keys.json, and the tree the app drew after each key. The
 # script is the proof that the keys are wired to the model, not just that the model has the
 # transitions: every assertion below reads the rendered tree, never the state a test set up.
-for mark in start next sibling sibling-back parent folded unfolded focus reroot pop focus2 esc \
+for mark in start next sibling sibling-back parent folded unfolded focus reroot pop focus2 focus3 \
   links links-closed citation citation-closed summary-hidden summary-shown; do
   "$BIN" --scene story --size 1180x760 --scale 2 --theme dark --script scripts/thread-keys.json \
     --at "mark:$mark" --tree "$ACTUAL/keys-$mark.json" >/dev/null
@@ -581,9 +577,8 @@ key_rows() { jq -r '[.elements[] | select((.key // "") | test("^comment-[0-9]+$"
     | {y: .rect[1], id: (.key | sub("comment-"; ""))}] | sort_by(.y) | map(.id) | join(",")' "$ACTUAL/keys-$1.json"; }
 key_sel() { jq -r '[.elements[] | select(.itemSelected == true) | .key] | join(",")' "$ACTUAL/keys-$1.json"; }
 key_trail() { jq -r '[.accessibility | .. | objects | select((.key // "") | startswith("trail-")) | .key] | join(",")' "$ACTUAL/keys-$1.json"; }
-key_dim() { jq -r '[.elements[] | select((.key // "") | test("^comment-[0-9]+$"))
-    | select(.opacity < 0.99) | .key] | sort | join(",")' "$ACTUAL/keys-$1.json"; }
-key_pill() { jq '[.elements[] | select((.key // "") == "discussion-focus")] | length' "$ACTUAL/keys-$1.json"; }
+key_focus() { jq -r '[.elements[] | select((.key // "") == "discussion-focus") | .label][0] // ""' "$ACTUAL/keys-$1.json"; }
+key_rail() { jq -r '[.elements[] | select((.key // "") | startswith("focus-rail-")) | .key] | join(",")' "$ACTUAL/keys-$1.json"; }
 
 check() { # mark got want what
   if [ "$2" = "$3" ]; then
@@ -596,6 +591,7 @@ check() { # mark got want what
 check start "$(key_rows start)" "901,9010,90100,901000,90101,9011,902,903,9030,90300,904,905" "12 rows, depth first"
 check start "$(key_sel start)" "comment-901" "the cursor starts on the first row"
 check start "$(key_trail start)" "" "no trail at the top level"
+check start "$(key_rail start)" "focus-rail-901" "focus starts on the selected comment"
 
 check next "$(key_sel next)" "comment-9010" "j moves to the next visible row"
 check next "$(key_trail next)" "trail-901,trail-9010" "the trail gains a segment"
@@ -615,8 +611,8 @@ check folded "$hidden" "Show 3 hidden replies" "the fold counts the rows it hid"
 
 check unfolded "$(key_rows unfolded)" "901,9010,90100,901000,90101,9011,902,903,9030,90300,904,905" "l unfolds them again"
 
-check focus "$(key_pill focus)" "1" "f turns focus mode on"
-check focus "$(key_dim focus)" "comment-9011,comment-902,comment-903,comment-9030,comment-90300,comment-904,comment-905" "the rows off the chain dim"
+check focus "$(key_focus focus)" "Turn focus mode on" "f turns focus mode off"
+check focus "$(key_rail focus)" "" "the selected rail is removed"
 
 check reroot "$(key_rows reroot)" "901000,9010000,90100000,90100001,9010001,9010002" "Enter on continue thread re-roots"
 check reroot "$(key_trail reroot)" "trail-901,trail-9010,trail-90100,trail-901000" "and pushes a trail segment"
@@ -625,12 +621,11 @@ check reroot "$(key_sel reroot)" "comment-901000" "the re-rooted comment is the 
 check pop "$(key_rows pop)" "90100,901000,9010000,90100000,90100001,9010001,9010002" "Backspace pops one segment"
 check pop "$(key_trail pop)" "trail-901,trail-9010,trail-90100" "the trail is one segment shorter"
 
-check focus2 "$(key_pill focus2)" "1" "f again, deeper in the thread"
-check focus2 "$(key_dim focus2)" "comment-9010001,comment-9010002" "only the off-chain replies dim"
-
-check esc "$(key_pill esc)" "0" "Esc leaves focus mode"
-check esc "$(key_dim esc)" "" "and nothing is dimmed"
-check esc "$(key_rows esc)" "90100,901000,9010000,90100000,90100001,9010001,9010002" "the story stays open"
+check focus2 "$(key_focus focus2)" "Turn focus mode on" "f turns focus off deeper in the thread"
+check focus2 "$(key_rail focus2)" "" "no focus rail while off"
+check focus3 "$(key_focus focus3)" "Turn focus mode off" "f turns focus back on"
+check focus3 "$(key_rail focus3)" "focus-rail-9010000" "the selected comment is marked"
+check focus3 "$(key_rows focus3)" "90100,901000,9010000,90100000,90100001,9010001,9010002" "the story stays open"
 
 chip=$(jq -r '[.elements[] | select((.key // "") == "links-chip") | .expanded][0]' "$ACTUAL/keys-links.json")
 links=$(jq '[.elements[] | select((.key // "") | test("^link-[0-9]+$"))] | length' "$ACTUAL/keys-links.json")
@@ -646,14 +641,14 @@ viewer=$(jq '[.elements[] | select((.key // "") == "source-viewer")] | length' "
 check citation-closed "$viewer" "0" "Esc closes the viewer and keeps the discussion"
 
 # S collapses the summary card to its points and back, and the discussion does not move.
-hidden=$(jq -r '[.elements[] | select((.key // "") == "summary-provenance") | .text][0] // ""' "$ACTUAL/keys-summary-hidden.json")
-shown=$(jq -r '[.elements[] | select((.key // "") == "summary-provenance") | .text][0] // ""' "$ACTUAL/keys-summary-shown.json")
-check summary-hidden "$hidden" "3 points" "S collapses the summary card"
-check summary-shown "$shown" "3 of 3 sources" "S expands it again"
+hidden=$(jq '[.elements[] | select((.key // "") == "summary-folded" and .exiting != true)] | length' "$ACTUAL/keys-summary-hidden.json")
+shown=$(jq '[.elements[] | select((.key // "") == "summary-open" and .exiting != true)] | length' "$ACTUAL/keys-summary-shown.json")
+check summary-hidden "$hidden" "1" "S collapses the summary card"
+check summary-shown "$shown" "1" "S expands it again"
 
 # Every transition leaves the focused comment inside the discussion's viewport: the selection is
 # scrolled into view, so a key never moves the cursor somewhere the reader cannot see.
-for mark in start next sibling sibling-back parent folded unfolded focus reroot pop focus2 esc \
+for mark in start next sibling sibling-back parent folded unfolded focus reroot pop focus2 focus3 \
   links links-closed citation-closed summary-hidden summary-shown; do
   inside=$(jq -r '[.elements[] | select((.key // "") == "discussion-scroll") | .rect][0] as $vp
     | [.elements[] | select(.itemSelected == true) | select((.key // "") | test("^comment-[0-9]+$")) | .rect][0] as $row
@@ -662,38 +657,43 @@ for mark in start next sibling sibling-back parent folded unfolded focus reroot 
   check "$mark" "$inside" "true" "the focused comment is inside the viewport"
 done
 
-# The done state: numbered citation chips, one per cited source, each a control.
+# The done state: numbered references are inline controls named for their source.
 chips=$(jq -r '[.elements[] | select((.key // "") | test("^cite-[0-9]+$")) | "\(.key):\(.role)"] | sort | join(",")' "$ACTUAL/story.json")
-if [ "$chips" = "cite-901:button,cite-902:button,cite-903:button,cite-904:button,cite-905:button" ]; then
-  pass "story citation chips (5, numbered, buttons)"
+inline=$(jq '[.elements[] | select((.key // "") | test("^cite-[0-9]+$")) | select((.path // "") | contains("summary-text-"))] | length' "$ACTUAL/story.json")
+first_label=$(jq -r '[.elements[] | select(.key == "cite-0") | .label][0] // ""' "$ACTUAL/story.json")
+if [ "$chips" = "cite-0:button,cite-1:button,cite-2:button,cite-3:button,cite-4:button" ] && [ "$inline" = 5 ] && [ "$first_label" = "Read comment by tptacek" ]; then
+  pass "story inline citations (5 source-named controls)"
 else
-  bad "story citation chips (got '$chips')"
+  bad "story inline citations (got '$chips', $inline inline, first '$first_label')"
 fi
-provenance=$(jq -r '[.elements[] | select((.key // "") == "summary-provenance") | .text][0] // ""' "$ACTUAL/story.json")
-if [ "$provenance" = "3 of 3 sources" ]; then
-  pass "story summary provenance ($provenance)"
+synopsis=$(jq -r '[.elements[] | select(.key == "article-summary") | .text][0] // ""' "$ACTUAL/story.json")
+headings=$(jq -r '[.elements[] | select(.key == "article-summary-heading" or .key == "discussion-summary-heading") | .text] | join(",")' "$ACTUAL/story.json")
+if [ "$synopsis" = "The article describes Libghostty and its design." ] && [ "$headings" = "Article,Discussion" ]; then
+  pass "story summary (article synopsis and discussion sections)"
 else
-  bad "story summary provenance (got '$provenance')"
+  bad "story summary (synopsis '$synopsis', sections '$headings')"
 fi
 
-# The citation scene: the source viewer takes the inspector and the article stays as context.
+# The citation scene preserves the hidden inspector and exposes the full cited comment.
 viewer=$(jq -r '[.elements[] | select((.key // "") == "source-viewer") | .label][0] // ""' "$ACTUAL/citation.json")
-excerpt=$(jq '[.elements[] | select((.key // "") == "source-excerpt-text") | .text] | length' "$ACTUAL/citation.json")
-dimmed=$(jq '[.elements[] | select((.key // "") == "article-pane") | .opacity][0] // 1' "$ACTUAL/citation.json")
-if [ "$viewer" = "Citation 2" ] && [ "$excerpt" = 1 ] && [ "$dimmed" = "0.550000011920929" ]; then
-  pass "citation viewer ($viewer, excerpt shown, article dimmed to $dimmed)"
+comment=$(jq '[.elements[] | select(.key == "source-comment-text" and (.text // "") != "")] | length' "$ACTUAL/citation.json")
+hidden=$(jq -r '[.elements[] | select(.key == "inspector") | (.inert == true and .opacity == 0)][0] // false' "$ACTUAL/citation.json")
+article_opacity=$(jq '[.elements[] | select(.key == "article-pane") | .opacity][0] // 0' "$ACTUAL/citation.json")
+if [ "$viewer" = "Comment by tptacek" ] && [ "$comment" = 1 ] && [ "$hidden" = "true" ] && [ "$article_opacity" = "1.0" ]; then
+  pass "citation viewer ($viewer, full comment, retained inert inspector)"
 else
-  bad "citation viewer (label '$viewer', $excerpt excerpts, article opacity $dimmed)"
+  bad "citation viewer (label '$viewer', $comment comments, inspector '$hidden', article opacity $article_opacity)"
 fi
 
-# Generating: skeleton rows and the capture count, and no chips until the summary lands.
+# One section may be ready while the other is still generating.
 skeletons=$(jq '[.elements[] | select((.key // "") | test("^skeleton-[0-9]+$"))] | length' "$ACTUAL/summary-generating.json")
 chips=$(jq '[.elements[] | select((.key // "") | test("^cite-[0-9]+$"))] | length' "$ACTUAL/summary-generating.json")
-captured=$(jq -r '[.elements[] | select((.key // "") == "summary-provenance") | .text][0] // ""' "$ACTUAL/summary-generating.json")
-if [ "$skeletons" = 5 ] && [ "$chips" = 0 ] && [ "$captured" = "2 of 3 sources captured" ]; then
-  pass "summary generating (5 skeleton rows, '$captured', no chips)"
+status=$(jq -r '[.elements[] | select(.key == "summary-status") | .text][0] // ""' "$ACTUAL/summary-generating.json")
+article=$(jq '[.elements[] | select(.key == "article-summary" and (.text // "") != "")] | length' "$ACTUAL/summary-generating.json")
+if [ "$skeletons" = 2 ] && [ "$chips" = 0 ] && [ "$status" = "Reading the discussion…" ] && [ "$article" = 1 ]; then
+  pass "summary generating (article ready, discussion pending)"
 else
-  bad "summary generating ($skeletons skeletons, $chips chips, '$captured')"
+  bad "summary generating ($skeletons skeletons, $chips citations, '$status', $article article summaries)"
 fi
 
 step "settings and help (the two overlays, read from the tree)"
@@ -745,7 +745,7 @@ fi
 # Every control in the dialog is a named, focusable role: the switch and the three buttons.
 controls=$(sq '[.accessibility | .. | objects | select(.role == "switch" or .role == "button")
   | .name] | join(",")')
-if [ "$controls" = "Close,Automatic summaries,Refresh sources & summary,Cancel,Apply" ]; then
+if [ "$controls" = "Close,Automatic summaries,Regenerate summary,Cancel,Apply" ]; then
   pass "settings controls ($controls)"
 else
   bad "settings controls (got '$controls')"
@@ -770,9 +770,9 @@ else
 fi
 
 # A row with no keys is a label with nothing to press; a row with no label is keys with no
-# meaning. The count comes from expected/, so a sheet that silently lost rows fails here too.
+# meaning. The intended four groups contain 48 rows.
 rows=$(hq '[.accessibility | .. | objects | select((.key // "") | startswith("help-row-"))] | length')
-want_rows=$(jq '[.elements[] | select((.key // "") | startswith("help-row-"))] | length' "$EXPECTED/help.json")
+want_rows=48
 bare=$(hq '[.accessibility | .. | objects | select((.key // "") | startswith("help-row-"))
   | select(([.children[]? | select(.role == "group" and (.name // "") != "")] | length) != 1
         or ([.children[]? | select(.role == "label" and (.name // "") != "")] | length) != 1)] | length')

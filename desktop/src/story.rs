@@ -10,18 +10,11 @@
 //! re-root and focus mode. This module owns the story around it — the article, the card, the
 //! citation selection and the link chooser — and hands the thread's transitions straight through.
 
-use hn_lib::reader::{Discussion, Source as CapturedSource};
+use hn_lib::reader::{Article, Discussion, Source as CapturedSource};
 use hn_lib::HNCLIItem;
 
-use crate::bridge::{StoryFilled, StoryUpdate, SummaryError};
+use crate::bridge::{CommentsRefreshed, StoryFilled, StoryUpdate, SummaryError};
 use crate::comments::Thread;
-
-/// How many capture stages one story open runs: the article, the discussion, the summary.
-///
-/// The card's provenance line counts these — "2 of 3 sources captured" — because they are the
-/// three things the aggregate request actually does. It is not an invented total: the HN API
-/// reports no comment count the card could divide by.
-pub const STAGES: usize = 3;
 
 /// One summary bullet, in the desktop's own shape so state can be cloned and compared.
 ///
@@ -38,9 +31,6 @@ pub struct Bullet {
 pub struct Summary {
     pub overview: String,
     pub bullets: Vec<Bullet>,
-    /// Capture stages that landed, out of [`STAGES`].
-    pub captured: usize,
-    pub of: usize,
 }
 
 /// The summary card's four states (DESIGN.md screen 04).
@@ -49,7 +39,7 @@ pub enum SummaryState {
     /// No API key configured: the card says what to do instead of pretending to work.
     Unconfigured,
     /// Skeleton rows while the article and discussion captures and then summary are pending.
-    Generating { captured: usize, of: usize },
+    Generating { previous: Option<Box<Summary>> },
     Done(Summary),
     /// A provider failure. The previous summary stays readable underneath, as DESIGN.md asks.
     Failed {
@@ -65,7 +55,7 @@ impl SummaryState {
     pub fn readable(&self) -> Option<&Summary> {
         match self {
             SummaryState::Done(summary) => Some(summary),
-            SummaryState::Failed { previous, .. } => previous.as_deref(),
+            SummaryState::Failed { previous, .. } | SummaryState::Generating { previous, .. } => previous.as_deref(),
             _ => None,
         }
     }
@@ -85,6 +75,25 @@ pub enum ArticleState {
     Loading,
     Ready { text: String, partial: bool },
     Failed(String),
+}
+
+/// The article synopsis is independent of the discussion and its citations.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ArticleSummaryState {
+    Unconfigured,
+    Generating { previous: Option<String> },
+    Done(String),
+    Failed { message: String, auth: bool, previous: Option<String> },
+}
+
+impl ArticleSummaryState {
+    pub fn readable(&self) -> Option<&str> {
+        match self {
+            Self::Done(text) => Some(text),
+            Self::Generating { previous } | Self::Failed { previous, .. } => previous.as_deref(),
+            Self::Unconfigured => None,
+        }
+    }
 }
 
 /// One link the chooser offers: where it came from, and where it goes.
@@ -129,6 +138,7 @@ impl LinkChooser {
 pub struct Story {
     pub story: HNCLIItem,
     pub article: ArticleState,
+    pub article_summary: ArticleSummaryState,
     pub summary: SummaryState,
     /// The discussion: the tree, the fold set, the cursor, the re-root and focus mode.
     pub thread: Thread,
@@ -136,6 +146,11 @@ pub struct Story {
     pub pending_reply: Option<crate::bridge::ReplyRequest>,
     /// The captured comment sources, for the citation viewer's excerpt and extra text.
     pub sources: Vec<CapturedSource>,
+    /// Latest roots, separate from the sources attached to the displayed summary.
+    pub current_sources: Vec<CapturedSource>,
+    staged_summary: Option<(Summary, Vec<CapturedSource>)>,
+    pub refreshing_comments: bool,
+    pub refresh_error: Option<String>,
     /// `S` folds the summary card; the discussion gets the height.
     pub summary_open: bool,
     /// The selected citation, as an index into [`Story::citations`].
@@ -158,10 +173,10 @@ impl Story {
         Story {
             story,
             article: ArticleState::Loading,
+            article_summary: if configured { ArticleSummaryState::Generating { previous: None } } else { ArticleSummaryState::Unconfigured },
             summary: if configured {
                 SummaryState::Generating {
-                    captured: 0,
-                    of: STAGES,
+                    previous: None,
                 }
             } else {
                 SummaryState::Unconfigured
@@ -170,6 +185,10 @@ impl Story {
             discussion: None,
             pending_reply: None,
             sources: Vec::new(),
+            current_sources: Vec::new(),
+            staged_summary: None,
+            refreshing_comments: false,
+            refresh_error: None,
             summary_open: true,
             citation: 0,
             citation_focus: false,
@@ -190,8 +209,9 @@ impl Story {
         }
         let story_id = filled.story_id;
         self.land_update(StoryUpdate::Article { story_id, article: filled.article });
-        self.land_update(StoryUpdate::Discussion { story_id, comments: filled.comments, sources: filled.sources });
-        self.land_update(StoryUpdate::Summary { story_id, summary: filled.summary });
+        self.land_update(StoryUpdate::ArticleSummary { story_id, summary: filled.article_summary });
+        self.land_update(StoryUpdate::Discussion { story_id, comments: filled.comments, sources: filled.sources.clone() });
+        self.land_update(StoryUpdate::Summary { story_id, summary: filled.summary, sources: filled.sources });
         true
     }
 
@@ -202,39 +222,72 @@ impl Story {
             StoryUpdate::Article { story_id, article } if story_id == self.id() => {
                 self.article = match article {
                     Ok((text, partial)) => ArticleState::Ready { text, partial },
-                    Err(message) => ArticleState::Failed(message),
+                    Err(message) => {
+                        if matches!(self.article_summary, ArticleSummaryState::Generating { .. }) {
+                            self.land_article_summary(Err(SummaryError::new(message.clone(), false)));
+                        }
+                        ArticleState::Failed(message)
+                    },
                 };
             }
+            StoryUpdate::ArticleSummary { story_id, summary } if story_id == self.id() => {
+                if !matches!(self.article_summary, ArticleSummaryState::Unconfigured) {
+                    self.land_article_summary(summary);
+                }
+            }
             StoryUpdate::Discussion { story_id, comments, sources } if story_id == self.id() => {
-                self.pending_reply = None;
+                if matches!(self.discussion, Some(Ok(()))) {
+                    // A newer comments refresh may have arrived before this initial capture.
+                    if let Err(message) = comments && self.summary.is_generating() {
+                        self.land_summary(Err(SummaryError::new(format!("Discussion unavailable: {message}"), false)), Vec::new());
+                    }
+                    return true;
+                }
+                let first = self.discussion.is_none() && self.thread.is_empty();
                 self.discussion = Some(match comments {
-                    Ok(comments) => { self.thread = Thread::from_comments(&comments); Ok(()) },
+                    Ok(comments) => {
+                        if first { self.thread = Thread::from_comments(&comments); }
+                        else { self.thread.merge_comments(&comments, &[]); }
+                        self.merge_current_sources(&comments, sources);
+                        Ok(())
+                    },
                     Err(message) => {
-                        self.land_summary(Err(SummaryError::new(format!("Discussion unavailable: {message}"), false)));
+                        if self.summary.is_generating() {
+                            self.land_summary(Err(SummaryError::new(format!("Discussion unavailable: {message}"), false)), Vec::new());
+                        }
                         Err(message)
                     }
                 });
-                self.sources = sources;
             }
-            StoryUpdate::Summary { story_id, summary } if story_id == self.id() => {
-                self.land_summary(summary);
+            StoryUpdate::Summary { story_id, summary, sources } if story_id == self.id() => {
+                if !matches!(self.summary, SummaryState::Unconfigured) {
+                    self.land_summary(summary, sources);
+                }
             }
             _ => return false,
-        }
-        let captures = usize::from(matches!(self.article, ArticleState::Ready { .. }))
-            + usize::from(matches!(self.discussion, Some(Ok(()))));
-        match &mut self.summary {
-            SummaryState::Generating { captured, .. } => *captured = captures,
-            SummaryState::Done(summary) => summary.captured = captures + 1,
-            _ => {}
         }
         true
     }
 
-    fn land_summary(&mut self, summary: Result<Discussion, SummaryError>) {
+    fn land_article_summary(&mut self, summary: Result<Article, SummaryError>) {
+        let previous = self.article_summary.readable().map(str::to_owned);
+        self.article_summary = match summary {
+            Ok(article) => ArticleSummaryState::Done(article.text),
+            Err(error) => ArticleSummaryState::Failed { message: error.message, auth: error.auth, previous },
+        };
+    }
+
+    fn land_summary(&mut self, summary: Result<Discussion, SummaryError>, sources: Vec<CapturedSource>) {
         let previous = self.summary.readable().cloned().map(Box::new);
         self.summary = match summary {
-            Ok(discussion) => SummaryState::Done(summary_of(discussion)),
+            Ok(discussion) if self.source.is_some() && previous.is_some() => {
+                self.staged_summary = Some((summary_of(discussion), sources));
+                SummaryState::Done(*previous.unwrap())
+            }
+            Ok(discussion) => {
+                self.sources = sources;
+                SummaryState::Done(summary_of(discussion))
+            }
             Err(error) => SummaryState::Failed {
                 message: error.message,
                 auth: error.auth,
@@ -266,16 +319,17 @@ impl Story {
     /// because the card is in the inspector and may be folded; a failure is worth a toast
     /// because the card may be scrolled away.
     pub fn summary_notice(&self) -> Option<String> {
+        if self.staged_summary.is_some() { return None; }
+        if matches!(self.discussion, Some(Err(_))) {
+            return Some("Discussion unavailable · press r to retry comments".to_string());
+        }
         match &self.summary {
-            SummaryState::Done(summary) => Some(format!(
-                "Summary ready \u{00b7} {} of {} sources",
-                summary.captured, summary.of
-            )),
+            SummaryState::Done(_) => Some("Discussion summary ready".to_string()),
             SummaryState::Failed { auth: true, .. } => {
                 Some("Summary failed \u{00b7} re-enter your key".to_string())
             }
             SummaryState::Failed { .. } => {
-                Some("Summary failed \u{00b7} press r to retry".to_string())
+                Some("Summary failed \u{00b7} retry in summary settings".to_string())
             }
             SummaryState::Generating { .. } | SummaryState::Unconfigured => None,
         }
@@ -364,7 +418,15 @@ impl Story {
 
     /// `Esc` in the viewer: back to the summary, keeping the citation selected.
     pub fn close_source(&mut self) -> bool {
-        self.source.take().is_some()
+        let closed = self.source.take();
+        if let Some((summary, sources)) = self.staged_summary.take() {
+            self.summary = SummaryState::Done(summary);
+            self.sources = sources;
+            let citations = self.citations();
+            self.citation = closed.and_then(|id| citations.iter().position(|source| *source == id)).unwrap_or(0);
+            self.citation_focus = !citations.is_empty();
+        }
+        closed.is_some()
     }
 
     /// The captured source the viewer is showing.
@@ -432,19 +494,39 @@ impl Story {
         Some(url)
     }
 
-    /// `r`: ask for the aggregate again, keeping what is already readable on screen.
+    /// Start a replacement while keeping both readable summaries and their citations.
     pub fn retry(&mut self, configured: bool) {
-        self.pending_reply = None;
-        self.discussion = None;
-        self.article = ArticleState::Loading;
+        self.staged_summary = None;
+        let previous = self.summary.readable().cloned().map(Box::new);
+        let article_previous = self.article_summary.readable().map(str::to_owned);
         self.summary = if configured {
             SummaryState::Generating {
-                captured: 0,
-                of: STAGES,
+                previous,
             }
         } else {
             SummaryState::Unconfigured
         };
+        self.article_summary = if configured { ArticleSummaryState::Generating { previous: article_previous } }
+            else { ArticleSummaryState::Unconfigured };
+    }
+
+    pub fn land_refresh(&mut self, result: CommentsRefreshed, sources: Vec<CapturedSource>) {
+        self.refreshing_comments = false;
+        let CommentsRefreshed { comments, descendants, warning, .. } = result;
+        self.thread.merge_comments(comments.as_deref().unwrap_or(&[]), &descendants);
+        self.refresh_error = match comments {
+            Ok(comments) => {
+                self.merge_current_sources(&comments, sources);
+                self.discussion = Some(Ok(()));
+                warning
+            }
+            Err(error) => Some(match warning { Some(warning) => format!("{error}; {warning}"), None => error }),
+        };
+    }
+
+    fn merge_current_sources(&mut self, comments: &[hn_lib::app::Comment], sources: Vec<CapturedSource>) {
+        self.current_sources.retain(|source| !comments.iter().any(|comment| comment.id == source.id));
+        self.current_sources.extend(sources);
     }
 }
 
@@ -459,8 +541,6 @@ fn summary_of(discussion: Discussion) -> Summary {
                 sources: point.sources,
             })
             .collect(),
-        captured: STAGES,
-        of: STAGES,
     }
 }
 
@@ -475,10 +555,36 @@ mod tests {
         Story::opening(fixtures::item(1, 2), true)
     }
 
+    #[test]
+    fn late_initial_discussion_preserves_a_newer_refresh() {
+        for fails in [false, true] {
+            let mut story = story();
+            let source = crate::service::Source::fake();
+            let mut newer = fixtures::comments();
+            newer[0].text = "newer comment".into();
+            story.land_refresh(CommentsRefreshed {
+                story_id: story.id(), comments: Ok(newer.clone()), descendants: Vec::new(), warning: None,
+            }, source.capture(&newer));
+            let mut older = newer.clone();
+            older[0].text = "older comment".into();
+            let old_capture = source.capture(&older);
+            story.land_update(StoryUpdate::Discussion {
+                story_id: story.id(),
+                comments: if fails { Err("initial capture failed".into()) } else { Ok(older) },
+                sources: old_capture,
+            });
+            assert_eq!(story.discussion, Some(Ok(())));
+            assert_eq!(story.thread.node(newer[0].id).unwrap().text, "newer comment");
+            assert_eq!(story.current_sources.iter().find(|item| item.id == newer[0].id).unwrap().text, "newer comment");
+            if fails { assert!(matches!(story.summary, SummaryState::Failed { .. })); }
+        }
+    }
+
     fn filled(summary: Result<Discussion, SummaryError>) -> StoryFilled {
         StoryFilled {
             story_id: 2,
             article: Ok(("# Libghostty 1.0\n\nBody.".to_string(), false)),
+            article_summary: Ok(Article { text: "Article overview.".to_string() }),
             comments: Ok(fixtures::thread()),
             sources: fixtures::sources(),
             summary,
@@ -507,10 +613,7 @@ mod tests {
         assert_eq!(story.article, ArticleState::Loading);
         assert_eq!(
             story.summary,
-            SummaryState::Generating {
-                captured: 0,
-                of: STAGES
-            }
+            SummaryState::Generating { previous: None }
         );
         assert!(story.thread.is_empty());
         assert!(story.summary_open, "the card is pinned open on open");
@@ -536,7 +639,6 @@ mod tests {
             panic!("a landed summary is done");
         };
         assert_eq!(summary.bullets.len(), 2);
-        assert_eq!(summary.captured, STAGES);
         assert_eq!(story.citations(), vec![901, 902, 903]);
     }
 
@@ -556,10 +658,7 @@ mod tests {
         failed.land(filled(Ok(discussion())));
         failed.retry(true);
         assert!(failed.summary.is_generating());
-        assert!(
-            failed.summary.readable().is_none(),
-            "a retry clears the card while it runs"
-        );
+        assert!(failed.summary.readable().is_some(), "a retry keeps the card readable");
         failed.land(filled(Err(SummaryError::new(
             "OpenRouter is rate limited.",
             false,
@@ -574,7 +673,7 @@ mod tests {
         };
         assert_eq!(message, "OpenRouter is rate limited.");
         assert!(!auth, "a rate limit is not an auth failure");
-        assert!(previous.is_none(), "the retry had already cleared it");
+        assert!(previous.is_some(), "the failed replacement keeps the earlier summary");
         // The failure card still renders the bullets it had, when it had them.
         let mut kept = story();
         kept.land(filled(Ok(discussion())));
@@ -586,6 +685,67 @@ mod tests {
         };
         assert_eq!(kept.summary.readable().unwrap().bullets.len(), 2);
         assert_eq!(kept.citations(), vec![901, 902, 903]);
+    }
+
+    #[test]
+    fn replacement_waits_until_the_open_citation_is_closed() {
+        let mut story = story();
+        story.land(filled(Ok(discussion())));
+        story.next_citation();
+        assert!(story.open_source());
+        let original = story.shown_source().unwrap().text.clone();
+        story.retry(true);
+        let mut sources = fixtures::sources();
+        sources.iter_mut().find(|source| source.id == 901).unwrap().text = "replacement capture".into();
+        let mut replacement = discussion();
+        replacement.overview = "A new discussion summary".into();
+        assert!(story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok(replacement), sources }));
+        assert_eq!(story.shown_source().unwrap().text, original);
+        assert_eq!(story.summary.readable().unwrap().overview, "Commenters split on the ABI.");
+        assert!(story.close_source());
+        assert_eq!(story.sources.iter().find(|s| s.id == 901).unwrap().text, "replacement capture");
+        assert_eq!(story.summary.readable().unwrap().overview, "A new discussion summary");
+        assert!(story.citation_focus);
+        assert_eq!(story.citations()[story.citation], 901);
+    }
+
+    #[test]
+    fn replacement_keeps_the_source_selected_when_citations_reorder_or_disappear() {
+        for replacement_kind in 0..3 {
+            let mut story = story();
+            story.land(filled(Ok(discussion())));
+            story.next_citation();
+            assert!(story.open_source());
+            story.retry(true);
+            let mut replacement = discussion();
+            match replacement_kind {
+                0 => replacement.points[0].sources.reverse(),
+                1 => for point in &mut replacement.points { point.sources.retain(|id| *id != 901); },
+                _ => for point in &mut replacement.points { point.sources.clear(); },
+            }
+            story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok(replacement), sources: fixtures::sources() });
+            assert!(story.close_source());
+            assert_eq!(story.citation_focus, replacement_kind != 2);
+            match replacement_kind {
+                0 => assert_eq!(story.citations()[story.citation], 901),
+                1 => assert_eq!(story.citations()[story.citation], 902),
+                _ => assert!(story.citations().is_empty()),
+            }
+        }
+    }
+
+    #[test]
+    fn failed_article_replacement_keeps_its_previous_synopsis() {
+        let mut story = story();
+        story.land(filled(Ok(discussion())));
+        story.retry(true);
+        assert_eq!(story.article_summary.readable(), Some("Article overview."));
+        story.land_update(StoryUpdate::ArticleSummary {
+            story_id: 2, summary: Err(SummaryError::new("Provider unavailable", false)),
+        });
+        assert!(matches!(story.article_summary, ArticleSummaryState::Failed { .. }));
+        assert_eq!(story.article_summary.readable(), Some("Article overview."));
+        assert_eq!(story.summary.readable().unwrap().bullets.len(), 2);
     }
 
     #[test]

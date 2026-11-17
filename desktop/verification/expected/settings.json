@@ -440,10 +440,10 @@
                                 "bounds": [
                                   376.0,
                                   530.5,
-                                  198.6,
+                                  156.8,
                                   24.0
                                 ],
-                                "name": "Refresh sources & summary",
+                                "name": "Regenerate summary",
                                 "role": "button"
                               },
                               {
@@ -5231,14 +5231,14 @@
       "focusable": true,
       "focused": false,
       "inert": false,
-      "label": "Refresh sources & summary",
+      "label": "Regenerate summary",
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#0",
       "rect": [
         376.0,
         530.5,
-        198.55,
+        156.79,
         24.0
       ],
       "role": "button",
@@ -5259,12 +5259,12 @@
       "rect": [
         388.0,
         532.5,
-        174.55,
+        132.79,
         20.0
       ],
       "role": "text",
       "scale": 1.0,
-      "text": "Refresh sources & summary"
+      "text": "Regenerate summary"
     },
     {
       "blur": 0.0,
@@ -5277,9 +5277,9 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#1",
       "rect": [
-        582.55,
+        540.79,
         542.5,
-        78.16,
+        119.92,
         0.0
       ],
       "role": "group",

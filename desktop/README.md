@@ -19,7 +19,7 @@ typography, images, code blocks, and anything interactive.
 
 ```
 article pane
-├── Rune header   eyebrow · title · byline · "Open in browser ↗"
+├── Rune header   title · metadata
 └── live region   the story's page, in a WKWebView child view
 ```
 
@@ -37,9 +37,9 @@ visible; Open in browser remains available. This handoff does not wait for every
 or claim that commit guarantees the first painted pixels.
 
 **The readability capture still runs, and is still the point.** Opening a story fetches and
-extracts the article exactly as before; that capture is what the summary card and its citations
-read. The model never sees the page, it sees the extracted text, and a citation's excerpt is a
-span of that text. The capture is a backend, not a surface.
+extracts the article for the article summary. The discussion summary uses captured top-level
+comments. Its inline citations open the captured comment and the available reply thread; replies
+can be loaded and retried without changing the snapshot used by the summary.
 
 **Fallback.** When no child view can exist, the pane is the extracted Markdown at the 66ch
 measure, under a banner that says so:
@@ -55,7 +55,8 @@ live page unavailable — showing extracted text
 | The child view failed to build | The banner carries the platform's own message beside it. |
 
 Summaries and citations work in all three, because they read the capture rather than the pane.
-`O` and `Open in browser ↗` are unchanged in all three: they hand the URL to the system browser.
+While reading, `o` or `O` and the footer's browser action hand the URL to the system browser.
+In the feed, `o` opens the story and `Shift+O` opens the browser.
 
 Article extraction and the root discussion load independently. Comments become readable as
 soon as they arrive, while the summary continues from that discussion capture. A later summary
@@ -94,6 +95,13 @@ Keys follow the terminal app with the desktop feed exception below: `j`/`k` move
 `c` opens the discussion, `s` saves, `?` shows the keyboard sheet, `M` (or `⌘,`) opens the summary
 settings, `⌘?` shows the sheet, `⌘\` toggles the inspector, `q` quits. The sheet is generated from
 `src/keys.rs`, so it cannot drift from what the window binds.
+
+In a story, `Esc` returns to the feed, `Shift+S` shows or hides the summary, `Shift+J`/`Shift+K`
+scroll it, and `r` refreshes comments without regenerating either summary. `Tab` selects a
+citation and `Enter` opens its comment; `Esc` returns to the same discussion position. Focus
+mode starts on and `f` toggles it. `Shift+L` lists links in the post and selected comment, or
+says when there are none. These shortcuts work when the app chrome or discussion has focus;
+the live page retains its own keyboard while focused.
 
 Desktop feed navigation uses Left/Right to select the same row in the adjacent column (clamped on a shorter right column). At a column edge they turn the page; in one column they page directly. Forward lands on the first story and backward on the last; known feed ends stay put. Use `n`/`p`, Space, Page Down/Page Up, or the page buttons to change pages. Selection has a restrained 120 ms color response with fixed text geometry. Completed page changes enter as one group from the navigation direction, 24 pt away and at 0.2 opacity, over about 220 ms. Reduced motion is instant. Discussion arrows retain their existing back/unfold bindings.
 
@@ -282,8 +290,8 @@ whether the focus ring is visible while it does. Run this on a real window, with
 - [ ] The trail reads as a chain of buttons ending in the comment being read, and the last
       segment is not announced as pressable.
 - [ ] A folded thread's label states how many replies it hides.
-- [ ] Focus mode's dimmed rows are still announced — dimming is visual, not hidden.
-- [ ] Citation chips read as "Citation N" and open the source.
+- [ ] Focus mode's less-emphasized rows are still announced.
+- [ ] Inline citations announce the comment's author and open the source.
 
 **Settings (`M`)**
 
@@ -311,10 +319,12 @@ whether the focus ring is visible while it does. Run this on a real window, with
 - [ ] With **Reduce Motion** on in System Settings, opening a story and re-rooting the thread
       still land in the same place, without the glide.
 
-Discussion replies load on demand. Opening a story captures every top-level comment for the summary; expanding a branch fetches its actual child IDs in batches of up to 50. Loaded comments stay available while further replies load. Load more and retry controls keep partial failures explicit, and folding a pending branch does not reopen it. The discussion count reports readable comments loaded so far; the article metadata keeps Hacker News’s total count. Replies do not regenerate the summary or change its citation capture.
+Discussion replies load on demand. Opening a story captures every top-level comment for the summary; expanding a branch fetches its actual child IDs in batches of up to 50. Loaded comments stay available while further replies load. Load more and retry controls keep partial failures explicit, and folding a pending branch does not reopen it. The article metadata keeps Hacker News’s total comment count. Replies do not regenerate the summary or change its citation capture.
+
+Refreshing comments updates roots and replies already loaded at any depth. Newly discovered replies remain available through the load controls; previously captured citation text stays attached to its summary. If a known fetch fails, the old comments remain readable and the discussion reports an incomplete refresh.
 
 Long discussions use Rune’s variable-height virtual rows: offscreen comment text and controls are not mounted. Keyboard navigation reveals the selected row; this bounds mounted content but is not a claim about measured native scroll performance.
 
 The discussion observes its scroll offset and keeps Rune’s frame clock active for 50 ms after movement, so successive scroll events share a running display link. Its UI wake callback and poll timer do not rebuild the view, and the window returns to idle afterward. Rebuilding a scrolled discussion may also start a short pacing interval. Native trackpad deltas and momentum are unchanged. Assess smoothness in an optimized build using native presentation timestamps (`--native --trace`), since CPU frame cost alone does not measure the cadence visible on screen.
 
-The desktop reading view keeps the story title and metadata in one article header, aligned with the summary. The toolbar provides Back to feed. Collapsing replies keeps their parent comment readable; dead, deleted, and blank leaves are omitted. An unavailable parent with replies remains a compact disclosure so readable descendants stay reachable. Those comments are also excluded from summary sources.
+The desktop reading view keeps the story title and metadata in one article header, aligned with the summary. The footer gives the contextual back action. Collapsing replies keeps their parent comment readable; dead, deleted, and blank leaves are omitted. An unavailable parent with replies remains a compact disclosure so readable descendants stay reachable. Those comments are also excluded from summary sources.

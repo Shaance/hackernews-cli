@@ -82,13 +82,17 @@ pub fn is_open_external(ev: &KeyEvent) -> bool {
     matches!(&ev.key, Key::Text(t) if t == "O")
 }
 
+/// In a story, either case opens the browser; feed `o` still opens the story split.
+pub fn is_reading_external(ev: &KeyEvent) -> bool {
+    let m = ev.mods;
+    !m.cmd && !m.ctrl && !m.alt && !m.logo && matches!(&ev.key, Key::Text(t) if t == "o" || t == "O")
+}
+
 /// What a key means while a story is open.
 ///
 /// The terminal app splits these across `Reader::key` (`src/reader/interaction.rs:7`) and
-/// `reader_actions::handle` (`src/reader_actions.rs:60`); this is the union, minus the
-/// bindings the window has no counterpart for (`o`/`O` open a browser tab, `J`/`K` scroll the
-/// summary — the card is not a viewport, `j`/`k`/`g`/`G` scroll the source viewer — the panes
-/// scroll themselves).
+/// `reader_actions::handle` (`src/reader_actions.rs:60`); the desktop also scrolls the summary
+/// viewport with `J`/`K` and the source viewer with `j`/`k`/`g`/`G`.
 ///
 /// `h` and `l` are the one place the two tables disagree. README.md's discussion table has
 /// `h` as back and `l` as expand/collapse; DESIGN.md's keyboard table has `h`/`l` as
@@ -96,7 +100,7 @@ pub fn is_open_external(ev: &KeyEvent) -> bool {
 /// still leave, so nothing is lost, and `c` folds as README.md says.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StoryKey {
-    /// `Esc`, `q`, `Left`: leave the source viewer, then focus mode, then the story.
+    /// `Esc`, `q`, `Left`: leave the source viewer, then the story.
     Back,
     /// `Tab`: select the next citation.
     NextCitation,
@@ -136,6 +140,9 @@ pub enum StoryKey {
     NextScreen,
     /// `PageUp`: the previous screen of the discussion.
     PrevScreen,
+    /// `J` / `K`: scroll the summary.
+    NextSummaryScreen,
+    PrevSummaryScreen,
     /// `f`: toggle focus mode.
     Focus,
     /// `Backspace`: pop one segment off the ancestor trail.
@@ -168,7 +175,9 @@ pub fn story_key(ev: &KeyEvent) -> StoryKey {
         Key::Text(text) => match single_char(text) {
             Some('q') => StoryKey::Back,
             Some('j') => StoryKey::NextComment,
+            Some('J') => StoryKey::NextSummaryScreen,
             Some('k') => StoryKey::PrevComment,
+            Some('K') => StoryKey::PrevSummaryScreen,
             Some(']') => StoryKey::NextSibling,
             Some('[') => StoryKey::PrevSibling,
             Some('u') => StoryKey::Parent,
@@ -179,7 +188,7 @@ pub fn story_key(ev: &KeyEvent) -> StoryKey {
             Some('f') => StoryKey::Focus,
             Some('s') => StoryKey::ToggleSaved,
             Some('S') => StoryKey::ToggleSummary,
-            Some('r') => StoryKey::Refresh,
+            Some('r' | 'R') => StoryKey::Refresh,
             Some('M') => StoryKey::Settings,
             Some('L') => StoryKey::Links,
             _ => StoryKey::None,
@@ -334,7 +343,7 @@ pub const HELP: &[HelpGroup] = &[
                 action: HelpAction::Feed(StoryAction::OpenUrl),
             },
             HelpRow {
-                keys: &["O"],
+                keys: &["⇧O"],
                 label: "Open in browser",
                 action: HelpAction::External,
             },
@@ -385,7 +394,7 @@ pub const HELP: &[HelpGroup] = &[
                 action: HelpAction::Story(StoryKey::FirstComment),
             },
             HelpRow {
-                keys: &["G"],
+                keys: &["⇧G"],
                 label: "Last comment",
                 action: HelpAction::Story(StoryKey::LastComment),
             },
@@ -420,6 +429,11 @@ pub const HELP: &[HelpGroup] = &[
                 action: HelpAction::Story(StoryKey::Focus),
             },
             HelpRow {
+                keys: &["r"],
+                label: "Refresh comments",
+                action: HelpAction::Story(StoryKey::Refresh),
+            },
+            HelpRow {
                 keys: &["\u{232b}"],
                 label: "Up one ancestor",
                 action: HelpAction::Story(StoryKey::PopTrail),
@@ -450,7 +464,7 @@ pub const HELP: &[HelpGroup] = &[
                 action: HelpAction::Story(StoryKey::PrevCitation),
             },
             HelpRow {
-                keys: &["L"],
+                keys: &["⇧L"],
                 label: "Choose a link",
                 action: HelpAction::Story(StoryKey::Links),
             },
@@ -458,6 +472,11 @@ pub const HELP: &[HelpGroup] = &[
                 keys: &["s"],
                 label: "Save or unsave",
                 action: HelpAction::Story(StoryKey::ToggleSaved),
+            },
+            HelpRow {
+                keys: &["o"],
+                label: "Open in browser",
+                action: HelpAction::External,
             },
             HelpRow {
                 keys: &["Esc", "q", "\u{2190}"],
@@ -471,17 +490,22 @@ pub const HELP: &[HelpGroup] = &[
         column: 0,
         rows: &[
             HelpRow {
-                keys: &["S"],
+                keys: &["⇧S"],
                 label: "Show or hide the summary",
                 action: HelpAction::Story(StoryKey::ToggleSummary),
             },
             HelpRow {
-                keys: &["r"],
-                label: "Regenerate the summary",
-                action: HelpAction::Story(StoryKey::Refresh),
+                keys: &["⇧J"],
+                label: "Scroll summary down",
+                action: HelpAction::Story(StoryKey::NextSummaryScreen),
             },
             HelpRow {
-                keys: &["M"],
+                keys: &["⇧K"],
+                label: "Scroll summary up",
+                action: HelpAction::Story(StoryKey::PrevSummaryScreen),
+            },
+            HelpRow {
+                keys: &["⇧M"],
                 label: "Summary settings",
                 action: HelpAction::Story(StoryKey::Settings),
             },
@@ -701,12 +725,15 @@ mod tests {
             (Key::Enter, StoryKey::Enter),
             (Key::Text("S".into()), StoryKey::ToggleSummary),
             (Key::Text("r".into()), StoryKey::Refresh),
+            (Key::Text("R".into()), StoryKey::Refresh),
             (Key::Text("M".into()), StoryKey::Settings),
             (Key::Text("L".into()), StoryKey::Links),
             (Key::Text("s".into()), StoryKey::ToggleSaved),
             (Key::Text("j".into()), StoryKey::NextComment),
+            (Key::Text("J".into()), StoryKey::NextSummaryScreen),
             (Key::Down, StoryKey::NextComment),
             (Key::Text("k".into()), StoryKey::PrevComment),
+            (Key::Text("K".into()), StoryKey::PrevSummaryScreen),
             (Key::Up, StoryKey::PrevComment),
             (Key::Text("]".into()), StoryKey::NextSibling),
             (Key::Text("[".into()), StoryKey::PrevSibling),
@@ -790,6 +817,13 @@ mod tests {
             "Enter" => plain(Key::Enter),
             "Tab" => plain(Key::Tab),
             "\u{21e7}Tab" => shifted(Key::Tab),
+            "⇧O" => shifted(Key::Text("O".into())),
+            "⇧G" => shifted(Key::Text("G".into())),
+            "⇧L" => shifted(Key::Text("L".into())),
+            "⇧M" => shifted(Key::Text("M".into())),
+            "⇧S" => shifted(Key::Text("S".into())),
+            "⇧J" => shifted(Key::Text("J".into())),
+            "⇧K" => shifted(Key::Text("K".into())),
             "\u{232b}" => plain(Key::Backspace),
             "Space" => plain(Key::Text(" ".into())),
             "Page Down" => plain(Key::PageDown),
@@ -820,7 +854,7 @@ mod tests {
             HelpAction::Story(_) => HelpAction::Story(story_key(ev)),
             HelpAction::Window(_) => HelpAction::Window(window_key(ev)),
             HelpAction::External => {
-                if is_open_external(ev) {
+                if is_reading_external(ev) {
                     HelpAction::External
                 } else {
                     HelpAction::Close
@@ -845,7 +879,7 @@ mod tests {
                     | ("Discussion", HelpAction::Story(_))
                     | ("Summary", HelpAction::Story(_))
                     | ("Window", HelpAction::Window(_))
-                    | ("Feed", HelpAction::External)
+                    | ("Feed" | "Discussion", HelpAction::External)
                     | ("Feed", HelpAction::ColumnLeft | HelpAction::ColumnRight)
                     | ("Window", HelpAction::Close) => row.action.clone(),
                     (title, action) => panic!("{title} group holds {action:?}"),
@@ -900,6 +934,8 @@ mod tests {
             StoryKey::LastComment,
             StoryKey::NextScreen,
             StoryKey::PrevScreen,
+            StoryKey::NextSummaryScreen,
+            StoryKey::PrevSummaryScreen,
             StoryKey::Focus,
             StoryKey::PopTrail,
         ];
