@@ -66,8 +66,7 @@ const LAYOUT_SECONDS: f64 = 2.0;
 /// Rune can stop its display link between wheel events; keeping it warm briefly gives the
 /// discussion a more even native presentation cadence without drawing continuously at rest.
 const SCROLL_PACING_SECONDS: f64 = 0.05;
-/// The inspector's width range: 46% of the 1180 pt default window, and enough either side for
-/// the summary card to stay readable.
+/// The inspector's default width and range in window points, independent of UI zoom.
 const INSPECTOR_WIDTH: f32 = 543.0;
 const INSPECTOR_MIN: f32 = 360.0;
 const INSPECTOR_MAX: f32 = 640.0;
@@ -218,6 +217,13 @@ impl App {
                     WindowKey::ActualSize => 1.0,
                     _ => unreachable!(),
                 };
+                if self.zoom != old_zoom {
+                    let pane = self.inspector;
+                    self.inspector = PaneState::new(pane.default_width() * old_zoom / self.zoom)
+                        .range(INSPECTOR_MIN / self.zoom, INSPECTOR_MAX / self.zoom)
+                        .with_width(pane.width() * old_zoom / self.zoom);
+                    self.inspector.set_open(pane.is_open());
+                }
                 webview::set_zoom(self.zoom);
                 // An unchanged view-point rect does not trigger on_layout when zoom changes.
                 if let Some(rect) = &mut self.live_bounds {
@@ -821,8 +827,8 @@ impl App {
         }
         self.feed.pending_anchor = self.layout.selected;
         if let Some(width) = self.layout.inspector {
-            self.inspector = PaneState::new(width.clamp(INSPECTOR_MIN, INSPECTOR_MAX))
-                .range(INSPECTOR_MIN, INSPECTOR_MAX)
+            self.inspector = PaneState::new(width.clamp(INSPECTOR_MIN, INSPECTOR_MAX) / self.zoom)
+                .range(INSPECTOR_MIN / self.zoom, INSPECTOR_MAX / self.zoom)
                 .collapsed();
         }
     }
@@ -832,7 +838,7 @@ impl App {
         Layout {
             window: self.window_size.get().or(self.layout.window),
             zoom: Some(self.zoom),
-            inspector: Some(self.inspector.width()),
+            inspector: Some(self.inspector.width() * self.zoom),
             tab: Some(self.feed.tab),
             page: Some(self.feed.stepper()),
             selected: self.feed.selected_id(),
@@ -910,8 +916,8 @@ fn init() -> App {
         readings: HashMap::new(),
         scroll_pacing: Rc::new(Cell::new(ScrollPacing::Idle)),
         scroll_waker: None,
-        inspector: PaneState::new(INSPECTOR_WIDTH)
-            .range(INSPECTOR_MIN, INSPECTOR_MAX)
+        inspector: PaneState::new(INSPECTOR_WIDTH / zoom)
+            .range(INSPECTOR_MIN / zoom, INSPECTOR_MAX / zoom)
             .collapsed(),
         config,
         settings: None,
@@ -2653,6 +2659,66 @@ mod tests {
             rt.frame(0.0);
             assert_eq!((rt.state.zoom, rt.zoom()), (expected, expected), "story {key}");
         }
+    }
+
+    #[test]
+    fn inspector_window_width_survives_zoom_drag_and_relaunch() {
+        let mut s = app(true, SavedView::in_memory());
+        scene_story(&mut s);
+        s.reduced = true;
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.frame(0.0);
+        let widths = |rt: &rune::Runtime<App>| {
+            let e = rt.elements();
+            let width = |key| e.iter().find(|v| v.key.as_deref() == Some(key)).unwrap().rect[2];
+            (width("story-main"), width("inspector-pane"))
+        };
+        let zoom = |rt: &mut rune::Runtime<App>, key| {
+            rt.key(KeyEvent { key: rune::Key::Command(key), mods: rune::Mods { cmd: true, ..Default::default() } });
+            rt.frame(0.0);
+        };
+        let drag = |rt: &mut rune::Runtime<App>, delta: f32| {
+            let grip = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("inspector-grip")).unwrap().rect;
+            let (x, y) = (grip[0] + grip[2] / 2.0, grip[1] + 40.0);
+            let (start, z) = (grip[0] * rt.zoom(), rt.zoom());
+            rt.pointer_down(x, y); rt.frame(0.0);
+            rt.pointer_move(x + delta / z, y); rt.frame(0.0);
+            rt.pointer_up(x + delta / z, y); rt.frame(0.0);
+            let end = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("inspector-grip")).unwrap().rect[0] * z;
+            assert!((end - start - delta).abs() <= z + 0.1, "zoom {z}, drag {delta}: {start} -> {end}");
+        };
+        let (article, inspector) = widths(&rt);
+        let initial = rt.state.snapshot().inspector.unwrap();
+        for _ in 0..3 { zoom(&mut rt, '='); }
+        assert_eq!(rt.zoom(), 1.5);
+        let (zoomed_article, zoomed_inspector) = widths(&rt);
+        assert!((article / inspector - zoomed_article / zoomed_inspector).abs() < 0.03);
+        assert!((rt.state.snapshot().inspector.unwrap() - initial).abs() < 2.0);
+        drag(&mut rt, 60.0);
+        let dragged = rt.state.snapshot().inspector.unwrap();
+        assert!((initial - dragged - 60.0).abs() < 2.0);
+        for key in ['0', '=', '=', '='] { zoom(&mut rt, key); }
+        assert!((rt.state.snapshot().inspector.unwrap() - dragged).abs() < 2.0);
+        let dir = temp_dir("inspector-zoom");
+        let path = dir.join("desktop.json");
+        let snapshot = rt.state.snapshot();
+        snapshot.save(&path).unwrap();
+        let mut next = app(true, SavedView::in_memory());
+        next.layout = Layout::load(&path);
+        next.zoom = next.layout.zoom_level();
+        next.restore();
+        assert_eq!(next.zoom, 1.5);
+        assert!((next.snapshot().inspector.unwrap() - snapshot.inspector.unwrap()).abs() < 1.0);
+        let _ = std::fs::remove_dir_all(dir);
+        for (i, key) in ['-', '-', '-', '-', '-', '-', '+', '+', '+', '+', '+', '+'].into_iter().enumerate() {
+            zoom(&mut rt, key);
+            assert!((rt.state.inspector.min_width() * rt.zoom() - INSPECTOR_MIN).abs() < 0.01);
+            assert!((rt.state.inspector.max_width() * rt.zoom() - INSPECTOR_MAX).abs() < 0.01);
+            drag(&mut rt, if i % 2 == 0 { 15.0 } else { -15.0 });
+        }
+        rt.state.inspector.reset_width();
+        assert!((rt.state.inspector.width() * rt.zoom() - INSPECTOR_WIDTH).abs() < 2.0);
     }
 
     #[cfg(target_os = "macos")]

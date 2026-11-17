@@ -25,7 +25,7 @@ pub struct Layout {
     pub window: Option<(f32, f32)>,
     /// The window's UI and article page zoom, 1.0 at actual size.
     pub zoom: Option<f32>,
-    /// The inspector's width in points, when the reader dragged the grip.
+    /// The inspector's width in window points, when the reader dragged the grip.
     pub inspector: Option<f32>,
     /// The feed tab that was showing.
     #[serde(default, with = "tab")]

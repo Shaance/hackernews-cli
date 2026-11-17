@@ -128,7 +128,7 @@ Status: fixed in run C — Regenerate appears only when settings has an open sto
   computed in `view` from the `window` rect already read at `app.rs:1456` and passed via `PaneState::range`;
   keep the persisted width untouched so `⌘0` restores it. Give the banner `.truncate()`. Size S–M.
 
-Status: partially fixed in run F — The fallback banner truncates; the inspector cap remains open because a visual-only clamp breaks grip dragging.
+Status: fixed in run G — Inspector width stays in window points across zoom and grip drags; the fallback banner truncates. At 1040 pt and zoom 1.0 the default inspector is still wider than the article; the grip can resize it.
 
 ### M3. Crossing the 1200 pt breakpoint jumps twice and drops the selected story
 - Severity: should-fix. Lens: motion + polish. Screen: feed, resize or zoom across 1200 pt.
