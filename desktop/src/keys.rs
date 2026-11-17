@@ -82,12 +82,6 @@ pub fn is_open_external(ev: &KeyEvent) -> bool {
     matches!(&ev.key, Key::Text(t) if t == "O")
 }
 
-/// In a story, either case opens the browser; feed `o` still opens the story split.
-pub fn is_reading_external(ev: &KeyEvent) -> bool {
-    let m = ev.mods;
-    !m.cmd && !m.ctrl && !m.alt && !m.logo && matches!(&ev.key, Key::Text(t) if t == "o" || t == "O")
-}
-
 /// What a key means while a story is open.
 ///
 /// The terminal app splits these across `Reader::key` (`src/reader/interaction.rs:7`) and
@@ -106,7 +100,7 @@ pub enum StoryKey {
     NextCitation,
     /// `Shift+Tab`: select the previous citation.
     PrevCitation,
-    /// `Enter`: read the selected citation, else expand or re-root the focused comment.
+    /// `Enter` / `o`: read the selected citation, else expand or re-root the focused comment.
     Enter,
     /// `S`: show or hide the summary card.
     ToggleSummary,
@@ -173,6 +167,7 @@ pub fn story_key(ev: &KeyEvent) -> StoryKey {
         Key::Tab => StoryKey::NextCitation,
         Key::Enter => StoryKey::Enter,
         Key::Text(text) => match single_char(text) {
+            Some('o') => StoryKey::Enter,
             Some('q') => StoryKey::Back,
             Some('j') => StoryKey::NextComment,
             Some('J') => StoryKey::NextSummaryScreen,
@@ -363,11 +358,6 @@ pub const HELP: &[HelpGroup] = &[
                 action: HelpAction::Feed(StoryAction::ToggleBookmark),
             },
             HelpRow {
-                keys: &["?"],
-                label: "Keyboard shortcuts",
-                action: HelpAction::Feed(StoryAction::ToggleHelp),
-            },
-            HelpRow {
                 keys: &["q"],
                 label: "Quit",
                 action: HelpAction::Feed(StoryAction::Quit),
@@ -449,7 +439,7 @@ pub const HELP: &[HelpGroup] = &[
                 action: HelpAction::Story(StoryKey::PrevScreen),
             },
             HelpRow {
-                keys: &["Enter"],
+                keys: &["Enter", "o"],
                 label: "Toggle replies, or read citation",
                 action: HelpAction::Story(StoryKey::Enter),
             },
@@ -474,7 +464,7 @@ pub const HELP: &[HelpGroup] = &[
                 action: HelpAction::Story(StoryKey::ToggleSaved),
             },
             HelpRow {
-                keys: &["o"],
+                keys: &["⇧O"],
                 label: "Open in browser",
                 action: HelpAction::External,
             },
@@ -521,7 +511,7 @@ pub const HELP: &[HelpGroup] = &[
                 action: HelpAction::Window(WindowKey::Settings),
             },
             HelpRow {
-                keys: &["\u{2318}?"],
+                keys: &["?", "\u{2318}?"],
                 label: "Keyboard shortcuts",
                 action: HelpAction::Window(WindowKey::Help),
             },
@@ -723,6 +713,7 @@ mod tests {
             (Key::Left, StoryKey::Back),
             (Key::Tab, StoryKey::NextCitation),
             (Key::Enter, StoryKey::Enter),
+            (Key::Text("o".into()), StoryKey::Enter),
             (Key::Text("S".into()), StoryKey::ToggleSummary),
             (Key::Text("r".into()), StoryKey::Refresh),
             (Key::Text("R".into()), StoryKey::Refresh),
@@ -763,7 +754,7 @@ mod tests {
         assert_eq!(story_key(&back_tab), StoryKey::PrevCitation);
         // The feed's page and tab keys are not story bindings: the discussion pages with
         // Page Up/Down, and `n`/`p`/`1`-`4` belong to the feed.
-        for key in ["n", "p", "?", "1", "2", "3", "4", "o", "O"] {
+        for key in ["n", "p", "?", "1", "2", "3", "4", "O"] {
             assert_eq!(
                 story_key(&plain(Key::Text(key.into()))),
                 StoryKey::None,
@@ -852,9 +843,10 @@ mod tests {
         match context {
             HelpAction::Feed(_) => HelpAction::Feed(story_action(ev)),
             HelpAction::Story(_) => HelpAction::Story(story_key(ev)),
+            HelpAction::Window(WindowKey::Help) if story_action(ev) == StoryAction::ToggleHelp => HelpAction::Window(WindowKey::Help),
             HelpAction::Window(_) => HelpAction::Window(window_key(ev)),
             HelpAction::External => {
-                if is_reading_external(ev) {
+                if is_open_external(ev) {
                     HelpAction::External
                 } else {
                     HelpAction::Close
@@ -965,7 +957,9 @@ mod tests {
         for action in story_keys.map(HelpAction::Story) {
             assert!(rows.contains(&action), "no help row for {action:?}");
         }
-        for action in feed_actions.map(HelpAction::Feed) {
+        for action in feed_actions.map(|action| if action == StoryAction::ToggleHelp {
+            HelpAction::Window(WindowKey::Help)
+        } else { HelpAction::Feed(action) }) {
             assert!(rows.contains(&action), "no help row for {action:?}");
         }
         for action in window_keys.map(HelpAction::Window) {

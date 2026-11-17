@@ -32,7 +32,7 @@ mod macos {
 
     use block2::RcBlock;
     use objc2::{MainThreadMarker, rc::Retained, runtime::AnyObject};
-    use objc2_app_kit::{NSEvent, NSEventMask, NSEventType};
+    use objc2_app_kit::{NSEvent, NSEventMask, NSEventModifierFlags, NSEventType};
     use rune::{Waker, WindowHandle};
     use wry::dpi::{LogicalPosition, LogicalSize};
     use wry::{PageLoadEvent, Rect, WebView, WebViewBuilder, WebViewExtMacOS};
@@ -59,6 +59,28 @@ mod macos {
             let block = RcBlock::new(move |ptr: NonNull<NSEvent>| -> *mut NSEvent {
                 // AppKit invokes this local monitor on the main thread before dispatch.
                 let event = unsafe { ptr.as_ref() };
+                if event.r#type() == NSEventType::KeyDown {
+                    if event.keyCode() == 53
+                        && !event.modifierFlags().intersects(NSEventModifierFlags::Command | NSEventModifierFlags::Control | NSEventModifierFlags::Option)
+                        && !view.isHiddenOrHasHiddenAncestor()
+                        && event.window(mtm).is_some_and(|event_window| std::ptr::eq(&*event_window, &*window))
+                    {
+                        on_pending.set(true);
+                        if let Some(waker) = &waker { waker(); }
+                        return std::ptr::null_mut();
+                    }
+                    return ptr.as_ptr();
+                }
+                // Mouse utilities can send macOS's navigation swipe instead of button 3.
+                if event.r#type() == NSEventType::Swipe {
+                    let owned = event.window(mtm).is_some_and(|event_window| std::ptr::eq(&*event_window, &*window));
+                    if owned && event.deltaX() > 0.5 && event.deltaX() > event.deltaY().abs() {
+                        on_pending.set(true);
+                        if let Some(waker) = &waker { waker(); }
+                        return std::ptr::null_mut();
+                    }
+                    return ptr.as_ptr();
+                }
                 if event.buttonNumber() != 3 { return ptr.as_ptr(); }
                 let same_window = event.window(mtm).is_some_and(|event_window| std::ptr::eq(&*event_window, &*window));
                 if !same_window {
@@ -89,7 +111,7 @@ mod macos {
                 }
                 ptr.as_ptr()
             });
-            let mask = NSEventMask::OtherMouseDown | NSEventMask::OtherMouseDragged | NSEventMask::OtherMouseUp;
+            let mask = NSEventMask::OtherMouseDown | NSEventMask::OtherMouseDragged | NSEventMask::OtherMouseUp | NSEventMask::Swipe | NSEventMask::KeyDown;
             // The block returns the original event or null and is retained by AppKit until removal.
             let token = unsafe { NSEvent::addLocalMonitorForEventsMatchingMask_handler(mask, &block) }
                 .ok_or("could not install webview mouse monitor")?;

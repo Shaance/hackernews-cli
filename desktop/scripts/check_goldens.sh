@@ -775,9 +775,9 @@ else
 fi
 
 # A row with no keys is a label with nothing to press; a row with no label is keys with no
-# meaning. The intended four groups contain 48 rows.
+# meaning. The intended four groups contain 47 rows, with help grouped under Window.
 rows=$(hq '[.accessibility | .. | objects | select((.key // "") | startswith("help-row-"))] | length')
-want_rows=48
+want_rows=47
 bare=$(hq '[.accessibility | .. | objects | select((.key // "") | startswith("help-row-"))
   | select(([.children[]? | select(.role == "group" and (.name // "") != "")] | length) != 1
         or ([.children[]? | select(.role == "label" and (.name // "") != "")] | length) != 1)] | length')

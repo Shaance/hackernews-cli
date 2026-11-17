@@ -176,7 +176,7 @@ pub struct App {
     /// Headless runs use the fake service and an in-memory Saved store, so a golden never
     /// depends on the network or on the machine's `saved.json`.
     headless: bool,
-    /// Set by `o`/`O` or the footer's browser action; drained in `poll`,
+    /// Set by `O` or the footer's browser action; drained in `poll`,
     /// which opens the real page in the system browser (no-op when headless).
     pub(crate) pending_external: bool,
     /// The window handle Rune lent in `on_window`, for building the live pane's child view.
@@ -1085,9 +1085,13 @@ fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
         }
         return false;
     }
+    if s.story.is_some() && keys::story_action(ev) == StoryAction::ToggleHelp {
+        s.help = true;
+        return true;
+    }
     // `O` (capital) always opens the real page in the system browser — the TUI's
     // `reader_actions.rs:42,74` distinction — never the extracted article split.
-    if keys::is_open_external(ev) || (s.story.is_some() && keys::is_reading_external(ev)) {
+    if keys::is_open_external(ev) {
         s.pending_external = true;
         return true;
     }
@@ -3328,6 +3332,72 @@ mod tests {
         assert!(rt.elements().iter().any(|e| e.key.as_deref() == Some("summary-scroll") && e.focused), "native focus returns to the summary");
         route(&mut rt, rune::Key::Enter);
         assert_eq!(rt.state.story.as_ref().unwrap().shown_source().map(|source| source.id), Some(901), "Enter reopens the returned citation");
+    }
+
+    #[test]
+    fn question_mark_toggles_help_in_discussion_summary_and_source() {
+        let mut s = app(true, SavedView::in_memory());
+        scene_comments(&mut s);
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.frame(0.0);
+        let question = || KeyEvent { key: rune::Key::Text("?".into()), mods: rune::Mods { shift: true, ..Default::default() } };
+        for surface in ["discussion", "summary", "source"] {
+            match surface {
+                "discussion" => {
+                    let [x, y, w, h] = rt.elements().iter().find(|e| e.key.as_deref() == Some("comment-901")).unwrap().visible;
+                    rt.pointer_down(x + w / 2.0, y + h / 2.0);
+                    rt.pointer_up(x + w / 2.0, y + h / 2.0);
+                    rt.frame(0.0);
+                }
+                "summary" => {
+                    let [x, y, w, h] = rt.elements().iter().find(|e| e.key.as_deref() == Some("article-summary")).unwrap().visible;
+                    rt.pointer_down(x + w / 2.0, y + h / 2.0);
+                    rt.pointer_up(x + w / 2.0, y + h / 2.0);
+                    rt.frame(0.0);
+                    assert!(rt.elements().iter().any(|e| e.key.as_deref() == Some("summary-scroll") && e.focused));
+                }
+                _ => { rt.update(|s, _| s.open_citation(0)); rt.frame(0.3); }
+            }
+            rt.key(question()); rt.frame(0.3);
+            assert!(rt.state.help, "help opens from {surface}");
+            assert!(rt.elements().iter().any(|e| e.key.as_deref() == Some("help-dialog") && !e.inert));
+            rt.key(question()); rt.frame(0.3);
+            assert!(!rt.state.help, "help closes from {surface}");
+            assert_eq!(rt.state.story.as_ref().unwrap().source.is_some(), surface == "source");
+        }
+        rt.update(|s, _| s.open_summary_settings()); rt.frame(0.3);
+        rt.key(question()); rt.frame(0.3);
+        assert!(rt.state.settings.is_some() && !rt.state.help, "settings retains its input");
+    }
+
+    #[test]
+    fn o_activates_reading_selection_and_shift_o_queues_browser() {
+        let mut feed = app(true, SavedView::in_memory());
+        feed.request((11, 1), Ranking::Fresh);
+        let mut feed = rune::Runtime::new(feed, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        feed.on_key = Some(on_key);
+        feed.frame(0.0);
+        route(&mut feed, rune::Key::Text("o".into()));
+        assert!(feed.state.story.is_some() && !feed.state.pending_external);
+
+        let mut s = app(true, SavedView::in_memory());
+        scene_comments(&mut s);
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.frame(0.0);
+        route(&mut rt, rune::Key::Text("o".into()));
+        assert!(rt.state.story.as_ref().unwrap().thread.is_folded(901));
+        route(&mut rt, rune::Key::Text("o".into()));
+        assert!(!rt.state.story.as_ref().unwrap().thread.is_folded(901));
+        route(&mut rt, rune::Key::Tab);
+        route(&mut rt, rune::Key::Text("o".into()));
+        assert_eq!(rt.state.story.as_ref().unwrap().shown_source().map(|source| source.id), Some(901));
+        route(&mut rt, rune::Key::Text("o".into()));
+        assert!(rt.state.story.as_ref().unwrap().source.as_ref().unwrap().nav.folded.contains(&901));
+        rt.key(KeyEvent { key: rune::Key::Text("O".into()), mods: rune::Mods { shift: true, ..Default::default() } });
+        rt.frame(0.0);
+        assert!(rt.state.pending_external && rt.state.story.as_ref().unwrap().source.is_some());
     }
 
     #[test]

@@ -55,8 +55,8 @@ live page unavailable — showing extracted text
 | The child view failed to build | The banner carries the platform's own message beside it. |
 
 Summaries and citations work in all three, because they read the capture rather than the pane.
-While reading, `o` or `O` and the footer's browser action hand the URL to the system browser.
-In the feed, `o` opens the story and `Shift+O` opens the browser.
+In the feed, `o` opens the story; while reading, `o` activates the selected comment or citation.
+`Shift+O` and the footer's browser action open the URL in the system browser.
 
 Article extraction and the root discussion load independently. Comments become readable as
 soon as they arrive, while the summary continues from that discussion capture. A later summary
@@ -68,8 +68,8 @@ starts new paid summary requests. Closing the app clears this session cache.
 Two consequences of a native child view, both worth knowing before you use it:
 
 - **The page owns its own keyboard while it has focus.** Clicking into the page gives the
-  `WKWebView` first responder and Rune's `on_key` no longer sees those keys. Clicking any Rune
-  chrome — the toolbar, the header, the inspector — takes focus back.
+  `WKWebView` first responder and Rune's `on_key` no longer sees those keys. Unmodified `Esc`
+  still follows the app's Back action. Clicking Rune chrome takes focus back.
 - **A window resized while another app is in front keeps stale bounds** until the next layout.
   Rune only relayouts a resize when the window is painting
   (`crates/rune/src/window/lifecycle.rs:225`), and the child follows `on_layout`. This is the
@@ -95,19 +95,21 @@ access and nothing outside the process can press a key or raise its window:
 
 Keys follow the terminal app with the desktop feed exception below: `j`/`k` move, `1`–`4` switch tabs and return arrow navigation to the feed, `Enter` opens a story,
 `c` opens the discussion, `s` saves, `?` shows the keyboard sheet, `M` (or `⌘,`) opens the summary
-settings, `⌘?` shows the sheet, `⌘\` toggles the inspector, `q` quits. The sheet is generated from
+settings, `⌘?` shows the sheet, `⌘\` toggles the inspector, `q` quits. `?` also opens the sheet
+from the discussion and citation views. The sheet is generated from
 `src/keys.rs`, so it cannot drift from what the window binds.
 
 In a story, `Esc` returns to the feed, `Shift+S` shows or hides the summary, `Shift+J`/`Shift+K`
 scroll it, and `r` refreshes comments without regenerating either summary. `Tab` selects a
-citation and `Enter` opens its captured comment alongside the supporting summary points.
-`j`/`k` or Up/Down select comments in either view; `Enter` toggles replies, `c` collapses the
+citation and `Enter` or `o` opens its captured comment alongside the supporting summary points.
+`j`/`k` or Up/Down select comments in either view; `Enter` or `o` toggles replies, `c` collapses the
 current branch or its nearest open parent, and Page Up/Down scrolls. In a source, `Tab` and
 `Shift+Tab` switch citations and `Esc` returns to the same discussion position. Focus mode
 starts on and `f` toggles it; moving the pointer over a comment selects it while focus is on.
 The footer's Back control follows the same path, as does a mouse Back button over the app chrome,
-discussion, and native article pane on macOS. Passive shortcut hints dim with pointer use and
-return with keyboard navigation; the Back and browser actions remain visible.
+discussion, and native article pane on macOS, including a macOS Back navigation swipe. Passive
+shortcut hints dim with pointer use and return with keyboard navigation; the Back and browser
+actions remain visible.
 `Shift+L` lists links in the post and selected comment, or says when there are none. These
 shortcuts work when the app chrome or discussion has focus; the live page retains its own
 keyboard while focused.

@@ -1123,12 +1123,11 @@ pub fn story_footer(s: &Story, k: &Kit, t: tok::Theme, hints: &rune::Live<f32>, 
         .child(h(&["Tab"], if in_source { "next source" } else { "citation" }));
     if !in_source {
         footer = footer.child(h(&["⇧", "S"], "summary"))
-            .child(h(&["⇧", "J/K"], "scroll summary"))
             .child(h(&["r"], "refresh comments"));
     }
     footer.child(row().key("article-open-original").role("button").label("Open in browser")
         .focusable(true).on_press(|s: &mut App| s.pending_external = true)
-        .gap(6.0).center_y().child(Keybind::new(&["o"]).build(k))
+        .gap(6.0).center_y().child(Keybind::new(&["⇧", "O"]).build(k))
         .child(text("browser ↗").font(type_::LABEL).color(t.text_secondary)))
 }
 

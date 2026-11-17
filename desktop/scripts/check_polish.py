@@ -221,7 +221,7 @@ def reachable_rows(elements):
             and e["rect"][1] >= viewport[1] - .01
             and e["rect"][1] + e["rect"][3] <= viewport[1] + viewport[3] + .01}
 all_rows = {e["path"] for e in top if str(e.get("key", "")).startswith("help-row-")}
-assert len(all_rows) == 48 and reachable_rows(top) | reachable_rows(scrolled) == all_rows
+assert len(all_rows) == 47 and reachable_rows(top) | reachable_rows(scrolled) == all_rows
 for fixed in ["close", "help-footer"]:
     assert one(top, fixed)["rect"] == one(scrolled, fixed)["rect"], fixed
 resized = capture("help-resized-short", scene="help", at=.9,
