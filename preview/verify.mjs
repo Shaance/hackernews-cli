@@ -93,8 +93,10 @@ try {
     memory_bytes: usage.memory_stats?.usage,
     pids: usage.pids_stats?.current,
   });
+  a.output = '';
   input(a, '2');
   await until(() => a.output.includes(snap.items[snap.feeds.new[0]].title));
+  a.output = '';
   input(a, '1');
   await until(() => a.output.includes(snap.items[snap.feeds.top[0]].title));
   pass('Native category switching works offline');
