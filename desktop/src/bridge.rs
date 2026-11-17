@@ -14,6 +14,7 @@
 //! same requests on the same runtime but block, so a scene is deterministic and needs no frame
 //! budget.
 
+use std::collections::HashMap;
 use std::future::Future;
 use std::sync::Arc;
 use std::task::{Context, Poll, Wake, Waker as TaskWaker};
@@ -53,6 +54,7 @@ pub struct Bridge {
     latest: Latest<Filled>,
     article: Option<JoinHandle<ArticlePhase>>,
     story: Option<JoinHandle<StoryPhase>>,
+    parked: HashMap<i32, (Option<JoinHandle<ArticlePhase>>, Option<JoinHandle<StoryPhase>>)>,
     refresh: Latest<CommentsRefreshed>,
     waker: Option<TaskWaker>,
     replies: Latest<ReplyFilled>,
@@ -173,6 +175,7 @@ impl Bridge {
             latest: Latest::default(),
             article: None,
             story: None,
+            parked: HashMap::new(),
             refresh: Latest::default(),
             waker: None,
             replies: Latest::default(),
@@ -293,17 +296,18 @@ impl Bridge {
         self.latest.take()
     }
 
-    /// Take a ready story result. Once the discussion lands, start its summary using the
-    /// same owner; article extraction never holds up the discussion.
-    pub fn take_story(&mut self, summarize: bool) -> Option<StoryUpdate> {
+    /// Take a ready story result. Start deferred summaries with settings current at dispatch;
+    /// article extraction never holds up the discussion.
+    pub fn take_story(&mut self, config: &Config, summarize_article: bool, summarize_discussion: bool) -> Option<StoryUpdate> {
         if let Some(phase) = take_task(&mut self.article, self.waker.as_ref()) {
             return Some(match phase {
                 ArticlePhase::Captured { source, request, article } => {
                     let story_id = request.story.id;
-                    if let Ok(captured) = &article && summarize && (!source.is_live() || !request.config.key().is_empty()) {
+                    if let Ok(captured) = &article && summarize_article && (!source.is_live() || !config.key().is_empty()) {
                         let captured = captured.clone();
+                        let config = config.clone();
                         self.article = Some(self.handle.spawn(async move {
-                            let summary = source.article_summary(&request.config, &request.story, &captured).await;
+                            let summary = source.article_summary(&config, &request.story, &captured).await;
                             ArticlePhase::Summary { story_id, summary }
                         }));
                     }
@@ -315,10 +319,11 @@ impl Bridge {
         match take_task(&mut self.story, self.waker.as_ref())? {
             StoryPhase::Captured { source, request, comments, sources } => {
                 let story_id = request.story.id;
-                if comments.is_ok() && summarize && (!source.is_live() || !request.config.key().is_empty()) {
+                if comments.is_ok() && summarize_discussion && (!source.is_live() || !config.key().is_empty()) {
                     let captured = sources.clone();
+                    let config = config.clone();
                     self.story = Some(self.handle.spawn(async move {
-                        let summary = source.summary(&request.config, &request.story, &captured).await;
+                        let summary = source.summary(&config, &request.story, &captured).await;
                         StoryPhase::Summary { story_id, summary, sources: captured }
                     }));
                 }
@@ -338,6 +343,21 @@ impl Bridge {
         self.article.is_some() || self.story.is_some()
     }
 
+    /// Retain paid work and its captures while the reader is on another story.
+    pub(crate) fn park_story(&mut self, story_id: i32) {
+        self.replies.cancel();
+        self.refresh.cancel();
+        self.parked.insert(story_id, (self.article.take(), self.story.take()));
+    }
+
+    pub(crate) fn resume_story(&mut self, story_id: i32) {
+        if let Some((article, story)) = self.parked.remove(&story_id) {
+            self.article = article;
+            self.story = story;
+            if let Some(waker) = &self.waker { waker.wake_by_ref(); }
+        }
+    }
+
     /// Drop the story open and any answer not yet taken, leaving the feed's request alone.
     pub fn cancel_story(&mut self) {
         self.article = None;
@@ -355,6 +375,7 @@ impl Bridge {
     pub fn cancel(&mut self) {
         self.latest.cancel();
         self.cancel_story();
+        self.parked.clear();
     }
 }
 
@@ -454,6 +475,10 @@ async fn run_refresh(source: &Source, story_id: i32, loaded: Vec<i32>) -> Commen
     let (comments, (descendants, warning)) = tokio::join!(source.thread(story_id), descendants);
     CommentsRefreshed { story_id, comments: comments.map_err(|error| error.to_string()), descendants, warning }
 }
+
+#[cfg(test)]
+#[path = "../../tests/support/http_fixture.rs"]
+mod http_fixture;
 
 #[cfg(test)]
 mod tests {
@@ -585,9 +610,13 @@ mod tests {
 
     /// Poll for the three story surfaces, the way `App::poll` would.
     fn wait_for_story(bridge: &mut Bridge) -> Vec<StoryUpdate> {
+        wait_for_story_with_config(bridge, &Config::default())
+    }
+
+    fn wait_for_story_with_config(bridge: &mut Bridge, config: &Config) -> Vec<StoryUpdate> {
         let mut updates = Vec::new();
         for _ in 0..600 {
-            while let Some(update) = bridge.take_story(true) {
+            while let Some(update) = bridge.take_story(config, true, true) {
                 updates.push(update);
             }
             if updates.len() == 4 {
@@ -608,6 +637,62 @@ mod tests {
     }
 
     #[test]
+    fn parked_captures_send_current_provider_credentials_and_profile() {
+        use hn_lib::reader::{Network, Profile, Provider};
+        use hn_lib::{HackerNewsCliServiceImpl, hn_client::HackerNewsClientImpl};
+        use serde_json::json;
+        let mut bridge = Bridge::new().unwrap();
+        let (sent, received) = std::sync::mpsc::channel();
+        let (base, _requests, server) = bridge.runtime.block_on(http_fixture::serve(move |path, body, headers| {
+            sent.send((path.clone(), body, headers)).unwrap();
+            let content = json!({"summary":"article", "overview":"discussion", "points":[{"text":"point", "sources":[901]}]}).to_string();
+            let response = if path == "/messages" {
+                json!({"content":[{"type":"text", "text":content}]})
+            } else {
+                json!({"choices":[{"message":{"content":content}}]})
+            };
+            std::future::ready((200, response.to_string()))
+        }));
+        let mut network = Network::default();
+        network.endpoint = format!("{base}chat/completions");
+        network.anthropic_endpoint = format!("{base}messages");
+        network.response_log_dir = None;
+        let source = Arc::new(Source::Live { client: HackerNewsClientImpl::new(),
+            service: HackerNewsCliServiceImpl::new(), network });
+        for provider in [Provider::OpenRouter, Provider::Anthropic] {
+            let request = StoryRequest { story: crate::fixtures::item(0, 1), config: Config {
+                api_key: "old-key".into(), ..Config::default()
+            }};
+            let current = Config { provider, api_key: "new-key".into(), anthropic_api_key: "new-key".into(),
+                profile: Profile::Thorough, ..Config::default() };
+            let comments = crate::fixtures::comments();
+            let sources = source.capture(&comments);
+            let article_source = source.clone();
+            let article_request = request.clone();
+            bridge.article = Some(bridge.handle.spawn(async move { ArticlePhase::Captured {
+                source: article_source, request: article_request, article: Ok(("captured article".into(), false)),
+            }}));
+            let discussion_source = source.clone();
+            bridge.story = Some(bridge.handle.spawn(async move { StoryPhase::Captured {
+                source: discussion_source, request, comments: Ok(comments), sources,
+            }}));
+            bridge.park_story(1);
+            bridge.resume_story(1);
+            let updates = wait_for_story_with_config(&mut bridge, &current);
+            assert!(updates.iter().any(|u| matches!(u, StoryUpdate::ArticleSummary { summary: Ok(_), .. })));
+            assert!(updates.iter().any(|u| matches!(u, StoryUpdate::Summary { summary: Ok(_), .. })));
+            for _ in 0..2 {
+                let (path, body, headers) = received.recv_timeout(Duration::from_secs(2)).unwrap();
+                assert_eq!(path, if provider == Provider::Anthropic { "/messages" } else { "/chat/completions" });
+                assert!(headers.to_lowercase().contains("authorization: bearer new-key\r\n"));
+                assert_eq!(body["model"], current.profile.model(current.provider));
+            }
+            assert!(received.try_recv().is_err());
+        }
+        server.abort();
+    }
+
+    #[test]
     fn story_tasks_wake_to_register_and_again_when_ready() {
         let mut bridge = Bridge::new().unwrap();
         let (wake, wakes) = std::sync::mpsc::channel();
@@ -624,10 +709,10 @@ mod tests {
         });
         bridge.request_story(Arc::new(Source::Fake(fake)), story_request(0, 1));
         wakes.recv_timeout(Duration::from_secs(2)).expect("request schedules registration poll");
-        assert!(bridge.take_story(true).is_none());
+        assert!(bridge.take_story(&Config::default(), true, true).is_none());
         gate.add_permits(1);
         wakes.recv_timeout(Duration::from_secs(2)).expect("completed task wakes the UI");
-        assert!(matches!(bridge.take_story(true), Some(StoryUpdate::Article { story_id: 1, .. })));
+        assert!(matches!(bridge.take_story(&Config::default(), true, true), Some(StoryUpdate::Article { story_id: 1, .. })));
         bridge.cancel_story();
     }
 
@@ -678,7 +763,7 @@ mod tests {
         );
         let landed = wait_for_story(&mut bridge);
         assert!(landed.iter().all(|update| update_id(update) == crate::fixtures::STORY_ID));
-        assert!(bridge.take_story(true).is_none(), "each answer lands once");
+        assert!(bridge.take_story(&Config::default(), true, true).is_none(), "each answer lands once");
     }
 
     #[test]
@@ -691,7 +776,7 @@ mod tests {
         );
         bridge.cancel_story();
         std::thread::sleep(Duration::from_millis(120));
-        assert!(bridge.take_story(true).is_none());
+        assert!(bridge.take_story(&Config::default(), true, true).is_none());
         assert!(!bridge.is_story_pending());
     }
 
@@ -716,7 +801,7 @@ mod tests {
         bridge.request_story(source, story_request(crate::fixtures::STORY_INDEX, 2));
         let landed = wait_for_story(&mut bridge);
         assert!(landed.iter().all(|update| update_id(update) == 2));
-        assert!(bridge.take_story(true).is_none());
+        assert!(bridge.take_story(&Config::default(), true, true).is_none());
     }
 
     #[test]

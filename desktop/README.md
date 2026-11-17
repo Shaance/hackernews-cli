@@ -60,8 +60,10 @@ In the feed, `o` opens the story and `Shift+O` opens the browser.
 
 Article extraction and the root discussion load independently. Comments become readable as
 soon as they arrive, while the summary continues from that discussion capture. A later summary
-result preserves the comment tree, expanded replies, and article already on screen. Opening
-another story or retrying supersedes the earlier work.
+result preserves the comment tree, expanded replies, and article already on screen. During the
+session, leaving and reopening a story reuses its captures, summaries, citation snapshots and
+in-flight work. `r` refreshes comments without regenerating summaries; explicitly regenerating
+starts new paid summary requests. Closing the app clears this session cache.
 
 Two consequences of a native child view, both worth knowing before you use it:
 

@@ -232,9 +232,8 @@ impl Story {
                 };
             }
             StoryUpdate::ArticleSummary { story_id, summary } if story_id == self.id() => {
-                if !matches!(self.article_summary, ArticleSummaryState::Unconfigured) {
-                    self.land_article_summary(summary);
-                }
+                if !matches!(self.article_summary, ArticleSummaryState::Generating { .. }) { return false; }
+                self.land_article_summary(summary);
             }
             StoryUpdate::Discussion { story_id, comments, sources } if story_id == self.id() => {
                 if matches!(self.discussion, Some(Ok(()))) {
@@ -261,9 +260,8 @@ impl Story {
                 });
             }
             StoryUpdate::Summary { story_id, summary, sources } if story_id == self.id() => {
-                if !matches!(self.summary, SummaryState::Unconfigured) {
-                    self.land_summary(summary, sources);
-                }
+                if !self.summary.is_generating() { return false; }
+                self.land_summary(summary, sources);
             }
             _ => return false,
         }
@@ -504,6 +502,16 @@ impl Story {
         let url = self.links.as_ref()?.selected_url()?.to_string();
         self.links = None;
         Some(url)
+    }
+
+    /// Stop pending summaries after the key is cleared, retaining already paid-for results.
+    pub(crate) fn stop_summaries(&mut self) {
+        if let SummaryState::Generating { previous } = &mut self.summary {
+            self.summary = previous.take().map_or(SummaryState::Unconfigured, |summary| SummaryState::Done(*summary));
+        }
+        if let ArticleSummaryState::Generating { previous } = &mut self.article_summary {
+            self.article_summary = previous.take().map_or(ArticleSummaryState::Unconfigured, ArticleSummaryState::Done);
+        }
     }
 
     /// Start a replacement while keeping both readable summaries and their citations.

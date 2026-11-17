@@ -566,12 +566,12 @@ fn unconfigured(t: tok::Theme, accent: Color) -> El {
         .w_full()
         .gap(6.0)
         .child(
-            text("No summary API key")
+            text("No summary yet")
                 .font(type_::TITLE)
                 .color(t.text),
         )
         .child(
-            text("Add one in settings and the summary appears here. The article and the discussion do not need it.")
+            text("Open summary settings to add an API key or generate a summary.")
                 .key("summary-unconfigured-hint")
                 .font(type_::LABEL)
                 .color(t.text_secondary)

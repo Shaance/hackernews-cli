@@ -16,6 +16,7 @@
 //! cannot exist, which is the fallback branch [`Pane::Extracted`] draws.
 
 use std::cell::Cell;
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::{Arc, OnceLock};
@@ -143,6 +144,8 @@ pub struct App {
     hints: rune::Live<f32>,
     /// The open story, when the split is showing one. `None` is the feed.
     story: Option<Story>,
+    /// Readings kept for this window's lifetime, including their summary citation snapshots.
+    readings: HashMap<i32, Story>,
     /// The reading viewports' scroll observers and poll share this frame-pacing state.
     scroll_pacing: Rc<Cell<ScrollPacing>>,
     scroll_waker: Option<Waker>,
@@ -379,10 +382,16 @@ impl App {
         self.feed_revision = 0;
         self.pending_arrival = None;
         self.arrival = Arrival::None;
-        let configured = self.configured();
-        self.story = Some(Story::opening(story.clone(), configured));
+        self.park_story();
         self.inspector.set_open(true);
-        self.request_story(story);
+        if let Some(mut reading) = self.readings.remove(&story.id) {
+            self.bridge.resume_story(story.id);
+            reading.story = story;
+            self.story = Some(reading);
+        } else {
+            self.story = Some(Story::opening(story.clone(), self.configured()));
+            self.request_story(story);
+        }
     }
 
     /// The row the feed has selected, if it is a story that loaded.
@@ -452,9 +461,19 @@ impl App {
     /// `Esc` from the split: back to the feed, with the feed's request untouched.
     pub(crate) fn close_story(&mut self) {
         self.hide_live();
-        self.story = None;
+        self.park_story();
         self.inspector.set_open(false);
-        self.bridge.cancel_story();
+    }
+
+    fn park_story(&mut self) {
+        if let Some(mut story) = self.story.take() {
+            story.close_links();
+            story.close_source();
+            story.pending_reply = None;
+            story.refreshing_comments = false;
+            self.bridge.park_story(story.id());
+            self.readings.insert(story.id(), story);
+        }
     }
 
     /// Unwind the same reading layers for Escape, the footer and the mouse Back button.
@@ -647,6 +666,7 @@ impl App {
     pub(crate) fn retry_summary(&mut self) {
         let configured = self.configured();
         if let Some(story) = self.story.as_mut() {
+            if !configured { story.stop_summaries(); return; }
             let request = StoryRequest { story: story.story.clone(), config: self.config.clone() };
             let article = match &story.article {
                 crate::story::ArticleState::Ready { text, partial } => Some((text.clone(), *partial)),
@@ -654,11 +674,10 @@ impl App {
             };
             let sources = matches!(story.discussion, Some(Ok(()))).then(|| story.current_sources.clone());
             story.retry(configured);
-            if !configured { return; }
             self.bridge.request_summaries(self.source.clone(), request, article, sources);
             if self.headless {
                 while self.bridge.is_story_pending() {
-                    if let Some(update) = self.bridge.take_story(true) {
+                    if let Some(update) = self.bridge.take_story(&self.config, true, true) {
                         if let Some(story) = self.story.as_mut() { story.land_update(update); }
                     } else {
                         std::thread::yield_now();
@@ -720,15 +739,17 @@ impl App {
             message: "Settings saved".to_string(),
             until: f64::INFINITY,
         });
+        if !self.configured() {
+            for story in self.story.iter_mut().chain(self.readings.values_mut()) {
+                story.stop_summaries();
+            }
+        }
         if refresh {
             if self.story.is_some() {
                 self.retry_summary();
             } else {
                 self.refresh();
             }
-        } else if !self.configured() && let Some(story) = self.story.as_mut() {
-            // Captures may still finish, but clearing the key ends both summary attempts.
-            story.retry(false);
         }
     }
 
@@ -824,6 +845,7 @@ fn init() -> App {
         hover: None,
         hints: rune::Live::new(1.0),
         story: None,
+        readings: HashMap::new(),
         scroll_pacing: Rc::new(Cell::new(ScrollPacing::Idle)),
         scroll_waker: None,
         inspector: PaneState::new(INSPECTOR_WIDTH)
@@ -881,7 +903,13 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
         changed |= landed;
         if landed { feed_arrived = s.accept_arrival(); }
     }
-    while let Some(update) = s.bridge.take_story(s.configured()) {
+    while let Some(update) = {
+        let configured = s.configured();
+        let article = s.story.as_ref().is_some_and(|story|
+            matches!(story.article_summary, crate::story::ArticleSummaryState::Generating { .. }));
+        let discussion = s.story.as_ref().is_some_and(|story| story.summary.is_generating());
+        s.bridge.take_story(&s.config, configured && article, configured && discussion)
+    } {
         let summary_finished = matches!(&update,
             StoryUpdate::Summary { .. } | StoryUpdate::Discussion { comments: Err(_), .. });
         let visible = s.inspector.is_open() && s.settings.is_none() && !s.help;
@@ -2344,7 +2372,7 @@ mod tests {
             SummaryState::Done(summary) if summary.overview == "current summary 1"));
 
         // A different story also wins over the older story's pending provider result.
-        rt.state.open_story(crate::fixtures::item(0, 1));
+        rt.state.retry_summary();
         poll_until(&mut rt.state, |_| summary_started.load(Ordering::SeqCst) == 4);
         rt.state.open_story(crate::fixtures::item(1, 2));
         poll_until(&mut rt.state, |s| matches!(&s.story.as_ref().unwrap().summary,
@@ -2917,7 +2945,7 @@ mod tests {
         assert!(rt.state.story.is_none());
         rt.update(|s, _| s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID)));
         rt.frame(0.3);
-        let [x, y, w, h] = rt.elements().iter().find(|e| e.key.as_deref() == Some("comment-load-901-false")).unwrap().visible;
+        let [x, y, w, h] = rt.elements().iter().find(|e| e.key.as_deref() == Some("comment-disclosure-901")).unwrap().visible;
         rt.button_down(x + w / 2.0, y + h / 2.0, rune::PointerButton::Back);
         rt.button_up(x + w / 2.0, y + h / 2.0, rune::PointerButton::Back);
         rt.frame(0.3);
@@ -4537,6 +4565,15 @@ mod tests {
         let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
         assert_eq!(*fake.summary_requests.lock().unwrap(), discussions);
         assert_eq!(*fake.article_summary_requests.lock().unwrap(), articles);
+        s.close_story();
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        assert_eq!(*fake.summary_requests.lock().unwrap(), discussions);
+        assert_eq!(*fake.article_summary_requests.lock().unwrap(), articles);
+        let story = s.story.as_ref().unwrap();
+        assert_eq!(story.summary.readable(), Some(&before));
+        assert_eq!(story.sources.iter().map(|s| (s.id, s.text.clone())).collect::<Vec<_>>(), sources);
+        assert!(story.current_sources.iter().any(|s| s.id == 987654));
         s.retry_summary();
         let story = s.story.as_ref().unwrap();
         assert_eq!(story.thread.cursor(), Some(9010));
@@ -4670,6 +4707,196 @@ mod tests {
     }
 
     #[test]
+    fn reopening_reuses_pending_and_completed_summaries_across_stories() {
+        use std::sync::{Mutex, atomic::{AtomicUsize, Ordering}};
+        use tokio::sync::oneshot;
+        let (article_release, article_gate) = oneshot::channel();
+        let (discussion_release, discussion_gate) = oneshot::channel();
+        let article_gate = Mutex::new(Some(article_gate));
+        let discussion_gate = Mutex::new(Some(discussion_gate));
+        let captures = Arc::new(AtomicUsize::new(0));
+        let mut fake = crate::service::FakeService::fixture();
+        let captured = captures.clone();
+        fake.article = Arc::new(move |_| {
+            captured.fetch_add(1, Ordering::SeqCst);
+            Box::pin(async { Ok(("captured".into(), false)) })
+        });
+        fake.article_summary = Arc::new(move |id| {
+            let gate = (id == 1).then(|| article_gate.lock().unwrap().take().unwrap());
+            Box::pin(async move {
+                if let Some(gate) = gate { gate.await.unwrap(); }
+                Ok(hn_lib::reader::Article { text: format!("article {id}") })
+            })
+        });
+        fake.summary = Arc::new(move |id| {
+            let gate = (id == 1).then(|| discussion_gate.lock().unwrap().take().unwrap());
+            Box::pin(async move {
+                if let Some(gate) = gate { gate.await.unwrap(); }
+                let mut summary = crate::fixtures::summary();
+                summary.overview = format!("summary {id}");
+                Ok(summary)
+            })
+        });
+        let mut s = app(false, SavedView::in_memory());
+        s.source = Arc::new(Source::Fake(fake));
+        s.config.api_key = "fixture".into();
+        let a = crate::fixtures::item(0, 1);
+        let b = crate::fixtures::item(1, 2);
+        s.open_story(a.clone());
+        poll_until(&mut s, |s| {
+            let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+            *fake.article_summary_requests.lock().unwrap() == 1 && *fake.summary_requests.lock().unwrap() == 1
+        });
+        let dir = temp_dir("settings-during-paid-work");
+        let mut settings = Settings::open(&s.config, Some(dir.join("summary.json")), false);
+        settings.set_key("new-key"); settings.set_profile(hn_lib::reader::Profile::Thorough);
+        s.settings = Some(settings); s.apply_settings(false);
+        assert!(s.settings.is_none() && s.config.key() == "new-key");
+        std::fs::remove_dir_all(dir).unwrap();
+        s.close_story();
+        s.open_story(a.clone());
+        assert!(s.story.as_ref().unwrap().summary.is_generating());
+        s.open_story(b.clone());
+        poll_until(&mut s, |s| !s.bridge.is_story_pending());
+        article_release.send(()).unwrap();
+        discussion_release.send(()).unwrap();
+        s.open_story(a.clone());
+        poll_until(&mut s, |s| !s.bridge.is_story_pending());
+        let story = s.story.as_ref().unwrap();
+        assert!(matches!(&story.article_summary, crate::story::ArticleSummaryState::Done(text) if text == "article 1"));
+        assert!(matches!(&story.summary, SummaryState::Done(summary) if summary.overview == "summary 1"));
+        s.open_story(b);
+        assert!(matches!(&s.story.as_ref().unwrap().summary, SummaryState::Done(summary) if summary.overview == "summary 2"));
+        s.close_story();
+        s.open_story(a);
+        assert!(!s.bridge.is_story_pending(), "completed readings do not start another request");
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        assert_eq!((*fake.article_summary_requests.lock().unwrap(), *fake.summary_requests.lock().unwrap()), (2, 2));
+        assert_eq!(captures.load(Ordering::SeqCst), 2, "cached opens do not recapture articles");
+    }
+
+    #[test]
+    fn parked_capture_waits_for_reopen_and_respects_clear_then_restore() {
+        use std::sync::{Mutex, mpsc};
+        use tokio::sync::oneshot;
+        for clear in [false, true] {
+            let (capture_release, capture_gate) = oneshot::channel();
+            let capture_gate = Mutex::new(Some(capture_gate));
+            let (captured, captured_rx) = mpsc::channel();
+            let (summary_release, summary_gate) = oneshot::channel();
+            let summary_gate = Mutex::new(Some(summary_gate));
+            let mut fake = crate::service::FakeService::fixture();
+            fake.article = Arc::new(move |_| {
+                let gate = capture_gate.lock().unwrap().take().unwrap();
+                let captured = captured.clone();
+                Box::pin(async move { gate.await.unwrap(); captured.send(()).unwrap(); Ok(("captured".into(), false)) })
+            });
+            fake.summary = Arc::new(move |_| {
+                let gate = summary_gate.lock().unwrap().take();
+                Box::pin(async move { if let Some(gate) = gate { gate.await.unwrap(); } Ok(crate::fixtures::summary()) })
+            });
+            let mut s = app(false, SavedView::in_memory());
+            s.source = Arc::new(Source::Fake(fake));
+            s.config.api_key = "old".into();
+            let item = crate::fixtures::item(0, 1);
+            s.open_story(item.clone());
+            poll_until(&mut s, |s| {
+                let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+                *fake.summary_requests.lock().unwrap() == 1
+            });
+            s.close_story();
+            if clear {
+                let dir = temp_dir("parked-clear-restore");
+                for key in ["", "new"] {
+                    let mut settings = Settings::open(&s.config, Some(dir.join("summary.json")), false);
+                    settings.set_key(key);
+                    s.settings = Some(settings);
+                    s.apply_settings(false);
+                    assert!(s.settings.is_none());
+                }
+                std::fs::remove_dir_all(dir).unwrap();
+            }
+            capture_release.send(()).unwrap();
+            captured_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+            summary_release.send(()).unwrap();
+            for _ in 0..5 { poll(&mut s, 0.0, &mut Tx::default()); }
+            let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+            assert_eq!(*fake.article_summary_requests.lock().unwrap(), 0, "parked captures do not start a provider");
+            s.open_story(item);
+            poll_until(&mut s, |s| !s.bridge.is_story_pending());
+            let story = s.story.as_ref().unwrap();
+            assert!(matches!(story.article, crate::story::ArticleState::Ready { .. }));
+            if clear {
+                assert_eq!(story.article_summary, crate::story::ArticleSummaryState::Unconfigured);
+                assert_eq!(story.summary, SummaryState::Unconfigured);
+                let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+                assert_eq!((*fake.article_summary_requests.lock().unwrap(), *fake.summary_requests.lock().unwrap()), (0, 1));
+                s.retry_summary();
+                poll_until(&mut s, |s| !s.bridge.is_story_pending());
+            } else {
+                assert!(matches!(story.article_summary, crate::story::ArticleSummaryState::Done(_)));
+                assert!(matches!(story.summary, SummaryState::Done(_)));
+            }
+            let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+            assert_eq!((*fake.article_summary_requests.lock().unwrap(), *fake.summary_requests.lock().unwrap()),
+                if clear { (1, 2) } else { (1, 1) });
+        }
+    }
+
+    #[test]
+    fn clearing_a_parked_retry_preserves_both_previous_summaries() {
+        use std::sync::Mutex;
+        use tokio::sync::oneshot;
+        let mut s = app(false, SavedView::in_memory());
+        s.config.api_key = "old".into();
+        let item = crate::fixtures::item(0, 1);
+        s.open_story(item.clone());
+        poll_until(&mut s, |s| !s.bridge.is_story_pending());
+        let story = s.story.as_ref().unwrap();
+        let article = story.article_summary.readable().unwrap().to_owned();
+        let discussion = story.summary.readable().unwrap().clone();
+        let sources: Vec<_> = story.sources.iter().map(|source| (source.id, source.text.clone())).collect();
+        let (article_release, article_gate) = oneshot::channel();
+        let (discussion_release, discussion_gate) = oneshot::channel();
+        let article_gate = Mutex::new(Some(article_gate));
+        let discussion_gate = Mutex::new(Some(discussion_gate));
+        let Source::Fake(fake) = Arc::get_mut(&mut s.source).unwrap() else { unreachable!() };
+        fake.article_summary = Arc::new(move |_| {
+            let gate = article_gate.lock().unwrap().take().unwrap();
+            Box::pin(async move { gate.await.unwrap(); Ok(hn_lib::reader::Article { text: "obsolete".into() }) })
+        });
+        fake.summary = Arc::new(move |_| {
+            let gate = discussion_gate.lock().unwrap().take().unwrap();
+            Box::pin(async move { gate.await.unwrap(); let mut summary = crate::fixtures::summary(); summary.overview = "obsolete".into(); Ok(summary) })
+        });
+        s.retry_summary();
+        poll_until(&mut s, |s| {
+            let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+            *fake.article_summary_requests.lock().unwrap() == 2 && *fake.summary_requests.lock().unwrap() == 2
+        });
+        s.close_story();
+        let dir = temp_dir("parked-clear-previous");
+        for key in ["", "new"] {
+            let mut settings = Settings::open(&s.config, Some(dir.join("summary.json")), false);
+            settings.set_key(key);
+            s.settings = Some(settings);
+            s.apply_settings(false);
+            assert!(s.settings.is_none());
+        }
+        std::fs::remove_dir_all(dir).unwrap();
+        article_release.send(()).unwrap();
+        discussion_release.send(()).unwrap();
+        s.open_story(item);
+        poll_until(&mut s, |s| !s.bridge.is_story_pending());
+        let story = s.story.as_ref().unwrap();
+        assert_eq!(story.article_summary.readable(), Some(article.as_str()));
+        assert_eq!(story.summary.readable(), Some(&discussion));
+        assert_eq!(story.sources.iter().map(|source| (source.id, source.text.clone())).collect::<Vec<_>>(), sources);
+        let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+        assert_eq!((*fake.article_summary_requests.lock().unwrap(), *fake.summary_requests.lock().unwrap()), (2, 2));
+    }
+
+    #[test]
     fn clearing_the_key_blocks_old_results_and_deferred_provider_calls() {
         use std::sync::Mutex;
         use tokio::sync::oneshot;
@@ -4739,6 +4966,13 @@ mod tests {
         s.headless = false;
         s.source = Arc::new(Source::Fake(crate::service::FakeService::fixture().with_delay(std::time::Duration::from_millis(25))));
         s.activate_comment(901);
+        s.refresh_comments();
+        assert!(s.story.as_ref().unwrap().pending_reply.is_some() && s.story.as_ref().unwrap().refreshing_comments);
+        s.close_story();
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        assert!(s.story.as_ref().unwrap().pending_reply.is_none() && !s.story.as_ref().unwrap().refreshing_comments);
+        s.activate_comment(901);
+        s.refresh_comments();
         let request = s.story.as_ref().unwrap().pending_reply.clone().unwrap();
         s.activate_comment(901);
         assert!(s.story.as_ref().unwrap().thread.is_folded(901), "second activation folds pending branch");
@@ -4748,7 +4982,8 @@ mod tests {
         assert!(s.story.as_ref().unwrap().thread.is_folded(901), "c folds the branch while replies are loading");
         let mut tx = Tx::default();
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
-        while s.story.as_ref().unwrap().pending_reply.is_some() && std::time::Instant::now() < deadline {
+        while (s.story.as_ref().unwrap().pending_reply.is_some() || s.story.as_ref().unwrap().refreshing_comments)
+            && std::time::Instant::now() < deadline {
             poll(&mut s, 0.0, &mut tx); std::thread::yield_now();
         }
         assert!(s.story.as_ref().unwrap().pending_reply.is_none());
@@ -4756,7 +4991,7 @@ mod tests {
         assert_eq!(s.story.as_ref().unwrap().thread.children_of(901).len(), 2);
         s.close_story();
         s.headless = true;
-        s.open_story(crate::fixtures::item(1, 2));
+        s.open_story(crate::fixtures::item(0, 1));
         assert!(!s.story.as_mut().unwrap().land_replies(crate::bridge::ReplyFilled { request, comments: Ok(crate::fixtures::replies(&[9010,9011])) }));
         assert_eq!(s.story.as_ref().unwrap().thread.len(), 5);
     }
@@ -4778,6 +5013,7 @@ mod tests {
             hover: None,
             hints: rune::Live::new(1.0),
             story: None,
+            readings: HashMap::new(),
             scroll_pacing: Rc::new(Cell::new(ScrollPacing::Idle)),
             scroll_waker: None,
             inspector: inspector(),
