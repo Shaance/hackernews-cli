@@ -143,6 +143,8 @@ Status: fixed in run A — Feed and discussion keyboard selection land immediate
   broken). For a zoom step only, a 0.15 s fade-in of the new `feed-page-{revision}` group is enough. Update
   DESIGN.md's `REFLOW` row to say resize snaps. Size M.
 
+Status: fixed in run B — Resize and zoom keep the selected story; Saved may clip it for one frame when width and height shrink.
+
 ### P6. The first row's top inset varies with window height
 - Severity: nice-to-have. Lens: polish. Screen: feed. Verified: rendered (`$A/feed-zin.png`: ~45 pt empty
   band above row 1 at zoom 1.5; 8 pt gutter elsewhere).

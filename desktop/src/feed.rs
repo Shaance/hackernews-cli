@@ -57,7 +57,7 @@ pub struct FeedModel {
     /// The cursor a page turn is loading. `display_cursor` stays put until the new window
     /// lands, so the rows on screen keep their own ranks while the next page is in flight.
     pub pending_cursor: Option<usize>,
-    /// The story a refresh must keep selected, applied when the new snapshot lands.
+    /// The story a refresh or reflow must keep selected when its fill lands.
     pub pending_anchor: Option<i32>,
     pub selected: usize,
     pub status: FeedStatus,

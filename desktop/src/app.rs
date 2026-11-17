@@ -131,8 +131,8 @@ pub struct App {
     bridge: Bridge,
     /// The grid the last commit measured. Written by `view`, read by `poll`.
     measured: Cell<Option<(usize, usize)>>,
-    /// The newest fill and ranking policy, so resize preserves a fresh request in flight.
-    requested: Option<(Fill, Ranking)>,
+    /// The newest fill, ranking policy and grid, so resize preserves in-flight work.
+    requested: Option<(Fill, Ranking, (usize, usize))>,
     /// Accepted tab/page changes replace this group; refresh and resize keep its identity.
     feed_revision: usize,
     pending_arrival: Option<Arrival>,
@@ -283,7 +283,7 @@ impl App {
     /// never reaches the source, so the viewport applies to display only.
     fn request(&mut self, grid: (usize, usize), ranking: Ranking) {
         let fill = self.feed.fill(grid.0, grid.1);
-        self.requested = Some((fill, ranking));
+        self.requested = Some((fill, ranking, grid));
         self.feed.status.error = None;
         if fill.tab == StoryType::Saved {
             self.feed.apply_saved(self.saved.store());
@@ -1050,9 +1050,30 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
     // resize keeps an in-flight fresh request fresh; otherwise it uses the accepted ranking.
     if let Some(grid) = s.measured.get() {
         let need = s.feed.fill(grid.0, grid.1);
-        if s.requested.map(|(fill, _)| fill) != Some(need) {
+        if s.feed.tab == StoryType::Saved
+            && s.requested.is_some_and(|(_, _, previous)| previous != grid)
+        {
+            if let Some(id) = s.feed.selected_id() {
+                tx.scroll_into_view(format!("story-{id}"));
+            }
+            tx.instant();
+            changed = true;
+        }
+        if s.requested.map(|(fill, _, _)| fill) != Some(need) {
+            // A page turn has its own destination. Reflow the page on screen only when
+            // there is no such turn, or when an earlier reflow is already pending.
+            if s.feed.tab != StoryType::Saved && need.count > 0
+                && (s.feed.pending_cursor.is_none() || s.feed.pending_anchor.is_some())
+                && let Some(id) = s.feed.selected_id()
+            {
+                let offset = (s.feed.selected / need.count) * need.count;
+                if offset > 0 || s.feed.pending_cursor.is_some() {
+                    s.feed.pending_anchor.get_or_insert(id);
+                    s.feed.pending_cursor = (offset > 0).then_some(s.feed.display_cursor + offset);
+                }
+            }
             let ranking = if s.feed.status.loading {
-                s.requested.map_or(Ranking::Keep, |(_, ranking)| ranking)
+                s.requested.map_or(Ranking::Keep, |(_, ranking, _)| ranking)
             } else {
                 Ranking::Keep
             };
@@ -1061,6 +1082,8 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
             }
             s.request(grid, ranking);
             changed = true;
+        } else if let Some((_, _, previous)) = &mut s.requested {
+            *previous = grid;
         }
     }
     // A request that never lands must not leave the feed loading forever.
@@ -1494,6 +1517,11 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
         let rows = ((feed_height - 2.0 * FEED_GUTTER + gap) / (ROW_HEIGHT + gap)).floor().max(1.0) as usize;
         s.measured.set(Some((rows, cols)));
     }
+    // Saved is one scrollable list. Change its columns in the same commit that reveals the
+    // selection at its new position, rather than putting it offscreen for a frame.
+    let feed_cols = if s.feed.tab == StoryType::Saved {
+        s.requested.map_or(cols, |(_, _, grid)| grid.1)
+    } else { cols };
 
     let handoff = if reduced { Transition::none() } else {
         Transition::asymmetric(Transition::opacity(), Transition::none())
@@ -1527,7 +1555,7 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
                 window.map_or(360.0, |rect| (rect[3] - 310.0).clamp(230.0, 440.0)),
                 [s.scroll_observer(Some(0)), s.scroll_observer(None), s.scroll_observer(Some(1))]),
         ),
-        None => (feed_body(s, &k, t, accent, cols, reduced, contrast, feed_height).transition(handoff), toolbar, col()),
+        None => (feed_body(s, &k, t, accent, feed_cols, reduced, contrast, feed_height).transition(handoff), toolbar, col()),
     };
     let shell = SplitView::new(main)
         .toolbar(toolbar)
@@ -1666,7 +1694,14 @@ fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize, reduce
 /// down it. One scroll viewport for both columns; every cell keeps its own key, so
 /// `Tx::scroll_into_view` reaches a story whichever column it is in.
 fn feed_list(s: &App, t: tok::Theme, accent: Color, cols: usize, reduced: bool, height: f32) -> El {
-    let shown = s.feed.stories.len();
+    // The measured grid is available during this view, before poll can settle its fill.
+    // Show the screenful containing the selection immediately, using the held stories.
+    let capacity = s.measured.get().unwrap_or(DEFAULT_GRID).0.saturating_mul(cols);
+    let start = if s.feed.tab != StoryType::Saved && capacity > 0 {
+        (s.feed.selected / capacity) * capacity
+    } else { 0 };
+    let shown = if s.feed.tab == StoryType::Saved { s.feed.stories.len() }
+        else { s.feed.stories.len().saturating_sub(start).min(capacity) };
     let per_column = shown.div_ceil(cols.max(1));
     // Keep the scroll viewport stable; only a completed page turn remounts this group.
     if s.feed.status.loading && s.feed.stories.is_empty() && s.feed.status.error.is_none() {
@@ -1710,7 +1745,7 @@ fn feed_list(s: &App, t: tok::Theme, accent: Color, cols: usize, reduced: bool, 
                 // per-row rules join into one continuous divider.
                 line = line.child(el().w(1.0).h_full().fill(t.separator));
             }
-            line = line.child(story_row(s, i, t, accent, reduced).grow(1.0));
+            line = line.child(story_row(s, start + i, t, accent, reduced).grow(1.0));
         }
         list = list.child(line);
     }
@@ -1916,7 +1951,7 @@ fn footer(s: &App, k: &Kit, t: tok::Theme, accent: Color, reduced: bool, contras
     if s.feed.status.loading && s.feed.stories.is_empty() && s.feed.status.error.is_none() {
         f = f.child(text(loading_label(s.feed.tab)).font(type_::LABEL).color(t.text_secondary).a11y_hidden());
     } else if s.feed.status.loading && !s.feed.stories.is_empty() {
-        let label = if s.requested.is_some_and(|(_, ranking)| ranking == Ranking::Fresh) {
+        let label = if s.requested.is_some_and(|(_, ranking, _)| ranking == Ranking::Fresh) {
             "Refreshing…"
         } else {
             "Loading page…"
@@ -2549,6 +2584,126 @@ mod tests {
         rt.frame(0.0);
         assert_eq!(rt.state.measured.get().unwrap().1, 1);
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    fn reflow_frames(rt: &mut rune::Runtime<App>, selected_id: i32) -> Vec<(usize, usize, bool)> {
+        (0..4).map(|_| {
+            rt.frame(0.016);
+            let elements = rt.elements();
+            let lines = elements.iter().filter(|e| !e.exiting && e.key.as_deref()
+                .and_then(|key| key.strip_prefix("line-"))
+                .is_some_and(|n| n.parse::<usize>().is_ok())).count();
+            let selected = format!("story-{selected_id}");
+            let visible = elements.iter().any(|e| e.key.as_deref() == Some(&selected)
+                && !e.exiting && e.visible[3] >= ROW_HEIGHT - 1.0);
+            let snapped = elements.iter().filter(|e| !e.exiting && e.key.as_deref()
+                .is_some_and(|key| key.starts_with("story-")))
+                .all(|e| e.rect.iter().zip(e.target).all(|(a, b)| (*a - b).abs() < 0.1));
+            (rt.state.measured.get().unwrap().0, lines, visible && snapped)
+        }).collect()
+    }
+
+    #[test]
+    fn resize_keeps_rank_sixteen_visible_without_an_overfull_frame() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request((14, 2), Ranking::Fresh);
+        let mut rt = rune::Runtime::new(s, view, (1600.0, 900.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.poll = Some(poll);
+        for _ in 0..3 { rt.frame(0.016); }
+        assert_eq!(rt.state.measured.get(), Some((14, 2)));
+        route(&mut rt, rune::Key::Down);
+        route(&mut rt, rune::Key::Right);
+        assert_eq!(rt.state.feed.selected_id(), Some(16));
+
+        rt.set_viewport((1100.0, 900.0), 1.0);
+        let frames = reflow_frames(&mut rt, 16);
+        assert_eq!(rt.state.feed.selected_id(), Some(16));
+        assert_eq!(rt.state.feed.display_cursor, 13);
+        assert!(frames.iter().all(|(rows, lines, visible)| lines <= rows && *visible), "{frames:?}");
+    }
+
+    #[test]
+    fn zoom_breakpoint_keeps_the_selected_story_visible_in_every_frame() {
+        let mut s = app(true, SavedView::in_memory());
+        s.request(DEFAULT_GRID, Ranking::Fresh);
+        let mut rt = rune::Runtime::new(s, view, (1100.0, 760.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.poll = Some(poll);
+        for _ in 0..3 { rt.frame(0.016); }
+        let narrow_rows = rt.state.measured.get().unwrap().0;
+        rt.key(KeyEvent { key: rune::Key::Command('-'), mods: rune::Mods { cmd: true, ..Default::default() } });
+        let widening = reflow_frames(&mut rt, 1);
+        assert_eq!((rt.state.zoom, rt.state.measured.get().unwrap().1), (0.9, 2));
+        route(&mut rt, rune::Key::Down);
+        route(&mut rt, rune::Key::Right);
+        let selected = rt.state.feed.selected_id().unwrap();
+        assert!(rt.state.feed.selected >= narrow_rows);
+
+        rt.key(KeyEvent { key: rune::Key::Command('0'), mods: rune::Mods { cmd: true, ..Default::default() } });
+        let narrowing = reflow_frames(&mut rt, selected);
+        assert_eq!((rt.state.zoom, rt.state.measured.get().unwrap().1), (1.0, 1));
+        assert_eq!(rt.state.feed.selected_id(), Some(selected));
+        assert_eq!(rt.state.feed.display_cursor, narrow_rows);
+        assert!(widening.iter().chain(&narrowing).all(|(rows, lines, visible)| lines <= rows && *visible),
+            "widening {widening:?}, narrowing {narrowing:?}");
+    }
+
+    #[test]
+    fn resize_retargets_pending_reflow_but_not_a_page_turn() {
+        for page_turn in [false, true] {
+            let mut s = app(true, SavedView::in_memory());
+            s.measured.set(Some((14, 2)));
+            s.request((14, 2), Ranking::Fresh);
+            s.feed.selected = 27;
+            s.headless = false;
+            s.source = Arc::new(Source::Fake(crate::service::FakeService::fixture()
+                .with_delay(Duration::from_millis(30))));
+            if page_turn { press(&mut s, rune::Key::Down); }
+            s.measured.set(Some((13, 1)));
+            poll(&mut s, 0.0, &mut Tx::default());
+            assert_eq!(s.feed.pending_cursor, Some(if page_turn { 28 } else { 26 }));
+            s.measured.set(Some((11, 1)));
+            poll(&mut s, 0.0, &mut Tx::default());
+            assert_eq!(s.feed.pending_cursor, Some(if page_turn { 28 } else { 22 }));
+            settle_feed(&mut s);
+            assert_eq!(s.feed.selected_id(), Some(if page_turn { 29 } else { 28 }));
+            assert_eq!(s.feed.display_cursor, if page_turn { 28 } else { 22 });
+            assert!(s.feed.story_cache.contains_key(&1), "reflow retains the earlier page");
+        }
+    }
+
+    #[test]
+    fn saved_selection_remains_visible_after_resize() {
+        let store = (1..=28).enumerate().map(|(index, id)| crate::fixtures::item(index, id)).collect();
+        let mut s = app(true, SavedView::seeded(store));
+        s.feed.tab = StoryType::Saved;
+        s.request((14, 2), Ranking::Fresh);
+        let mut rt = rune::Runtime::new(s, view, (1600.0, 900.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.poll = Some(poll);
+        for _ in 0..3 { rt.frame(0.016); }
+        route(&mut rt, rune::Key::Down);
+        route(&mut rt, rune::Key::Right);
+        assert_eq!(rt.state.feed.selected_id(), Some(16));
+        rt.set_viewport((1100.0, 900.0), 1.0);
+        for frame in 0..4 {
+            rt.frame(0.016); assert_eq!(rt.state.feed.selected_id(), Some(16));
+            assert!(rt.elements().iter().any(|e| e.key.as_deref() == Some("story-16")
+                && e.visible[3] >= ROW_HEIGHT - 1.0), "frame {frame}");
+        }
+        assert_eq!(rt.state.feed.selected_id(), Some(16));
+        assert_eq!(rt.state.feed.stories.len(), 28, "Saved remains one scrollable list");
+        rt.set_viewport((1600.0, 900.0), 1.0);
+        for _ in 0..3 { rt.frame(0.016); }
+        route(&mut rt, rune::Key::Text("G".into()));
+        assert_eq!(rt.state.feed.selected_id(), Some(28));
+        rt.set_viewport((1100.0, 700.0), 1.0);
+        for frame in 0..4 {
+            rt.frame(0.016); assert_eq!(rt.state.feed.selected_id(), Some(28));
+            assert!(frame == 0 || rt.elements().iter().any(|e| e.key.as_deref() == Some("story-28")
+                && e.visible[3] >= ROW_HEIGHT - 1.0), "shorter window frame {frame}");
+        }
     }
 
     #[test]

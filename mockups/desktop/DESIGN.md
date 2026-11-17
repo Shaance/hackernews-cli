@@ -127,7 +127,7 @@ and it makes the rank numbers monotonic down each column — which is how you sc
 
 `scroll_into_view` resolves the selected index to its `(row, col)` cell and scrolls the shared
 list to that row. `j` past the last story turns the page, as in the TUI. Crossing the threshold
-reflows on `REFLOW` 0.40/0 and the selection keeps its story, not its row; below it the layout is
+snaps on resize and zoom; the selection keeps its story, not its row. Below it the layout is
 exactly the one-column feed — no intermediate three-column state, no card grid.
 
 ### Fill the grid
@@ -152,9 +152,9 @@ just below the fold. At 1600×1200 the same page leaves 8 cells empty, so the ap
 page and renders 38 of the 60 it holds. One column is the same rule: `ceil(11 / 30) = 1`.
 
 `pages_needed()` in `prototypes/rune-mocks/src/main.rs` is that formula, and the wide mock renders
-30 stories into 15 rows to prove the grid is full. The real app measures the viewport on resize
-and refetches only when `pagesNeeded` grows; shrinking the window never drops a page it already
-has, so scrolling back up does not re-fetch.
+30 stories into 15 rows to prove the grid is full. The real app measures the viewport on resize,
+re-pages when needed to keep the selected story visible, and retains fetched stories in its cache.
+Shrinking never drops a page it already has, so returning to cached stories does not re-fetch.
 
 Measurement: `Cx::layout_with` / `Cx::layout_size` on the keyed window root
 (`crates/rune/src/runtime/layout_read.rs:216,232`) — synchronous and settled on the first layout,
@@ -314,7 +314,7 @@ Rune's springs are duration + bounce, retargeted with exact position and velocit
 | `SNAP` | 0.25 s / 0 | tab indicator, citation chip, switch knob, chevron, trail segment | snaps |
 | `SETTLE` | 0.30 s / 0 | failure card, occasional layout changes | snaps |
 | `GLIDE` | 0.32 s / 0 | source viewer; thread re-root | fades in place |
-| `REFLOW` | 0.40 s / 0 | thread fold; focus mode; row removal; one-column ↔ two-column reflow | lands at once |
+| `REFLOW` | 0.40 s / 0 | thread fold; focus mode; row removal; feed resize snaps and selection keeps its story | lands at once |
 | `MORPH` | 0.30 s / 0.16 | inspector sliding into place; settings, help, link chooser | fades |
 | `POP` | 0.25 s / 0.15 | the saved dot beside the rank; the toast follows it | instant |
 | `REDUCED_FADE` | 0.15 s curve | replacement for every spatial move | — |
