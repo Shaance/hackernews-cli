@@ -1898,7 +1898,7 @@
         651.0,
         48.0,
         515.0,
-        248.75
+        242.75
       ],
       "role": "region",
       "scale": 1.0
@@ -1918,7 +1918,7 @@
         651.0,
         48.0,
         515.0,
-        248.75
+        242.75
       ],
       "role": "group",
       "scale": 1.0
@@ -2508,56 +2508,15 @@
       "focusable": false,
       "focused": false,
       "inert": true,
-      "key": "summary-more",
-      "loopPhase": null,
-      "opacity": 0.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/summary-card/summary-open/summary-more",
-      "rect": [
-        1071.16,
-        279.75,
-        80.84,
-        15.0
-      ],
-      "role": "group",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": true,
-      "loopPhase": null,
-      "opacity": 0.0,
-      "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/summary-card/summary-open/summary-more/#0",
-      "rect": [
-        1071.16,
-        279.75,
-        80.84,
-        15.0
-      ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "More below ↓"
-    },
-    {
-      "blur": 0.0,
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": true,
       "key": "discussion-scroll",
       "loopPhase": null,
       "opacity": 1.0,
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll",
       "rect": [
         651.0,
-        306.75,
+        300.75,
         515.0,
-        400.25
+        406.25
       ],
       "role": "group",
       "scale": 1.0
@@ -2575,7 +2534,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion",
       "rect": [
         651.0,
-        306.75,
+        300.75,
         515.0,
         1026.25
       ],
@@ -2595,7 +2554,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header",
       "rect": [
         651.0,
-        306.75,
+        300.75,
         515.0,
         27.0
       ],
@@ -2614,7 +2573,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/#0",
       "rect": [
         653.0,
-        313.06,
+        307.06,
         435.56,
         14.38
       ],
@@ -2634,7 +2593,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/#0/#0",
       "rect": [
         653.0,
-        313.06,
+        307.06,
         61.05,
         14.38
       ],
@@ -2656,7 +2615,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/discussion-focus",
       "rect": [
         1096.56,
-        310.25,
+        304.25,
         67.44,
         20.0
       ],
@@ -2677,7 +2636,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-header/discussion-focus/label",
       "rect": [
         1106.56,
-        314.25,
+        308.25,
         47.44,
         12.0
       ],
@@ -2698,7 +2657,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows",
       "rect": [
         651.0,
-        335.75,
+        329.75,
         515.0,
         997.25
       ],
@@ -2722,7 +2681,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901",
       "rect": [
         651.0,
-        335.75,
+        329.75,
         515.0,
         88.75
       ],
@@ -2742,7 +2701,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901/focus-rail-901",
       "rect": [
         656.0,
-        342.75,
+        336.75,
         2.0,
         74.75
       ],
@@ -2762,7 +2721,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901/comment-who-901",
       "rect": [
         659.0,
-        343.75,
+        337.75,
         497.0,
         20.0
       ],
@@ -2781,7 +2740,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901/comment-who-901/#0",
       "rect": [
         659.0,
-        343.75,
+        337.75,
         20.0,
         20.0
       ],
@@ -2802,7 +2761,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901/comment-who-901/#0/comment-chevron-901",
       "rect": [
         659.0,
-        343.75,
+        337.75,
         20.0,
         20.0
       ],
@@ -2823,7 +2782,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901/comment-who-901/#0/comment-disclosure-901",
       "rect": [
         655.0,
-        339.75,
+        333.75,
         28.0,
         28.0
       ],
@@ -2844,7 +2803,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901/comment-who-901/comment-author-901",
       "rect": [
         685.0,
-        345.63,
+        339.63,
         47.48,
         16.25
       ],
@@ -2866,7 +2825,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901/comment-who-901/comment-age-901",
       "rect": [
         738.48,
-        346.25,
+        340.25,
         68.09,
         15.0
       ],
@@ -2886,7 +2845,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901/comment-who-901/#3",
       "rect": [
         812.57,
-        353.75,
+        347.75,
         343.43,
         0.0
       ],
@@ -2907,7 +2866,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901/comment-text-901",
       "rect": [
         685.0,
-        367.75,
+        361.75,
         471.0,
         48.75
       ],
@@ -2931,7 +2890,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010",
       "rect": [
         651.0,
-        426.5,
+        420.5,
         515.0,
         88.75
       ],
@@ -2951,7 +2910,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010/guide-9010-1",
       "rect": [
         665.0,
-        426.5,
+        420.5,
         1.0,
         88.75
       ],
@@ -2971,7 +2930,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010/comment-who-9010",
       "rect": [
         672.0,
-        434.5,
+        428.5,
         484.0,
         20.0
       ],
@@ -2990,7 +2949,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010/comment-who-9010/#0",
       "rect": [
         672.0,
-        434.5,
+        428.5,
         20.0,
         20.0
       ],
@@ -3011,7 +2970,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010/comment-who-9010/#0/comment-chevron-9010",
       "rect": [
         672.0,
-        434.5,
+        428.5,
         20.0,
         20.0
       ],
@@ -3032,7 +2991,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010/comment-who-9010/#0/comment-disclosure-9010",
       "rect": [
         668.0,
-        430.5,
+        424.5,
         28.0,
         28.0
       ],
@@ -3053,7 +3012,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010/comment-who-9010/comment-author-9010",
       "rect": [
         698.0,
-        436.38,
+        430.38,
         59.59,
         16.25
       ],
@@ -3075,7 +3034,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010/comment-who-9010/comment-age-9010",
       "rect": [
         763.59,
-        437.0,
+        431.0,
         59.2,
         15.0
       ],
@@ -3095,7 +3054,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010/comment-who-9010/#3",
       "rect": [
         828.79,
-        444.5,
+        438.5,
         327.21,
         0.0
       ],
@@ -3116,7 +3075,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9010/comment-text-9010",
       "rect": [
         698.0,
-        458.5,
+        452.5,
         458.0,
         48.75
       ],
@@ -3140,7 +3099,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100",
       "rect": [
         651.0,
-        517.25,
+        511.25,
         515.0,
         88.75
       ],
@@ -3160,7 +3119,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100/guide-90100-1",
       "rect": [
         665.0,
-        517.25,
+        511.25,
         1.0,
         88.75
       ],
@@ -3180,7 +3139,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100/guide-90100-2",
       "rect": [
         678.0,
-        517.25,
+        511.25,
         1.0,
         88.75
       ],
@@ -3200,7 +3159,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100/comment-who-90100",
       "rect": [
         685.0,
-        525.25,
+        519.25,
         471.0,
         20.0
       ],
@@ -3219,7 +3178,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100/comment-who-90100/#0",
       "rect": [
         685.0,
-        525.25,
+        519.25,
         20.0,
         20.0
       ],
@@ -3240,7 +3199,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100/comment-who-90100/#0/comment-chevron-90100",
       "rect": [
         685.0,
-        525.25,
+        519.25,
         20.0,
         20.0
       ],
@@ -3261,7 +3220,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100/comment-who-90100/#0/comment-disclosure-90100",
       "rect": [
         681.0,
-        521.25,
+        515.25,
         28.0,
         28.0
       ],
@@ -3282,7 +3241,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100/comment-who-90100/comment-author-90100",
       "rect": [
         711.0,
-        527.13,
+        521.13,
         49.03,
         16.25
       ],
@@ -3304,7 +3263,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100/comment-who-90100/comment-age-90100",
       "rect": [
         766.03,
-        527.75,
+        521.75,
         87.97,
         15.0
       ],
@@ -3324,7 +3283,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100/comment-who-90100/#3",
       "rect": [
         860.0,
-        535.25,
+        529.25,
         296.0,
         0.0
       ],
@@ -3345,7 +3304,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90100/comment-text-90100",
       "rect": [
         711.0,
-        549.25,
+        543.25,
         445.0,
         48.75
       ],
@@ -3369,7 +3328,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000",
       "rect": [
         651.0,
-        608.0,
+        602.0,
         515.0,
         112.75
       ],
@@ -3389,7 +3348,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/guide-901000-1",
       "rect": [
         665.0,
-        608.0,
+        602.0,
         1.0,
         112.75
       ],
@@ -3409,7 +3368,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/guide-901000-2",
       "rect": [
         678.0,
-        608.0,
+        602.0,
         1.0,
         112.75
       ],
@@ -3429,7 +3388,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/guide-901000-3",
       "rect": [
         691.0,
-        608.0,
+        602.0,
         1.0,
         112.75
       ],
@@ -3449,7 +3408,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-who-901000",
       "rect": [
         698.0,
-        616.0,
+        610.0,
         458.0,
         20.0
       ],
@@ -3468,7 +3427,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-who-901000/#0",
       "rect": [
         698.0,
-        616.0,
+        610.0,
         20.0,
         20.0
       ],
@@ -3489,7 +3448,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-who-901000/#0/comment-chevron-901000",
       "rect": [
         698.0,
-        616.0,
+        610.0,
         20.0,
         20.0
       ],
@@ -3510,7 +3469,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-who-901000/#0/comment-disclosure-901000",
       "rect": [
         694.0,
-        612.0,
+        606.0,
         28.0,
         28.0
       ],
@@ -3531,7 +3490,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-who-901000/comment-author-901000",
       "rect": [
         724.0,
-        617.88,
+        611.88,
         31.66,
         16.25
       ],
@@ -3553,7 +3512,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-who-901000/comment-age-901000",
       "rect": [
         761.66,
-        618.5,
+        612.5,
         88.48,
         15.0
       ],
@@ -3573,7 +3532,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-who-901000/#3",
       "rect": [
         856.14,
-        626.0,
+        620.0,
         299.86,
         0.0
       ],
@@ -3594,7 +3553,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-text-901000",
       "rect": [
         724.0,
-        640.0,
+        634.0,
         432.0,
         48.75
       ],
@@ -3616,7 +3575,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-continue-901000",
       "rect": [
         724.0,
-        692.75,
+        686.75,
         162.61,
         20.0
       ],
@@ -3637,7 +3596,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-901000/comment-continue-901000/label",
       "rect": [
         734.0,
-        696.75,
+        690.75,
         142.61,
         12.0
       ],
@@ -3660,7 +3619,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90101",
       "rect": [
         651.0,
-        722.75,
+        716.75,
         515.0,
         72.5
       ],
@@ -3680,7 +3639,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90101/guide-90101-1",
       "rect": [
         665.0,
-        722.75,
+        716.75,
         1.0,
         72.5
       ],
@@ -3700,7 +3659,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90101/guide-90101-2",
       "rect": [
         678.0,
-        722.75,
+        716.75,
         1.0,
         72.5
       ],
@@ -3720,7 +3679,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90101/comment-who-90101",
       "rect": [
         685.0,
-        730.75,
+        724.75,
         471.0,
         20.0
       ],
@@ -3739,7 +3698,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90101/comment-who-90101/#0",
       "rect": [
         685.0,
-        730.75,
+        724.75,
         20.0,
         20.0
       ],
@@ -3760,7 +3719,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90101/comment-who-90101/comment-author-90101",
       "rect": [
         711.0,
-        732.63,
+        726.63,
         31.66,
         16.25
       ],
@@ -3782,7 +3741,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90101/comment-who-90101/comment-age-90101",
       "rect": [
         748.66,
-        733.25,
+        727.25,
         88.92,
         15.0
       ],
@@ -3802,7 +3761,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90101/comment-who-90101/#3",
       "rect": [
         843.59,
-        740.75,
+        734.75,
         312.41,
         0.0
       ],
@@ -3823,7 +3782,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90101/comment-text-90101",
       "rect": [
         711.0,
-        754.75,
+        748.75,
         445.0,
         32.5
       ],
@@ -3846,7 +3805,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9011",
       "rect": [
         651.0,
-        797.25,
+        791.25,
         515.0,
         88.75
       ],
@@ -3866,7 +3825,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9011/guide-9011-1",
       "rect": [
         665.0,
-        797.25,
+        791.25,
         1.0,
         88.75
       ],
@@ -3886,7 +3845,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9011/comment-who-9011",
       "rect": [
         672.0,
-        805.25,
+        799.25,
         484.0,
         20.0
       ],
@@ -3905,7 +3864,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9011/comment-who-9011/#0",
       "rect": [
         672.0,
-        805.25,
+        799.25,
         20.0,
         20.0
       ],
@@ -3926,7 +3885,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9011/comment-who-9011/comment-author-9011",
       "rect": [
         698.0,
-        807.13,
+        801.13,
         47.48,
         16.25
       ],
@@ -3948,7 +3907,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9011/comment-who-9011/comment-age-9011",
       "rect": [
         751.48,
-        807.75,
+        801.75,
         59.2,
         15.0
       ],
@@ -3968,7 +3927,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9011/comment-who-9011/#3",
       "rect": [
         816.68,
-        815.25,
+        809.25,
         339.32,
         0.0
       ],
@@ -3989,7 +3948,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9011/comment-text-9011",
       "rect": [
         698.0,
-        829.25,
+        823.25,
         458.0,
         48.75
       ],
@@ -4012,7 +3971,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-902",
       "rect": [
         651.0,
-        888.0,
+        882.0,
         515.0,
         72.5
       ],
@@ -4032,7 +3991,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-902/comment-who-902",
       "rect": [
         659.0,
-        896.0,
+        890.0,
         497.0,
         20.0
       ],
@@ -4051,7 +4010,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-902/comment-who-902/#0",
       "rect": [
         659.0,
-        896.0,
+        890.0,
         20.0,
         20.0
       ],
@@ -4072,7 +4031,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-902/comment-who-902/comment-author-902",
       "rect": [
         685.0,
-        897.88,
+        891.88,
         59.59,
         16.25
       ],
@@ -4094,7 +4053,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-902/comment-who-902/comment-age-902",
       "rect": [
         750.59,
-        898.5,
+        892.5,
         59.2,
         15.0
       ],
@@ -4114,7 +4073,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-902/comment-who-902/#3",
       "rect": [
         815.79,
-        906.0,
+        900.0,
         340.21,
         0.0
       ],
@@ -4135,7 +4094,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-902/comment-text-902",
       "rect": [
         685.0,
-        920.0,
+        914.0,
         471.0,
         32.5
       ],
@@ -4159,7 +4118,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-903",
       "rect": [
         651.0,
-        962.5,
+        956.5,
         515.0,
         72.5
       ],
@@ -4179,7 +4138,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-903/comment-who-903",
       "rect": [
         659.0,
-        970.5,
+        964.5,
         497.0,
         20.0
       ],
@@ -4198,7 +4157,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-903/comment-who-903/#0",
       "rect": [
         659.0,
-        970.5,
+        964.5,
         20.0,
         20.0
       ],
@@ -4219,7 +4178,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-903/comment-who-903/#0/comment-chevron-903",
       "rect": [
         659.0,
-        970.5,
+        964.5,
         20.0,
         20.0
       ],
@@ -4240,7 +4199,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-903/comment-who-903/#0/comment-disclosure-903",
       "rect": [
         655.0,
-        966.5,
+        960.5,
         28.0,
         28.0
       ],
@@ -4261,7 +4220,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-903/comment-who-903/comment-author-903",
       "rect": [
         685.0,
-        972.38,
+        966.38,
         47.48,
         16.25
       ],
@@ -4283,7 +4242,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-903/comment-who-903/comment-age-903",
       "rect": [
         738.48,
-        973.0,
+        967.0,
         59.2,
         15.0
       ],
@@ -4303,7 +4262,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-903/comment-who-903/#3",
       "rect": [
         803.68,
-        980.5,
+        974.5,
         352.32,
         0.0
       ],
@@ -4324,7 +4283,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-903/comment-text-903",
       "rect": [
         685.0,
-        994.5,
+        988.5,
         471.0,
         32.5
       ],
@@ -4348,7 +4307,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9030",
       "rect": [
         651.0,
-        1037.0,
+        1031.0,
         515.0,
         56.25
       ],
@@ -4368,7 +4327,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9030/guide-9030-1",
       "rect": [
         665.0,
-        1037.0,
+        1031.0,
         1.0,
         56.25
       ],
@@ -4388,7 +4347,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9030/comment-who-9030",
       "rect": [
         672.0,
-        1045.0,
+        1039.0,
         484.0,
         20.0
       ],
@@ -4407,7 +4366,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9030/comment-who-9030/#0",
       "rect": [
         672.0,
-        1045.0,
+        1039.0,
         20.0,
         20.0
       ],
@@ -4428,7 +4387,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9030/comment-who-9030/#0/comment-chevron-9030",
       "rect": [
         672.0,
-        1045.0,
+        1039.0,
         20.0,
         20.0
       ],
@@ -4449,7 +4408,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9030/comment-who-9030/#0/comment-disclosure-9030",
       "rect": [
         668.0,
-        1041.0,
+        1035.0,
         28.0,
         28.0
       ],
@@ -4470,7 +4429,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9030/comment-who-9030/comment-author-9030",
       "rect": [
         698.0,
-        1046.88,
+        1040.88,
         31.66,
         16.25
       ],
@@ -4492,7 +4451,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9030/comment-who-9030/comment-age-9030",
       "rect": [
         735.66,
-        1047.5,
+        1041.5,
         88.48,
         15.0
       ],
@@ -4512,7 +4471,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9030/comment-who-9030/#3",
       "rect": [
         830.14,
-        1055.0,
+        1049.0,
         325.86,
         0.0
       ],
@@ -4533,7 +4492,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-9030/comment-text-9030",
       "rect": [
         698.0,
-        1069.0,
+        1063.0,
         458.0,
         16.25
       ],
@@ -4556,7 +4515,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90300",
       "rect": [
         651.0,
-        1095.25,
+        1089.25,
         515.0,
         72.5
       ],
@@ -4576,7 +4535,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90300/guide-90300-1",
       "rect": [
         665.0,
-        1095.25,
+        1089.25,
         1.0,
         72.5
       ],
@@ -4596,7 +4555,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90300/guide-90300-2",
       "rect": [
         678.0,
-        1095.25,
+        1089.25,
         1.0,
         72.5
       ],
@@ -4616,7 +4575,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90300/comment-who-90300",
       "rect": [
         685.0,
-        1103.25,
+        1097.25,
         471.0,
         20.0
       ],
@@ -4635,7 +4594,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90300/comment-who-90300/#0",
       "rect": [
         685.0,
-        1103.25,
+        1097.25,
         20.0,
         20.0
       ],
@@ -4656,7 +4615,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90300/comment-who-90300/comment-author-90300",
       "rect": [
         711.0,
-        1105.13,
+        1099.13,
         47.48,
         16.25
       ],
@@ -4678,7 +4637,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90300/comment-who-90300/comment-age-90300",
       "rect": [
         764.48,
-        1105.75,
+        1099.75,
         88.61,
         15.0
       ],
@@ -4698,7 +4657,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90300/comment-who-90300/#3",
       "rect": [
         859.09,
-        1113.25,
+        1107.25,
         296.91,
         0.0
       ],
@@ -4719,7 +4678,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-90300/comment-text-90300",
       "rect": [
         711.0,
-        1127.25,
+        1121.25,
         445.0,
         32.5
       ],
@@ -4742,7 +4701,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-904",
       "rect": [
         651.0,
-        1169.75,
+        1163.75,
         515.0,
         88.75
       ],
@@ -4762,7 +4721,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-904/comment-who-904",
       "rect": [
         659.0,
-        1177.75,
+        1171.75,
         497.0,
         20.0
       ],
@@ -4781,7 +4740,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-904/comment-who-904/#0",
       "rect": [
         659.0,
-        1177.75,
+        1171.75,
         20.0,
         20.0
       ],
@@ -4802,7 +4761,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-904/comment-who-904/comment-author-904",
       "rect": [
         685.0,
-        1179.63,
+        1173.63,
         49.03,
         16.25
       ],
@@ -4824,7 +4783,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-904/comment-who-904/comment-age-904",
       "rect": [
         740.03,
-        1180.25,
+        1174.25,
         88.29,
         15.0
       ],
@@ -4844,7 +4803,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-904/comment-who-904/#3",
       "rect": [
         834.32,
-        1187.75,
+        1181.75,
         321.68,
         0.0
       ],
@@ -4865,7 +4824,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-904/comment-text-904",
       "rect": [
         685.0,
-        1201.75,
+        1195.75,
         471.0,
         48.75
       ],
@@ -4888,7 +4847,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-905",
       "rect": [
         651.0,
-        1260.5,
+        1254.5,
         515.0,
         72.5
       ],
@@ -4908,7 +4867,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-905/comment-who-905",
       "rect": [
         659.0,
-        1268.5,
+        1262.5,
         497.0,
         20.0
       ],
@@ -4927,7 +4886,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-905/comment-who-905/#0",
       "rect": [
         659.0,
-        1268.5,
+        1262.5,
         20.0,
         20.0
       ],
@@ -4948,7 +4907,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-905/comment-who-905/comment-author-905",
       "rect": [
         685.0,
-        1270.38,
+        1264.38,
         31.66,
         16.25
       ],
@@ -4970,7 +4929,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-905/comment-who-905/comment-age-905",
       "rect": [
         722.66,
-        1271.0,
+        1265.0,
         88.13,
         15.0
       ],
@@ -4990,7 +4949,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-905/comment-who-905/#3",
       "rect": [
         816.79,
-        1278.5,
+        1272.5,
         339.21,
         0.0
       ],
@@ -5011,7 +4970,7 @@
       "path": "kit-root/window/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/inspector-stage/inspector/inspector-content/discussion-scroll/discussion/discussion-rows/comment-905/comment-text-905",
       "rect": [
         685.0,
-        1292.5,
+        1286.5,
         471.0,
         32.5
       ],

@@ -77,14 +77,6 @@ fn summary_overflow_remains_keyboard_scrollable_and_leaves_discussion_room() {
     let discussion = before.iter().find(|e| e.key.as_deref() == Some("discussion-scroll")).unwrap();
     assert!(summary.focusable && summary.rect[3] <= 274.0);
     assert!(discussion.rect[3] > 200.0, "discussion remains usable: {:?}", discussion.rect);
-    assert!(before.iter().find(|e| e.key.as_deref() == Some("summary-more")).unwrap().opacity > 0.9,
-        "overflow is signalled without covering the content");
-    let more = before.iter().find(|e| e.key.as_deref() == Some("summary-more")).unwrap();
-    assert!(more.rect[1] >= summary.rect[1] + summary.rect[3] - 1.0);
-    rt.update(|s, _| { s.story.as_mut().unwrap().thread.next(); });
-    rt.frame(0.0);
-    assert!(rt.elements().iter().find(|e| e.key.as_deref() == Some("summary-more")).unwrap().opacity > 0.9,
-        "rebuilding the view preserves the overflow cue");
     let y = before.iter().find(|e| e.key.as_deref() == Some("article-summary")).unwrap().rect[1];
     route(&mut rt, rune::Key::Text("J".into()));
     let moved = rt.elements().iter().find(|e| e.key.as_deref() == Some("article-summary")).unwrap().rect[1];
@@ -94,10 +86,6 @@ fn summary_overflow_remains_keyboard_scrollable_and_leaves_discussion_room() {
     route(&mut rt, rune::Key::PageUp);
     let restored = rt.elements().iter().find(|e| e.key.as_deref() == Some("article-summary")).unwrap().rect[1];
     assert!(restored > moved, "Page Up in the summary scrolls that viewport");
-    rt.update(|_, tx| tx.scroll_to_instant("summary-scroll", 0.0, f32::MAX));
-    rt.frame(0.0);
-    assert!(rt.elements().iter().find(|e| e.key.as_deref() == Some("summary-more")).unwrap().opacity < 0.1,
-        "the cue disappears at the end");
 }
 
 fn gated_summary_fixture() -> (App, tokio::sync::oneshot::Sender<()>, tokio::sync::oneshot::Sender<()>) {

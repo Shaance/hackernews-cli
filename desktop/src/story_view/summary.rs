@@ -90,12 +90,10 @@ fn expanded_summary(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: b
                     .opacity_motion(discussion_motion).offset_motion(discussion_motion).child(discussion))
                 .children(discussion_waiting.then(|| generating(k, t, "Reading the discussion…"))))));
     }
-    let more = rune::Live::new(0.0_f32);
-    let on_more = more.clone();
     let scroll = col().key("summary-scroll").role("region").label("Summary content").focusable(true);
     // Inline citations share the viewport's keyboard focus; the selected chip shows it.
     let scroll = if s.focused_citation().is_some() { scroll.no_focus_ring() } else { scroll };
-    col().key("summary-open").w_full().gap(10.0).px(14.0).pt(14.0).pb(20.0)
+    col().key("summary-open").w_full().gap(10.0).px(14.0).pt(14.0).pb(14.0)
         .child(summary_header(k, t))
         .child(scroll
             .on_key(|s: &mut App, ev: &rune::KeyEvent, tx: &mut Tx| match ev.key {
@@ -105,11 +103,7 @@ fn expanded_summary(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: b
             }).w_full().min_h(0.0).shrink()
             .max_h((max_height - 62.0).max(80.0)).scroll(ScrollSpec { stick_bottom: false }).on_scroll_offset(on_scroll)
             .on_wheel(App::pointer_wheel)
-            .chain_scroll_offset(move |at| { on_more.set(if at.max[1] > at.offset[1] + 1.0 { 1.0 } else { 0.0 }); })
-            .scroll_edge_fade(12.0).child(body))
-        .child(row().key("summary-more").pin(None, None, Some(14.0), Some(2.0))
-            .live_opacity(&more).a11y_hidden()
-            .child(text("More below ↓").font(type_::LABEL).color(t.text_secondary)))
+            .scroll_edge_fade(28.0).child(body))
 }
 
 fn summary_header(k: &Kit, t: tok::Theme) -> El {
