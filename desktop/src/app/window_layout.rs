@@ -5,6 +5,19 @@ use rune_kit::PaneState;
 use crate::layout::Layout;
 
 impl App {
+    /// Keep the chosen width while constraining the pane to half the window.
+    pub(super) fn resize_inspector(&self, window_width: f32) {
+        let zoom = self.zoom.scale();
+        let max = INSPECTOR_MAX.min(window_width * 0.5);
+        let min = INSPECTOR_MIN.min(max);
+        let pane = self.inspector.get();
+        if pane.min_width() != min / zoom || pane.max_width() != max / zoom {
+            // `range` reapplies the pane's last requested width, so first capture any grip drag.
+            let width = self.inspector_window_width();
+            self.inspector.set(pane.range(min / zoom, max / zoom).with_width(width / zoom));
+        }
+    }
+
     /// Put the reader back where they left off: the tab, the page, the selected story and the
     /// inspector's width. A headless run has no layout, so this is a no-op there.
     pub(super) fn restore(&mut self) {
@@ -19,9 +32,9 @@ impl App {
             let width = width.clamp(INSPECTOR_MIN, INSPECTOR_MAX);
             self.inspector_width.set(width);
             self.inspector_default_width = width;
-            self.inspector = PaneState::new(width / self.zoom.scale())
+            self.inspector.set(PaneState::new(width / self.zoom.scale())
                 .range(INSPECTOR_MIN / self.zoom.scale(), INSPECTOR_MAX / self.zoom.scale())
-                .collapsed();
+                .collapsed());
         }
     }
 
@@ -29,8 +42,9 @@ impl App {
     pub(super) fn inspector_window_width(&self) -> f32 {
         let zoom = self.zoom.scale();
         let stored = self.inspector_width.get();
-        let projected = (stored / zoom).round().clamp(self.inspector.min_width(), self.inspector.max_width());
-        let shown = self.inspector.width();
+        let pane = self.inspector.get();
+        let projected = (stored / zoom).round().clamp(pane.min_width(), pane.max_width());
+        let shown = pane.width();
         if shown != projected { self.inspector_width.set(shown * zoom); }
         self.inspector_width.get()
     }

@@ -50,7 +50,7 @@ pub(super) fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
     } {
         let summary_finished = matches!(&update,
             StoryUpdate::Summary { .. } | StoryUpdate::Discussion { comments: Err(_), .. });
-        let visible = s.inspector.is_open() && s.settings.is_none() && !s.help;
+        let visible = s.inspector.get().is_open() && s.settings.is_none() && !s.help;
         // A landing for a story that is no longer open is dropped by `Story::land_update`.
         let landed = s.story.as_mut().map(|open| {
             let first_result = match &update {
@@ -94,7 +94,7 @@ pub(super) fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
                 Some(source) => story.thread.source_rows(&source.nav),
                 None => story.thread.rows(),
             };
-            replies_arrived = landed && s.inspector.is_open() && s.settings.is_none() && !s.help
+            replies_arrived = landed && s.inspector.get().is_open() && s.settings.is_none() && !s.help
                 && after.iter().any(|row| !before.contains(&row.id));
             changed |= landed;
         }

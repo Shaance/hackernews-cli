@@ -136,8 +136,8 @@ pub struct App {
     /// The reading viewports' scroll observers and poll share this frame-pacing state.
     scroll_pacing: Rc<Cell<ScrollPacing>>,
     scroll_waker: Option<Waker>,
-    /// The inspector's width and open state. Opening a story opens it; `Esc` closes it.
-    inspector: PaneState,
+    /// The inspector's width and open state; the view updates its range after measuring the window.
+    inspector: Cell<PaneState>,
     /// The chosen and reset widths in window points, independent of Rune's view-point rounding.
     inspector_width: Cell<f32>,
     inspector_default_width: f32,
@@ -276,9 +276,9 @@ fn init() -> App {
         readings: HashMap::new(),
         scroll_pacing: Rc::new(Cell::new(ScrollPacing::Idle)),
         scroll_waker: None,
-        inspector: PaneState::new(INSPECTOR_WIDTH / zoom.scale())
+        inspector: Cell::new(PaneState::new(INSPECTOR_WIDTH / zoom.scale())
             .range(INSPECTOR_MIN / zoom.scale(), INSPECTOR_MAX / zoom.scale())
-            .collapsed(),
+            .collapsed()),
         inspector_width: Cell::new(INSPECTOR_WIDTH),
         inspector_default_width: INSPECTOR_WIDTH,
         config,

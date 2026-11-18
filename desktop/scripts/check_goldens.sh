@@ -94,6 +94,7 @@ SCENES=(
 # four levels down with focus mode on, which is the state the trail and the dimming exist for.
 STORY_SCENES=(
   "story|story|1180x760|scripts/story.json"
+  "story-narrow|story|700x1100|scripts/story.json"
   "comments|comments|1180x760|scripts/thread.json"
   "thread|thread|1180x760|scripts/thread.json"
   "citation|citation|1180x760|scripts/story.json"

@@ -73,7 +73,7 @@ pub(super) fn app(headless: bool, saved: SavedView) -> App {
         readings: HashMap::new(),
         scroll_pacing: Rc::new(Cell::new(ScrollPacing::Idle)),
         scroll_waker: None,
-        inspector: inspector(),
+        inspector: Cell::new(inspector()),
         inspector_width: Cell::new(INSPECTOR_WIDTH),
         inspector_default_width: INSPECTOR_WIDTH,
         config: Config::default(),

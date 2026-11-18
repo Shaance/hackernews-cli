@@ -26,7 +26,7 @@ impl App {
         self.pending_arrival = None;
         self.arrival = None;
         self.park_story();
-        self.inspector.set_open(true);
+        self.inspector.get_mut().set_open(true);
         if let Some(mut reading) = self.readings.remove(&story.id) {
             self.bridge.resume_story(story.id);
             reading.story = story;
@@ -105,7 +105,7 @@ impl App {
     pub(crate) fn close_story(&mut self) {
         self.hide_live();
         self.park_story();
-        self.inspector.set_open(false);
+        self.inspector.get_mut().set_open(false);
     }
 
     fn park_story(&mut self) {

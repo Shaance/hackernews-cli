@@ -1,6 +1,6 @@
 //! Window composition, startup and native menus.
 
-use super::{App, Pane, Live, RequestLifecycle, OPEN_STORY, ROW_HEIGHT, BREAKPOINT, FEED_GUTTER, DEFAULT_FEED_HEIGHT, init};
+use super::{App, Pane, Live, RequestLifecycle, OPEN_STORY, ROW_HEIGHT, BREAKPOINT, FEED_GUTTER, DEFAULT_FEED_HEIGHT, INSPECTOR_MAX, init};
 use hn_lib::app::StoryType;
 use rune::tok;
 use rune::tok::type_;
@@ -50,6 +50,8 @@ pub(super) fn view(s: &App, cx: &mut Cx<App>) -> El {
     let window = cx.layout_with("window", |rect| rect);
     if let Some(rect) = window {
         s.window_size.set(Some((rect[2] * s.zoom.scale(), rect[3] * s.zoom.scale())));
+        let width = if s.story.is_some() { rect[2] * s.zoom.scale() } else { INSPECTOR_MAX * 2.0 };
+        s.resize_inspector(width);
     }
     // Tx has no keyed visibility query; scroll observers supply offsets without view commits.
     let visible = s.story.as_ref().and_then(|story| {
@@ -111,7 +113,7 @@ pub(super) fn view(s: &App, cx: &mut Cx<App>) -> El {
     };
     let shell = SplitView::new(main)
         .toolbar(toolbar)
-        .inspector(&s.inspector, |s: &mut App| &mut s.inspector, inspector)
+        .inspector(&s.inspector.get(), |s: &mut App| s.inspector.get_mut(), inspector)
         .titlebar_inset(cx.titlebar_inset())
         .pane_motion(pane_motion())
         .reduced_motion(reduced)

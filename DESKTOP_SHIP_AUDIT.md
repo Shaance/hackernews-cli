@@ -311,6 +311,43 @@ Status: fixed in run C — Kit buttons unify recovery actions with pointer curso
   that call the same `App` methods the key handler calls; show a short "125%" toast on zoom change. Size S–M.
 Status: fixed in run E — Native menu actions share window shortcuts and zoom changes show a transient percentage.
 
+## Found in the live pass (2026-11-18)
+
+Real app, real config, real Anthropic summary key, 1344×900 window. Evidence in the session scratchpad
+(`cap/`), not committed.
+
+### N1. A narrow window squeezes the article to ~150 pt
+- Severity: should-fix. Verified: live at 700 pt (the Mac's only display was 700×1338 pt) and headless
+  (`--scene story --size 700x1100`: article 149 pt, inspector 543 pt). Predates this session: the inspector
+  range was a fixed 360–640 pt; P5's fix only scaled it with zoom.
+- Decision (user): the article keeps at least half. Inspector range max = min(640, ½ window), min = min(360, max),
+  applied to the pane's range so the saved width survives narrowing.
+- Status: fixed — the view feeds the measured window width into the pane range; golden `story-narrow`.
+
+### N2. The live page takes keyboard focus on open, with no click
+- Severity: must-fix. Verified: live. Opening "Quad9's withdrawal from France" (blog.cloudflare.com) left the
+  `WKWebView` first responder: `Tab` moved focus inside the page (cookie banner "Reject All", then "Skip to
+  content"), and `Enter` pressed the page's button instead of reading citation [1]. The footer still said
+  "Tab citation". The Harvard story (complexdiscovery.com) kept focus in Rune, so it depends on the page.
+  `Esc` still returned to the feed (the child's local monitor intercepts it before dispatch).
+- Worse, the focus outlives the story: after closing it, the hidden page stayed first responder, so in the
+  feed `Return` no longer opened a story and `Esc` no longer closed the settings dialog (menu shortcuts still
+  worked). A clean instance closes settings on `Esc`.
+- Contract broken: DESIGN.md "The page owns its own keyboard while it has focus. Clicking into the page gives
+  the `WKWebView` first responder" — only a click may hand it focus.
+- Fix: a key arriving while the page holds focus without a click in it goes to Rune instead, and hiding the
+  page hands focus back. Needs a live check on blog.cloudflare.com.
+
+### N4. The app menu says "hn-desktop", not "HN"
+- Severity: polish. Verified: live (accessibility tree). "About hn-desktop", "Hide hn-desktop",
+  "Quit hn-desktop" use the executable name; the bundle is "HN". View, Window and Help menus are right.
+
+### N3. Article extraction returns navigation only on some sites (shared `hn_lib`)
+- Severity: follow-up (not desktop-specific). Verified: live. blog.cloudflare.com gave the summarizer "only the
+  title and site navigation"; github.com/jquery/jquery/releases gave GitHub's "Sorry, something went wrong"
+  page. The summary says so honestly. Extraction is `readability` in `src/reader/sources.rs:55`, shared with
+  the TUI.
+
 ## Where the code differs from DESIGN.md's motion spec
 
 | Spec item | In code | Verdict |

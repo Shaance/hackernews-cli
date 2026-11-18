@@ -18,7 +18,10 @@ impl App {
             WindowKey::Settings => { self.open_summary_settings(); return true; }
             WindowKey::Help => { self.help = !self.help; return true; }
             WindowKey::ToggleSplit => {
-                if self.story.is_some() { self.inspector.set_open(!self.inspector.is_open()); }
+                if self.story.is_some() {
+                    let inspector = self.inspector.get_mut();
+                    inspector.set_open(!inspector.is_open());
+                }
                 return true;
             }
             WindowKey::ZoomIn => self.zoom.increase(),
@@ -30,11 +33,12 @@ impl App {
         let old_zoom = self.zoom;
         self.zoom = zoom;
         if self.zoom != old_zoom {
-            let pane = self.inspector;
-            self.inspector = PaneState::new(self.inspector_default_width / self.zoom.scale())
+            let pane = self.inspector.get();
+            self.inspector.set(PaneState::new(self.inspector_default_width / self.zoom.scale())
                 .range(INSPECTOR_MIN / self.zoom.scale(), INSPECTOR_MAX / self.zoom.scale())
-                .with_width(inspector_width / self.zoom.scale());
-            self.inspector.set_open(pane.is_open());
+                .with_width(inspector_width / self.zoom.scale()));
+            self.inspector.get_mut().set_open(pane.is_open());
+            if self.story.is_some() && let Some((width, _)) = self.window_size.get() { self.resize_inspector(width); }
         }
         if let Live::Created { child, .. } = &mut self.live {
             child.set_zoom(self.zoom.scale());

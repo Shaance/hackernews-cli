@@ -104,6 +104,8 @@ Two consequences worth stating, because they are the cost of a native child view
 | 10 | Settings | Provider radio group (OpenRouter / Anthropic), masked API key, automatic summaries switch, Fast/Thorough profile with the model each resolves to, `Refresh sources & summary`. `Apply` writes `~/.config/hn/summary.json`; `Cancel` and `Esc` discard. The TUI's `M` overlay, given room to breathe. |
 | 11 | Help | The `?` sheet: two columns of `Keybind` rows, grouped Feed / Discussion / Summary / Window. Focus is trapped while open; `Esc` or `?` closes. |
 
+On narrow windows the inspector is limited to half the window width, leaving the other half to the article.
+
 ## Responsive feed: one column, two columns
 
 The terminal is 80 columns wide and always will be. A window is not: a feed that stays a single

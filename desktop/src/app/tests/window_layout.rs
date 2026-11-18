@@ -47,7 +47,134 @@ fn inspector_width_returns_exactly_after_a_zoom_round_trip() {
         assert_eq!(rt.state.snapshot().inspector, Some(543.0));
     }
     assert_eq!(rt.state.snapshot().inspector, Some(543.0));
-    assert_eq!(rt.state.inspector.width(), 543.0);
+    assert_eq!(rt.state.inspector.get().width(), 543.0);
+}
+
+#[test]
+fn narrowing_preserves_the_saved_width_and_widening_restores_it() {
+    let mut s = app(true, SavedView::in_memory());
+    s.layout.inspector = Some(600.0);
+    s.restore();
+    scene_story(&mut s);
+    s.reduced = true;
+    let mut rt = rune::Runtime::new(s, view, (1400.0, 1100.0), rune::Env::new(true, 1.0));
+    rt.frame(0.0);
+    rt.set_viewport((700.0, 1100.0), 1.0);
+    for _ in 0..3 { rt.frame(0.0); }
+    assert_eq!(rt.state.inspector.get().width(), 350.0);
+    assert_eq!((rt.state.inspector.get().min_width(), rt.state.inspector.get().max_width()), (350.0, 350.0));
+    assert_eq!(rt.state.inspector_width.get(), 600.0);
+    assert_eq!(rt.state.snapshot().inspector, Some(600.0));
+    let dir = temp_dir("narrow-inspector");
+    let path = dir.join("desktop.json");
+    rt.state.snapshot().save(&path).unwrap();
+    assert_eq!(Layout::load(&path).inspector, Some(600.0));
+    rt.set_viewport((1400.0, 1100.0), 1.0);
+    for _ in 0..3 { rt.frame(0.0); }
+    assert_eq!(rt.state.inspector.get().width(), 600.0);
+    assert_eq!(rt.state.snapshot().inspector, Some(600.0));
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn narrow_inspector_range_uses_window_points_at_zoom() {
+    let mut s = app(true, SavedView::in_memory());
+    scene_story(&mut s);
+    s.reduced = true;
+    let mut rt = rune::Runtime::new(s, view, (900.0, 1100.0), rune::Env::new(true, 1.0));
+    rt.on_key = Some(on_key);
+    for _ in 0..3 { rt.frame(0.0); }
+    for _ in 0..2 {
+        rt.key(KeyEvent { key: rune::Key::Command('='), mods: rune::Mods { cmd: true, ..Default::default() } });
+        for _ in 0..3 { rt.frame(0.0); }
+    }
+    assert_eq!(rt.zoom(), 1.25);
+    assert_eq!(rt.state.inspector.get().min_width() * rt.zoom(), 360.0);
+    assert_eq!(rt.state.inspector.get().max_width() * rt.zoom(), 450.0);
+    assert_eq!(rt.state.inspector.get().width() * rt.zoom(), 450.0);
+    assert_eq!(rt.state.snapshot().inspector, Some(543.0));
+}
+
+#[test]
+fn narrow_grip_drag_survives_a_resize_and_saves_the_dragged_width() {
+    let mut s = app(true, SavedView::in_memory());
+    scene_story(&mut s);
+    s.reduced = true;
+    let mut rt = rune::Runtime::new(s, view, (1000.0, 1100.0), rune::Env::new(true, 1.0));
+    for _ in 0..3 { rt.frame(0.0); }
+    assert_eq!(rt.state.inspector.get().width(), 500.0);
+    let grip = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("inspector-grip")).unwrap().rect;
+    let (x, y) = (grip[0] + grip[2] / 2.0, grip[1] + 40.0);
+    rt.pointer_down(x, y); rt.frame(0.0);
+    rt.pointer_move(x + 60.0, y); rt.frame(0.0);
+    assert!(rt.state.inspector.get().is_resizing());
+    rt.set_viewport((980.0, 1100.0), 1.0);
+    for _ in 0..3 { rt.frame(0.0); }
+    assert!(rt.state.inspector.get().is_resizing());
+    rt.pointer_move(x + 80.0, y); rt.frame(0.0);
+    rt.pointer_up(x + 80.0, y); rt.frame(0.0);
+    assert_eq!(rt.state.snapshot().inspector, Some(420.0));
+    rt.set_viewport((1400.0, 1100.0), 1.0);
+    for _ in 0..3 { rt.frame(0.0); }
+    assert_eq!(rt.state.inspector.get().width(), 420.0);
+}
+
+#[test]
+fn resizing_keeps_the_inspector_open_or_collapsed_without_reopening_it() {
+    let mut s = app(true, SavedView::in_memory());
+    scene_story(&mut s);
+    let mut rt = rune::Runtime::new(s, view, (1400.0, 1100.0), rune::Env::new(true, 1.0));
+    rt.frame(1.0);
+    rt.set_viewport((700.0, 1100.0), 1.0);
+    for _ in 0..3 { rt.frame(0.0); }
+    let pane = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("inspector-pane")).unwrap();
+    assert!(rt.state.inspector.get().is_open());
+    assert_eq!(rt.state.inspector.get().width(), 350.0);
+    assert_eq!(pane.rect[2], 350.0, "resize must not replay the opening slide");
+    rt.update(|s, _| s.inspector.get_mut().set_open(false));
+    rt.frame(1.0);
+    rt.set_viewport((900.0, 1100.0), 1.0);
+    for _ in 0..3 { rt.frame(0.0); }
+    assert!(!rt.state.inspector.get().is_open());
+    assert_eq!(rt.state.inspector.get().shown_width(), 0.0);
+    assert_eq!(rt.state.inspector.get().max_width(), 450.0);
+}
+
+#[test]
+fn resizing_during_open_follows_runes_existing_motion_and_keeps_later_transitions() {
+    let width = |rt: &rune::Runtime<App>| rt.elements().into_iter()
+        .find(|e| e.key.as_deref() == Some("inspector-pane")).unwrap().rect[2];
+    for (window, target) in [(1300.0, 543.0), (1000.0, 500.0)] {
+        let s = app(true, SavedView::in_memory());
+        let mut rt = rune::Runtime::new(s, view, (1400.0, 1100.0), rune::Env::new(true, 1.0));
+        for _ in 0..3 { rt.frame(0.0); }
+        rt.update(|s, tx| { scene_story(s); tx.animated(); });
+        rt.frame(0.03);
+        let before = width(&rt);
+        assert!(before > 0.0 && before < target, "opening width {before}");
+        rt.set_viewport((window, 1100.0), 1.0);
+        for _ in 0..3 { rt.frame(0.0); }
+        let after = width(&rt);
+        assert_eq!(after, target, "window {window}: opening width {before} -> {after}");
+    }
+    let s = app(true, SavedView::in_memory());
+    let mut rt = rune::Runtime::new(s, view, (700.0, 1100.0), rune::Env::new(true, 1.0));
+    for _ in 0..3 { rt.frame(0.0); }
+    assert!(!rt.state.inspector.get().is_open());
+    assert_eq!(rt.state.inspector.get().width(), 543.0);
+    rt.update(|s, tx| { scene_story(s); tx.animated(); });
+    rt.frame(0.03);
+    assert!(width(&rt) > 0.0 && width(&rt) < 350.0);
+    rt.frame(0.5);
+    assert_eq!(width(&rt), 350.0);
+    rt.update(|s, tx| { s.inspector.get_mut().set_open(false); tx.animated(); });
+    rt.frame(0.03);
+    assert!(width(&rt) > 0.0 && width(&rt) < 350.0);
+    rt.frame(0.5);
+    assert_eq!(width(&rt), 0.0);
+    rt.update(|s, _| s.close_story());
+    rt.frame(0.0);
+    assert_eq!((rt.state.inspector.get().width(), rt.state.inspector.get().max_width()), (543.0, 640.0));
 }
 
 #[test]
@@ -102,13 +229,13 @@ fn inspector_window_width_survives_zoom_drag_and_relaunch() {
     let _ = std::fs::remove_dir_all(dir);
     for (i, key) in ['-', '-', '-', '-', '-', '-', '+', '+', '+', '+', '+', '+'].into_iter().enumerate() {
         zoom(&mut rt, key);
-        assert!((rt.state.inspector.min_width() * rt.zoom() - INSPECTOR_MIN).abs() < 0.01);
-        assert!((rt.state.inspector.max_width() * rt.zoom() - INSPECTOR_MAX).abs() < 0.01);
+        assert!((rt.state.inspector.get().min_width() * rt.zoom() - INSPECTOR_MIN).abs() < 0.01);
+        assert!((rt.state.inspector.get().max_width() * rt.zoom() - 590.0).abs() < 0.01);
         drag(&mut rt, if i % 2 == 0 { 15.0 } else { -15.0 });
     }
     for _ in 0..2 { zoom(&mut rt, '-'); }
     assert_eq!(rt.zoom(), 1.1);
-    let reset_width = rt.state.inspector.default_width() * rt.zoom();
+    let reset_width = rt.state.inspector.get().default_width() * rt.zoom();
     assert_ne!(rt.state.snapshot().inspector, Some(reset_width));
     rt.frame(0.6);
     let grip = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("inspector-grip")).unwrap().rect;
@@ -151,9 +278,9 @@ fn menu_actions_operate_on_the_same_window_state() {
     run("Keyboard Shortcuts", &mut s);
     assert!(s.help);
     scene_story(&mut s);
-    let open = s.inspector.is_open();
+    let open = s.inspector.get().is_open();
     run("Show/Hide Inspector", &mut s);
-    assert_ne!(s.inspector.is_open(), open);
+    assert_ne!(s.inspector.get().is_open(), open);
     run("Zoom Out", &mut s);
     assert_eq!(s.zoom, ZoomStep::Z90);
     run("Actual Size", &mut s);
@@ -382,7 +509,7 @@ fn restore_puts_the_reader_back_where_they_left_off() {
         "page 3 is the third window of the page size"
     );
     assert_eq!(s.feed.pending_anchor, Some(42), "the feed re-anchors on it");
-    assert_eq!(s.inspector.width(), 512.0, "the grip's width came back");
+    assert_eq!(s.inspector.get().width(), 512.0, "the grip's width came back");
 }
 
 #[test]
@@ -410,6 +537,6 @@ fn the_layout_file_round_trips_the_window_and_the_feed() {
     next.restore();
     assert_eq!(next.feed.tab, StoryType::Best);
     assert_eq!(next.feed.pending_anchor, Some(5));
-    assert_eq!(next.inspector.width(), 512.0);
+    assert_eq!(next.inspector.get().width(), 512.0);
     let _ = std::fs::remove_dir_all(&dir);
 }
