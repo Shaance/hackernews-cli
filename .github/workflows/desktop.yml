@@ -23,7 +23,7 @@ env:
 jobs:
   macos-goldens:
     name: macOS — build, test, PNG goldens
-    runs-on: macos-14
+    runs-on: macos-15
     defaults:
       run:
         working-directory: desktop
@@ -92,7 +92,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            mesa-vulkan-drivers libvulkan1 vulkan-tools jq
+            mesa-vulkan-drivers libvulkan1 vulkan-tools jq libxkbcommon-dev
 
       - name: Build
         run: cargo build --locked

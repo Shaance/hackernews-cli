@@ -27,7 +27,7 @@ env:
 jobs:
   macos-app:
     name: macOS Apple Silicon app
-    runs-on: macos-14
+    runs-on: macos-15
     permissions:
       contents: write
     defaults:
@@ -74,7 +74,7 @@ jobs:
       - name: Test
         run: cargo test --release --locked
 
-      # macos-14 runners are Apple Silicon, so the host build is the arm64 app.
+      # macos-15 runners are Apple Silicon, so the host build is the arm64 app.
       - name: Build and stage HN.app
         run: HN_BUILD=${{ github.run_number }} bash scripts/package-macos.sh
 
