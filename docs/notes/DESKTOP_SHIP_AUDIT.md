@@ -348,6 +348,8 @@ Real app, real config, real Anthropic summary key, 1344×900 window. Evidence in
 ### N5. A selected citation is nearly invisible in the story view
 - Severity: polish, follow-up. Verified: live stills before and after `Tab` differ only in the `[1]` marker's
   brightness. The reader cannot tell which point the citation belongs to until `Enter` opens it.
+- Status: fixed in `b9460cc` — the selected chip inverts to the accent and its point gets an accent wash and
+  left rule; golden `citation-selected`.
 
 ### N6. The Desktop workflow's Linux job has never passed (CI only)
 - Severity: follow-up; the macOS release does not depend on it. Verified: all 11 runs since 2026-11-16 failed.
@@ -356,12 +358,34 @@ Real app, real config, real Anthropic summary key, 1344×900 window. Evidence in
   Also a Linux-only unused-import warning (`crate::keys::WindowKey`, `src/app/window.rs:24`).
 - Also fixed in `cc0635b`: GitHub retired the `macos-14` image on 2026-11-02, which had cancelled every macOS
   job before it got a runner; both workflows now use `macos-15`.
+- Status: fixed in `f695e35` and `009083d`. The job pins the manifest the runner installs
+  (`/usr/share/vulkan/icd.d/lvp_icd.json`) and renders on `llvmpipe`; the unused import is macOS-guarded.
+  First green Linux run on 2026-11-18.
 
 ### N3. Article extraction returns navigation only on some sites (shared `hn_lib`)
 - Severity: follow-up (not desktop-specific). Verified: live. blog.cloudflare.com gave the summarizer "only the
   title and site navigation"; github.com/jquery/jquery/releases gave GitHub's "Sorry, something went wrong"
   page. The summary says so honestly. Extraction is `readability` in `src/reader/sources.rs:55`, shared with
   the TUI.
+- Status: fixed in `6641bef` — `hidden` elements are dropped before readability, and a result under 200
+  characters retries on the page's single `<main>`. Fixtures for both sites in `tests/fixtures/reader/`.
+
+### N7. Going back to the feed and leaving a citation have no transition (user report)
+- Severity: should-fix. Reported by the user after N2: `Esc` and the mouse back button snap to the feed, and
+  leaving a citation snaps back to the summary, which is then outlined in the focus ring.
+- Status: fixed in `2ecc4b9` (the feed arrives 24 pt from the left over a 0.22 s spring on back, both from
+  keys and from the native back event) and `dc8bddc` (leaving a citation animates; the summary scroll drops
+  its focus ring while a citation is focused). Checked headless with trace samples; the live check over a
+  loaded page is still owed.
+
+### N8. A summary point reading "placeholder [1]" (user report, unresolved)
+- Seen once by the user. No code, prompt or schema produces the string, and none of the 13 responses kept in
+  `~/.local/state/hn/openrouter/` contains it, so the most likely source is the model's own output.
+- Logging does not depend on how the app is launched: production builds use `Network::default()`, which
+  writes every provider response to `$HOME/.local/state/hn/openrouter/` (`src/reader/network.rs:34`). The last
+  record is 10:14 on 2026-11-18. A story already summarized in the same session is served from memory and
+  sends no request, so a repeat view leaves no record.
+- Next time it appears, note the story title and time; the matching record shows whether the model wrote it.
 
 ## Where the code differs from DESIGN.md's motion spec
 
