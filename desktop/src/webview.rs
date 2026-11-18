@@ -18,7 +18,7 @@
 //! build.
 
 #[cfg(target_os = "macos")]
-pub use macos::{Child, create, set_waker};
+pub use macos::{Child, create, remember_window_frame, set_waker};
 
 #[cfg(not(target_os = "macos"))]
 pub use stub::{Child, create, set_waker};
@@ -32,9 +32,33 @@ mod macos {
     use block2::RcBlock;
     use objc2::{MainThreadMarker, rc::Retained, runtime::AnyObject};
     use objc2_app_kit::{NSEvent, NSEventMask, NSEventModifierFlags, NSEventType, NSView};
+    use objc2_foundation::{NSSize, ns_string};
     use rune::{Waker, WindowHandle};
     use wry::dpi::{LogicalPosition, LogicalSize};
+    use wry::raw_window_handle::RawWindowHandle;
     use wry::{PageLoadEvent, Rect, WebView, WebViewBuilder, WebViewExtMacOS};
+
+    /// Restore before Rune's first layout, then let AppKit own subsequent frame changes.
+    pub fn remember_window_frame(window: &WindowHandle, legacy: Option<(f32, f32)>) -> Result<(), String> {
+        window.with_raw_handle(|raw| {
+            let RawWindowHandle::AppKit(handle) = raw.as_raw() else { return Err("not an AppKit window".into()) };
+            // Rune lends the live content view on the main thread for this callback.
+            let view = unsafe { &*handle.ns_view.as_ptr().cast::<NSView>() };
+            let window = view.window().ok_or("content view has no window")?;
+            let name = ns_string!("HN");
+            let autosaved = window.setFrameUsingName(name);
+            if !window.setFrameAutosaveName(name) { return Err("frame autosave name is in use".into()); }
+            // First launch with autosave: carry over the size the layout file remembered.
+            if !autosaved {
+                if let Some((width, height)) = legacy {
+                    window.setContentSize(NSSize::new(f64::from(width), f64::from(height)));
+                }
+                // Save even if the user closes without moving or resizing the first window.
+                window.saveFrameUsingName(name);
+            }
+            Ok(())
+        })?
+    }
 
     #[derive(Clone, Copy, PartialEq, Eq)]
     enum BackPress { Idle, Held, Cancelled }

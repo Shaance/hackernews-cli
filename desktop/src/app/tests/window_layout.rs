@@ -306,7 +306,7 @@ fn zoom_toast_shows_percentage_and_expires() {
 }
 
 #[test]
-fn zoom_changes_feed_columns_and_persists_window_points() {
+fn zoom_changes_feed_columns_and_tracks_window_points() {
     let mut s = app(true, SavedView::in_memory());
     s.request(DEFAULT_GRID, Ranking::Fresh);
     let mut rt = rune::Runtime::new(s, view, (1100.0, 760.0), rune::Env::new(true, 2.0));
@@ -317,18 +317,19 @@ fn zoom_changes_feed_columns_and_persists_window_points() {
     rt.frame(0.0);
     assert_eq!(rt.zoom(), 0.9);
     assert_eq!(rt.state.measured.get().unwrap().columns.count().get(), 2);
-    let size = rt.state.snapshot().window.unwrap();
+    let size = rt.state.window_size.get().unwrap();
     assert!((size.0 - 1100.0).abs() < 0.01 && (size.1 - 760.0).abs() < 0.01, "{size:?}");
 
     let dir = temp_dir("zoom-window");
     let path = dir.join("desktop.json");
     rt.state.layout_path = Some(path.clone());
     rt.state.headless = false;
+    rt.state.layout.window = Some((900.0, 600.0));
     close(&mut rt.state, &mut Tx::default());
     let saved = Layout::load(&path);
     assert_eq!(saved.zoom_level(), ZoomStep::Z90);
-    let saved_size = saved.window.unwrap();
-    assert!((saved_size.0 - 1100.0).abs() < 0.01 && (saved_size.1 - 760.0).abs() < 0.01);
+    let expected = if cfg!(target_os = "macos") { None } else { Some(size) };
+    assert_eq!(saved.window, expected);
     rt.state.headless = true;
     rt.key(KeyEvent { key: rune::Key::Command('0'), mods: rune::Mods { cmd: true, ..Default::default() } });
     rt.frame(0.0);
@@ -520,13 +521,15 @@ fn the_layout_file_round_trips_the_window_and_the_feed() {
     s.request(grid(11, 1), Ranking::Fresh);
     s.layout_path = Some(path.clone());
     s.window_size.set(Some((1280.0, 820.0)));
+    s.layout.window = Some((1100.0, 760.0));
     s.layout.inspector = Some(512.0);
     s.restore();
     s.feed.tab = StoryType::Best;
     s.feed.selected = 4;
 
     let snapshot = s.snapshot();
-    assert_eq!(snapshot.window, Some((1280.0, 820.0)));
+    let expected = if cfg!(target_os = "macos") { None } else { Some((1280.0, 820.0)) };
+    assert_eq!(snapshot.window, expected);
     assert_eq!(snapshot.selected, Some(5), "the selected story's id");
     s.write_layout(snapshot.clone(), 0.0);
     assert_eq!(Layout::load(&path), snapshot, "the file holds what was drawn");

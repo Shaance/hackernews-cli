@@ -58,7 +58,7 @@ impl ZoomStep {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Layout {
-    /// The window's size in points, when the reader resized it.
+    /// The window's size in points; on macOS this is read only for migration.
     pub window: Option<(f32, f32)>,
     /// The window's UI and article page zoom, 1.0 at actual size.
     pub zoom: Option<f32>,

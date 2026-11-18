@@ -49,10 +49,11 @@ impl App {
         self.inspector_width.get()
     }
 
-    /// What the window would write now: its size, the inspector's width, and where the feed is.
+    /// What the window would write now: its layout and, off macOS, its size.
     pub(super) fn snapshot(&self) -> Layout {
         Layout {
-            window: self.window_size.get().or(self.layout.window),
+            // AppKit's frame autosave owns the macOS window; the file keeps the size elsewhere.
+            window: if cfg!(target_os = "macos") { None } else { self.window_size.get().or(self.layout.window) },
             zoom: Some(self.zoom.scale()),
             inspector: Some(self.inspector_window_width()),
             tab: Some(self.feed.tab),

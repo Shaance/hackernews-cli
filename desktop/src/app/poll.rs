@@ -176,9 +176,9 @@ pub(super) fn poll_updates(s: &mut App, now: f64, tx: &mut Tx, back_requested: b
         Some(false) => tx.wake_after(Duration::from_secs_f64(LOAD_TIMEOUT)),
         None => {}
     }
-    // The window size the reader left, asked for once. `AppSpec::size` is compile-time, so a
-    // restore is a resize; a headless run has no window and no remembered size.
-    if !s.headless && !s.restored {
+    // On macOS the native creation hook restores the frame before the first layout. Other
+    // platforms retain the existing one-time size restore.
+    if !cfg!(target_os = "macos") && !s.headless && !s.restored {
         s.restored = true;
         if let Some(size) = s.layout.window {
             tx.resize_window_instant(size);

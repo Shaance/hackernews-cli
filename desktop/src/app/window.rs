@@ -233,7 +233,16 @@ pub fn run() {
     let on_top = argv.iter().any(|arg| arg == "--on-top");
     let mut app = rune::App::new(spec());
     #[cfg(target_os = "macos")]
-    { app = native_menus(app); }
+    let legacy_size = std::rc::Rc::new(std::cell::Cell::new(None));
+    #[cfg(target_os = "macos")]
+    {
+        let initial_size = std::rc::Rc::clone(&legacy_size);
+        app = native_menus(app).init(move || {
+            let state = init();
+            initial_size.set(state.layout.window);
+            state
+        });
+    }
     if on_top {
         app = app.window_options(rune::WindowOptions {
             always_on_top: true,
@@ -242,6 +251,10 @@ pub fn run() {
     }
     let handle = app.handle();
     app.on_window(move |window| {
+        #[cfg(target_os = "macos")]
+        if let Err(error) = crate::webview::remember_window_frame(window, legacy_size.take()) {
+            eprintln!("could not restore window frame: {error}");
+        }
         let window = window.clone();
         handle.update(move |s: &mut App, _| {
             s.native_window = Some(window);

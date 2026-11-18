@@ -161,8 +161,7 @@ pub struct App {
     layout_saved_at: f64,
     /// The window size in window points. Written by `view`, read by `poll`.
     window_size: Cell<Option<(f32, f32)>>,
-    /// Whether the remembered window size has been asked for. `AppSpec::size` is compile-time,
-    /// so the restore is one `Tx::resize_window_instant` on the first frame.
+    /// Whether the remembered window size has been asked for on non-macOS platforms.
     restored: bool,
     toast: Option<Notice>,
     /// `HN_REDUCED_MOTION=1`, the same override the terminal app honours.
