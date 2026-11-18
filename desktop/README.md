@@ -233,7 +233,7 @@ overwrites their remembered window size.
 
 ## Packaging
 
-`scripts/package-macos.sh` stages a `.app` bundle — `Contents/MacOS/hn-desktop`,
+`scripts/package-macos.sh` stages a `.app` bundle — `Contents/MacOS/HN`,
 `Contents/Resources/`, and an `Info.plist` with the keys LaunchServices reads — into
 `desktop/dist/HN.app`. It follows the layout of Rune's own `scripts/mac-app`, and stops there: no
 codesign, no install into `~/Applications`, no notarization, no atomic exchange.

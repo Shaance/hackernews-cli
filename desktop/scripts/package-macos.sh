@@ -36,8 +36,10 @@ fi
 echo "== stage $APP"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$BIN" "$APP/Contents/MacOS/$EXE"
-chmod +x "$APP/Contents/MacOS/$EXE"
+# The executable carries the bundle name: AppKit titles the app menu (About, Hide, Quit) after the
+# process name, not CFBundleName.
+cp "$BIN" "$APP/Contents/MacOS/$NAME"
+chmod +x "$APP/Contents/MacOS/$NAME"
 cp assets/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 
 # The keys LaunchServices reads. assets/AppIcon.icns is built from assets/AppIcon-1024.png.
@@ -49,7 +51,7 @@ cat >"$APP/Contents/Info.plist" <<PLIST
   <key>CFBundleName</key><string>$NAME</string>
   <key>CFBundleDisplayName</key><string>$NAME</string>
   <key>CFBundleIdentifier</key><string>$BUNDLE_ID</string>
-  <key>CFBundleExecutable</key><string>$EXE</string>
+  <key>CFBundleExecutable</key><string>$NAME</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$VERSION</string>
   <key>CFBundleVersion</key><string>$BUILD</string>
@@ -64,7 +66,7 @@ plutil -lint "$APP/Contents/Info.plist" >/dev/null
 
 echo "== staged"
 printf '  %s\n' "$PWD/$APP"
-printf '  binary  %s\n' "$(du -h "$APP/Contents/MacOS/$EXE" | cut -f1)"
+printf '  binary  %s\n' "$(du -h "$APP/Contents/MacOS/$NAME" | cut -f1)"
 printf '  bundle  %s\n' "$(du -sh "$APP" | cut -f1)"
 echo
 echo "Open it with:  open $APP"
