@@ -6,7 +6,7 @@
 //!
 //! Independent owners keep feed, article, discussion/summary and replies separate:
 //!
-//! - [`Request`] — one aggregate fill of the feed's visible window.
+//! - [`feed::Request`] — one aggregate fill of the feed's visible window.
 //! - [`StoryRequest`] — article and discussion start independently; the discussion capture
 //!   starts the summary when it lands.
 //!
@@ -22,31 +22,15 @@ use std::task::{Context, Poll, Wake, Waker as TaskWaker};
 use anyhow::Result;
 use hn_lib::app::Comment;
 use hn_lib::reader::{Article, Config, Discussion, Source as CapturedSource};
-use hn_lib::HNCLIItem;
 use rune::{Latest, Waker};
 use tokio::runtime::{Handle, Runtime};
 use tokio::task::JoinHandle;
 
-use crate::feed::{Fill, Filled};
+use crate::feed::Filled;
 use crate::service::Source;
+use crate::story_io::{CommentsRefreshed, ReplyFilled, ReplyRequest, StoryFilled, StoryRequest, StoryUpdate, SummaryError};
 
-/// One fill request: the window, plus the ranking to page it against.
-///
-/// `snapshot` is the feed's `id_snapshot`. A page turn or a resize pages against the ranking
-/// the feed already has, so the ranks on screen stay the ranks that were shown; only a refresh
-/// (or the first load of a tab) asks the source for a new one.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Request {
-    pub fill: Fill,
-    pub snapshot: Option<Vec<i32>>,
-}
-
-impl Request {
-    /// A request that pages against `snapshot`, taking a fresh one only when there is none.
-    pub fn new(fill: Fill, snapshot: Option<Vec<i32>>) -> Request {
-        Request { fill, snapshot }
-    }
-}
+pub mod feed;
 
 pub struct Bridge {
     runtime: Runtime,
@@ -75,37 +59,6 @@ fn take_task<T>(task: &mut Option<JoinHandle<T>>, waker: Option<&TaskWaker>) -> 
     }
 }
 
-/// One story open: the item to read, and the summary settings to read it with.
-///
-/// The `Config` is the reader's own, loaded once at launch; it is never logged, printed or
-/// written into a tree.
-#[derive(Clone)]
-pub struct StoryRequest {
-    pub story: HNCLIItem,
-    pub config: Config,
-}
-
-/// The aggregate answer used for synchronous, deterministic story opens.
-///
-/// A failed article is a `String`; the card uses [`SummaryError`] to classify a failed summary.
-pub struct StoryFilled {
-    pub story_id: i32,
-    pub article: Result<(String, bool), String>,
-    pub article_summary: Result<Article, SummaryError>,
-    /// The discussion as a tree: the top-level comments and their replies, level by level.
-    pub comments: Result<Vec<Comment>, String>,
-    pub sources: Vec<CapturedSource>,
-    pub summary: Result<Discussion, SummaryError>,
-}
-
-/// A result that can be shown without waiting for the other story work.
-pub enum StoryUpdate {
-    Article { story_id: i32, article: Result<(String, bool), String>, summary_skipped: bool },
-    Discussion { story_id: i32, comments: Result<Vec<Comment>, String>, sources: Vec<CapturedSource>, summary_skipped: bool },
-    ArticleSummary { story_id: i32, summary: Result<Article, SummaryError> },
-    Summary { story_id: i32, summary: Result<Discussion, SummaryError>, sources: Vec<CapturedSource> },
-}
-
 enum ArticlePhase {
     Captured { source: Arc<Source>, request: StoryRequest, article: Result<(String, bool), String>, manual: bool },
     Summary { story_id: i32, summary: Result<Article, SummaryError> },
@@ -120,46 +73,6 @@ enum StoryPhase {
         manual: bool,
     },
     Summary { story_id: i32, summary: Result<Discussion, SummaryError>, sources: Vec<CapturedSource> },
-}
-
-pub struct CommentsRefreshed {
-    pub story_id: i32,
-    pub comments: Result<Vec<Comment>, String>,
-    pub descendants: Vec<Comment>,
-    pub warning: Option<String>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ReplyRequest {
-    pub story_id: i32,
-    pub parent_id: i32,
-    pub ids: Vec<i32>,
-    pub depth: usize,
-}
-
-pub struct ReplyFilled {
-    pub request: ReplyRequest,
-    pub comments: Result<Vec<Comment>, String>,
-}
-
-/// A provider failure, with the one classification the summary card acts on.
-///
-/// `hn_lib::reader::Failure` keeps its `auth` field private but exposes `is_auth()`, so the
-/// window can offer the key prompt without reading the message text.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SummaryError {
-    pub message: String,
-    /// The provider rejected the key: the retry card offers settings, not another attempt.
-    pub auth: bool,
-}
-
-impl SummaryError {
-    pub fn new(message: impl Into<String>, auth: bool) -> SummaryError {
-        SummaryError {
-            message: message.into(),
-            auth,
-        }
-    }
 }
 
 impl Bridge {
@@ -193,15 +106,6 @@ impl Bridge {
         if self.article.is_some() || self.story.is_some() {
             task_waker.wake_by_ref();
         }
-    }
-
-    /// Ask for `request`, superseding any earlier one. The work runs on the runtime from a
-    /// `Latest` worker thread; only the newest request's answer lands.
-    pub fn request(&self, source: Arc<Source>, request: Request) {
-        let handle = self.handle.clone();
-        self.latest.request(request, move |request| {
-            handle.block_on(run(source.as_ref(), request))
-        });
     }
 
     /// Ask for one story open, superseding both parts of any earlier open or retry.
@@ -269,12 +173,6 @@ impl Bridge {
 
     pub fn take_refresh(&self) -> Option<CommentsRefreshed> { self.refresh.take() }
 
-    /// The same request, run to completion on this thread. Headless scenes and tests use it so
-    /// the first frame already has its rows.
-    pub fn fill_now(&self, source: &Source, request: Request) -> Filled {
-        self.runtime.block_on(run(source, request))
-    }
-
     /// The story open, run to completion on this thread.
     pub fn story_now(&mut self, source: &Source, request: StoryRequest) -> StoryFilled {
         self.cancel_story();
@@ -291,11 +189,6 @@ impl Bridge {
     }
 
     pub fn take_replies(&self) -> Option<ReplyFilled> { self.replies.take() }
-
-    /// The newest answer, once.
-    pub fn take(&self) -> Option<Filled> {
-        self.latest.take()
-    }
 
     /// Take a ready story result. Start deferred summaries with settings current at dispatch;
     /// article extraction never holds up the discussion.
@@ -334,11 +227,6 @@ impl Bridge {
         }
     }
 
-    /// Whether a request is still in flight.
-    pub fn is_pending(&self) -> bool {
-        self.latest.is_pending()
-    }
-
     /// Whether a story open is still in flight.
     pub fn is_story_pending(&self) -> bool {
         self.article.is_some() || self.story.is_some()
@@ -367,52 +255,11 @@ impl Bridge {
         self.refresh.cancel();
     }
 
-    /// Drop only the feed request when a held window settles synchronously.
-    pub fn cancel_feed(&self) {
-        self.latest.cancel();
-    }
-
     /// Drop every request and any answer not yet taken.
     pub fn cancel(&mut self) {
         self.latest.cancel();
         self.cancel_story();
         self.parked.clear();
-    }
-}
-
-/// The one request shape: take the ranking (or the caller's), then fetch the window against it.
-///
-/// A ranking that cannot be fetched is an error the feed renders with a retry, not an empty
-/// list: `unwrap_or_default` here would turn a network failure into "no stories".
-async fn run(source: &Source, request: Request) -> Filled {
-    let ids = match request.snapshot {
-        Some(ids) => ids,
-        None => match source.ranked_ids(request.fill.tab).await {
-            Ok(ids) => ids,
-            Err(error) => {
-                return Filled {
-                    tab: request.fill.tab,
-                    ids: Vec::new(),
-                    from_rank: request.fill.from_rank,
-                    items: Vec::new(),
-                    error: Some(format!("{error:#}")),
-                };
-            }
-        },
-    };
-    let items = source
-        .fetch_pages_against(&ids, request.fill.from_rank, request.fill.count)
-        .await
-        .into_iter()
-        .zip(ids.iter().skip(request.fill.from_rank))
-        .map(|(item, &id)| item.ok_or(id))
-        .collect();
-    Filled {
-        tab: request.fill.tab,
-        ids,
-        from_rank: request.fill.from_rank,
-        items,
-        error: None,
     }
 }
 
@@ -480,12 +327,14 @@ async fn run_refresh(source: &Source, story_id: i32, loaded: Vec<i32>) -> Commen
 }
 
 #[cfg(test)]
-#[path = "../../tests/support/http_fixture.rs"]
+#[path = "../../../tests/support/http_fixture.rs"]
 mod http_fixture;
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::feed::Request;
+    use crate::feed::Fill;
     use hn_lib::app::StoryType;
     use std::time::Duration;
 
@@ -569,7 +418,7 @@ mod tests {
         // The older request is genuinely slower, so if `Latest` did not supersede it, its
         // answer would land last and win.
         let slow = Arc::new(Source::Fake(
-            crate::service::FakeService::fixture().with_delay(Duration::from_millis(150)),
+            crate::service::fake::FakeService::fixture().with_delay(Duration::from_millis(150)),
         ));
         let fast = Arc::new(Source::fake());
         bridge.request(slow, Request::new(fill(StoryType::Top, 0, 11), None));
@@ -702,7 +551,7 @@ mod tests {
         bridge.set_waker(Arc::new(move || { let _ = wake.send(()); }));
         let gate = Arc::new(tokio::sync::Semaphore::new(0));
         let article_gate = gate.clone();
-        let mut fake = crate::service::FakeService::fixture().with_delay(Duration::from_secs(5));
+        let mut fake = crate::service::fake::FakeService::fixture().with_delay(Duration::from_secs(5));
         fake.article = Arc::new(move |_| {
             let gate = article_gate.clone();
             Box::pin(async move {
@@ -786,7 +635,7 @@ mod tests {
     #[test]
     fn reopening_the_same_story_discards_its_older_refresh() {
         let mut bridge = Bridge::new().unwrap();
-        let slow = Arc::new(Source::Fake(crate::service::FakeService::fixture().with_delay(Duration::from_millis(150))));
+        let slow = Arc::new(Source::Fake(crate::service::fake::FakeService::fixture().with_delay(Duration::from_millis(150))));
         bridge.request_refresh(slow, 1, Vec::new());
         bridge.request_story(Arc::new(Source::fake()), story_request(0, 1));
         assert!(wait_for_story(&mut bridge).iter().all(|update| update_id(update) == 1));

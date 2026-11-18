@@ -13,7 +13,7 @@
 use hn_lib::reader::{Article, Discussion, Source as CapturedSource};
 use hn_lib::HNCLIItem;
 
-use crate::bridge::{CommentsRefreshed, StoryFilled, StoryUpdate, SummaryError};
+use crate::story_io::{CommentsRefreshed, StoryFilled, StoryUpdate, SummaryError};
 use crate::comments::{Navigation, Thread};
 
 /// One summary bullet, in the desktop's own shape so state can be cloned and compared.
@@ -149,7 +149,7 @@ pub struct Story {
     /// The discussion: the tree, the fold set, the cursor, the re-root and focus mode.
     pub thread: Thread,
     pub discussion: Option<Result<(), String>>,
-    pub pending_reply: Option<crate::bridge::ReplyRequest>,
+    pub pending_reply: Option<crate::story_io::ReplyRequest>,
     /// The captured comment sources, for the citation viewer's excerpt and extra text.
     pub sources: Vec<CapturedSource>,
     /// Latest roots, separate from the sources attached to the displayed summary.
@@ -299,17 +299,17 @@ impl Story {
         self.citation = self.citation.min(self.citations().len().saturating_sub(1));
     }
 
-    pub fn request_replies(&mut self, parent_id: i32, retry: bool) -> Option<crate::bridge::ReplyRequest> {
+    pub fn request_replies(&mut self, parent_id: i32, retry: bool) -> Option<crate::story_io::ReplyRequest> {
         if self.pending_reply.is_some() { return None; }
         let ids = self.thread.reply_batch(parent_id, retry);
         if ids.is_empty() { return None; }
-        let request = crate::bridge::ReplyRequest { story_id: self.id(), parent_id, ids,
+        let request = crate::story_io::ReplyRequest { story_id: self.id(), parent_id, ids,
             depth: self.thread.tree_depth(parent_id)? as usize + 1 };
         self.pending_reply = Some(request.clone());
         Some(request)
     }
 
-    pub fn land_replies(&mut self, filled: crate::bridge::ReplyFilled) -> bool {
+    pub fn land_replies(&mut self, filled: crate::story_io::ReplyFilled) -> bool {
         if filled.request.story_id != self.id() || self.pending_reply.as_ref() != Some(&filled.request) { return false; }
         let selected = self.source.as_ref().and_then(|source| self.thread.source_rows(&source.nav)
             .iter().position(|row| Some(row.id) == source.nav.cursor));
@@ -587,7 +587,7 @@ fn summary_of(discussion: Discussion) -> Summary {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::bridge::SummaryError;
+    use crate::story_io::SummaryError;
     use crate::fixtures;
     use hn_lib::reader::Point;
 
