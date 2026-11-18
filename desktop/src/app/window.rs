@@ -173,7 +173,13 @@ pub(super) fn view(s: &App, cx: &mut Cx<App>) -> El {
     }
     rune_kit::root(base, overlays)
         .on_key(|s: &mut App, ev: &KeyEvent, _: &mut Tx| { s.keyboard_navigation(ev); false })
-        .on_pointer_move_local(|s: &mut App, _, tx| { s.hints.set(0.3); tx.live_only(); })
+        .on_pointer_move_local(|s: &mut App, ev, tx| {
+            let position = (ev.window_x, ev.window_y);
+            s.pointer_position = Some(position);
+            if let Some(anchor) = &mut s.keyboard_pointer_anchor { anchor.get_or_insert(position); }
+            s.hints.set(0.3);
+            tx.live_only();
+        })
         .on_wheel(App::pointer_wheel)
         .pointer_buttons([rune::PointerButton::Back])
         .on_background_press_tx(|s: &mut App, tx: &mut Tx| {

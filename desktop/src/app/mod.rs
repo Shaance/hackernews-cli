@@ -127,6 +127,9 @@ pub struct App {
     hover: Option<i32>,
     /// Whether the last selection came from the keyboard.
     pub(crate) keyboard_selection: bool,
+    pointer_position: Option<(f32, f32)>,
+    // A keyboard action can arm the guard before the window has seen a pointer move.
+    keyboard_pointer_anchor: Option<Option<(f32, f32)>>,
     /// Passive shortcut hints yield visual emphasis to pointer use and return on navigation.
     hints: rune::Live<f32>,
     /// The open story, when the split is showing one. `None` is the feed.
@@ -277,6 +280,8 @@ fn init() -> App {
         feed_scroll_y: Rc::new(Cell::new(0.0)),
         hover: None,
         keyboard_selection: true,
+        pointer_position: None,
+        keyboard_pointer_anchor: None,
         hints: rune::Live::new(1.0),
         story: None,
         visible_comment: Cell::new(None),

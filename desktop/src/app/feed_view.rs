@@ -163,8 +163,8 @@ fn story_row(s: &App, i: usize, t: tok::Theme, accent: Color, reduced: bool) -> 
                 s.open_id(id);
             }
         })
-        .on_pointer_move_local(move |s: &mut App, _, tx| {
-            if !s.feed.request.is_loading() && let Some(index) = s.feed.stories.iter().position(|story| story.id == id)
+        .on_pointer_move_local(move |s: &mut App, ev, tx| {
+            if s.pointer_can_select(ev) && !s.feed.request.is_loading() && let Some(index) = s.feed.stories.iter().position(|story| story.id == id)
                 && s.feed.selected != index {
                 s.feed.selected = index;
                 s.keyboard_selection = false;

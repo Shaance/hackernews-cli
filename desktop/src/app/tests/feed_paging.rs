@@ -26,6 +26,8 @@ fn keyboard_selection_is_instant_and_feed_hover_eases() {
     assert_eq!(after.iter().find(|e| e.key.as_deref() == Some("story-2")).unwrap().fill, full);
     assert_eq!(after.iter().find(|e| e.key.as_deref() == Some("story-1")).unwrap().fill.a, 0.0);
     let [x, y, w, h] = after.iter().find(|e| e.key.as_deref() == Some("story-3")).unwrap().rect;
+    rt.pointer_move(x + w / 2.0 - 40.0, y + h / 2.0);
+    rt.frame(0.0);
     rt.pointer_move(x + w / 2.0, y + h / 2.0);
     rt.frame(0.0);
     rt.frame(0.05);
@@ -53,6 +55,8 @@ fn keyboard_selection_is_instant_and_feed_hover_eases() {
     assert_eq!(elements.iter().find(|e| e.key.as_deref() == Some("focus-rail-9010") && !e.exiting).unwrap().opacity, 1.0);
     let dimmed = elements.iter().find(|e| e.key.as_deref() == Some("comment-text-901")).unwrap().text_color;
     let [x, y, w, h] = elements.iter().find(|e| e.key.as_deref() == Some("comment-901")).unwrap().visible;
+    rt.pointer_move(x + w / 2.0 - 40.0, y + h / 2.0);
+    rt.frame(0.0);
     rt.pointer_move(x + w / 2.0, y + h / 2.0);
     rt.frame(0.0);
     rt.frame(0.05);
@@ -263,3 +267,28 @@ fn a_failed_ranking_reaches_the_feed_error_state() {
     assert!(!s.feed.request.is_loading());
 }
 
+
+#[test]
+fn keyboard_selection_survives_pointer_jitter_in_feed() {
+    let mut s = app(true, SavedView::in_memory());
+    s.request(DEFAULT_GRID, Ranking::Fresh);
+    let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+    rt.on_key = Some(on_key);
+    rt.frame(0.0);
+    let [x, y, w, h] = rt.elements().iter()
+        .find(|e| e.key.as_deref() == Some("story-1")).unwrap().visible;
+    let (px, py) = (x + w / 2.0, y + h / 2.0);
+    rt.pointer_move(px, py);
+    rt.frame(0.0);
+
+    for (key, expected, nudge) in [("j", 2, 1.0), ("j", 3, 2.0), ("k", 2, 3.0)] {
+        route(&mut rt, rune::Key::Text(key.into()));
+        assert_eq!(rt.state.feed.selected_id(), Some(expected));
+        rt.pointer_move(px + nudge, py);
+        rt.frame(0.1);
+        assert_eq!(rt.state.feed.selected_id(), Some(expected), "{key} keeps selection after a 1 pt nudge");
+    }
+    rt.pointer_move(px + 43.0, py);
+    rt.frame(0.1);
+    assert_eq!(rt.state.feed.selected_id(), Some(1));
+}
