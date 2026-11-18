@@ -125,7 +125,6 @@ impl App {
         };
         let applied = self.feed.apply(action, grid);
         if applied.fill.is_some() {
-            self.feed.request.reset_clock();
             self.pending_arrival = arrival;
             self.request(grid, ranking);
         }
