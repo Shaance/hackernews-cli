@@ -1,7 +1,5 @@
 # hn-desktop
 
-> **Highly experimental:** This desktop app is an unfinished work in progress and does not represent the final version. Its design, features, and behavior may change substantially. Expect bugs and incomplete functionality; it is not ready for production use.
-
 The native window over `hn_lib`: the same feed, discussion and summary the terminal app shows,
 drawn with Rune instead of a terminal. One window, one `SplitView`; opening a story puts the
 story's **live page** in the main pane and the summary card plus the discussion in the inspector.
@@ -254,10 +252,9 @@ artifact. A `desktop-vX.Y.Z` tag that matches `Cargo.toml`'s version also publis
 GitHub Release. The workflow's header lists the signing and notarization secrets. Without them,
 a `main` push uploads an unsigned zip and a tag refuses to release.
 
-Still missing:
-
-- **An icon.** `CFBundleIconFile` is omitted rather than naming a file that does not exist.
-- **Intel Macs.** Builds are Apple Silicon only.
+The icon is `assets/AppIcon.icns`, built from `assets/AppIcon-1024.png`. `CFBundleVersion` is
+`HN_BUILD` (the CI run number) and `CFBundleShortVersionString` is `Cargo.toml`'s version. Builds
+are Apple Silicon only.
 
 ### Measured
 
