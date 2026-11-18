@@ -130,21 +130,32 @@ fn summary_header(k: &Kit, t: tok::Theme) -> El {
 /// Each source reference is a pressable inline range in the point it supports.
 fn bullets(s: &Story, summary: &Summary, t: tok::Theme, accent: Color) -> El {
     let mut list = col().key("summary-points").w_full().gap(10.0);
+    let focused = s.focused_citation().filter(|_| s.source().is_none());
     for (index, bullet) in summary.bullets.iter().enumerate() {
         let mut content = bullet.text.clone();
         let mut spans = Vec::new();
         let mut links = Vec::new();
+        let mut point_selected = false;
         for citation in &bullet.citations {
             let position = citation.position;
             content.push(' ');
             let start = content.len();
             content.push_str(&format!("[{}]", position + 1));
             let end = content.len();
-            let selected = s.focused_citation().is_some_and(|selected| selected.position == position);
-            spans.push(Span::new(start, end).color(if selected { t.text } else { t.text_secondary }).underline(accent));
-            links.push(Link::new(start..end, format!("cite-{position}"))
-                .role("button").label(format!("Read comment by {}", citation.source.author))
-                .hover(LinkPaint::new().color(t.text).underline(accent)));
+            let selected = focused.is_some_and(|selected| selected.position == position);
+            point_selected |= selected;
+            let span = Span::new(start, end);
+            let link = Link::new(start..end, format!("cite-{position}")).role("button");
+            let label = format!("Read comment by {}", citation.source.author);
+            if selected {
+                let ink = tok::theme(false).text;
+                spans.push(span.color(ink).bg(accent, 2.0));
+                links.push(link.label(format!("Selected. {label}"))
+                    .hover(LinkPaint::new().ring(ink, 1.0)));
+            } else {
+                spans.push(span.color(t.text_secondary).underline(accent));
+                links.push(link.label(label).hover(LinkPaint::new().color(t.text).underline(accent)));
+            }
         }
         let mut paragraph = text(content).key(format!("summary-text-{index}"))
             .grow(1.0).min_w(0.0).font(type_::BODY).color(t.text).wrap().spans(spans);
@@ -154,14 +165,18 @@ fn bullets(s: &Story, summary: &Summary, t: tok::Theme, accent: Color) -> El {
                 s.open_citation(index);
             }
         });
-        list = list.child(
-            row()
-                .key(format!("summary-point-{index}"))
-                .w_full()
-                .gap(8.0)
-                .child(text("•").font(type_::BODY).color(accent))
-                .child(paragraph),
-        );
+        let mut point = row().key(format!("summary-point-{index}")).w_full().gap(8.0);
+        if point_selected {
+            point = point.child(
+                el().key("citation-focus").a11y_hidden().transition(Transition::none())
+                    .pin(Some(0.0), Some(-3.0), Some(0.0), Some(-3.0))
+                    .fill(accent.alpha(0.10))
+                    .border_sides([0.0, 0.0, 0.0, 2.0], accent),
+            );
+        }
+        let marker = text("•").font(type_::BODY)
+            .color(if point_selected { accent.alpha(0.0) } else { accent });
+        list = list.child(point.child(marker).child(paragraph));
     }
     list
 }

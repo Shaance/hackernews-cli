@@ -88,12 +88,13 @@ SCENES=(
 )
 
 # name | scene | size | script
-# The story split's five frozen states. They share the render/tree/pixel/motion loops with the
+# The story split's frozen states. They share the render/tree/pixel/motion loops with the
 # feed scenes but not the feed's fidelity loop: a story has no rank order and no page stepper.
 # `comments` is the discussion at the story's top level; `thread` is the same discussion re-rooted
 # four levels down with focus mode on, which is the state the trail and the dimming exist for.
 STORY_SCENES=(
   "story|story|1180x760|scripts/story.json"
+  "citation-selected|story|1180x760|scripts/citation-selected.json"
   "story-narrow|story|700x1100|scripts/story.json"
   "comments|comments|1180x760|scripts/thread.json"
   "thread|thread|1180x760|scripts/thread.json"
