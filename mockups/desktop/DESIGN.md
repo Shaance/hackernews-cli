@@ -298,7 +298,7 @@ Focus is explicit: `focusable` + `focus_group` per pane, `focus_highlight` in am
 never wanders into the article body. `scroll_into_view` keeps the selected row on screen when
 `j`/`k` cross a page boundary, and resolves the row to its column when the feed is two-column.
 
-The desktop now builds against Rune `55ef5268`; the original API source locations in this design document refer to the earlier pinned design snapshot.
+The desktop now builds against Rune `78efd4a7`; the original API source locations in this design document refer to the earlier pinned design snapshot.
 
 ## Motion spec
 

@@ -256,20 +256,6 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      49.0,
-                                                      76.5,
-                                                      5.0,
-                                                      15.0
-                                                    ],
-                                                    "key": "rank-1",
-                                                    "name": "1",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
                                                       60.0,
                                                       81.0,
                                                       6.0,
@@ -281,33 +267,6 @@
                                                     "states": [
                                                       "live-polite"
                                                     ]
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      66.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-1",
-                                                    "name": "Tesla to wind down Cybertruck production",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      86.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "1057 points  ·  by PLenz  ·  1913 comments",
-                                                    "role": "label"
                                                   }
                                                 ],
                                                 "key": "story-1",
@@ -328,62 +287,6 @@
                                                   56.0,
                                                   791.5,
                                                   56.0
-                                                ],
-                                                "children": [
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      834.3,
-                                                      76.5,
-                                                      12.2,
-                                                      15.0
-                                                    ],
-                                                    "key": "rank-15",
-                                                    "name": "15",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      852.5,
-                                                      81.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-15",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      66.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-15",
-                                                    "name": "Greece has its own Pompeii: Thera buried Akrotiri in ash 17th-16th century BCE",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      86.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "138 points  ·  by derbOac  ·  15 comments",
-                                                    "role": "label"
-                                                  }
                                                 ],
                                                 "key": "story-15",
                                                 "name": "Greece has its own Pompeii: Thera buried Akrotiri in ash 17th-16th century BCE · 138 points  ·  by derbOac  ·  15 comments",
@@ -422,20 +325,6 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      46.6,
-                                                      132.5,
-                                                      7.4,
-                                                      15.0
-                                                    ],
-                                                    "key": "rank-2",
-                                                    "name": "2",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
                                                       60.0,
                                                       137.0,
                                                       6.0,
@@ -447,33 +336,6 @@
                                                     "states": [
                                                       "live-polite"
                                                     ]
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      122.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-2",
-                                                    "name": "Libghostty 1.0",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      142.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "771 points  ·  by mfiguiere  ·  122 comments",
-                                                    "role": "label"
                                                   }
                                                 ],
                                                 "key": "story-2",
@@ -505,46 +367,6 @@
                                                     ],
                                                     "key": "rank-16",
                                                     "name": "16",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      852.5,
-                                                      137.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-16",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      122.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-16",
-                                                    "name": "A barbarian tribe's mythic origin story is true, ancient DNA reveals",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      142.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "136 points  ·  by benbreen  ·  104 comments",
                                                     "role": "label"
                                                   }
                                                 ],
@@ -579,62 +401,6 @@
                                                   791.5,
                                                   56.0
                                                 ],
-                                                "children": [
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      46.5,
-                                                      188.5,
-                                                      7.5,
-                                                      15.0
-                                                    ],
-                                                    "key": "rank-3",
-                                                    "name": "3",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      60.0,
-                                                      193.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-3",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      178.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-3",
-                                                    "name": "A Jev that can ask Opus for help gives Opus accuracy at 4x lower cost",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      198.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "513 points  ·  by theanomaly  ·  122 comments",
-                                                    "role": "label"
-                                                  }
-                                                ],
                                                 "key": "story-3",
                                                 "name": "A Jev that can ask Opus for help gives Opus accuracy at 4x lower cost · 513 points  ·  by theanomaly  ·  122 comments",
                                                 "role": "button"
@@ -664,46 +430,6 @@
                                                     ],
                                                     "key": "rank-17",
                                                     "name": "17",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      852.5,
-                                                      193.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-17",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      178.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-17",
-                                                    "name": "Chomsky and the two cultures of statistical learning (2011)",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      198.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "135 points  ·  by andsoitis  ·  104 comments",
                                                     "role": "label"
                                                   }
                                                 ],
@@ -752,46 +478,6 @@
                                                     "key": "rank-4",
                                                     "name": "4",
                                                     "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      60.0,
-                                                      249.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-4",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      234.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-4",
-                                                    "name": "US FAA says it will phase out floppy disks from air traffic control by 2028",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      254.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "356 points  ·  by ChrisArchitect  ·  289 comments",
-                                                    "role": "label"
                                                   }
                                                 ],
                                                 "key": "story-4",
@@ -823,46 +509,6 @@
                                                     ],
                                                     "key": "rank-18",
                                                     "name": "18",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      852.5,
-                                                      249.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-18",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      234.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-18",
-                                                    "name": "Can GROUP BY still be optimized after all these years?",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      254.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "95 points  ·  by ntur1337  ·  16 comments",
                                                     "role": "label"
                                                   }
                                                 ],
@@ -911,46 +557,6 @@
                                                     "key": "rank-5",
                                                     "name": "5",
                                                     "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      60.0,
-                                                      305.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-5",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      290.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-5",
-                                                    "name": "Gemini Omni 1.2 Flash",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      310.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "347 points  ·  by thisisauserid  ·  234 comments",
-                                                    "role": "label"
                                                   }
                                                 ],
                                                 "key": "story-5",
@@ -982,46 +588,6 @@
                                                     ],
                                                     "key": "rank-19",
                                                     "name": "19",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      852.5,
-                                                      305.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-19",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      290.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-19",
-                                                    "name": "Notes on San Marino",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      310.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "90 points  ·  by yorwba  ·  34 comments",
                                                     "role": "label"
                                                   }
                                                 ],
@@ -1087,33 +653,6 @@
                                                     "states": [
                                                       "live-polite"
                                                     ]
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      346.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-6",
-                                                    "name": "Firecracker VM Escape: PwnEscape Part 2",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      366.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "257 points  ·  by SerCe  ·  110 comments",
-                                                    "role": "label"
                                                   }
                                                 ],
                                                 "key": "story-6",
@@ -1145,46 +684,6 @@
                                                     ],
                                                     "key": "rank-20",
                                                     "name": "20",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      852.5,
-                                                      361.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-20",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      346.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-20",
-                                                    "name": "Google has acquired Crusoe's data center site in southeast Wyoming",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      366.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "86 points  ·  by rexbee  ·  33 comments",
                                                     "role": "label"
                                                   }
                                                 ],
@@ -1233,46 +732,6 @@
                                                     "key": "rank-7",
                                                     "name": "7",
                                                     "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      60.0,
-                                                      417.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-7",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      402.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-7",
-                                                    "name": "First steps in bare-metal programming using UEFI",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      422.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "233 points  ·  by LaSombra  ·  46 comments",
-                                                    "role": "label"
                                                   }
                                                 ],
                                                 "key": "story-7",
@@ -1304,46 +763,6 @@
                                                     ],
                                                     "key": "rank-21",
                                                     "name": "21",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      852.5,
-                                                      417.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-21",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      402.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-21",
-                                                    "name": "The Components of Agent Memory",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      422.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "76 points  ·  by geoffbp  ·  40 comments",
                                                     "role": "label"
                                                   }
                                                 ],
@@ -1392,46 +811,6 @@
                                                     "key": "rank-8",
                                                     "name": "8",
                                                     "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      60.0,
-                                                      473.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-8",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      458.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-8",
-                                                    "name": "Every Mac comes with an (undocumented) family member classifier",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      478.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "219 points  ·  by infwhispers  ·  106 comments",
-                                                    "role": "label"
                                                   }
                                                 ],
                                                 "key": "story-8",
@@ -1463,46 +842,6 @@
                                                     ],
                                                     "key": "rank-22",
                                                     "name": "22",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      852.5,
-                                                      473.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-22",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      458.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-22",
-                                                    "name": "The Flash C Compiler",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      478.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "64 points  ·  by AlexeyBrin  ·  19 comments",
                                                     "role": "label"
                                                   }
                                                 ],
@@ -1537,62 +876,6 @@
                                                   791.5,
                                                   56.0
                                                 ],
-                                                "children": [
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      46.4,
-                                                      524.5,
-                                                      7.6,
-                                                      15.0
-                                                    ],
-                                                    "key": "rank-9",
-                                                    "name": "9",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      60.0,
-                                                      529.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-9",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      514.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-9",
-                                                    "name": "Upload Your RAM",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      534.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "180 points  ·  by susanthenerd  ·  129 comments",
-                                                    "role": "label"
-                                                  }
-                                                ],
                                                 "key": "story-9",
                                                 "name": "Upload Your RAM · 180 points  ·  by susanthenerd  ·  129 comments",
                                                 "role": "button"
@@ -1622,46 +905,6 @@
                                                     ],
                                                     "key": "rank-23",
                                                     "name": "23",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      852.5,
-                                                      529.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-23",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      514.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-23",
-                                                    "name": "Every Windows 11 app should kill Electron, and Discord just showed why",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      534.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "47 points  ·  by thunderbong  ·  34 comments",
                                                     "role": "label"
                                                   }
                                                 ],
@@ -1710,46 +953,6 @@
                                                     "key": "rank-10",
                                                     "name": "10",
                                                     "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      60.0,
-                                                      585.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-10",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      570.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-10",
-                                                    "name": "Devvm.dev: One VM for every project",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      590.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "169 points  ·  by luispa  ·  64 comments",
-                                                    "role": "label"
                                                   }
                                                 ],
                                                 "key": "story-10",
@@ -1781,46 +984,6 @@
                                                     ],
                                                     "key": "rank-24",
                                                     "name": "24",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      852.5,
-                                                      585.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-24",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      570.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-24",
-                                                    "name": "PostgreSQL Internals [pdf]",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      590.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "45 points  ·  by Foe  ·  5 comments",
                                                     "role": "label"
                                                   }
                                                 ],
@@ -1886,33 +1049,6 @@
                                                     "states": [
                                                       "live-polite"
                                                     ]
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      626.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-11",
-                                                    "name": "GitHub's new Git storage architecture",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      646.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "168 points  ·  by DAlperin  ·  38 comments",
-                                                    "role": "label"
                                                   }
                                                 ],
                                                 "key": "story-11",
@@ -1944,46 +1080,6 @@
                                                     ],
                                                     "key": "rank-25",
                                                     "name": "25",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      852.5,
-                                                      641.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-25",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      626.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-25",
-                                                    "name": "The great butter and cheese fire of 1991",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      646.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "43 points  ·  by subroutine  ·  16 comments",
                                                     "role": "label"
                                                   }
                                                 ],
@@ -2032,46 +1128,6 @@
                                                     "key": "rank-12",
                                                     "name": "12",
                                                     "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      60.0,
-                                                      697.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-12",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      682.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-12",
-                                                    "name": "RealPage rent-pricing case wraps with nearly $360M to renters",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      702.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "143 points  ·  by raybb  ·  84 comments",
-                                                    "role": "label"
                                                   }
                                                 ],
                                                 "key": "story-12",
@@ -2103,46 +1159,6 @@
                                                     ],
                                                     "key": "rank-26",
                                                     "name": "26",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      852.5,
-                                                      697.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-26",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      682.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-26",
-                                                    "name": "8088 Domination Post-Mortem",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      702.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "30 points  ·  by cosmojg  ·  5 comments",
                                                     "role": "label"
                                                   }
                                                 ],
@@ -2191,46 +1207,6 @@
                                                     "key": "rank-13",
                                                     "name": "13",
                                                     "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      60.0,
-                                                      753.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-13",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      738.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-13",
-                                                    "name": "Need for Speed Underground 2 online in the browser",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      758.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "141 points  ·  by fluxusars  ·  43 comments",
-                                                    "role": "label"
                                                   }
                                                 ],
                                                 "key": "story-13",
@@ -2262,46 +1238,6 @@
                                                     ],
                                                     "key": "rank-27",
                                                     "name": "27",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      852.5,
-                                                      753.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-27",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      738.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-27",
-                                                    "name": "Running a law firm on Free software",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      758.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "28 points  ·  by DeepLogin  ·  3 comments",
                                                     "role": "label"
                                                   }
                                                 ],
@@ -2350,46 +1286,6 @@
                                                     "key": "rank-14",
                                                     "name": "14",
                                                     "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      60.0,
-                                                      809.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-14",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      794.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-14",
-                                                    "name": "Restaurant Delivery Payment-Skimming Campaign",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      814.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "138 points  ·  by fiej  ·  71 comments",
-                                                    "role": "label"
                                                   }
                                                 ],
                                                 "key": "story-14",
@@ -2421,46 +1317,6 @@
                                                     ],
                                                     "key": "rank-28",
                                                     "name": "28",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      852.5,
-                                                      809.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-28",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      794.4,
-                                                      707.5,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-28",
-                                                    "name": "ToothPaste",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      872.5,
-                                                      814.6,
-                                                      707.5,
-                                                      15.0
-                                                    ],
-                                                    "name": "22 points  ·  by speckx  ·  5 comments",
                                                     "role": "label"
                                                   }
                                                 ],

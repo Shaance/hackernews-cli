@@ -2474,16 +2474,6 @@
                         ],
                         "name": "Esc",
                         "role": "group"
-                      },
-                      {
-                        "bounds": [
-                          64.9,
-                          1034.5,
-                          71.7,
-                          15.0
-                        ],
-                        "name": "Back to feed",
-                        "role": "label"
                       }
                     ],
                     "key": "story-back",

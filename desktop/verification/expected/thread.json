@@ -1111,21 +1111,6 @@
                                                                           43.2,
                                                                           15.0
                                                                         ],
-                                                                        "children": [
-                                                                          {
-                                                                            "actions": [
-                                                                              "scroll-into-view"
-                                                                            ],
-                                                                            "bounds": [
-                                                                              653.0,
-                                                                              312.8,
-                                                                              43.2,
-                                                                              15.0
-                                                                            ],
-                                                                            "name": "tptacek",
-                                                                            "role": "label"
-                                                                          }
-                                                                        ],
                                                                         "key": "trail-901",
                                                                         "name": "Back to tptacek",
                                                                         "role": "button"
@@ -1154,21 +1139,6 @@
                                                                           312.8,
                                                                           54.0,
                                                                           15.0
-                                                                        ],
-                                                                        "children": [
-                                                                          {
-                                                                            "actions": [
-                                                                              "scroll-into-view"
-                                                                            ],
-                                                                            "bounds": [
-                                                                              713.0,
-                                                                              312.8,
-                                                                              54.0,
-                                                                              15.0
-                                                                            ],
-                                                                            "name": "kstrauser",
-                                                                            "role": "label"
-                                                                          }
                                                                         ],
                                                                         "key": "trail-9010",
                                                                         "name": "Back to kstrauser",
@@ -1199,21 +1169,6 @@
                                                                           44.6,
                                                                           15.0
                                                                         ],
-                                                                        "children": [
-                                                                          {
-                                                                            "actions": [
-                                                                              "scroll-into-view"
-                                                                            ],
-                                                                            "bounds": [
-                                                                              783.8,
-                                                                              312.8,
-                                                                              44.6,
-                                                                              15.0
-                                                                            ],
-                                                                            "name": "simonw",
-                                                                            "role": "label"
-                                                                          }
-                                                                        ],
                                                                         "key": "trail-90100",
                                                                         "name": "Back to simonw",
                                                                         "role": "button"
@@ -1242,21 +1197,6 @@
                                                                           312.8,
                                                                           28.9,
                                                                           15.0
-                                                                        ],
-                                                                        "children": [
-                                                                          {
-                                                                            "actions": [
-                                                                              "scroll-into-view"
-                                                                            ],
-                                                                            "bounds": [
-                                                                              845.2,
-                                                                              312.8,
-                                                                              28.9,
-                                                                              15.0
-                                                                            ],
-                                                                            "name": "dang",
-                                                                            "role": "label"
-                                                                          }
                                                                         ],
                                                                         "key": "trail-901000",
                                                                         "name": "Back to dang",
@@ -2031,16 +1971,6 @@
                         ],
                         "name": "Esc",
                         "role": "group"
-                      },
-                      {
-                        "bounds": [
-                          64.9,
-                          732.5,
-                          71.7,
-                          15.0
-                        ],
-                        "name": "Back to feed",
-                        "role": "label"
                       }
                     ],
                     "key": "story-back",

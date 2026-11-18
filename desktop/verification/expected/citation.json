@@ -1474,16 +1474,6 @@
                         ],
                         "name": "Esc",
                         "role": "group"
-                      },
-                      {
-                        "bounds": [
-                          64.9,
-                          732.5,
-                          107.4,
-                          15.0
-                        ],
-                        "name": "Back to discussion",
-                        "role": "label"
                       }
                     ],
                     "key": "story-back",

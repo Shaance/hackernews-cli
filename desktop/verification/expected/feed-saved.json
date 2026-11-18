@@ -256,20 +256,6 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      49.0,
-                                                      76.5,
-                                                      5.0,
-                                                      15.0
-                                                    ],
-                                                    "key": "rank-1",
-                                                    "name": "1",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
                                                       60.0,
                                                       81.0,
                                                       6.0,
@@ -281,33 +267,6 @@
                                                     "states": [
                                                       "live-polite"
                                                     ]
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      66.4,
-                                                      1080.0,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-1",
-                                                    "name": "Tesla to wind down Cybertruck production",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      86.6,
-                                                      1080.0,
-                                                      15.0
-                                                    ],
-                                                    "name": "1057 points  ·  by PLenz  ·  1913 comments",
-                                                    "role": "label"
                                                   }
                                                 ],
                                                 "key": "story-1",
@@ -350,20 +309,6 @@
                                                       "scroll-into-view"
                                                     ],
                                                     "bounds": [
-                                                      46.6,
-                                                      134.5,
-                                                      7.4,
-                                                      15.0
-                                                    ],
-                                                    "key": "rank-2",
-                                                    "name": "2",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
                                                       60.0,
                                                       139.0,
                                                       6.0,
@@ -375,33 +320,6 @@
                                                     "states": [
                                                       "live-polite"
                                                     ]
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      124.4,
-                                                      1080.0,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-2",
-                                                    "name": "Libghostty 1.0",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      144.6,
-                                                      1080.0,
-                                                      15.0
-                                                    ],
-                                                    "name": "771 points  ·  by mfiguiere  ·  122 comments",
-                                                    "role": "label"
                                                   }
                                                 ],
                                                 "key": "story-2",
@@ -434,62 +352,6 @@
                                                   172.0,
                                                   1164.0,
                                                   56.0
-                                                ],
-                                                "children": [
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      46.5,
-                                                      192.5,
-                                                      7.5,
-                                                      15.0
-                                                    ],
-                                                    "key": "rank-3",
-                                                    "name": "3",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      60.0,
-                                                      197.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-3",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      182.4,
-                                                      1080.0,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-3",
-                                                    "name": "A Jev that can ask Opus for help gives Opus accuracy at 4x lower cost",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      202.6,
-                                                      1080.0,
-                                                      15.0
-                                                    ],
-                                                    "name": "513 points  ·  by theanomaly  ·  122 comments",
-                                                    "role": "label"
-                                                  }
                                                 ],
                                                 "key": "story-3",
                                                 "name": "A Jev that can ask Opus for help gives Opus accuracy at 4x lower cost · 513 points  ·  by theanomaly  ·  122 comments",
@@ -535,46 +397,6 @@
                                                     ],
                                                     "key": "rank-4",
                                                     "name": "4",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      60.0,
-                                                      255.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-4",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      240.4,
-                                                      1080.0,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-4",
-                                                    "name": "US FAA says it will phase out floppy disks from air traffic control by 2028",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      260.6,
-                                                      1080.0,
-                                                      15.0
-                                                    ],
-                                                    "name": "356 points  ·  by ChrisArchitect  ·  289 comments",
                                                     "role": "label"
                                                   }
                                                 ],
@@ -622,46 +444,6 @@
                                                     ],
                                                     "key": "rank-5",
                                                     "name": "5",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      60.0,
-                                                      313.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-5",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      298.4,
-                                                      1080.0,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-5",
-                                                    "name": "Gemini Omni 1.2 Flash",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      318.6,
-                                                      1080.0,
-                                                      15.0
-                                                    ],
-                                                    "name": "347 points  ·  by thisisauserid  ·  234 comments",
                                                     "role": "label"
                                                   }
                                                 ],
@@ -727,33 +509,6 @@
                                                     "states": [
                                                       "live-polite"
                                                     ]
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      356.4,
-                                                      1080.0,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-6",
-                                                    "name": "Firecracker VM Escape: PwnEscape Part 2",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      376.6,
-                                                      1080.0,
-                                                      15.0
-                                                    ],
-                                                    "name": "257 points  ·  by SerCe  ·  110 comments",
-                                                    "role": "label"
                                                   }
                                                 ],
                                                 "key": "story-6",
@@ -800,46 +555,6 @@
                                                     ],
                                                     "key": "rank-7",
                                                     "name": "7",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      60.0,
-                                                      429.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-7",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      414.4,
-                                                      1080.0,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-7",
-                                                    "name": "First steps in bare-metal programming using UEFI",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      434.6,
-                                                      1080.0,
-                                                      15.0
-                                                    ],
-                                                    "name": "233 points  ·  by LaSombra  ·  46 comments",
                                                     "role": "label"
                                                   }
                                                 ],
@@ -888,46 +603,6 @@
                                                     "key": "rank-8",
                                                     "name": "8",
                                                     "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      60.0,
-                                                      487.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-8",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      472.4,
-                                                      1080.0,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-8",
-                                                    "name": "Every Mac comes with an (undocumented) family member classifier",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      492.6,
-                                                      1080.0,
-                                                      15.0
-                                                    ],
-                                                    "name": "219 points  ·  by infwhispers  ·  106 comments",
-                                                    "role": "label"
                                                   }
                                                 ],
                                                 "key": "story-8",
@@ -960,62 +635,6 @@
                                                   520.0,
                                                   1164.0,
                                                   56.0
-                                                ],
-                                                "children": [
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      46.4,
-                                                      540.5,
-                                                      7.6,
-                                                      15.0
-                                                    ],
-                                                    "key": "rank-9",
-                                                    "name": "9",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      60.0,
-                                                      545.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-9",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      530.4,
-                                                      1080.0,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-9",
-                                                    "name": "Upload Your RAM",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      550.6,
-                                                      1080.0,
-                                                      15.0
-                                                    ],
-                                                    "name": "180 points  ·  by susanthenerd  ·  129 comments",
-                                                    "role": "label"
-                                                  }
                                                 ],
                                                 "key": "story-9",
                                                 "name": "Upload Your RAM · 180 points  ·  by susanthenerd  ·  129 comments",
@@ -1061,46 +680,6 @@
                                                     ],
                                                     "key": "rank-10",
                                                     "name": "10",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      60.0,
-                                                      603.0,
-                                                      6.0,
-                                                      6.0
-                                                    ],
-                                                    "key": "unsaved-dot-10",
-                                                    "role": "group"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      588.4,
-                                                      1080.0,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-10",
-                                                    "name": "Devvm.dev: One VM for every project",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      608.6,
-                                                      1080.0,
-                                                      15.0
-                                                    ],
-                                                    "name": "169 points  ·  by luispa  ·  64 comments",
                                                     "role": "label"
                                                   }
                                                 ],
@@ -1166,33 +745,6 @@
                                                     "states": [
                                                       "live-polite"
                                                     ]
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      646.4,
-                                                      1080.0,
-                                                      16.3
-                                                    ],
-                                                    "key": "title-11",
-                                                    "name": "GitHub's new Git storage architecture",
-                                                    "role": "label"
-                                                  },
-                                                  {
-                                                    "actions": [
-                                                      "scroll-into-view"
-                                                    ],
-                                                    "bounds": [
-                                                      80.0,
-                                                      666.6,
-                                                      1080.0,
-                                                      15.0
-                                                    ],
-                                                    "name": "168 points  ·  by DAlperin  ·  38 comments",
-                                                    "role": "label"
                                                   }
                                                 ],
                                                 "key": "story-11",

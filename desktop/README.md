@@ -277,7 +277,7 @@ The release measurements above were recorded at the earlier `d751f07` pin; they 
 
 ## Known limitations
 
-- **Rune is pinned to a pre-release commit** (`55ef5268`), not a published crate. Building needs
+- **Rune is pinned to a pre-release commit** (`78efd4a7`), not a published crate. Building needs
   network access to `github.com/anomalyco/rune`, and an upstream change can break this crate
   without a version bump to warn us.
 - The desktop workspace mirrors Rune's required official patches for Parley, winit, wgpu-hal and both AccessKit adapters at the same revision. Rune's `tooling` feature preserves the existing release headless commands.
