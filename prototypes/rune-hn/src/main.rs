@@ -16,7 +16,7 @@ use serde::Deserialize;
 
 const TOP_STORIES: &str = "https://hackernews.firebaseio.com/v0/topstories.json";
 const ITEM: &str = "https://hackernews.firebaseio.com/v0/item/";
-const USER_AGENT: &str = "rune-hn-prototype/0.1 (+https://github.com/Shaance/hackernews-cli)";
+const USER_AGENT: &str = "rune-hn-prototype/0.1 (+https://github.com/Shaance/hn)";
 const FIXTURE: &str = include_str!("../fixtures/topstories.json");
 const LIMIT: usize = 12;
 
