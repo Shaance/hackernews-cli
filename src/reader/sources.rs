@@ -1,6 +1,9 @@
 //! Prepare bounded source material without a private service or browser crawler.
 use super::{network::Network, ArticleCapture, Capture, DiscussionCapture, Failure, Source};
 use crate::{HNCLIItem, HackerNewsCliService, HackerNewsCliServiceImpl};
+use html5ever::{parse_document, serialize, tendril::TendrilSink};
+use markup5ever_rcdom::{Handle, NodeData, RcDom, SerializableHandle};
+use readability::{dom, extractor};
 use reqwest::Client;
 use std::collections::VecDeque;
 
@@ -53,12 +56,75 @@ pub async fn article(client: &Client, story: &HNCLIItem) -> Result<(String, bool
     Ok((text.chars().take(24_000).collect(), partial))
 }
 pub fn extract(html: &[u8], url: &reqwest::Url) -> Result<String, Failure> {
-    let product = readability::extractor::extract(&mut std::io::Cursor::new(html), url)
-        .map_err(|_| Failure::new("Could not extract this article. o Original"))?;
-    if product.text.trim().is_empty() {
+    let extraction_failed = || Failure::new("Could not extract this article. o Original");
+    let document = parse_document(RcDom::default(), Default::default())
+        .from_utf8()
+        .one(html)
+        .document;
+    let visible_html;
+    let mut input = if remove_hidden(&document) {
+        visible_html = serialize_children(&document).map_err(|_| extraction_failed())?;
+        visible_html.as_slice()
+    } else {
+        html
+    };
+    let mut text = extractor::extract(&mut input, url)
+        .map_err(|_| extraction_failed())?
+        .text;
+    if short_extraction(&text) {
+        let mut mains = Vec::new();
+        dom::find_node(document.clone(), "main", &mut mains);
+        if let [main] = mains.as_slice() {
+            // A layout class on <main> can make readability discard the entire region.
+            let html = serialize_children(main).map_err(|_| extraction_failed())?;
+            if let Ok(product) = extractor::extract(&mut html.as_slice(), url) {
+                if !short_extraction(&product.text) {
+                    text = product.text;
+                }
+            }
+        }
+    }
+    if text.trim().is_empty() {
         return Err(Failure::new("No readable article text. o Original"));
     }
-    Ok(product.text)
+    Ok(text)
+}
+
+fn short_extraction(text: &str) -> bool {
+    const MIN_CONTENT_CHARS: usize = 200;
+    text.chars()
+        .filter(|c| !c.is_whitespace())
+        .take(MIN_CONTENT_CHARS)
+        .count()
+        < MIN_CONTENT_CHARS
+}
+
+fn serialize_children(node: &Handle) -> std::io::Result<Vec<u8>> {
+    let mut html = Vec::new();
+    serialize(
+        &mut html,
+        &SerializableHandle::from(node.clone()),
+        Default::default(),
+    )?;
+    Ok(html)
+}
+
+fn remove_hidden(document: &Handle) -> bool {
+    let mut pending = vec![document.clone()];
+    let mut removed = false;
+    while let Some(node) = pending.pop() {
+        node.children.borrow_mut().retain(|child| {
+            if matches!(&child.data, NodeData::Element { attrs, .. }
+                if attrs.borrow().iter().any(|attr| attr.name.local.as_ref() == "hidden"))
+            {
+                removed = true;
+                return false;
+            }
+            pending.push(child.clone());
+            true
+        });
+    }
+    removed
 }
 pub(super) async fn article_capture(
     network: &Network,
@@ -169,3 +235,7 @@ pub(super) async fn discussion(
         coverage,
     }))
 }
+
+#[cfg(test)]
+#[path = "tests/extraction.rs"]
+mod extraction_tests;
