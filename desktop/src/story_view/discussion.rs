@@ -3,7 +3,6 @@
 use std::f32::consts::FRAC_PI_2;
 use std::rc::Rc;
 
-use hn_lib::reader::Source as CapturedSource;
 use rune::tok::{self, radius, type_};
 use rune::{Color, El, GrowthSpec, ScrollSpec, Spring, SpringPair, Transition, Tx, col, el, icon, row, text};
 use rune_kit::{Keybind, Kit, Placement, Popover};
@@ -11,7 +10,13 @@ use rune_kit::{Keybind, Kit, Placement, Popover};
 use crate::app::App;
 use crate::app::chrome::quiet_button;
 use crate::comments::{INDENT, MAX_DEPTH};
-use crate::story::Story;
+use crate::story::{SourceView, Story};
+
+#[derive(Clone, Copy)]
+pub(super) enum RenderContext<'a> {
+    Discussion,
+    Source(&'a SourceView),
+}
 
 /// The discussion's viewport: the tree scrolls here, under the pinned card, and nowhere else.
 pub(super) fn discussion_pane(
@@ -77,7 +82,7 @@ fn discussion(s: &Story, k: &Kit, t: tok::Theme, accent: Color, overlays: &mut V
     list.child(stack
         .growth(GrowthSpec { spring: Spring::NONE, ..GrowthSpec::default() }).virtual_rows(rows.len(), 110.0,
             move |_s: &App, i| format!("comment-{}", keys[i].id).into(),
-            move |app: &App, i| app.story().map(|s| comment_row(s, rows[i].id, rows[i].depth, &kit, t, accent, false, reduced, app.keyboard_selection)).unwrap_or_else(el)))
+            move |app: &App, i| app.story().map(|s| comment_row(s, rows[i].id, rows[i].depth, &kit, t, accent, RenderContext::Discussion, reduced, app.keyboard_selection)).unwrap_or_else(el)))
 }
 
 /// The discussion's header: what the capture holds, whether focus mode is on, and `L`'s chip.
@@ -174,12 +179,13 @@ fn trail_strip(s: &Story, trail: &[i32], k: &Kit, t: tok::Theme) -> El {
 ///
 /// The row is the fold target and the cursor target at once. Folding keeps the comment readable;
 /// a comment at the depth cap offers `continue thread` instead of drawing deeper replies.
-pub(super) fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: Color, context: bool, reduced: bool, keyboard: bool) -> El {
+pub(super) fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme, accent: Color, context: RenderContext<'_>, reduced: bool, keyboard: bool) -> El {
     let thread = &s.thread;
-    let captured = context.then(|| s.shown_source()).flatten().filter(|source| source.id == id);
+    let captured = match context { RenderContext::Source(source) => Some(source.captured()).filter(|source| source.id == id), RenderContext::Discussion => None };
     let node = thread.node(id);
     if node.is_none() && captured.is_none() { return el(); }
-    let nav = context.then(|| &s.source.as_ref().unwrap().nav);
+    let nav = match context { RenderContext::Source(source) => Some(&source.nav), RenderContext::Discussion => None };
+    let context = matches!(context, RenderContext::Source(_));
     let cursor = nav.map_or_else(|| thread.cursor(), |nav| nav.cursor);
     let focus = nav.map_or_else(|| thread.focus(), |nav| nav.focus);
     let selected = cursor == Some(id);
@@ -217,14 +223,14 @@ pub(super) fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme
     if depth > 0 && !reduced { r = r.fold_glide(Spring::new(0.12, 0.0)); }
     r = r.on_press_tx(move |s: &mut App, tx: &mut Tx| {
         if let Some(story) = s.story_mut() {
-            if !context { story.citation_focus = false; }
+            if !context { story.clear_citation_focus(); }
             let changed = story.with_thread(|thread| thread.cursor() != Some(id) && thread.select(id));
             if changed { s.keyboard_selection = tx.by_keys(); }
         }
     }).on_pointer_move_local(move |s: &mut App, _, tx| {
         if let Some(story) = s.story_mut() {
             let changed = story.with_thread(|thread| thread.focus() && thread.cursor() != Some(id) && thread.select(id));
-            if changed && !context { story.citation_focus = false; }
+            if changed && !context { story.clear_citation_focus(); }
             if changed { s.keyboard_selection = false; }
             if !changed { tx.live_only(); }
         }
@@ -463,7 +469,7 @@ fn link_chooser(
 /// The captured comment and its current reply context share the discussion's thread data.
 pub(super) fn source_viewer(
     s: &Story,
-    source: &CapturedSource,
+    source: &SourceView,
     k: &Kit,
     t: tok::Theme,
     accent: Color,
@@ -473,14 +479,13 @@ pub(super) fn source_viewer(
     let thread = &s.thread;
     let mut content = col().key("source-content").w_full().px(28.0).py(14.0).gap(10.0).motion(Spring::NONE)
         .child(text("Discussion summary").key("source-summary-heading").font(type_::LABEL).color(t.text_secondary));
-    if let Some(summary) = s.summary.readable() {
-        for (index, bullet) in summary.bullets.iter().enumerate().filter(|(_, bullet)| bullet.sources.contains(&source.id)) {
-            content = content.child(row().key(format!("source-summary-{index}")).w_full().gap(8.0)
-                .child(text("•").font(type_::BODY).color(accent))
-                .child(text(bullet.text.clone()).grow(1.0).min_w(0.0).font(type_::BODY).color(t.text).wrap()));
-        }
+    for (index, bullet) in source.summary().bullets.iter().enumerate()
+        .filter(|(_, bullet)| bullet.citations.iter().any(|citation| citation.source.id == source.id())) {
+        content = content.child(row().key(format!("source-summary-{index}")).w_full().gap(8.0)
+            .child(text("•").font(type_::BODY).color(accent))
+            .child(text(bullet.text.clone()).grow(1.0).min_w(0.0).font(type_::BODY).color(t.text).wrap()));
     }
-    let rows = Rc::new(thread.source_rows(&s.source.as_ref().unwrap().nav));
+    let rows = Rc::new(thread.source_rows(&source.nav));
     let keys = Rc::clone(&rows);
     let kit = (*k).clone();
     let mut stack = col().key("source-replies").w_full().gap(2.0).motion(Spring::NONE);
@@ -489,8 +494,9 @@ pub(super) fn source_viewer(
         .child(stack
         .growth(GrowthSpec { spring: Spring::NONE, ..GrowthSpec::default() }).virtual_rows(rows.len(), 110.0,
             move |_app: &App, i| format!("source-comment-{}", keys[i].id).into(),
-            move |app: &App, i| app.story().map(|story| comment_row(story, rows[i].id, rows[i].depth, &kit, t, accent, true, reduced, app.keyboard_selection)).unwrap_or_else(el)));
-    col().key("source-viewer").role("region").label(format!("Comment by {}", source.author))
+            move |app: &App, i| app.story().and_then(|story| story.source().map(|source|
+                comment_row(story, rows[i].id, rows[i].depth, &kit, t, accent, RenderContext::Source(source), reduced, app.keyboard_selection))).unwrap_or_else(el)));
+    col().key("source-viewer").role("region").label(format!("Comment by {}", source.captured().author))
         .focusable(true).w_full().h_full().scroll(ScrollSpec { stick_bottom: false }).scroll_edge_fade(20.0)
         .on_wheel(App::pointer_wheel)
         .on_scroll_offset(on_scroll).child(content)

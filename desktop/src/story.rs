@@ -10,53 +10,74 @@
 //! re-root and focus mode. This module owns the story around it — the article, the card, the
 //! citation selection and the link chooser — and hands the thread's transitions straight through.
 
+use std::collections::VecDeque;
+use std::rc::Rc;
+
 use hn_lib::reader::{Article, Discussion, Source as CapturedSource};
 use hn_lib::HNCLIItem;
 
 use crate::story_io::{CommentsRefreshed, StoryFilled, StoryUpdate, SummaryError};
 use crate::comments::{Navigation, Thread};
 
-/// One summary bullet, in the desktop's own shape so state can be cloned and compared.
-///
-/// `hn_lib::reader::Point` is `Deserialize` only, so it cannot be held in state that a test
-/// compares; the conversion is a field copy, not a second implementation of anything.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// One summary bullet and the captured citations it can actually show.
+#[derive(Debug, Clone)]
 pub struct Bullet {
     pub text: String,
-    pub sources: Vec<i32>,
+    pub(crate) citations: Vec<Citation>,
 }
 
 /// A finished summary: its bullets and its provenance.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct Summary {
     pub overview: String,
     pub bullets: Vec<Bullet>,
+    sources: Vec<Rc<CapturedSource>>,
 }
 
 /// The summary card's four states (DESIGN.md screen 04).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub enum SummaryState {
     /// No API key configured: the card says what to do instead of pretending to work.
     Unconfigured,
     /// Skeleton rows while the article and discussion captures and then summary are pending.
-    Generating { previous: Option<Box<Summary>> },
-    Done(Summary),
+    Generating { previous: Option<Box<DisplayedSummary>> },
+    Done(DisplayedSummary),
     /// A provider failure. The previous summary stays readable underneath, as DESIGN.md asks.
     Failed {
         message: String,
         /// The provider rejected the key, so the retry card offers settings instead of a retry.
         auth: bool,
-        previous: Option<Box<Summary>>,
+        previous: Option<Box<DisplayedSummary>>,
     },
 }
 
 impl SummaryState {
     /// The summary the card can still show, if any.
     pub fn readable(&self) -> Option<&Summary> {
+        self.displayed().map(DisplayedSummary::summary)
+    }
+
+    pub(crate) fn displayed(&self) -> Option<&DisplayedSummary> {
         match self {
             SummaryState::Done(summary) => Some(summary),
             SummaryState::Failed { previous, .. } | SummaryState::Generating { previous, .. } => previous.as_deref(),
             _ => None,
+        }
+    }
+
+    fn displayed_mut(&mut self) -> Option<&mut DisplayedSummary> {
+        match self {
+            SummaryState::Done(summary) => Some(summary),
+            SummaryState::Failed { previous, .. } | SummaryState::Generating { previous, .. } => previous.as_deref_mut(),
+            _ => None,
+        }
+    }
+
+    fn take_displayed(&mut self) -> Option<DisplayedSummary> {
+        match std::mem::replace(self, SummaryState::Unconfigured) {
+            SummaryState::Done(summary) => Some(summary),
+            SummaryState::Failed { previous, .. } | SummaryState::Generating { previous, .. } => previous.map(|summary| *summary),
+            SummaryState::Unconfigured => None,
         }
     }
 
@@ -66,6 +87,100 @@ impl SummaryState {
 
     pub fn is_failed(&self) -> bool {
         matches!(self, SummaryState::Failed { .. })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct Citation {
+    pub source: Rc<CapturedSource>,
+    pub first_bullet: usize,
+    pub position: usize,
+}
+
+/// A nonempty, ordered selection: its current citation can never be out of range.
+#[derive(Debug, Clone)]
+struct CitationCursor {
+    current: Citation,
+    others: VecDeque<Citation>,
+    focused: bool,
+}
+
+impl CitationCursor {
+    fn iter(&self) -> impl Iterator<Item = &Citation> {
+        self.others.iter().filter(|citation| citation.position < self.current.position)
+            .chain(std::iter::once(&self.current))
+            .chain(self.others.iter().filter(|citation| citation.position > self.current.position))
+    }
+
+    fn step(&mut self, forward: bool) {
+        let next = if forward { self.others.pop_front() } else { self.others.pop_back() };
+        if let Some(next) = next {
+            let previous = std::mem::replace(&mut self.current, next);
+            if forward { self.others.push_back(previous); } else { self.others.push_front(previous); }
+        }
+    }
+
+    fn select(&mut self, index: usize) -> bool {
+        if index > self.others.len() { return false; }
+        while self.current.position != index { self.step(true); }
+        true
+    }
+}
+
+impl Summary {
+    fn capture(discussion: Discussion, sources: Vec<CapturedSource>) -> (Rc<Self>, Option<CitationCursor>) {
+        let sources: Vec<_> = sources.into_iter().map(Rc::new).collect();
+        let mut citations: Vec<Citation> = Vec::new();
+        let bullets = discussion.points.into_iter().enumerate().map(|(first_bullet, point)| {
+            let references = point.sources.into_iter().filter_map(|id| {
+                if let Some(citation) = citations.iter().find(|citation| citation.source.id == id) {
+                    return Some(citation.clone());
+                }
+                let source = sources.iter().find(|source| source.id == id)?;
+                let citation = Citation { source: Rc::clone(source), first_bullet, position: citations.len() };
+                citations.push(citation.clone());
+                Some(citation)
+            }).collect();
+            Bullet { text: point.text, citations: references }
+        }).collect();
+        let summary = Rc::new(Summary { overview: discussion.overview, bullets, sources });
+        let mut citations = citations.into_iter();
+        let cursor = citations.next().map(|current| CitationCursor {
+            current, others: citations.collect(), focused: false,
+        });
+        (summary, cursor)
+    }
+}
+
+/// A readable snapshot, either on the card or owned by its open source viewer.
+#[derive(Debug, Clone)]
+pub struct DisplayedSummary(DisplayState);
+
+#[derive(Debug, Clone)]
+enum DisplayState {
+    Summary { summary: Rc<Summary>, cursor: Option<CitationCursor> },
+    Source(SourceView),
+}
+
+impl DisplayedSummary {
+    fn snapshot(&self) -> &Rc<Summary> {
+        match &self.0 {
+            DisplayState::Summary { summary, .. } => summary,
+            DisplayState::Source(source) => &source.summary,
+        }
+    }
+    pub fn summary(&self) -> &Summary { self.snapshot() }
+    pub fn sources(&self) -> &[Rc<CapturedSource>] { &self.summary().sources }
+
+    fn selection(&self) -> Option<(&CitationCursor, bool)> {
+        match &self.0 {
+            DisplayState::Summary { cursor, .. } => cursor.as_ref().map(|cursor| (cursor, cursor.focused)),
+            DisplayState::Source(source) => Some((&source.cursor, true)),
+        }
+    }
+
+    fn source_mut(&mut self) -> Option<&mut SourceView> {
+        match &mut self.0 { DisplayState::Source(source) => Some(source), _ => None }
     }
 }
 
@@ -116,9 +231,18 @@ pub struct LinkChooser {
 }
 
 /// The captured comment and its temporary, independent thread navigation.
+#[derive(Debug, Clone)]
 pub(crate) struct SourceView {
-    pub id: i32,
+    summary: Rc<Summary>,
+    cursor: CitationCursor,
     pub nav: Navigation,
+    staged: Option<(Rc<Summary>, Option<CitationCursor>)>,
+}
+
+impl SourceView {
+    pub(crate) fn id(&self) -> i32 { self.cursor.current.source.id }
+    pub(crate) fn captured(&self) -> &CapturedSource { &self.cursor.current.source }
+    pub(crate) fn summary(&self) -> &Summary { &self.summary }
 }
 
 impl LinkChooser {
@@ -150,21 +274,12 @@ pub struct Story {
     pub thread: Thread,
     pub discussion: Option<Result<(), String>>,
     pub pending_reply: Option<crate::story_io::ReplyRequest>,
-    /// The captured comment sources, for the citation viewer's excerpt and extra text.
-    pub sources: Vec<CapturedSource>,
     /// Latest roots, separate from the sources attached to the displayed summary.
     pub current_sources: Vec<CapturedSource>,
-    staged_summary: Option<(Summary, Vec<CapturedSource>)>,
     pub refreshing_comments: bool,
     pub refresh_error: Option<String>,
     /// `S` folds the summary card; the discussion gets the height.
     pub summary_open: bool,
-    /// The selected citation, as an index into [`Story::citations`].
-    pub citation: usize,
-    /// `Tab` has selected a citation, so `Enter` reads it.
-    pub citation_focus: bool,
-    /// The source viewer's comment id, when it is open.
-    pub(crate) source: Option<SourceView>,
     /// `L`'s chooser, when it is open.
     pub links: Option<LinkChooser>,
 }
@@ -186,15 +301,10 @@ impl Story {
             thread: Thread::empty(),
             discussion: None,
             pending_reply: None,
-            sources: Vec::new(),
             current_sources: Vec::new(),
-            staged_summary: None,
             refreshing_comments: false,
             refresh_error: None,
             summary_open: true,
-            citation: 0,
-            citation_focus: false,
-            source: None,
             links: None,
         }
     }
@@ -279,24 +389,33 @@ impl Story {
     }
 
     fn land_summary(&mut self, summary: Result<Discussion, SummaryError>, sources: Vec<CapturedSource>) {
-        let previous = self.summary.readable().cloned().map(Box::new);
+        let previous = self.summary.take_displayed();
         self.summary = match summary {
-            Ok(discussion) if self.source.is_some() && previous.is_some() => {
-                self.staged_summary = Some((summary_of(discussion), sources));
-                SummaryState::Done(*previous.unwrap())
-            }
             Ok(discussion) => {
-                self.sources = sources;
-                SummaryState::Done(summary_of(discussion))
+                let (summary, mut cursor) = Summary::capture(discussion, sources);
+                match previous {
+                    Some(DisplayedSummary(DisplayState::Source(mut source))) => {
+                        source.staged = Some((summary, cursor));
+                        SummaryState::Done(DisplayedSummary(DisplayState::Source(source)))
+                    }
+                    previous => {
+                        if let Some((old, focused)) = previous.as_ref().and_then(DisplayedSummary::selection)
+                            && let Some(cursor) = &mut cursor
+                        {
+                            let index = old.current.position.min(cursor.others.len());
+                            cursor.select(index);
+                            cursor.focused = focused;
+                        }
+                        SummaryState::Done(DisplayedSummary(DisplayState::Summary { summary, cursor }))
+                    }
+                }
             }
             Err(error) => SummaryState::Failed {
                 message: error.message,
                 auth: error.auth,
-                previous,
+                previous: previous.map(Box::new),
             },
         };
-        // A citation index past the new bullet list would select nothing.
-        self.citation = self.citation.min(self.citations().len().saturating_sub(1));
     }
 
     pub fn request_replies(&mut self, parent_id: i32, retry: bool) -> Option<crate::story_io::ReplyRequest> {
@@ -311,7 +430,7 @@ impl Story {
 
     pub fn land_replies(&mut self, filled: crate::story_io::ReplyFilled) -> bool {
         if filled.request.story_id != self.id() || self.pending_reply.as_ref() != Some(&filled.request) { return false; }
-        let selected = self.source.as_ref().and_then(|source| self.thread.source_rows(&source.nav)
+        let selected = self.source().and_then(|source| self.thread.source_rows(&source.nav)
             .iter().position(|row| Some(row.id) == source.nav.cursor));
         self.pending_reply = None;
         self.thread.merge_replies(filled.request.parent_id, &filled.request.ids, filled.comments);
@@ -323,7 +442,7 @@ impl Story {
     /// because the card is in the inspector and may be folded; a failure is worth a toast
     /// because the card may be scrolled away.
     pub fn summary_notice(&self) -> Option<String> {
-        if self.staged_summary.is_some() { return None; }
+        if self.source().is_some_and(|source| source.staged.is_some()) { return None; }
         if matches!(self.discussion, Some(Err(_))) {
             return Some("Discussion unavailable · press r to retry comments".to_string());
         }
@@ -343,24 +462,30 @@ impl Story {
     pub fn toggle_summary(&mut self) {
         self.summary_open = !self.summary_open;
         if !self.summary_open {
-            self.citation_focus = false;
+            self.clear_citation_focus();
         }
     }
 
-    /// The distinct comment ids the bullets cite, in first-cited order, restricted to sources
-    /// this capture actually holds — the same rule the terminal reader applies, so a chip can
-    /// never point at a comment the viewer cannot show.
-    pub fn citations(&self) -> Vec<i32> {
-        let mut ids = Vec::new();
-        let Some(summary) = self.summary.readable() else {
-            return ids;
-        };
-        for id in summary.bullets.iter().flat_map(|bullet| &bullet.sources) {
-            if !ids.contains(id) && self.sources.iter().any(|source| source.id == *id) {
-                ids.push(*id);
-            }
+    /// Citations remain paired with their captured source and first supporting bullet.
+    pub(crate) fn citations(&self) -> impl Iterator<Item = &Citation> {
+        self.summary.displayed().and_then(DisplayedSummary::selection)
+            .into_iter().flat_map(|(cursor, _)| cursor.iter())
+    }
+
+    pub(crate) fn focused_citation(&self) -> Option<&Citation> {
+        self.summary.displayed().and_then(DisplayedSummary::selection)
+            .and_then(|(cursor, focused)| focused.then_some(&cursor.current))
+    }
+
+    pub(crate) fn clear_citation_focus(&mut self) {
+        if let Some(DisplayedSummary(DisplayState::Summary { cursor: Some(cursor), .. })) = self.summary.displayed_mut()
+        {
+            cursor.focused = false;
         }
-        ids
+    }
+
+    pub(crate) fn source(&self) -> Option<&SourceView> {
+        match &self.summary.displayed()?.0 { DisplayState::Source(source) => Some(source), _ => None }
     }
 
     /// `Tab`: select the next citation, and ask for the summary to be readable.
@@ -374,74 +499,63 @@ impl Story {
     }
 
     fn step_citation(&mut self, forward: bool) {
-        let count = self.citations().len();
-        if count == 0 {
-            return;
+        match self.summary.displayed_mut().map(|display| &mut display.0) {
+            Some(DisplayState::Summary { cursor: Some(cursor), .. }) => {
+                if cursor.focused { cursor.step(forward); }
+                cursor.focused = true;
+            }
+            Some(DisplayState::Source(source)) => {
+                source.cursor.step(forward);
+                source.nav = Navigation::rooted(source.id());
+            }
+            _ => return,
         }
-        // Tab is an explicit request to read the summary, as in the terminal reader.
         self.summary_open = true;
-        if self.citation_focus {
-            self.citation = if forward {
-                (self.citation + 1) % count
-            } else {
-                (self.citation + count - 1) % count
-            };
-        }
-        self.citation_focus = true;
-        if let Some(id) = self.citations().get(self.citation).copied()
-            && self.source.is_some()
-        {
-            // The viewer follows the selection, so Tab walks the sources.
-            self.source = Some(SourceView { id, nav: Navigation::rooted(id) });
-        }
     }
 
     /// A press on citation chip `index`: select it and read it, which is what `Tab` then
     /// `Enter` does from the keyboard.
     pub fn select_citation(&mut self, index: usize) -> bool {
-        if index >= self.citations().len() {
-            return false;
-        }
-        self.citation = index;
-        self.citation_focus = true;
+        let Some(DisplayedSummary(DisplayState::Summary { cursor: Some(cursor), .. })) = self.summary.displayed_mut() else { return false; };
+        if !cursor.select(index) { return false; }
+        cursor.focused = true;
         self.summary_open = true;
         self.open_source()
     }
 
     /// `Enter` on a selected citation: open the source viewer. Returns whether it opened.
     pub fn open_source(&mut self) -> bool {
-        if self.source.is_some() || !self.citation_focus {
-            return false;
-        }
-        let Some(id) = self.citations().get(self.citation).copied() else {
-            return false;
-        };
-        self.source = Some(SourceView { id, nav: Navigation::rooted(id) });
+        let Some(display) = self.summary.displayed_mut() else { return false; };
+        let DisplayState::Summary { summary, cursor } = &mut display.0 else { return false; };
+        let Some(selected) = cursor.take() else { return false; };
+        if !selected.focused { *cursor = Some(selected); return false; }
+        let nav = Navigation::rooted(selected.current.source.id);
+        display.0 = DisplayState::Source(SourceView { summary: Rc::clone(summary), cursor: selected, nav, staged: None });
         true
     }
 
     /// `Esc` in the viewer: back to the summary, keeping the citation selected.
     pub fn close_source(&mut self) -> bool {
-        let closed = self.source.take().map(|source| source.id);
-        if let Some((summary, sources)) = self.staged_summary.take() {
-            self.summary = SummaryState::Done(summary);
-            self.sources = sources;
-            let citations = self.citations();
-            self.citation = closed.and_then(|id| citations.iter().position(|source| *source == id)).unwrap_or(0);
-            self.citation_focus = !citations.is_empty();
+        let Some(display) = self.summary.displayed_mut() else { return false; };
+        let summary = Rc::clone(display.snapshot());
+        let source = match std::mem::replace(&mut display.0, DisplayState::Summary { summary, cursor: None }) {
+            DisplayState::Source(source) => source,
+            state => { display.0 = state; return false; }
+        };
+        let id = source.id();
+        let (summary, mut cursor) = source.staged.unwrap_or((source.summary, Some(source.cursor)));
+        if let Some(cursor) = &mut cursor {
+            let index = cursor.iter().position(|citation| citation.source.id == id).unwrap_or(0);
+            cursor.select(index);
+            cursor.focused = true;
         }
-        closed.is_some()
-    }
-
-    /// The captured source the viewer is showing.
-    pub fn shown_source(&self) -> Option<&CapturedSource> {
-        let id = self.source.as_ref()?.id;
-        self.sources.iter().find(|source| source.id == id)
+        display.0 = DisplayState::Summary { summary, cursor };
+        true
     }
 
     /// Apply the same navigation operations to whichever view owns input.
     pub(crate) fn with_thread<T>(&mut self, f: impl FnOnce(&mut Thread) -> T) -> T {
-        match &mut self.source {
+        match self.summary.displayed_mut().and_then(DisplayedSummary::source_mut) {
             Some(source) => self.thread.with_navigation(&mut source.nav, f),
             None => f(&mut self.thread),
         }
@@ -520,8 +634,9 @@ impl Story {
 
     /// Start a replacement while keeping both readable summaries and their citations.
     pub fn retry(&mut self, configured: bool) {
-        self.staged_summary = None;
-        let previous = self.summary.readable().cloned().map(Box::new);
+        let mut previous = self.summary.take_displayed();
+        if let Some(source) = previous.as_mut().and_then(DisplayedSummary::source_mut) { source.staged = None; }
+        let previous = previous.map(Box::new);
         let article_previous = self.article_summary.readable().map(str::to_owned);
         self.summary = if configured {
             SummaryState::Generating {
@@ -537,7 +652,7 @@ impl Story {
     pub fn land_refresh(&mut self, result: CommentsRefreshed, sources: Vec<CapturedSource>) {
         self.refreshing_comments = false;
         let CommentsRefreshed { comments, descendants, warning, .. } = result;
-        let selected = self.source.as_ref().and_then(|source| self.thread.source_rows(&source.nav)
+        let selected = self.source().and_then(|source| self.thread.source_rows(&source.nav)
             .iter().position(|row| Some(row.id) == source.nav.cursor));
         self.thread.merge_comments(comments.as_deref().unwrap_or(&[]), &descendants);
         self.repair_source_navigation(selected);
@@ -557,30 +672,16 @@ impl Story {
     }
 
     fn repair_source_navigation(&mut self, selected: Option<usize>) {
-        let Some(source) = &mut self.source else { return; };
-        if source.nav.root.is_some_and(|id| id != source.id
+        let Some(source) = self.summary.displayed_mut().and_then(DisplayedSummary::source_mut) else { return; };
+        if source.nav.root.is_some_and(|id| id != source.id()
             && self.thread.node(id).is_none_or(|node| !node.readable && !self.thread.has_children(id))) {
             let focus = source.nav.focus;
-            source.nav = Navigation { focus, ..Navigation::rooted(source.id) };
+            source.nav = Navigation { focus, ..Navigation::rooted(source.id()) };
         }
         let rows = self.thread.source_rows(&source.nav);
         if !rows.iter().any(|row| Some(row.id) == source.nav.cursor) {
             source.nav.cursor = rows.get(selected.unwrap_or(0).min(rows.len().saturating_sub(1))).map(|row| row.id);
         }
-    }
-}
-
-fn summary_of(discussion: Discussion) -> Summary {
-    Summary {
-        overview: discussion.overview,
-        bullets: discussion
-            .points
-            .into_iter()
-            .map(|point| Bullet {
-                text: point.text,
-                sources: point.sources,
-            })
-            .collect(),
     }
 }
 
@@ -652,19 +753,16 @@ mod tests {
     fn opening_starts_both_captures_and_no_discussion() {
         let story = story();
         assert_eq!(story.article, ArticleState::Loading);
-        assert_eq!(
-            story.summary,
-            SummaryState::Generating { previous: None }
-        );
+        assert!(matches!(story.summary, SummaryState::Generating { previous: None }));
         assert!(story.thread.is_empty());
         assert!(story.summary_open, "the card is pinned open on open");
-        assert_eq!(story.citations(), Vec::<i32>::new());
+        assert_eq!(story.citations().map(|citation| citation.source.id).collect::<Vec<_>>(), Vec::<i32>::new());
     }
 
     #[test]
     fn an_unconfigured_reader_does_not_pretend_to_generate() {
         let story = Story::opening(fixtures::item(1, 2), false);
-        assert_eq!(story.summary, SummaryState::Unconfigured);
+        assert!(matches!(story.summary, SummaryState::Unconfigured));
         assert!(!story.summary.is_generating());
     }
 
@@ -679,8 +777,8 @@ mod tests {
         let SummaryState::Done(summary) = &story.summary else {
             panic!("a landed summary is done");
         };
-        assert_eq!(summary.bullets.len(), 2);
-        assert_eq!(story.citations(), vec![901, 902, 903]);
+        assert_eq!(summary.summary().bullets.len(), 2);
+        assert_eq!(story.citations().map(|citation| citation.source.id).collect::<Vec<_>>(), vec![901, 902, 903]);
     }
 
     #[test]
@@ -718,14 +816,14 @@ mod tests {
         // The failure card still renders the bullets it had, when it had them.
         let mut kept = story();
         kept.land(filled(Ok(discussion())));
-        let previous = kept.summary.readable().cloned();
+        let previous = kept.summary.displayed().cloned();
         kept.summary = SummaryState::Failed {
             message: "boom".to_string(),
             auth: false,
             previous: previous.map(Box::new),
         };
         assert_eq!(kept.summary.readable().unwrap().bullets.len(), 2);
-        assert_eq!(kept.citations(), vec![901, 902, 903]);
+        assert_eq!(kept.citations().map(|citation| citation.source.id).collect::<Vec<_>>(), vec![901, 902, 903]);
     }
 
     #[test]
@@ -734,20 +832,20 @@ mod tests {
         story.land(filled(Ok(discussion())));
         story.next_citation();
         assert!(story.open_source());
-        let original = story.shown_source().unwrap().text.clone();
+        let original = story.source().unwrap().captured().text.clone();
         story.retry(true);
         let mut sources = fixtures::sources();
         sources.iter_mut().find(|source| source.id == 901).unwrap().text = "replacement capture".into();
         let mut replacement = discussion();
         replacement.overview = "A new discussion summary".into();
         assert!(story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok(replacement), sources }));
-        assert_eq!(story.shown_source().unwrap().text, original);
+        assert_eq!(story.source().unwrap().captured().text, original);
         assert_eq!(story.summary.readable().unwrap().overview, "Commenters split on the ABI.");
         assert!(story.close_source());
-        assert_eq!(story.sources.iter().find(|s| s.id == 901).unwrap().text, "replacement capture");
+        assert_eq!(story.summary.displayed().unwrap().sources().iter().find(|s| s.id == 901).unwrap().text, "replacement capture");
         assert_eq!(story.summary.readable().unwrap().overview, "A new discussion summary");
-        assert!(story.citation_focus);
-        assert_eq!(story.citations()[story.citation], 901);
+        assert!(story.focused_citation().is_some());
+        assert_eq!(story.focused_citation().unwrap().source.id, 901);
     }
 
     #[test]
@@ -766,13 +864,27 @@ mod tests {
             }
             story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok(replacement), sources: fixtures::sources() });
             assert!(story.close_source());
-            assert_eq!(story.citation_focus, replacement_kind != 2);
+            assert_eq!(story.focused_citation().is_some(), replacement_kind != 2);
             match replacement_kind {
-                0 => assert_eq!(story.citations()[story.citation], 901),
-                1 => assert_eq!(story.citations()[story.citation], 902),
-                _ => assert!(story.citations().is_empty()),
+                0 => assert_eq!(story.focused_citation().unwrap().source.id, 901),
+                1 => assert_eq!(story.focused_citation().unwrap().source.id, 902),
+                _ => assert!(story.citations().next().is_none()),
             }
         }
+    }
+
+    #[test]
+    fn direct_replacement_without_citations_drops_citation_focus() {
+        let mut story = story();
+        story.land(filled(Ok(discussion())));
+        story.next_citation();
+        story.retry(true);
+        let mut replacement = discussion();
+        for point in &mut replacement.points { point.sources.clear(); }
+        assert!(story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok(replacement), sources: fixtures::sources() }));
+        assert!(story.focused_citation().is_none());
+        assert!(story.citations().next().is_none());
+        assert!(!story.open_source());
     }
 
     #[test]
@@ -805,24 +917,24 @@ mod tests {
     fn tab_selects_the_first_citation_and_enter_reads_it() {
         let mut story = story();
         story.land(filled(Ok(discussion())));
-        assert!(!story.citation_focus);
+        assert!(!story.focused_citation().is_some());
         assert!(!story.open_source(), "Enter does nothing before Tab");
         story.next_citation();
-        assert!(story.citation_focus);
-        assert_eq!(story.citation, 0);
+        assert!(story.focused_citation().is_some());
+        assert_eq!(story.focused_citation().map(|citation| citation.position), Some(0));
         assert!(story.open_source());
-        assert_eq!(story.shown_source().map(|source| source.id), Some(901));
-        assert_eq!(story.shown_source().unwrap().author, "tptacek");
+        assert_eq!(story.source().map(|source| source.id()), Some(901));
+        assert_eq!(story.source().unwrap().captured().author, "tptacek");
         // A second Enter does not re-open; Esc closes and keeps the selection.
         assert!(!story.open_source());
         assert!(story.close_source());
-        assert!(story.source.is_none());
-        assert!(story.citation_focus);
+        assert!(story.source().is_none());
+        assert!(story.focused_citation().is_some());
         // Tab wraps.
         story.next_citation();
         story.next_citation();
         story.next_citation();
-        assert_eq!(story.citation, 0);
+        assert_eq!(story.focused_citation().map(|citation| citation.position), Some(0));
     }
 
     #[test]
@@ -832,7 +944,7 @@ mod tests {
         landing.sources.retain(|source| source.id != 903);
         story.land(landing);
         assert_eq!(
-            story.citations(),
+            story.citations().map(|citation| citation.source.id).collect::<Vec<_>>(),
             vec![901, 902],
             "a chip must point at a comment the viewer can show"
         );
@@ -843,10 +955,10 @@ mod tests {
         let mut story = story();
         story.land(filled(Ok(discussion())));
         story.next_citation();
-        assert!(story.citation_focus);
+        assert!(story.focused_citation().is_some());
         story.toggle_summary();
         assert!(!story.summary_open);
-        assert!(!story.citation_focus);
+        assert!(!story.focused_citation().is_some());
         story.toggle_summary();
         assert!(story.summary_open);
     }

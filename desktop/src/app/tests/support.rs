@@ -32,6 +32,11 @@ pub(super) fn route(rt: &mut rune::Runtime<App>, key: rune::Key) {
     rt.frame(0.3);
 }
 
+pub(super) fn summary_contents(summary: &crate::story::Summary) -> (String, Vec<(String, Vec<i32>)>) {
+    (summary.overview.clone(), summary.bullets.iter().map(|bullet|
+        (bullet.text.clone(), bullet.citations.iter().map(|citation| citation.source.id).collect())).collect())
+}
+
 /// The inspector the window builds: 543 points, clamped to 360..=640, collapsed.
 pub(super) fn inspector() -> PaneState {
     PaneState::new(INSPECTOR_WIDTH)

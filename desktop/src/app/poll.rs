@@ -60,7 +60,7 @@ pub(super) fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
                     open.summary, SummaryState::Generating { previous: None }),
                 _ => false,
             };
-            let show = visible && open.summary_open && open.source.is_none();
+            let show = visible && open.summary_open && open.source().is_none();
             let visible_success = show && matches!(&update, StoryUpdate::Summary { summary: Ok(_), .. });
             let landed = open.land_update(update);
             (landed, landed && first_result && show,
@@ -85,12 +85,12 @@ pub(super) fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
     }
     if let Some(filled) = s.bridge.take_replies() {
         if let Some(story) = &mut s.story {
-            let before: std::collections::HashSet<_> = match &story.source {
+            let before: std::collections::HashSet<_> = match story.source() {
                 Some(source) => story.thread.source_rows(&source.nav),
                 None => story.thread.rows(),
             }.into_iter().map(|row| row.id).collect();
             let landed = story.land_replies(filled);
-            let after = match &story.source {
+            let after = match story.source() {
                 Some(source) => story.thread.source_rows(&source.nav),
                 None => story.thread.rows(),
             };

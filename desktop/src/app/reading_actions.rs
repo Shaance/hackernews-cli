@@ -144,7 +144,7 @@ impl App {
 
     pub(crate) fn load_replies(&mut self, parent: i32, retry: bool) {
         if let Some(story) = self.story.as_mut() {
-            if story.source.is_none() { story.citation_focus = false; }
+            if story.source().is_none() { story.clear_citation_focus(); }
             story.with_thread(|thread| { thread.select(parent); });
         }
         let Some(request) = self.story.as_mut().and_then(|s| s.request_replies(parent, retry)) else { return; };
@@ -165,7 +165,7 @@ impl App {
 
     pub(super) fn load_source_replies(&mut self) {
         let id = self.story.as_ref().and_then(|story| {
-            let id = story.source.as_ref()?.id;
+            let id = story.source()?.id();
             (story.thread.children_of(id).is_empty() && !story.thread.reply_batch(id, false).is_empty()).then_some(id)
         });
         if let Some(id) = id { self.load_replies(id, false); }
@@ -179,7 +179,7 @@ impl App {
 
     pub(crate) fn activate_comment(&mut self, id: i32) {
         let Some(story) = self.story.as_mut() else { return; };
-        if story.source.is_none() { story.citation_focus = false; }
+        if story.source().is_none() { story.clear_citation_focus(); }
         story.with_thread(|thread| { thread.select(id); });
         if story.pending_reply.as_ref().is_some_and(|request| request.parent_id == id) {
             story.with_thread(|thread| { if thread.is_folded(id) { thread.unfold(); } else { thread.fold(); } });

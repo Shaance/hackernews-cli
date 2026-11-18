@@ -293,7 +293,7 @@ fn article_summary_arrives_before_discussion_and_survives_a_refresh_during_gener
     let story = s.story.as_ref().unwrap();
     assert!(story.thread.node(987654).is_some());
     assert!(story.current_sources.iter().any(|source| source.id == 987654));
-    assert!(!story.sources.iter().any(|source| source.id == 987654), "summary retains its original capture");
+    assert!(!story.summary.displayed().unwrap().sources().iter().any(|source| source.id == 987654), "summary retains its original capture");
 }
 
 #[test]
@@ -354,9 +354,9 @@ fn reopening_reuses_pending_and_completed_summaries_across_stories() {
     poll_until(&mut s, |s| !s.bridge.is_story_pending());
     let story = s.story.as_ref().unwrap();
     assert!(matches!(&story.article_summary, crate::story::ArticleSummaryState::Done(text) if text == "article 1"));
-    assert!(matches!(&story.summary, SummaryState::Done(summary) if summary.overview == "summary 1"));
+    assert!(matches!(&story.summary, SummaryState::Done(summary) if summary.summary().overview == "summary 1"));
     s.open_story(b);
-    assert!(matches!(&s.story.as_ref().unwrap().summary, SummaryState::Done(summary) if summary.overview == "summary 2"));
+    assert!(matches!(&s.story.as_ref().unwrap().summary, SummaryState::Done(summary) if summary.summary().overview == "summary 2"));
     s.close_story();
     s.open_story(a);
     assert!(!s.bridge.is_story_pending(), "completed readings do not start another request");
@@ -418,7 +418,7 @@ fn parked_capture_waits_for_reopen_and_respects_clear_then_restore() {
         assert!(matches!(story.article, crate::story::ArticleState::Ready { .. }));
         if clear {
             assert_eq!(story.article_summary, crate::story::ArticleSummaryState::Unconfigured);
-            assert_eq!(story.summary, SummaryState::Unconfigured);
+            assert!(matches!(story.summary, SummaryState::Unconfigured));
             let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
             assert_eq!((*fake.article_summary_requests.lock().unwrap(), *fake.summary_requests.lock().unwrap()), (0, 1));
             s.retry_summary();
@@ -444,8 +444,8 @@ fn clearing_a_parked_retry_preserves_both_previous_summaries() {
     poll_until(&mut s, |s| !s.bridge.is_story_pending());
     let story = s.story.as_ref().unwrap();
     let article = story.article_summary.readable().unwrap().to_owned();
-    let discussion = story.summary.readable().unwrap().clone();
-    let sources: Vec<_> = story.sources.iter().map(|source| (source.id, source.text.clone())).collect();
+    let discussion = summary_contents(story.summary.readable().unwrap());
+    let sources: Vec<_> = story.summary.displayed().unwrap().sources().iter().map(|source| (source.id, source.text.clone())).collect();
     let (article_release, article_gate) = oneshot::channel();
     let (discussion_release, discussion_gate) = oneshot::channel();
     let article_gate = Mutex::new(Some(article_gate));
@@ -480,8 +480,8 @@ fn clearing_a_parked_retry_preserves_both_previous_summaries() {
     poll_until(&mut s, |s| !s.bridge.is_story_pending());
     let story = s.story.as_ref().unwrap();
     assert_eq!(story.article_summary.readable(), Some(article.as_str()));
-    assert_eq!(story.summary.readable(), Some(&discussion));
-    assert_eq!(story.sources.iter().map(|source| (source.id, source.text.clone())).collect::<Vec<_>>(), sources);
+    assert_eq!(summary_contents(story.summary.readable().unwrap()), discussion);
+    assert_eq!(story.summary.displayed().unwrap().sources().iter().map(|source| (source.id, source.text.clone())).collect::<Vec<_>>(), sources);
     let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
     assert_eq!((*fake.article_summary_requests.lock().unwrap(), *fake.summary_requests.lock().unwrap()), (2, 2));
 }
@@ -499,7 +499,7 @@ fn automatic_off_keeps_captures_without_provider_calls_until_regenerated() {
         assert!(matches!(story.article, crate::story::ArticleState::Ready { .. }));
         assert_eq!(story.discussion, Some(Ok(())));
         assert_eq!(story.article_summary, crate::story::ArticleSummaryState::Unconfigured);
-        assert_eq!(story.summary, SummaryState::Unconfigured);
+        assert!(matches!(story.summary, SummaryState::Unconfigured));
         s.refresh_comments();
         poll_until(&mut s, |s| !s.story.as_ref().unwrap().refreshing_comments);
         let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
@@ -642,7 +642,7 @@ fn clearing_the_key_blocks_old_results_and_deferred_provider_calls() {
         summary_release.send(()).unwrap();
         poll_until(&mut s, |s| !s.bridge.is_story_pending());
         let story = s.story.as_ref().unwrap();
-        assert_eq!(story.summary, SummaryState::Unconfigured);
+        assert!(matches!(story.summary, SummaryState::Unconfigured));
         assert_eq!(story.article_summary, crate::story::ArticleSummaryState::Unconfigured);
         assert!(!story.thread.is_empty());
     }

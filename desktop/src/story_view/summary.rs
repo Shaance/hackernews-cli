@@ -129,23 +129,21 @@ fn summary_header(k: &Kit, t: tok::Theme) -> El {
 
 /// Each source reference is a pressable inline range in the point it supports.
 fn bullets(s: &Story, summary: &Summary, t: tok::Theme, accent: Color) -> El {
-    let citations = s.citations();
     let mut list = col().key("summary-points").w_full().gap(10.0);
     for (index, bullet) in summary.bullets.iter().enumerate() {
         let mut content = bullet.text.clone();
         let mut spans = Vec::new();
         let mut links = Vec::new();
-        for id in &bullet.sources {
-            let Some(position) = citations.iter().position(|cited| cited == id) else { continue; };
-            let Some(source) = s.sources.iter().find(|source| source.id == *id) else { continue; };
+        for citation in &bullet.citations {
+            let position = citation.position;
             content.push(' ');
             let start = content.len();
             content.push_str(&format!("[{}]", position + 1));
             let end = content.len();
-            let selected = s.citation_focus && s.citation == position;
+            let selected = s.focused_citation().is_some_and(|selected| selected.position == position);
             spans.push(Span::new(start, end).color(if selected { t.text } else { t.text_secondary }).underline(accent));
             links.push(Link::new(start..end, format!("cite-{position}"))
-                .role("button").label(format!("Read comment by {}", source.author))
+                .role("button").label(format!("Read comment by {}", citation.source.author))
                 .hover(LinkPaint::new().color(t.text).underline(accent)));
         }
         let mut paragraph = text(content).key(format!("summary-text-{index}"))

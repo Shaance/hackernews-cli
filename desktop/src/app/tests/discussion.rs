@@ -236,7 +236,7 @@ fn disclosure_edge_click_folds_and_unfolds_without_slow_row_reflow() {
         };
         click(&mut rt);
         let story = rt.state.story.as_ref().unwrap();
-        assert!(if source { story.source.as_ref().unwrap().nav.folded.contains(&901) } else { story.thread.is_folded(901) });
+        assert!(if source { story.source().unwrap().nav.folded.contains(&901) } else { story.thread.is_folded(901) });
         let reply = if source { "source-comment-9010" } else { "comment-9010" };
         assert!(!rt.elements().iter().any(|e| e.key.as_deref() == Some(reply)), "outgoing replies must not paint over moving live rows");
         let mut closing = vec![measure(&rt)];
@@ -511,10 +511,14 @@ fn summary_and_source_scroll_return_to_idle() {
 
     for source in [false, true] {
         let mut s = app(true, SavedView::in_memory());
+        if source {
+            let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
+            fake.comments.lock().unwrap().iter_mut().find(|comment| comment.id == 901).unwrap().text =
+                "A captured comment with enough text to scroll. ".repeat(120);
+        }
         scene_story(&mut s);
         let story = s.story.as_mut().unwrap();
         if source {
-            story.sources[0].text = "A captured comment with enough text to scroll. ".repeat(120);
             s.open_citation(0);
         } else {
             story.article_summary = crate::story::ArticleSummaryState::Done("A long article summary. ".repeat(120));
@@ -701,7 +705,7 @@ fn replies_use_actual_child_ids_and_never_change_the_summary_capture() {
     s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
     let story = s.story.as_ref().unwrap();
     assert_eq!(story.thread.len(), 5);
-    let sources: Vec<_> = story.sources.iter().map(|s| (s.id, s.text.clone())).collect();
+    let sources: Vec<_> = story.summary.displayed().unwrap().sources().iter().map(|s| (s.id, s.text.clone())).collect();
     let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
     assert!(fake.comment_requests.lock().unwrap().is_empty(), "no reply prefetch");
     let summaries = *fake.summary_requests.lock().unwrap();
@@ -711,7 +715,7 @@ fn replies_use_actual_child_ids_and_never_change_the_summary_capture() {
     let story = s.story.as_ref().unwrap();
     assert_eq!(story.thread.children_of(9010), &[90100, 90101]);
     assert_eq!(story.thread.tree_depth(90100), Some(2));
-    assert_eq!(story.sources.iter().map(|s| (s.id, s.text.clone())).collect::<Vec<_>>(), sources, "lazy replies do not alter citation identity");
+    assert_eq!(story.summary.displayed().unwrap().sources().iter().map(|s| (s.id, s.text.clone())).collect::<Vec<_>>(), sources, "lazy replies do not alter citation identity");
     let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
     assert_eq!(*fake.comment_requests.lock().unwrap(), vec![vec![9010, 9011], vec![90100, 90101]]);
     assert_eq!(*fake.summary_requests.lock().unwrap(), summaries);
@@ -728,7 +732,7 @@ fn every_root_is_captured_for_summary_and_successful_empty_discussion_is_distinc
     s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
     let story = s.story.as_ref().unwrap();
     assert_eq!(story.thread.roots(), 244);
-    assert_eq!(story.sources.len(), 244, "summary capture has no arbitrary root cap");
+    assert_eq!(story.summary.displayed().unwrap().sources().len(), 244, "summary capture has no arbitrary root cap");
     let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
     assert!(fake.comment_requests.lock().unwrap().is_empty());
     assert_eq!(*fake.summary_requests.lock().unwrap(), 1);
@@ -737,7 +741,7 @@ fn every_root_is_captured_for_summary_and_successful_empty_discussion_is_distinc
     let story = s.story.as_ref().unwrap();
     assert_eq!(story.discussion, Some(Ok(())));
     assert_eq!(story.thread.roots(), 244, "refresh retains previously loaded roots");
-    assert_eq!(story.sources.len(), 244, "refresh preserves summary citations");
+    assert_eq!(story.summary.displayed().unwrap().sources().len(), 244, "refresh preserves summary citations");
     let mut empty = app(true, SavedView::in_memory());
     let Source::Fake(fake) = empty.source.as_ref() else { unreachable!() };
     fake.comments.lock().unwrap().clear();
@@ -745,7 +749,7 @@ fn every_root_is_captured_for_summary_and_successful_empty_discussion_is_distinc
     let story = empty.story.as_ref().unwrap();
     assert_eq!(story.discussion, Some(Ok(())));
     assert!(story.thread.is_empty());
-    assert!(story.sources.is_empty());
+    assert!(story.summary.displayed().is_none_or(|summary| summary.sources().is_empty()));
 }
 
 #[test]
@@ -757,8 +761,8 @@ fn refresh_adds_roots_and_replies_without_replacing_summary_or_reading_position(
     assert!(story.thread.reroot(901));
     assert!(story.thread.select(9010));
     assert!(story.thread.fold());
-    let before = story.summary.readable().unwrap().clone();
-    let sources: Vec<_> = story.sources.iter().map(|s| (s.id, s.text.clone())).collect();
+    let before = summary_contents(story.summary.readable().unwrap());
+    let sources: Vec<_> = story.summary.displayed().unwrap().sources().iter().map(|s| (s.id, s.text.clone())).collect();
     let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
     let discussions = *fake.summary_requests.lock().unwrap();
     let articles = *fake.article_summary_requests.lock().unwrap();
@@ -778,8 +782,8 @@ fn refresh_adds_roots_and_replies_without_replacing_summary_or_reading_position(
     assert_eq!(story.thread.root(), Some(901));
     assert!(story.thread.focus());
     assert!(story.thread.is_folded(9010));
-    assert_eq!(story.summary.readable(), Some(&before));
-    assert_eq!(story.sources.iter().map(|s| (s.id, s.text.clone())).collect::<Vec<_>>(), sources);
+    assert_eq!(summary_contents(story.summary.readable().unwrap()), before);
+    assert_eq!(story.summary.displayed().unwrap().sources().iter().map(|s| (s.id, s.text.clone())).collect::<Vec<_>>(), sources);
     assert!(story.current_sources.iter().any(|s| s.id == 987654));
     let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
     assert_eq!(*fake.summary_requests.lock().unwrap(), discussions);
@@ -790,8 +794,8 @@ fn refresh_adds_roots_and_replies_without_replacing_summary_or_reading_position(
     assert_eq!(*fake.summary_requests.lock().unwrap(), discussions);
     assert_eq!(*fake.article_summary_requests.lock().unwrap(), articles);
     let story = s.story.as_ref().unwrap();
-    assert_eq!(story.summary.readable(), Some(&before));
-    assert_eq!(story.sources.iter().map(|s| (s.id, s.text.clone())).collect::<Vec<_>>(), sources);
+    assert_eq!(summary_contents(story.summary.readable().unwrap()), before);
+    assert_eq!(story.summary.displayed().unwrap().sources().iter().map(|s| (s.id, s.text.clone())).collect::<Vec<_>>(), sources);
     assert!(story.current_sources.iter().any(|s| s.id == 987654));
     s.retry_summary();
     let story = s.story.as_ref().unwrap();
@@ -809,7 +813,7 @@ fn failed_comment_refresh_leaves_the_existing_tree_and_summaries_readable() {
     let mut s = app(true, SavedView::in_memory());
     s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
     s.activate_comment(901);
-    let before = s.story.as_ref().unwrap().summary.readable().unwrap().clone();
+    let before = summary_contents(s.story.as_ref().unwrap().summary.readable().unwrap());
     let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
     let calls = *fake.summary_requests.lock().unwrap();
     fake.failing_comments.lock().unwrap().insert(crate::fixtures::STORY_ID);
@@ -818,7 +822,7 @@ fn failed_comment_refresh_leaves_the_existing_tree_and_summaries_readable() {
     assert!(!story.refreshing_comments);
     assert!(story.refresh_error.is_some());
     assert_eq!(story.thread.children_of(901), &[9010, 9011]);
-    assert_eq!(story.summary.readable(), Some(&before));
+    assert_eq!(summary_contents(story.summary.readable().unwrap()), before);
     let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
     assert_eq!(*fake.summary_requests.lock().unwrap(), calls);
 }
@@ -833,8 +837,8 @@ fn refresh_updates_loaded_nested_replies_and_keeps_new_children_lazy() {
     assert!(story.thread.select(90100));
     assert!(story.thread.fold());
     let pending = story.request_replies(90100, false).unwrap();
-    let before = story.summary.readable().unwrap().clone();
-    let sources: Vec<_> = story.sources.iter().map(|source| (source.id, source.text.clone())).collect();
+    let before = summary_contents(story.summary.readable().unwrap());
+    let sources: Vec<_> = story.summary.displayed().unwrap().sources().iter().map(|source| (source.id, source.text.clone())).collect();
     let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
     let summaries = *fake.summary_requests.lock().unwrap();
     let mut comments = fake.comments.lock().unwrap();
@@ -849,8 +853,8 @@ fn refresh_updates_loaded_nested_replies_and_keeps_new_children_lazy() {
     assert_eq!(story.pending_reply.as_ref(), Some(&pending));
     assert_eq!(story.thread.cursor(), Some(90100));
     assert!(story.thread.is_folded(90100));
-    assert_eq!(story.summary.readable(), Some(&before));
-    assert_eq!(story.sources.iter().map(|source| (source.id, source.text.clone())).collect::<Vec<_>>(), sources);
+    assert_eq!(summary_contents(story.summary.readable().unwrap()), before);
+    assert_eq!(story.summary.displayed().unwrap().sources().iter().map(|source| (source.id, source.text.clone())).collect::<Vec<_>>(), sources);
     let replies = crate::fixtures::replies(&pending.ids);
     assert!(story.land_replies(crate::story_io::ReplyFilled { request: pending, comments: Ok(replies) }));
     assert_eq!(story.thread.children_of(90100), &[901000]);

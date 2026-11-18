@@ -33,7 +33,7 @@ pub(super) fn skeleton_line(n: usize, t: tok::Theme) -> El {
 
 /// One footer stays in the same place when the reader enters or leaves a source.
 pub fn story_footer(s: &Story, k: &Kit, t: tok::Theme, hints: &rune::Live<f32>, reduced: bool, contrast: bool) -> El {
-    let in_source = s.source.is_some();
+    let in_source = s.source().is_some();
     let back = if in_source { "Back to discussion" } else { "Back to feed" };
     let h = |keys: &[&str], label: &str| crate::app::chrome::passive_hint(hint(k, t, keys, label), hints, reduced, contrast);
     let mut footer = row().key("story-footer").instant_changes().w_full().px(24.0).py(2.0).gap(18.0).flex_wrap().center_y()

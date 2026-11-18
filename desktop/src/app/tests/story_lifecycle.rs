@@ -191,21 +191,21 @@ fn story_phases_show_comments_while_work_is_pending_and_reject_stale_results() {
     poll_until(&mut rt.state, |_| summary_started.load(Ordering::SeqCst) == 2);
     rt.state.retry_summary();
     poll_until(&mut rt.state, |s| matches!(&s.story.as_ref().unwrap().summary,
-        SummaryState::Done(summary) if summary.overview == "current summary 1"));
+        SummaryState::Done(summary) if summary.summary().overview == "current summary 1"));
     assert!(old_retry_tx.send(Err(SummaryError::new("obsolete failure", true))).is_ok());
     assert_eq!(finished_rx.recv_timeout(Duration::from_secs(3)).unwrap(), 1); // first failure
     assert_eq!(finished_rx.recv_timeout(Duration::from_secs(3)).unwrap(), 1); // old retry
     std::thread::sleep(Duration::from_millis(20));
     poll(&mut rt.state, 0.0, &mut Tx::default());
     assert!(matches!(&rt.state.story.as_ref().unwrap().summary,
-        SummaryState::Done(summary) if summary.overview == "current summary 1"));
+        SummaryState::Done(summary) if summary.summary().overview == "current summary 1"));
 
     // A different story also wins over the older story's pending provider result.
     rt.state.retry_summary();
     poll_until(&mut rt.state, |_| summary_started.load(Ordering::SeqCst) == 4);
     rt.state.open_story(crate::fixtures::item(1, 2));
     poll_until(&mut rt.state, |s| matches!(&s.story.as_ref().unwrap().summary,
-        SummaryState::Done(summary) if summary.overview == "current summary 2"));
+        SummaryState::Done(summary) if summary.summary().overview == "current summary 2"));
     assert!(matches!(rt.state.story.as_ref().unwrap().article, ArticleState::Loading));
     assert!(matches!(&rt.state.story.as_ref().unwrap().summary,
         SummaryState::Done(_)));
@@ -220,7 +220,7 @@ fn story_phases_show_comments_while_work_is_pending_and_reject_stale_results() {
     poll(&mut rt.state, 0.0, &mut Tx::default());
     let story = rt.state.story.as_ref().unwrap();
     assert_eq!(story.id(), 2);
-    assert!(matches!(&story.summary, SummaryState::Done(summary) if summary.overview == "current summary 2"));
+    assert!(matches!(&story.summary, SummaryState::Done(summary) if summary.summary().overview == "current summary 2"));
     assert!(story.thread.node(901).is_some());
 }
 

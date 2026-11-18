@@ -60,7 +60,7 @@ fn question_mark_toggles_help_in_discussion_summary_and_source() {
         assert!(rt.elements().iter().any(|e| e.key.as_deref() == Some("help-dialog") && !e.inert));
         rt.key(question()); rt.frame(0.3);
         assert!(!rt.state.help, "help closes from {surface}");
-        assert_eq!(rt.state.story.as_ref().unwrap().source.is_some(), surface == "source");
+        assert_eq!(rt.state.story.as_ref().unwrap().source().is_some(), surface == "source");
     }
     rt.update(|s, _| s.open_summary_settings()); rt.frame(0.3);
     rt.key(question()); rt.frame(0.3);
@@ -88,12 +88,12 @@ fn o_activates_reading_selection_and_shift_o_queues_browser() {
     assert!(!rt.state.story.as_ref().unwrap().thread.is_folded(901));
     route(&mut rt, rune::Key::Tab);
     route(&mut rt, rune::Key::Text("o".into()));
-    assert_eq!(rt.state.story.as_ref().unwrap().shown_source().map(|source| source.id), Some(901));
+    assert_eq!(rt.state.story.as_ref().unwrap().source().map(|source| source.id()), Some(901));
     route(&mut rt, rune::Key::Text("o".into()));
-    assert!(rt.state.story.as_ref().unwrap().source.as_ref().unwrap().nav.folded.contains(&901));
+    assert!(rt.state.story.as_ref().unwrap().source().unwrap().nav.folded.contains(&901));
     rt.key(KeyEvent { key: rune::Key::Text("O".into()), mods: rune::Mods { shift: true, ..Default::default() } });
     rt.frame(0.0);
-    assert!(rt.state.pending_external && rt.state.story.as_ref().unwrap().source.is_some());
+    assert!(rt.state.pending_external && rt.state.story.as_ref().unwrap().source().is_some());
 }
 
 #[test]
@@ -114,7 +114,7 @@ fn link_chooser_keeps_tab_away_from_summary_citations() {
     assert_eq!(rt.state.hints.get(), 1.0, "Tab in the chooser restores hints");
     let story = rt.state.story.as_ref().unwrap();
     assert!(story.links.is_some());
-    assert!(!story.citation_focus, "the chooser owns Tab, not the summary behind it");
+    assert!(!story.focused_citation().is_some(), "the chooser owns Tab, not the summary behind it");
     assert!(!rt.elements().iter().any(|e| e.key.as_deref() == Some("summary-scroll") && e.focused));
 }
 

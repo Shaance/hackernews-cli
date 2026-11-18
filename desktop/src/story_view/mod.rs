@@ -60,7 +60,7 @@ pub fn inspector_pane(
     let transition = reading_transition(reduced);
     let reflow = if reduced { Spring::NONE } else { Spring::new(0.18, 0.0) };
     let [discussion_scroll, summary_scroll, source_scroll] = on_scroll;
-    let source = s.shown_source();
+    let source = s.source();
     let hidden = source.is_some();
     let back = if hidden || reduced { Spring::NONE } else { Spring::new(0.22, 0.0) };
     let mut inspector = col()
@@ -112,7 +112,7 @@ pub fn inspector_pane(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::{article::host_of, discussion::comment_row, reading_chrome::story_footer};
+    use super::{article::host_of, discussion::{comment_row, RenderContext}, reading_chrome::story_footer};
     use crate::fixtures;
 
     #[test]
@@ -135,7 +135,7 @@ mod tests {
 
     fn nested_comment(story: &Story, cx: &mut rune::Cx<Story>) -> El {
         let dark = cx.system_dark();
-        comment_row(story, 9010, 1, &Kit::neutral(dark), tok::theme(dark), tok::accent(3, dark), false, false, true)
+        comment_row(story, 9010, 1, &Kit::neutral(dark), tok::theme(dark), tok::accent(3, dark), RenderContext::Discussion, false, true)
     }
 
     #[test]

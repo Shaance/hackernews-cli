@@ -54,7 +54,7 @@ pub(super) fn view(s: &App, cx: &mut Cx<App>) -> El {
     }
     // Tx has no keyed visibility query; scroll observers supply offsets without view commits.
     let visible = s.story.as_ref().and_then(|story| {
-        let source = story.source.as_ref();
+        let source = story.source();
         let id = source.map_or_else(|| story.thread.cursor(), |view| view.nav.cursor)?;
         let viewport = cx.layout_with(if source.is_some() { "source-viewer" } else { "discussion-scroll" }, |r| [r[1], r[3]])?;
         let row = cx.layout_with(&format!("{}comment-{id}", if source.is_some() { "source-" } else { "" }), |r| [r[1], r[3]])?;
@@ -125,7 +125,7 @@ pub(super) fn view(s: &App, cx: &mut Cx<App>) -> El {
             s.keyboard_navigation(ev);
             let handled = on_story_key(s, ev, tx);
             if handled {
-                let target = if s.story.as_ref().is_some_and(|story| story.source.is_some()) { "source-viewer" } else { "summary-scroll" };
+                let target = if s.story.as_ref().is_some_and(|story| story.source().is_some()) { "source-viewer" } else { "summary-scroll" };
                 tx.focus(target, true);
             }
             handled

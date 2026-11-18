@@ -236,7 +236,7 @@ pub(super) fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
         }
     }
     // Source navigation shares the thread operations but keeps its own cursor and folds.
-    if story.source.is_some() {
+    if story.source().is_some() {
         match key {
             StoryKey::NextScreen => {
                 tx.scroll_page("source-viewer", 1);
@@ -269,19 +269,19 @@ pub(super) fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             _ => {}
         }
     }
-    let in_source = story.source.is_some();
+    let in_source = story.source().is_some();
     let (root, cursor) = story.with_thread(|thread| (thread.root(), thread.cursor()));
     match key {
         StoryKey::None => false,
         StoryKey::Back => unreachable!("back is handled before borrowing the story"),
         StoryKey::NextCitation => {
-            if story.citations().is_empty() { return false; }
+            if story.citations().next().is_none() { return false; }
             story.next_citation();
             reveal_citation(story, tx, false);
             true
         }
         StoryKey::PrevCitation => {
-            if story.citations().is_empty() { return false; }
+            if story.citations().next().is_none() { return false; }
             story.prev_citation();
             reveal_citation(story, tx, false);
             true
@@ -322,8 +322,8 @@ pub(super) fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
         StoryKey::NextComment | StoryKey::PrevComment | StoryKey::NextSibling | StoryKey::PrevSibling
         | StoryKey::Parent | StoryKey::Fold | StoryKey::FirstComment | StoryKey::LastComment
         | StoryKey::PopTrail => {
-            if !in_source { story.citation_focus = false; }
-            let source_root = story.source.as_ref().map(|source| source.id);
+            if !in_source { story.clear_citation_focus(); }
+            let source_root = story.source().map(|source| source.id());
             let loading = story.pending_reply.as_ref().is_some_and(|request| Some(request.parent_id) == cursor);
             let changed = story.with_thread(|thread| match key {
                 StoryKey::NextComment => thread.next(),
@@ -342,7 +342,7 @@ pub(super) fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             true
         }
         StoryKey::Unfold => {
-            if !in_source { story.citation_focus = false; }
+            if !in_source { story.clear_citation_focus(); }
             let id = cursor;
             let retry = id.is_some_and(|id| story.thread.children_of(id).is_empty()
                 && story.thread.reply_batch(id, false).is_empty()
@@ -368,7 +368,7 @@ pub(super) fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             true
         }
         StoryKey::Focus => {
-            if !in_source { story.citation_focus = false; }
+            if !in_source { story.clear_citation_focus(); }
             story.with_thread(|thread| thread.toggle_focus());
             true
         }
@@ -379,19 +379,17 @@ pub(super) fn reveal_citation(story: &Story, tx: &mut Tx, focus: bool) {
     // A replacement can remove every citation while its old source is still open.
     if focus {
         tx.focus("summary-scroll", true);
-        if !story.citation_focus { tx.announce("Back to summary", rune::LiveRegion::Polite); }
     }
-    if !story.citation_focus { return; }
-    let Some(id) = story.citations().get(story.citation).copied() else { return; };
-    let Some(index) = story.summary.readable().and_then(|summary| summary.bullets.iter().position(|point| point.sources.contains(&id))) else { return; };
-    let key = format!("summary-text-{index}");
+    let Some(citation) = story.focused_citation() else {
+        if focus { tx.announce("Back to summary", rune::LiveRegion::Polite); }
+        return;
+    };
+    let key = format!("summary-text-{}", citation.first_bullet);
     tx.scroll_into_view_in("summary-scroll", key.clone());
     if focus {
         // Rune's inline links are accessibility nodes inside one text element, so the
         // viewport is the focusable return target; the selected reference stays visible.
-        if let Some(source) = story.sources.iter().find(|source| source.id == id) {
-            tx.announce(format!("Back to summary, comment by {} selected", source.author), rune::LiveRegion::Polite);
-        }
+        tx.announce(format!("Back to summary, comment by {} selected", citation.source.author), rune::LiveRegion::Polite);
     }
 }
 
@@ -401,7 +399,7 @@ pub(super) fn reveal_citation(story: &Story, tx: &mut Tx, focus: bool) {
 /// rows crossfade in place, so the offset is the only thing that travels. Anything else just
 /// reveals the row the cursor landed on.
 fn thread_moved(story: &mut Story, before: Option<i32>, fold: bool, visible: Option<(i32, bool)>, tx: &mut Tx) {
-    let source = story.source.is_some();
+    let source = story.source().is_some();
     if fold {
         let (root, cursor) = story.with_thread(|thread| (thread.root(), thread.cursor()));
         if root == before && let Some(id) = cursor && visible == Some((id, source)) {
@@ -409,7 +407,7 @@ fn thread_moved(story: &mut Story, before: Option<i32>, fold: bool, visible: Opt
             return;
         }
     }
-    if let Some(source) = &story.source {
+    if let Some(source) = story.source() {
         if source.nav.root != before {
             tx.scroll_to_y("source-viewer", 0.0);
         } else if let Some(id) = source.nav.cursor {
