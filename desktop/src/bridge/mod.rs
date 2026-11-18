@@ -337,7 +337,7 @@ mod tests {
         Fill {
             tab,
             from_rank,
-            count,
+            count: std::num::NonZeroUsize::new(count).unwrap(),
         }
     }
 
@@ -345,19 +345,18 @@ mod tests {
     fn a_synchronous_fill_returns_the_window_in_rank_order() {
         let bridge = Bridge::new().unwrap();
         let source = Source::fake();
-        let filled = bridge.fill_now(&source, Request::new(fill(StoryType::Top, 0, 11), None));
+        let filled = bridge.fill_now(&source, Request::new(fill(StoryType::Top, 0, 11), None)).outcome.unwrap();
         assert_eq!(filled.ids.len(), 30);
         assert_eq!(filled.items.len(), 11);
         assert_eq!(filled.items[0].as_ref().unwrap().id, 1);
         assert_eq!(filled.items[10].as_ref().unwrap().id, 11);
-        assert!(filled.error.is_none());
     }
 
     #[test]
     fn a_request_with_a_snapshot_pages_against_it_and_never_re_ranks() {
         let bridge = Bridge::new().unwrap();
         let source = Source::fake();
-        let first = bridge.fill_now(&source, Request::new(fill(StoryType::Top, 0, 11), None));
+        let first = bridge.fill_now(&source, Request::new(fill(StoryType::Top, 0, 11), None)).outcome.unwrap();
         let snapshot = first.ids.clone();
         // The ranking changes upstream, as it does between two refreshes.
         if let Source::Fake(fake) = &source {
@@ -367,11 +366,11 @@ mod tests {
         let next = bridge.fill_now(
             &source,
             Request::new(fill(StoryType::Top, 11, 11), Some(snapshot.clone())),
-        );
+        ).outcome.unwrap();
         assert_eq!(next.ids, snapshot, "the ranking did not change under the reader");
         assert_eq!(next.items[0].as_ref().unwrap().id, 12);
         // A refresh is the one request that takes a new one.
-        let refreshed = bridge.fill_now(&source, Request::new(fill(StoryType::Top, 0, 11), None));
+        let refreshed = bridge.fill_now(&source, Request::new(fill(StoryType::Top, 0, 11), None)).outcome.unwrap();
         assert_eq!(refreshed.ids, vec![9, 8, 7]);
     }
 
@@ -383,16 +382,14 @@ mod tests {
             fake.fail_ranking(StoryType::Top);
         }
         let filled = bridge.fill_now(&source, Request::new(fill(StoryType::Top, 0, 11), None));
-        assert!(filled.items.is_empty());
         assert_eq!(
-            filled.error.as_deref(),
+            filled.outcome.as_ref().err().map(String::as_str),
             Some("the ranking request failed"),
             "a failed ranking is an error, not an empty feed"
         );
         // Another tab is unaffected.
         let other = bridge.fill_now(&source, Request::new(fill(StoryType::New, 0, 11), None));
-        assert!(other.error.is_none());
-        assert_eq!(other.items.len(), 11);
+        assert_eq!(other.outcome.unwrap().items.len(), 11);
     }
 
     #[test]
@@ -402,7 +399,7 @@ mod tests {
         if let Source::Fake(fake) = &source {
             fake.fail(14);
         }
-        let filled = bridge.fill_now(&source, Request::new(fill(StoryType::Top, 11, 5), None));
+        let filled = bridge.fill_now(&source, Request::new(fill(StoryType::Top, 11, 5), None)).outcome.unwrap();
         assert_eq!(filled.items.len(), 5);
         assert_eq!(filled.items[2].as_ref().err(), Some(&14));
     }
@@ -420,7 +417,7 @@ mod tests {
         bridge.request(fast, Request::new(fill(StoryType::New, 0, 11), None));
         let landed = wait_for(&bridge);
         assert_eq!(landed.tab, StoryType::New);
-        assert_eq!(landed.items[0].as_ref().unwrap().id, 101);
+        assert_eq!(landed.outcome.unwrap().items[0].as_ref().unwrap().id, 101);
         // The slow answer is discarded when it arrives, not taken as the newest.
         std::thread::sleep(Duration::from_millis(250));
         assert!(bridge.take().is_none(), "the superseded answer never lands");
@@ -662,7 +659,7 @@ mod tests {
             story_request(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID),
         );
         // Each kind has its own owner, so opening a story never cancels the feed's page.
-        assert_eq!(wait_for(&bridge).items.len(), 11);
+        assert_eq!(wait_for(&bridge).outcome.unwrap().items.len(), 11);
         assert!(wait_for_story(&mut bridge).iter().all(|update| update_id(update) == crate::fixtures::STORY_ID));
     }
 }

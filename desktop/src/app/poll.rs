@@ -123,9 +123,9 @@ pub(super) fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
     // One request per invalidation: the measured grid is the only thing that moves it. A
     // resize keeps an in-flight fresh request fresh; otherwise it uses the accepted ranking.
     if let Some(grid) = s.measured.get() {
-        let need = s.feed.fill(grid.0, grid.1);
+        let need = s.feed.fill(grid);
         if s.feed.tab == StoryType::Saved
-            && matches!(s.feed.request, RequestLifecycle::Loading(_, _, previous)
+            && matches!(s.feed.request, RequestLifecycle::Loading(_, _, previous, _)
                 | RequestLifecycle::Settled(_, _, previous) if previous != grid)
         {
             if let Some(id) = s.feed.selected_id() {
@@ -135,19 +135,19 @@ pub(super) fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
             changed = true;
         }
         let ranking = match &mut s.feed.request {
-            RequestLifecycle::Loading(fill, _, previous) | RequestLifecycle::Settled(fill, _, previous)
+            RequestLifecycle::Loading(fill, _, previous, _) | RequestLifecycle::Settled(fill, _, previous)
                 if *fill == need => { *previous = grid; None }
-            RequestLifecycle::Loading(_, ranking, _) => Some(*ranking),
+            RequestLifecycle::Loading(_, ranking, _, _) => Some(*ranking),
             RequestLifecycle::BeforeFirst | RequestLifecycle::Settled(..) => Some(Ranking::Keep),
         };
         if let Some(ranking) = ranking {
             // A page turn has its own destination. Reflow the page on screen only when
             // there is no such turn, or when an earlier reflow is already pending.
-            if s.feed.tab != StoryType::Saved && need.count > 0
+            if s.feed.tab != StoryType::Saved
                 && (s.feed.pending_cursor.is_none() || s.feed.pending_anchor.is_some())
                 && let Some(id) = s.feed.selected_id()
             {
-                let offset = (s.feed.selected / need.count) * need.count;
+                let offset = (s.feed.selected / need.count) * need.count.get();
                 if offset > 0 || s.feed.pending_cursor.is_some() {
                     s.feed.pending_anchor.get_or_insert(id);
                     s.feed.pending_cursor = (offset > 0).then_some(s.feed.display_cursor + offset);
@@ -161,19 +161,15 @@ pub(super) fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
         }
     }
     // A request that never lands must not leave the feed loading forever.
-    if s.feed.request.is_loading() {
-        let since = *s.loading_since.get_or_insert(now);
-        if s.feed.timed_out(now - since, LOAD_TIMEOUT) {
+    match s.feed.poll_timeout(now, LOAD_TIMEOUT) {
+        Some(true) => {
             s.bridge.cancel_feed();
-            s.loading_since = None;
             s.pending_arrival = None;
-            s.arrival = Arrival::None;
+            s.arrival = None;
             changed = true;
-        } else {
-            tx.wake_after(Duration::from_secs_f64(LOAD_TIMEOUT));
         }
-    } else {
-        s.loading_since = None;
+        Some(false) => tx.wake_after(Duration::from_secs_f64(LOAD_TIMEOUT)),
+        None => {}
     }
     // The window size the reader left, asked for once. `AppSpec::size` is compile-time, so a
     // restore is a resize; a headless run has no window and no remembered size.

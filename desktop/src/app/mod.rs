@@ -39,7 +39,7 @@ use rune_kit::PaneState;
 
 use crate::bookmarks::SavedView;
 use crate::bridge::Bridge;
-use crate::feed::{FeedModel, Ranking, RequestLifecycle};
+use crate::feed::{Columns, FeedModel, Grid, Ranking, RequestLifecycle};
 use crate::layout::{Layout, ZoomStep};
 use crate::service::Source;
 use crate::settings::Settings;
@@ -50,7 +50,7 @@ const ROW_HEIGHT: f32 = 56.0;
 /// Window width at which the feed becomes two columns (DESIGN.md's table).
 const BREAKPOINT: f32 = 1200.0;
 /// The grid the first request asks for: the 1180×760 default window, one column.
-const DEFAULT_GRID: (usize, usize) = (11, 1);
+const DEFAULT_GRID: Grid = Grid::measured(11, Columns::One);
 const FEED_GUTTER: f32 = 8.0;
 const DEFAULT_FEED_HEIGHT: f32 = 661.0;
 /// How long a transient notice stays.
@@ -82,7 +82,6 @@ enum Arrival {
     Initial,
     Tab(i8),
     Page(i8),
-    None,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -116,13 +115,11 @@ pub struct App {
     source: Arc<Source>,
     bridge: Bridge,
     /// The grid the last commit measured. Written by `view`, read by `poll`.
-    measured: Cell<Option<(usize, usize)>>,
+    measured: Cell<Option<Grid>>,
     /// Accepted tab/page changes replace this group; refresh and resize keep its identity.
     feed_revision: usize,
     pending_arrival: Option<Arrival>,
-    arrival: Arrival,
-    /// When the in-flight request started, on the frame clock, for [`LOAD_TIMEOUT`].
-    loading_since: Option<f64>,
+    arrival: Option<Arrival>,
     /// The row under the pointer, for the hover actions.
     hover: Option<i32>,
     /// Whether the last selection came from the keyboard.
@@ -269,8 +266,7 @@ fn init() -> App {
         measured: Cell::new(None),
         feed_revision: 0,
         pending_arrival: Some(Arrival::Initial),
-        arrival: Arrival::Initial,
-        loading_since: None,
+        arrival: Some(Arrival::Initial),
         hover: None,
         keyboard_selection: true,
         hints: rune::Live::new(1.0),

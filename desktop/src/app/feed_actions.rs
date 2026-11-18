@@ -1,10 +1,10 @@
 //! Feed requests, saved stories and accepted arrivals.
 
-use super::{App, Notice, Ranking, RequestLifecycle, Arrival, DEFAULT_GRID};
+use super::{App, Grid, Notice, Ranking, RequestLifecycle, Arrival, DEFAULT_GRID};
 use hn_lib::app::StoryType;
 use hn_lib::feed_state;
 use crate::bridge::feed::Request;
-use crate::feed::Filled;
+use crate::feed::{FeedWindow, Filled};
 use crate::feed::tab_index;
 
 impl App {
@@ -12,9 +12,13 @@ impl App {
     ///
     /// Saved is the local store, not a feed: it renders every saved story from memory and
     /// never reaches the source, so the viewport applies to display only.
-    pub(super) fn request(&mut self, grid: (usize, usize), ranking: Ranking) {
-        let fill = self.feed.fill(grid.0, grid.1);
-        self.feed.request = RequestLifecycle::Loading(fill, ranking, grid);
+    pub(super) fn request(&mut self, grid: Grid, ranking: Ranking) {
+        let fill = self.feed.fill(grid);
+        let since = match self.feed.request {
+            RequestLifecycle::Loading(_, _, _, since) => since,
+            _ => None,
+        };
+        self.feed.request = RequestLifecycle::Loading(fill, ranking, grid, since);
         self.feed.error = None;
         if fill.tab == StoryType::Saved {
             self.feed.apply_saved(self.saved.store());
@@ -32,13 +36,13 @@ impl App {
         // A complete held window can settle immediately against the same ranked snapshot.
         // Fresh requests always reach the source; missing/failed items retain the normal fetch path.
         if let Some(ids) = snapshot.as_ref() {
-            let end = (fill.from_rank + fill.count).min(ids.len());
+            let end = (fill.from_rank + fill.count.get()).min(ids.len());
             if let Some(window) = ids.get(fill.from_rank..end) {
                 let held: Option<Vec<_>> = window.iter()
                     .map(|id| self.feed.story_cache.get(id).cloned().map(Ok)).collect();
                 if let Some(items) = held {
                     self.bridge.cancel_feed();
-                    self.feed.apply_fill(Filled { tab: fill.tab, ids: ids.clone(), from_rank: fill.from_rank, items, error: None });
+                    self.feed.apply_fill(Filled { tab: fill.tab, from_rank: fill.from_rank, outcome: Ok(FeedWindow { ids: ids.clone(), items }) });
                     self.accept_arrival();
                     return;
                 }
@@ -57,9 +61,9 @@ impl App {
     /// Re-request the current window with a new ranking, as `r` does. The story the reader has
     /// selected stays selected: the feed re-anchors on its id when the new snapshot lands.
     pub(super) fn refresh(&mut self) {
-        self.loading_since = None;
+        self.feed.request.reset_clock();
         self.pending_arrival = None;
-        self.arrival = Arrival::None;
+        self.arrival = None;
         self.feed.pending_anchor = self.feed.selected_id();
         let grid = self.measured.get().unwrap_or(DEFAULT_GRID);
         self.request(grid, Ranking::Fresh);
@@ -121,7 +125,7 @@ impl App {
         };
         let applied = self.feed.apply(action, grid);
         if applied.fill.is_some() {
-            self.loading_since = None;
+            self.feed.request.reset_clock();
             self.pending_arrival = arrival;
             self.request(grid, ranking);
         }
@@ -129,8 +133,8 @@ impl App {
 
     pub(super) fn accept_arrival(&mut self) -> bool {
         let Some(arrival) = self.pending_arrival.take() else { return false; };
-        if self.feed.error.is_some() { self.arrival = Arrival::None; return false; }
-        self.arrival = arrival;
+        if self.feed.error.is_some() { self.arrival = None; return false; }
+        self.arrival = Some(arrival);
         if arrival != Arrival::Initial {
             self.feed_revision += 1;
             self.hover = None;
@@ -138,8 +142,7 @@ impl App {
         true
     }
 
-    pub(super) fn cells(&self) -> usize {
-        let (rows, cols) = self.measured.get().unwrap_or(DEFAULT_GRID);
-        rows * cols
+    pub(super) fn cells(&self) -> std::num::NonZeroUsize {
+        self.measured.get().unwrap_or(DEFAULT_GRID).capacity()
     }
 }

@@ -185,11 +185,11 @@ fn zoom_changes_feed_columns_and_persists_window_points() {
     let mut rt = rune::Runtime::new(s, view, (1100.0, 760.0), rune::Env::new(true, 2.0));
     rt.on_key = Some(on_key);
     rt.frame(0.0);
-    assert_eq!(rt.state.measured.get().unwrap().1, 1);
+    assert_eq!(rt.state.measured.get().unwrap().columns.count().get(), 1);
     rt.key(KeyEvent { key: rune::Key::Command('-'), mods: rune::Mods { cmd: true, ..Default::default() } });
     rt.frame(0.0);
     assert_eq!(rt.zoom(), 0.9);
-    assert_eq!(rt.state.measured.get().unwrap().1, 2);
+    assert_eq!(rt.state.measured.get().unwrap().columns.count().get(), 2);
     let size = rt.state.snapshot().window.unwrap();
     assert!((size.0 - 1100.0).abs() < 0.01 && (size.1 - 760.0).abs() < 0.01, "{size:?}");
 
@@ -205,7 +205,7 @@ fn zoom_changes_feed_columns_and_persists_window_points() {
     rt.state.headless = true;
     rt.key(KeyEvent { key: rune::Key::Command('0'), mods: rune::Mods { cmd: true, ..Default::default() } });
     rt.frame(0.0);
-    assert_eq!(rt.state.measured.get().unwrap().1, 1);
+    assert_eq!(rt.state.measured.get().unwrap().columns.count().get(), 1);
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -222,19 +222,19 @@ fn reflow_frames(rt: &mut rune::Runtime<App>, selected_id: i32) -> Vec<(usize, u
         let snapped = elements.iter().filter(|e| !e.exiting && e.key.as_deref()
             .is_some_and(|key| key.starts_with("story-")))
             .all(|e| e.rect.iter().zip(e.target).all(|(a, b)| (*a - b).abs() < 0.1));
-        (rt.state.measured.get().unwrap().0, lines, visible && snapped)
+        (rt.state.measured.get().unwrap().rows.get(), lines, visible && snapped)
     }).collect()
 }
 
 #[test]
 fn resize_keeps_rank_sixteen_visible_without_an_overfull_frame() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((14, 2), Ranking::Fresh);
+    s.request(grid(14, 2), Ranking::Fresh);
     let mut rt = rune::Runtime::new(s, view, (1600.0, 900.0), rune::Env::new(true, 1.0));
     rt.on_key = Some(on_key);
     rt.poll = Some(poll);
     for _ in 0..3 { rt.frame(0.016); }
-    assert_eq!(rt.state.measured.get(), Some((14, 2)));
+    assert_eq!(rt.state.measured.get(), Some(grid(14, 2)));
     route(&mut rt, rune::Key::Down);
     route(&mut rt, rune::Key::Right);
     assert_eq!(rt.state.feed.selected_id(), Some(16));
@@ -254,10 +254,10 @@ fn zoom_breakpoint_keeps_the_selected_story_visible_in_every_frame() {
     rt.on_key = Some(on_key);
     rt.poll = Some(poll);
     for _ in 0..3 { rt.frame(0.016); }
-    let narrow_rows = rt.state.measured.get().unwrap().0;
+    let narrow_rows = rt.state.measured.get().unwrap().rows.get();
     rt.key(KeyEvent { key: rune::Key::Command('-'), mods: rune::Mods { cmd: true, ..Default::default() } });
     let widening = reflow_frames(&mut rt, 1);
-    assert_eq!((rt.state.zoom, rt.state.measured.get().unwrap().1), (ZoomStep::Z90, 2));
+    assert_eq!((rt.state.zoom, rt.state.measured.get().unwrap().columns.count().get()), (ZoomStep::Z90, 2));
     route(&mut rt, rune::Key::Down);
     route(&mut rt, rune::Key::Right);
     let selected = rt.state.feed.selected_id().unwrap();
@@ -265,7 +265,7 @@ fn zoom_breakpoint_keeps_the_selected_story_visible_in_every_frame() {
 
     rt.key(KeyEvent { key: rune::Key::Command('0'), mods: rune::Mods { cmd: true, ..Default::default() } });
     let narrowing = reflow_frames(&mut rt, selected);
-    assert_eq!((rt.state.zoom, rt.state.measured.get().unwrap().1), (ZoomStep::Z100, 1));
+    assert_eq!((rt.state.zoom, rt.state.measured.get().unwrap().columns.count().get()), (ZoomStep::Z100, 1));
     assert_eq!(rt.state.feed.selected_id(), Some(selected));
     assert_eq!(rt.state.feed.display_cursor, narrow_rows);
     assert!(widening.iter().chain(&narrowing).all(|(rows, lines, visible)| lines <= rows && *visible),
@@ -277,7 +277,7 @@ fn saved_selection_remains_visible_after_resize() {
     let store = (1..=28).enumerate().map(|(index, id)| crate::fixtures::item(index, id)).collect();
     let mut s = app(true, SavedView::seeded(store));
     s.feed.tab = StoryType::Saved;
-    s.request((14, 2), Ranking::Fresh);
+    s.request(grid(14, 2), Ranking::Fresh);
     let mut rt = rune::Runtime::new(s, view, (1600.0, 900.0), rune::Env::new(true, 1.0));
     rt.on_key = Some(on_key);
     rt.poll = Some(poll);
@@ -378,7 +378,7 @@ fn restore_puts_the_reader_back_where_they_left_off() {
     assert_eq!(s.feed.tab, StoryType::Best);
     assert_eq!(
         s.feed.display_cursor,
-        2 * s.feed.page_size as usize,
+        2 * hn_lib::feed_state::API_PAGE_SIZE as usize,
         "page 3 is the third window of the page size"
     );
     assert_eq!(s.feed.pending_anchor, Some(42), "the feed re-anchors on it");
@@ -390,7 +390,7 @@ fn the_layout_file_round_trips_the_window_and_the_feed() {
     let dir = temp_dir("layout");
     let path = dir.join("hn/desktop.json");
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     s.layout_path = Some(path.clone());
     s.window_size.set(Some((1280.0, 820.0)));
     s.layout.inspector = Some(512.0);

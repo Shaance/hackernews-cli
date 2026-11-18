@@ -20,17 +20,17 @@ use super::support::*;
 fn resize_retargets_pending_reflow_but_not_a_page_turn() {
     for page_turn in [false, true] {
         let mut s = app(true, SavedView::in_memory());
-        s.measured.set(Some((14, 2)));
-        s.request((14, 2), Ranking::Fresh);
+        s.measured.set(Some(grid(14, 2)));
+        s.request(grid(14, 2), Ranking::Fresh);
         s.feed.selected = 27;
         s.headless = false;
         s.source = Arc::new(Source::Fake(crate::service::fake::FakeService::fixture()
             .with_delay(Duration::from_millis(30))));
         if page_turn { press(&mut s, rune::Key::Down); }
-        s.measured.set(Some((13, 1)));
+        s.measured.set(Some(grid(13, 1)));
         poll(&mut s, 0.0, &mut Tx::default());
         assert_eq!(s.feed.pending_cursor, Some(if page_turn { 28 } else { 26 }));
-        s.measured.set(Some((11, 1)));
+        s.measured.set(Some(grid(11, 1)));
         poll(&mut s, 0.0, &mut Tx::default());
         assert_eq!(s.feed.pending_cursor, Some(if page_turn { 28 } else { 22 }));
         settle_feed(&mut s);
@@ -43,7 +43,7 @@ fn resize_retargets_pending_reflow_but_not_a_page_turn() {
 #[test]
 fn explicit_paging_replaces_the_group_but_selection_and_refresh_do_not() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     press(&mut s, rune::Key::Down);
     assert_eq!(s.feed_revision, 0);
     for key in [
@@ -70,7 +70,7 @@ fn explicit_paging_replaces_the_group_but_selection_and_refresh_do_not() {
 #[test]
 fn asynchronous_page_arrival_consumes_the_effect_and_refresh_cancels_it() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     s.headless = false;
     // Keep file/window restoration outside this feed-only test.
     s.restored = true;
@@ -82,7 +82,7 @@ fn asynchronous_page_arrival_consumes_the_effect_and_refresh_cancels_it() {
         assert!(std::time::Instant::now() < deadline, "fake fill must land");
         std::thread::yield_now();
     }
-    assert_eq!(s.feed.display_cursor, DEFAULT_GRID.0);
+    assert_eq!(s.feed.display_cursor, DEFAULT_GRID.rows.get());
     assert_eq!(s.feed_revision, 1);
     assert!(s.pending_arrival.is_none());
     poll(&mut s, 0.0, &mut Tx::default());
@@ -105,7 +105,7 @@ fn asynchronous_page_arrival_consumes_the_effect_and_refresh_cancels_it() {
 #[test]
 fn opening_a_story_during_a_page_request_does_not_rearm_the_feed_fade() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     s.headless = false;
     press(&mut s, rune::Key::Text("n".into()));
     assert!(s.pending_arrival.is_some());
@@ -117,7 +117,7 @@ fn opening_a_story_during_a_page_request_does_not_rearm_the_feed_fade() {
         assert!(std::time::Instant::now() < deadline, "fake fill must land");
         std::thread::yield_now();
     }
-    assert_eq!(s.feed.display_cursor, DEFAULT_GRID.0, "the page fill still lands");
+    assert_eq!(s.feed.display_cursor, DEFAULT_GRID.rows.get(), "the page fill still lands");
     press(&mut s, rune::Key::Escape);
     assert!(s.story.is_none());
     assert_eq!(s.feed_revision, 0, "returning to the feed must not replay the fade");
@@ -135,7 +135,7 @@ fn loading_shell_has_one_busy_accessible_status_and_no_fake_story_controls() {
     assert_eq!(tree.nodes.iter().filter(|(_, node)| node.is_busy()).count(), 1);
     assert!(rt.elements().iter().all(|e| !e.key.as_deref().is_some_and(|key| key.starts_with("story-"))));
     let viewport = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("feed-list")).unwrap().rect;
-    rt.update(|s, tx| { s.request((11, 1), Ranking::Fresh); tx.instant(); });
+    rt.update(|s, tx| { s.request(grid(11, 1), Ranking::Fresh); tx.instant(); });
     rt.frame(0.0);
     let loaded = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("feed-list")).unwrap().rect;
     assert_eq!(loaded, viewport, "loading and loaded content keep the same viewport");
@@ -145,7 +145,7 @@ fn loading_shell_has_one_busy_accessible_status_and_no_fake_story_controls() {
 fn switching_tabs_fades_the_loading_shell_and_reduced_motion_lands_it() {
     for reduced in [false, true] {
         let mut s = app(true, SavedView::in_memory());
-        s.request((11, 1), Ranking::Fresh);
+        s.request(grid(11, 1), Ranking::Fresh);
         s.headless = false;
         s.source = Arc::new(Source::Fake(crate::service::fake::FakeService::fixture()
             .with_delay(Duration::from_millis(100))));
@@ -183,7 +183,7 @@ fn switching_tabs_fades_the_loading_shell_and_reduced_motion_lands_it() {
 fn tab_response_can_land_before_or_during_the_loading_entrance() {
     for before_frame in [true, false] {
         let mut s = app(true, SavedView::in_memory());
-        s.request((11, 1), Ranking::Fresh);
+        s.request(grid(11, 1), Ranking::Fresh);
         s.headless = false;
         let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
         rt.on_key = Some(on_key);
@@ -215,7 +215,7 @@ fn tab_response_can_land_before_or_during_the_loading_entrance() {
 fn loading_shell_entrance_survives_a_new_keyed_parent() {
     fn stage(s: &App, cx: &mut Cx<App>) -> El {
         let child = if s.feed.request.is_loading() {
-            col().key("new-parent").w_full().child(feed_skeleton(s, tok::theme(cx.system_dark()), 1, false))
+            col().key("new-parent").w_full().child(feed_skeleton(s, tok::theme(cx.system_dark()), Columns::One, false))
         } else { col().key("old-parent").w_full() };
         col().w_full().h_full().child(child)
     }
@@ -234,8 +234,8 @@ fn loading_shell_entrance_survives_a_new_keyed_parent() {
 #[test]
 fn retained_feed_rows_show_one_busy_status_until_settled_or_timed_out() {
     let mut s = app(true, SavedView::in_memory());
-    s.measured.set(Some((11, 1)));
-    s.request((11, 1), Ranking::Fresh);
+    s.measured.set(Some(grid(11, 1)));
+    s.request(grid(11, 1), Ranking::Fresh);
     s.source = Arc::new(Source::Fake(crate::service::fake::FakeService::fixture()
         .with_delay(Duration::from_millis(200))));
     s.headless = false;
@@ -275,7 +275,7 @@ fn retained_feed_rows_show_one_busy_status_until_settled_or_timed_out() {
     rt.state.refresh();
     poll_until(&mut rt.state, |s| !s.feed.request.is_loading());
     assert!(rt.state.feed.error.is_none());
-    let page_size = rt.state.measured.get().unwrap_or(DEFAULT_GRID).0;
+    let page_size = rt.state.measured.get().unwrap_or(DEFAULT_GRID).rows.get();
     press(&mut rt.state, rune::Key::Text("n".into()));
     rt.update(|_, tx| tx.instant());
     rt.frame(0.0);
@@ -294,7 +294,7 @@ fn retained_feed_rows_show_one_busy_status_until_settled_or_timed_out() {
 #[test]
 fn system_reduced_motion_lands_saved_tab_and_returns_keys_to_the_feed() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
     rt.set_system_reduced_motion(true);
     rt.frame(0.0);
@@ -338,9 +338,9 @@ fn render_loading_shell_fixtures() {
 #[test]
 fn tab_arrivals_include_immediate_saved_and_latest_async_tab_only() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     press(&mut s, rune::Key::Text("4".into()));
-    assert_eq!(s.arrival, Arrival::Tab(1));
+    assert_eq!(s.arrival, Some(Arrival::Tab(1)));
     assert!(!s.feed.request.is_loading());
     assert!(s.feed.stories.is_empty());
     let saved_revision = s.feed_revision;
@@ -351,35 +351,34 @@ fn tab_arrivals_include_immediate_saved_and_latest_async_tab_only() {
     press(&mut s, rune::Key::Text("3".into()));
     settle_feed(&mut s);
     assert_eq!(s.feed.stories[0].id, 201);
-    assert_eq!(s.arrival, Arrival::Tab(1));
+    assert_eq!(s.arrival, Some(Arrival::Tab(1)));
     assert_eq!(s.feed_revision, saved_revision + 1, "only the latest accepted tab arrives");
 }
 
 #[test]
 fn new_tab_resets_timeout_but_its_resize_preserves_deadline_and_arrival() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     s.headless = false;
     s.source = Arc::new(Source::Fake(crate::service::fake::FakeService::fixture()
         .with_delay(Duration::from_millis(100))));
-    s.loading_since = Some(0.0);
     press(&mut s, rune::Key::Text("2".into()));
     poll(&mut s, 9.9, &mut Tx::default());
-    assert_eq!(s.loading_since, Some(9.9));
-    s.measured.set(Some((10, 1)));
+    assert!(matches!(s.feed.request, RequestLifecycle::Loading(_, _, _, Some(since)) if since == 9.9));
+    s.measured.set(Some(grid(10, 1)));
     poll(&mut s, 10.1, &mut Tx::default());
-    assert_eq!(s.loading_since, Some(9.9));
+    assert!(matches!(s.feed.request, RequestLifecycle::Loading(_, _, _, Some(since)) if since == 9.9));
     assert_eq!(s.pending_arrival, Some(Arrival::Tab(1)));
     press(&mut s, rune::Key::Text("3".into()));
     poll(&mut s, 19.8, &mut Tx::default());
-    assert_eq!(s.loading_since, Some(19.8));
+    assert!(matches!(s.feed.request, RequestLifecycle::Loading(_, _, _, Some(since)) if since == 19.8));
     assert!(s.feed.request.is_loading() && s.feed.error.is_none());
 }
 
 #[test]
 fn retry_clears_feed_error_and_settled_empty_is_distinct_from_loading() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     if let Source::Fake(fake) = s.source.as_ref() { fake.fail_ranking(StoryType::New); }
     press(&mut s, rune::Key::Text("2".into()));
     assert!(s.feed.error.is_some());
@@ -388,7 +387,7 @@ fn retry_clears_feed_error_and_settled_empty_is_distinct_from_loading() {
     s.headless = false;
     s.refresh();
     assert!(s.feed.request.is_loading() && s.feed.error.is_none());
-    assert_eq!(s.arrival, Arrival::None, "retry must not replay stale tab motion");
+    assert_eq!(s.arrival, None, "retry must not replay stale tab motion");
     settle_feed(&mut s);
     assert!(!s.feed.request.is_loading() && s.feed.error.is_none());
     assert!(s.feed.stories.is_empty());
@@ -403,7 +402,7 @@ fn retry_clears_feed_error_and_settled_empty_is_distinct_from_loading() {
 fn render_feed_arrival_workflows() {
     fn loaded() -> App {
         let mut s = app(true, SavedView::in_memory());
-        s.request((11, 1), Ranking::Fresh);
+        s.request(grid(11, 1), Ranking::Fresh);
         s.headless = false;
         s
     }
@@ -552,12 +551,12 @@ fn settle_feed(s: &mut App) {
 #[test]
 fn tab_switch_resize_keeps_the_new_tabs_fresh_request() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     s.source = Arc::new(Source::Fake(crate::service::fake::FakeService::fixture()
         .with_delay(Duration::from_millis(50))));
     s.headless = false;
     press(&mut s, rune::Key::Text("2".into()));
-    s.measured.set(Some((10, 1)));
+    s.measured.set(Some(grid(10, 1)));
     poll(&mut s, 0.0, &mut Tx::default());
     assert!(s.feed.request.is_loading(), "resize must not settle the previous tab's cache");
     settle_feed(&mut s);
@@ -570,7 +569,7 @@ fn tab_switch_resize_keeps_the_new_tabs_fresh_request() {
 #[test]
 fn refresh_resize_keeps_fresh_ranking_and_updated_items() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     let fake = crate::service::fake::FakeService::fixture().with_delay(Duration::from_millis(50));
     fake.set_ranking(StoryType::Top, vec![9, 8, 7, 6]);
     let mut item = crate::fixtures::item(8, 9);
@@ -579,7 +578,7 @@ fn refresh_resize_keeps_fresh_ranking_and_updated_items() {
     s.source = Arc::new(Source::Fake(fake));
     s.headless = false;
     s.refresh();
-    s.measured.set(Some((10, 1)));
+    s.measured.set(Some(grid(10, 1)));
     poll(&mut s, 0.0, &mut Tx::default());
     assert!(s.feed.request.is_loading(), "resize must not cancel an explicit refresh");
     assert_eq!(s.feed.stories[0].id, 1, "held rows stay until the fresh window lands");
@@ -591,7 +590,7 @@ fn refresh_resize_keeps_fresh_ranking_and_updated_items() {
 #[test]
 fn failed_tab_load_then_resize_never_reuses_the_previous_tabs_snapshot() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     let fake = crate::service::fake::FakeService::fixture().with_delay(Duration::from_millis(50));
     fake.fail_ranking(StoryType::New);
     s.source = Arc::new(Source::Fake(fake));
@@ -599,7 +598,7 @@ fn failed_tab_load_then_resize_never_reuses_the_previous_tabs_snapshot() {
     press(&mut s, rune::Key::Text("2".into()));
     settle_feed(&mut s);
     assert!(s.feed.error.is_some());
-    s.measured.set(Some((10, 1)));
+    s.measured.set(Some(grid(10, 1)));
     poll(&mut s, 0.0, &mut Tx::default());
     settle_feed(&mut s);
     assert_eq!(s.feed.tab, StoryType::New);

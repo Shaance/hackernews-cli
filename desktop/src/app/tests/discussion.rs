@@ -63,7 +63,7 @@ fn quiet_control_and_disclosure_respond_to_hover() {
 fn passive_hints_follow_pointer_and_keyboard_without_dimming_actions() {
     for (reduced, contrast) in [(false, false), (true, false), (false, true)] {
         let mut s = app(true, SavedView::in_memory());
-        s.request((11, 1), Ranking::Fresh);
+        s.request(grid(11, 1), Ranking::Fresh);
         let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
         rt.set_system_reduced_motion(reduced);
         rt.set_system_increased_contrast(contrast);

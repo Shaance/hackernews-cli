@@ -12,7 +12,7 @@ impl App {
             self.feed.tab = tab;
         }
         if let Some(page) = self.layout.page.filter(|page| *page > 1) {
-            self.feed.display_cursor = (page as usize - 1) * self.feed.page_size as usize;
+            self.feed.display_cursor = (page as usize - 1) * hn_lib::feed_state::API_PAGE_SIZE as usize;
         }
         self.feed.pending_anchor = self.layout.selected;
         if let Some(width) = self.layout.inspector {

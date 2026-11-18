@@ -1,13 +1,13 @@
 //! Feed tabs, story rows, banners and footer.
 
-use super::{App, Arrival, Ranking, RequestLifecycle, DEFAULT_GRID, FEED_GUTTER, ROW_HEIGHT};
+use super::{App, Arrival, Columns, Grid, Ranking, RequestLifecycle, DEFAULT_GRID, FEED_GUTTER, ROW_HEIGHT};
 use hn_lib::app::StoryType;
 use hn_lib::{feed_state, HNCLIItem};
 use rune::tok::{self, radius, type_};
 use rune::{col, el, row, text, Color, El, ScrollSpec, Spring, SpringPair, Transition, Tx};
 use rune_kit::{Keybind, Kit};
 use super::chrome::{passive_hint, quiet_button, saved_dot};
-use crate::feed::{tab_at, tab_index};
+use crate::feed::tab_index;
 
 pub(super) fn feed_tabs(s: &App, k: &Kit, t: tok::Theme, accent: Color, reduced: bool) -> El {
     let selected = tab_index(s.feed.tab);
@@ -18,7 +18,10 @@ pub(super) fn feed_tabs(s: &App, k: &Kit, t: tok::Theme, accent: Color, reduced:
             .child(el().w(16.0).h(2.0).radius(1.0).fill(accent)));
     let mut tabs = row().key("feed-tabs").role("radiogroup").label("Feed").focus_group()
         .equal_columns(4).h(36.0).center_y().radius(7.0).fill(k.c.layer_01).child(indicator);
-    for (i, label) in ["Top", "New", "Best", "Saved"].into_iter().enumerate() {
+    for (i, (tab, label)) in [
+        (StoryType::Top, "Top"), (StoryType::New, "New"),
+        (StoryType::Best, "Best"), (StoryType::Saved, "Saved"),
+    ].into_iter().enumerate() {
         tabs = tabs.child(row().key(format!("segment{i}")).grid_cell(i).role("radio").label(label)
             .position_in_set(i + 1, 4).focusable(true).focus_selected(i == selected)
             .focus_ring(2.0, 1.0, accent).h(36.0).px(16.0).center().radius(7.0)
@@ -26,7 +29,6 @@ pub(super) fn feed_tabs(s: &App, k: &Kit, t: tok::Theme, accent: Color, reduced:
             .on_press_tx(move |s: &mut App, tx: &mut Tx| {
                 // Pointer selection returns arrows to the feed; an accessibility-focused tab keeps them.
                 if !tx.by_keys() && !tx.focus_visible() { tx.blur(); }
-                let tab = tab_at(i);
                 if tab != s.feed.tab { s.apply(feed_state::switch_tab(&s.feed.state(), tab)); }
             })
             .child(text(label).font(type_::TITLE).color(if i == selected { t.text } else { t.text_secondary }).a11y_hidden()));
@@ -34,7 +36,7 @@ pub(super) fn feed_tabs(s: &App, k: &Kit, t: tok::Theme, accent: Color, reduced:
     tabs
 }
 
-pub(super) fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: usize, reduced: bool, contrast: bool) -> El {
+pub(super) fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: Columns, reduced: bool, contrast: bool) -> El {
     let mut body = col().w_full().h_full();
     if let Some(error) = s.saved.error() {
         body = body.child(banner(s, error, k, t));
@@ -60,26 +62,26 @@ pub(super) fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: us
 /// Column-major: story `c * rows + r`, so the left column fills first and `j` walks straight
 /// down it. One scroll viewport for both columns; every cell keeps its own key, so
 /// `Tx::scroll_into_view` reaches a story whichever column it is in.
-fn feed_list(s: &App, t: tok::Theme, accent: Color, cols: usize, reduced: bool) -> El {
+fn feed_list(s: &App, t: tok::Theme, accent: Color, cols: Columns, reduced: bool) -> El {
     // The measured grid is available during this view, before poll can settle its fill.
     // Show the screenful containing the selection immediately, using the held stories.
-    let capacity = s.measured.get().unwrap_or(DEFAULT_GRID).0.saturating_mul(cols);
-    let start = if s.feed.tab != StoryType::Saved && capacity > 0 {
-        (s.feed.selected / capacity) * capacity
+    let capacity = Grid { columns: cols, ..s.measured.get().unwrap_or(DEFAULT_GRID) }.capacity();
+    let start = if s.feed.tab != StoryType::Saved {
+        (s.feed.selected / capacity) * capacity.get()
     } else { 0 };
     let shown = if s.feed.tab == StoryType::Saved { s.feed.stories.len() }
-        else { s.feed.stories.len().saturating_sub(start).min(capacity) };
-    let per_column = shown.div_ceil(cols.max(1));
+        else { s.feed.stories.len().saturating_sub(start).min(capacity.get()) };
+    let per_column = shown.div_ceil(cols.count().get());
     // Keep the scroll viewport stable; only a completed page turn remounts this group.
     if s.feed.request.is_loading() && s.feed.stories.is_empty() && s.feed.error.is_none() {
         return feed_skeleton(s, t, cols, reduced);
     }
+    let cols = cols.count().get();
     let mut transition = Transition::none();
-    if !reduced && s.arrival != Arrival::None {
-        let enter = match s.arrival {
+    if !reduced && let Some(arrival) = s.arrival {
+        let enter = match arrival {
             Arrival::Initial => Transition::offset(0.0, 12.0),
             Arrival::Tab(direction) | Arrival::Page(direction) => Transition::offset(direction as f32 * 24.0, 0.0),
-            Arrival::None => Transition::none(),
         };
         transition = Transition::asymmetric(enter.combined(Transition::opacity()), Transition::none())
             .springs(SpringPair::new(Spring::new(0.22, 0.0), Spring::NONE));
@@ -302,7 +304,7 @@ fn footer(s: &App, k: &Kit, t: tok::Theme, accent: Color, reduced: bool, contras
     if s.feed.request.is_loading() && s.feed.stories.is_empty() && s.feed.error.is_none() {
         f = f.child(text(loading_label(s.feed.tab)).font(type_::LABEL).color(t.text_secondary).a11y_hidden());
     } else if s.feed.request.is_loading() && !s.feed.stories.is_empty() {
-        let label = if matches!(s.feed.request, RequestLifecycle::Loading(_, Ranking::Fresh, _)) {
+        let label = if matches!(s.feed.request, RequestLifecycle::Loading(_, Ranking::Fresh, _, _)) {
             "Refreshing…"
         } else {
             "Loading page…"
@@ -332,7 +334,7 @@ fn stepper(page: u32, t: tok::Theme, accent: Color) -> El {
         .gap(2.0)
         .center_y()
         .child(chev("\u{2039}", "Previous page", t, |s: &mut App| {
-            let cells = s.cells();
+            let cells = s.cells().get();
             let action = feed_state::prev_page(&s.feed.state(), cells);
             s.apply(action);
         }))
@@ -343,7 +345,7 @@ fn stepper(page: u32, t: tok::Theme, accent: Color) -> El {
                 .child(text(format!("{page}")).font(type_::LABEL).color(accent)),
         )
         .child(chev("\u{203a}", "Next page", t, |s: &mut App| {
-            let cells = s.cells();
+            let cells = s.cells().get();
             let action = feed_state::next_page(&s.feed.state(), cells);
             s.apply(action);
         }))
@@ -430,8 +432,9 @@ fn feed_error(error: &str, k: &Kit, t: tok::Theme) -> El {
 }
 
 /// Decorative rows occupy the same viewport and lanes as the feed, with one status owner.
-pub(super) fn feed_skeleton(s: &App, t: tok::Theme, cols: usize, reduced: bool) -> El {
-    let rows = s.measured.get().unwrap_or(DEFAULT_GRID).0;
+pub(super) fn feed_skeleton(s: &App, t: tok::Theme, cols: Columns, reduced: bool) -> El {
+    let rows = s.measured.get().unwrap_or(DEFAULT_GRID).rows.get();
+    let cols = cols.count().get();
     let transition = if reduced { Transition::none() } else {
         let mut transition = Transition::asymmetric(Transition::opacity(), Transition::opacity())
             .springs(SpringPair::new(Spring::new(0.20, 0.0), Spring::new(0.12, 0.0)));

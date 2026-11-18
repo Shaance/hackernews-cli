@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use super::Bridge;
-use crate::feed::{Fill, Filled};
+use crate::feed::{FeedWindow, Fill, Filled};
 use crate::service::Source;
 
 /// One fill request: the window, plus the ranking to page it against.
@@ -69,10 +69,8 @@ async fn run(source: &Source, request: Request) -> Filled {
             Err(error) => {
                 return Filled {
                     tab: request.fill.tab,
-                    ids: Vec::new(),
                     from_rank: request.fill.from_rank,
-                    items: Vec::new(),
-                    error: Some(format!("{error:#}")),
+                    outcome: Err(format!("{error:#}")),
                 };
             }
         },
@@ -86,10 +84,8 @@ async fn run(source: &Source, request: Request) -> Filled {
         .collect();
     Filled {
         tab: request.fill.tab,
-        ids,
         from_rank: request.fill.from_rank,
-        items,
-        error: None,
+        outcome: Ok(FeedWindow { ids, items }),
     }
 }
 

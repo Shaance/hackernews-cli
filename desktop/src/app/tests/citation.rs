@@ -46,7 +46,7 @@ fn source_keys_keep_discussion_state_and_load_reply_context() {
 #[test]
 fn pointer_back_unwinds_source_then_story_and_preserves_discussion() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
     s.load_replies(901, false);
     let thread = &mut s.story.as_mut().unwrap().thread;

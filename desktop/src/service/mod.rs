@@ -13,6 +13,8 @@
 //! `HackerNewsCliService` impl, so the provided `fetch_pages_against` composes it exactly as it
 //! composes the live service.
 
+use std::num::NonZeroUsize;
+
 use anyhow::Result;
 use hn_lib::app::{Comment, StoryType};
 use hn_lib::hn_client::{HackerNewsClient, HackerNewsClientImpl};
@@ -74,11 +76,11 @@ impl Source {
         &self,
         ids: &[i32],
         from_rank: usize,
-        count: usize,
+        count: NonZeroUsize,
     ) -> Vec<Option<HNCLIItem>> {
         match self {
-            Source::Live { service, .. } => service.fetch_pages_against(ids, from_rank, count).await,
-            Source::Fake(fake) => fake.fetch_pages_against(ids, from_rank, count).await,
+            Source::Live { service, .. } => service.fetch_pages_against(ids, from_rank, count.get()).await,
+            Source::Fake(fake) => fake.fetch_pages_against(ids, from_rank, count.get()).await,
         }
     }
 

@@ -69,8 +69,8 @@ fn keyboard_selection_is_instant_and_feed_hover_eases() {
 #[test]
 fn desktop_arrows_follow_rendered_columns_and_clamp_short_columns() {
     let mut s = app(true, SavedView::in_memory());
-    s.measured.set(Some((14, 2)));
-    s.request((14, 2), Ranking::Fresh);
+    s.measured.set(Some(grid(14, 2)));
+    s.request(grid(14, 2), Ranking::Fresh);
     for shown in [28, 27, 11, 3] {
         s.feed.stories.truncate(shown);
         let per_column = shown.div_ceil(2);
@@ -101,11 +101,11 @@ fn desktop_arrows_follow_rendered_columns_and_clamp_short_columns() {
 #[test]
 fn desktop_column_loading_empty_and_modifiers_do_not_page() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     s.feed.selected = 5;
     press(&mut s, rune::Key::Left);
     assert_eq!(s.feed.selected, 5);
-    s.measured.set(Some((11, 2)));
+    s.measured.set(Some(grid(11, 2)));
     on_key(
         &mut s,
         &KeyEvent {
@@ -119,12 +119,12 @@ fn desktop_column_loading_empty_and_modifiers_do_not_page() {
     );
     assert_eq!(s.feed.selected, 5);
     s.headless = false;
-    s.request((11, 2), Ranking::Fresh);
+    s.request(grid(11, 2), Ranking::Fresh);
     press(&mut s, rune::Key::Right);
     assert_eq!(s.feed.selected, 5);
     s.bridge.cancel_feed();
     s.headless = true;
-    s.request((11, 2), Ranking::Fresh);
+    s.request(grid(11, 2), Ranking::Fresh);
     s.feed.stories.clear();
     press(&mut s, rune::Key::Right);
     assert_eq!(s.feed.display_cursor, 0);
@@ -135,25 +135,25 @@ fn desktop_column_loading_empty_and_modifiers_do_not_page() {
 fn edge_arrows_turn_pages_and_land_at_the_matching_side() {
     for cols in [1, 2] {
         let mut s = app(true, SavedView::in_memory());
-        s.measured.set(Some((5, cols)));
-        s.request((5, cols), Ranking::Fresh);
+        s.measured.set(Some(grid(5, cols)));
+        s.request(grid(5, cols), Ranking::Fresh);
         s.feed.selected = s.feed.stories.len() - 1;
         press(&mut s, rune::Key::Right);
         assert_eq!(s.feed.display_cursor, 5 * cols);
         assert_eq!(s.feed.selected, 0);
-        assert_eq!(s.arrival, Arrival::Page(1));
+        assert_eq!(s.arrival, Some(Arrival::Page(1)));
         press(&mut s, rune::Key::Left);
         assert_eq!(s.feed.display_cursor, 0);
         assert_eq!(s.feed.selected, 5 * cols - 1);
-        assert_eq!(s.arrival, Arrival::Page(-1));
+        assert_eq!(s.arrival, Some(Arrival::Page(-1)));
     }
 }
 
 #[test]
 fn arrow_paging_stops_at_known_ends_and_saved() {
     let mut s = app(true, SavedView::in_memory());
-    s.measured.set(Some((5, 2)));
-    s.request((5, 2), Ranking::Fresh);
+    s.measured.set(Some(grid(5, 2)));
+    s.request(grid(5, 2), Ranking::Fresh);
     press(&mut s, rune::Key::Left);
     assert_eq!(s.feed.display_cursor, 0);
     for _ in 0..2 {
@@ -172,7 +172,7 @@ fn arrow_paging_stops_at_known_ends_and_saved() {
 #[test]
 fn fully_cached_windows_skip_source_requests_but_refresh_and_partial_windows_fetch() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     press(&mut s, rune::Key::Text("n".into()));
     let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
     let before = *fake.requests.lock().unwrap();
@@ -194,11 +194,11 @@ fn fully_cached_windows_skip_source_requests_but_refresh_and_partial_windows_fet
     assert!(fake.requests.lock().unwrap().1 > refreshed.1, "partial cache still fetches");
     s.feed.story_cache.remove(&12);
     fake.fail(12);
-    s.request((11, 1), Ranking::Keep);
+    s.request(grid(11, 1), Ranking::Keep);
     assert!(s.feed.failed.contains(&12));
     let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
     let failed = fake.requests.lock().unwrap().1;
-    s.request((11, 1), Ranking::Keep);
+    s.request(grid(11, 1), Ranking::Keep);
     let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
     assert!(fake.requests.lock().unwrap().1 > failed, "failure placeholders are not cache hits");
 }
@@ -206,15 +206,15 @@ fn fully_cached_windows_skip_source_requests_but_refresh_and_partial_windows_fet
 #[test]
 fn a_cached_window_cancels_only_the_superseded_feed_worker() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     s.source = Arc::new(Source::Fake(crate::service::fake::FakeService::fixture()
         .with_delay(Duration::from_millis(50))));
     s.headless = false;
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     s.open_selected();
     assert!(s.bridge.is_pending());
     assert!(s.bridge.is_story_pending());
-    s.request((11, 1), Ranking::Keep);
+    s.request(grid(11, 1), Ranking::Keep);
     assert!(!s.feed.request.is_loading());
     assert!(!s.bridge.is_pending(), "a held window supersedes the feed worker");
     assert!(s.bridge.is_story_pending(), "feed cache must not cancel the independent story request");
@@ -228,7 +228,7 @@ fn a_cached_window_cancels_only_the_superseded_feed_worker() {
 #[test]
 fn a_page_turn_pages_against_the_snapshot_and_only_a_refresh_re_ranks() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     let snapshot: Vec<i32> = (1..=30).collect();
     assert_eq!(s.feed.id_snapshot, snapshot);
     // The ranking changes upstream, as it does between two refreshes.
@@ -248,7 +248,7 @@ fn a_page_turn_pages_against_the_snapshot_and_only_a_refresh_re_ranks() {
 #[test]
 fn a_failed_ranking_reaches_the_feed_error_state() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     let before = s.feed.stories.len();
     if let Source::Fake(fake) = s.source.as_ref() {
         fake.fail_ranking(StoryType::Top);

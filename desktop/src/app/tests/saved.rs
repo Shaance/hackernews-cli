@@ -106,7 +106,7 @@ fn save_dot_pops_and_toast_fades_above_footer() {
 #[test]
 fn feed_hover_selects_row_click_opens_and_save_stays_separate() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     let ids: Vec<_> = s.feed.stories.iter().take(3).map(|story| story.id).collect();
     let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
     rt.on_key = Some(on_key);
@@ -144,7 +144,7 @@ fn feed_hover_selects_row_click_opens_and_save_stays_separate() {
 fn the_saved_view_renders_from_the_store_and_never_asks_the_source() {
     let mut s = app(false, saved_store());
     s.feed.tab = StoryType::Saved;
-    s.request((11, 2), Ranking::Fresh);
+    s.request(grid(11, 2), Ranking::Fresh);
     assert!(!s.bridge.is_pending(), "no request went out");
     assert_eq!(
         s.feed.stories.len(),
@@ -161,10 +161,10 @@ fn the_saved_view_renders_from_the_store_and_never_asks_the_source() {
         "save-time order"
     );
     assert!(!s.feed.request.is_loading(), "the store is local: nothing is in flight");
-    let fill = s.feed.fill(11, 2);
-    s.measured.set(Some((22, 1)));
+    let fill = s.feed.fill(grid(11, 2));
+    s.measured.set(Some(grid(22, 1)));
     poll(&mut s, 0.0, &mut rune::Tx::default());
-    assert_eq!(s.feed.request, RequestLifecycle::Settled(fill, Ranking::Fresh, (22, 1)),
+    assert_eq!(s.feed.request, RequestLifecycle::Settled(fill, Ranking::Fresh, grid(22, 1)),
         "an equal-capacity resize still updates Saved's last grid");
     assert!(!s.bridge.is_pending());
 }
@@ -174,7 +174,7 @@ fn initial_saved_fill_preserves_its_hover_unsave_action() {
     let mut s = app(true, saved_store());
     s.feed.tab = StoryType::Saved;
     s.hover = Some(11);
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
     rt.frame(0.0);
     assert!(rt.elements().iter().any(|e| e.role == "button"
@@ -184,7 +184,7 @@ fn initial_saved_fill_preserves_its_hover_unsave_action() {
 #[test]
 fn a_hover_action_saves_the_row_it_belongs_to_not_the_selected_one() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     s.feed.selected = 0;
     // The hover action on rank 3 saves rank 3, not the selected row.
     s.toggle_saved_id(3);
@@ -197,7 +197,7 @@ fn a_hover_action_saves_the_row_it_belongs_to_not_the_selected_one() {
 #[test]
 fn a_hover_action_opens_the_row_it_belongs_to() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     s.feed.selected = 0;
     s.open_id(4);
     assert_eq!(s.story.as_ref().map(|story| story.id()), Some(4));
@@ -212,7 +212,7 @@ fn a_store_that_could_not_be_read_does_not_confirm_a_save() {
             "expected value at line 1 column 2",
         ),
     );
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     s.toggle_saved_id(1);
     assert!(s.saved.ids().is_empty(), "nothing was saved");
     assert!(
@@ -224,5 +224,41 @@ fn a_store_that_could_not_be_read_does_not_confirm_a_save() {
         "the toast says so instead of confirming: {:?}",
         s.toast.as_ref().map(|notice| &notice.message)
     );
+}
+
+#[test]
+fn unresolved_saved_path_refuses_save_and_keeps_error_visible() {
+    const CHILD: &str = "HN_TEST_UNRESOLVED_SAVED_PATH";
+    if std::env::var_os(CHILD).is_none() {
+        let output = std::process::Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", "app::tests::saved::unresolved_saved_path_refuses_save_and_keeps_error_visible", "--nocapture"])
+            .env(CHILD, "1")
+            .env_remove("HOME")
+            .env_remove("XDG_DATA_HOME")
+            .output().unwrap();
+        assert!(output.status.success(), "{}\n{}", String::from_utf8_lossy(&output.stdout), String::from_utf8_lossy(&output.stderr));
+        return;
+    }
+
+    let saved = SavedView::load();
+    assert!(saved.path().is_none());
+    let error = saved.error().unwrap().to_owned();
+    let mut s = app(true, saved);
+    s.request(DEFAULT_GRID, Ranking::Fresh);
+    let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+    rt.on_key = Some(on_key);
+    rt.frame(0.0);
+    rt.key(KeyEvent { key: rune::Key::Text("s".into()), mods: Default::default() });
+    rt.frame(0.0);
+    assert!(rt.state.saved.ids().is_empty());
+    assert_eq!(rt.state.saved.error(), Some(error.as_str()));
+    assert!(rt.state.toast.as_ref().unwrap().message.contains("unavailable"));
+    assert!(rt.elements().iter().any(|e| e.key.as_deref() == Some("saved-banner")));
+    assert!(rt.elements().iter().any(|e| e.text.as_deref() == Some(error.as_str())));
+    rt.update(|s, _| s.saved.reload());
+    rt.key(KeyEvent { key: rune::Key::Text("s".into()), mods: Default::default() });
+    assert!(rt.state.saved.ids().is_empty());
+    assert_eq!(rt.state.saved.error(), Some(error.as_str()));
+    assert!(rt.state.toast.as_ref().unwrap().message.contains("unavailable"));
 }
 

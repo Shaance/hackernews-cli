@@ -7,6 +7,14 @@ use rune::Tx;
 use super::super::input::on_key;
 use super::super::poll::poll;
 
+pub(super) fn grid(rows: usize, columns: usize) -> Grid {
+    Grid::measured(rows, match columns {
+        1 => Columns::One,
+        2 => Columns::Two,
+        _ => panic!("invalid fixture columns"),
+    })
+}
+
 pub(super) fn press(s: &mut App, key: rune::Key) {
     on_key(
         s,
@@ -55,8 +63,7 @@ pub(super) fn app(headless: bool, saved: SavedView) -> App {
         measured: Cell::new(None),
         feed_revision: 0,
         pending_arrival: Some(Arrival::Initial),
-        arrival: Arrival::Initial,
-        loading_since: None,
+        arrival: Some(Arrival::Initial),
         hover: None,
         keyboard_selection: true,
         hints: rune::Live::new(1.0),

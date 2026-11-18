@@ -70,7 +70,7 @@ fn question_mark_toggles_help_in_discussion_summary_and_source() {
 #[test]
 fn o_activates_reading_selection_and_shift_o_queues_browser() {
     let mut feed = app(true, SavedView::in_memory());
-    feed.request((11, 1), Ranking::Fresh);
+    feed.request(grid(11, 1), Ranking::Fresh);
     let mut feed = rune::Runtime::new(feed, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
     feed.on_key = Some(on_key);
     feed.frame(0.0);
@@ -145,7 +145,7 @@ fn mouse_back_respects_the_chooser_and_modal_scope() {
 fn numeric_tab_shortcuts_return_arrow_navigation_to_the_feed() {
     for (key, tab) in [("1", StoryType::Top), ("2", StoryType::New), ("3", StoryType::Best), ("4", StoryType::Saved)] {
         let mut s = app(true, saved_store());
-        s.request((11, 1), Ranking::Fresh);
+        s.request(grid(11, 1), Ranking::Fresh);
         let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
         rt.on_key = Some(on_key);
         rt.frame(0.0);
@@ -175,7 +175,7 @@ fn full_feed_has_fixed_top_inset_and_pointer_tabs_return_navigation_to_rows() {
         let elements = rt.elements();
         let viewport = elements.iter().find(|e| e.key.as_deref() == Some("feed-list")).unwrap().rect;
         let first = elements.iter().find(|e| e.key.as_deref() == Some("story-1")).unwrap().rect;
-        let (_, cols) = rt.state.measured.get().unwrap();
+        let cols = rt.state.measured.get().unwrap().columns.count().get();
         let top = first[1] - viewport[1];
         assert!((top - FEED_GUTTER).abs() < 0.5, "{size:?}: top inset {top}");
         assert_eq!(cols, if size.0 >= BREAKPOINT { 2 } else { 1 });
@@ -211,7 +211,7 @@ fn full_feed_has_fixed_top_inset_and_pointer_tabs_return_navigation_to_rows() {
         rt.poll = Some(poll);
         rt.set_viewport(if cols == 1 { (1600.0, 900.0) } else { (800.0, 640.0) }, 1.0);
         for _ in 0..4 { rt.frame(0.25); }
-        let (_, new_cols) = rt.state.measured.get().unwrap();
+        let new_cols = rt.state.measured.get().unwrap().columns.count().get();
         assert_ne!(cols, new_cols, "resize crosses the column breakpoint");
         let elements = rt.elements();
         let viewport = elements.iter().find(|e| e.key.as_deref() == Some("feed-list")).unwrap().rect;
@@ -224,7 +224,7 @@ fn full_feed_has_fixed_top_inset_and_pointer_tabs_return_navigation_to_rows() {
 #[test]
 fn intentionally_focused_tab_radios_keep_their_arrow_navigation() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
     rt.on_key = Some(on_key);
     rt.frame(0.0);
@@ -259,7 +259,7 @@ fn accessibility_click_keeps_tab_group_keyboard_navigation() {
 #[test]
 fn arrows_during_a_pending_shortcut_do_not_navigate_the_tab_radios() {
     let mut s = app(true, SavedView::in_memory());
-    s.request((11, 1), Ranking::Fresh);
+    s.request(grid(11, 1), Ranking::Fresh);
     s.source = Arc::new(Source::Fake(crate::service::fake::FakeService::fixture().with_delay(Duration::from_millis(50))));
     s.headless = false;
     let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));

@@ -1,6 +1,6 @@
 //! Story opening, reading navigation and capture actions.
 
-use super::{App, Notice, Arrival, Live};
+use super::{App, Notice, Live};
 use std::sync::Arc;
 use hn_lib::HNCLIItem;
 use rune::Tx;
@@ -24,7 +24,7 @@ impl App {
         // Returning to the feed is not another page arrival.
         self.feed_revision = 0;
         self.pending_arrival = None;
-        self.arrival = Arrival::None;
+        self.arrival = None;
         self.park_story();
         self.inspector.set_open(true);
         if let Some(mut reading) = self.readings.remove(&story.id) {

@@ -61,19 +61,19 @@ pub(super) fn view(s: &App, cx: &mut Cx<App>) -> El {
     });
     s.visible_comment.set(visible);
     let wide = window.is_some_and(|rect| rect[2] >= BREAKPOINT);
-    let cols = if wide { 2 } else { 1 };
+    let cols = if wide { super::Columns::Two } else { super::Columns::One };
     // The feed's grid is only measurable while the feed is on screen: a story open must not
     // overwrite it with the default and make `poll` re-request the wrong window.
     let feed_height = cx.layout_with("feed-list", |rect| rect[3]).unwrap_or(DEFAULT_FEED_HEIGHT);
     if s.story.is_none() {
-        let gap = if cols == 2 { 0.0 } else { 2.0 };
-        let rows = ((feed_height - 2.0 * FEED_GUTTER + gap) / (ROW_HEIGHT + gap)).floor().max(1.0) as usize;
-        s.measured.set(Some((rows, cols)));
+        let gap = if cols == super::Columns::Two { 0.0 } else { 2.0 };
+        let rows = ((feed_height - 2.0 * FEED_GUTTER + gap) / (ROW_HEIGHT + gap)).floor() as usize;
+        s.measured.set(Some(super::Grid::measured(rows, cols)));
     }
     // Saved is one scrollable list. Change its columns in the same commit that reveals the
     // selection at its new position, rather than putting it offscreen for a frame.
     let feed_cols = match (s.feed.tab, s.feed.request) {
-        (StoryType::Saved, RequestLifecycle::Loading(_, _, grid) | RequestLifecycle::Settled(_, _, grid)) => grid.1,
+        (StoryType::Saved, RequestLifecycle::Loading(_, _, grid, _) | RequestLifecycle::Settled(_, _, grid)) => grid.columns,
         _ => cols,
     };
 

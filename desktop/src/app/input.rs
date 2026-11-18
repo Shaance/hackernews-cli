@@ -14,44 +14,41 @@ use crate::story::Story;
 
 impl App {
     pub(super) fn window_action(&mut self, action: WindowKey, tx: &mut Tx) -> bool {
-        match action {
-            WindowKey::Settings => self.open_summary_settings(),
-            WindowKey::Help => self.help = !self.help,
-            WindowKey::ToggleSplit => if self.story.is_some() {
-                self.inspector.set_open(!self.inspector.is_open());
-            },
-            WindowKey::ZoomIn | WindowKey::ZoomOut | WindowKey::ActualSize => {
-                let inspector_width = self.inspector_window_width();
-                let old_zoom = self.zoom;
-                self.zoom = match action {
-                    WindowKey::ZoomIn => self.zoom.increase(),
-                    WindowKey::ZoomOut => self.zoom.decrease(),
-                    WindowKey::ActualSize => ZoomStep::Z100,
-                    _ => unreachable!(),
-                };
-                if self.zoom != old_zoom {
-                    let pane = self.inspector;
-                    self.inspector = PaneState::new(self.inspector_default_width / self.zoom.scale())
-                        .range(INSPECTOR_MIN / self.zoom.scale(), INSPECTOR_MAX / self.zoom.scale())
-                        .with_width(inspector_width / self.zoom.scale());
-                    self.inspector.set_open(pane.is_open());
-                }
-                if let Live::Created { child, .. } = &mut self.live {
-                    child.set_zoom(self.zoom.scale());
-                }
-                // An unchanged view-point rect does not trigger on_layout when zoom changes.
-                if let Some(rect) = &mut self.live_bounds {
-                    *rect = rect.map(|value| value * self.zoom.scale() / old_zoom.scale());
-                    if let Live::Created { child, .. } = &mut self.live { child.set_bounds(*rect); }
-                }
-                if self.zoom != old_zoom || action == WindowKey::ActualSize {
-                    self.toast = Some(Notice { message: format!("{:.0}%", self.zoom.scale() * 100.0),
-                        until: f64::INFINITY, show_dot: false });
-                }
-                tx.instant();
+        let zoom = match action {
+            WindowKey::Settings => { self.open_summary_settings(); return true; }
+            WindowKey::Help => { self.help = !self.help; return true; }
+            WindowKey::ToggleSplit => {
+                if self.story.is_some() { self.inspector.set_open(!self.inspector.is_open()); }
+                return true;
             }
+            WindowKey::ZoomIn => self.zoom.increase(),
+            WindowKey::ZoomOut => self.zoom.decrease(),
+            WindowKey::ActualSize => ZoomStep::Z100,
             WindowKey::None => return false,
+        };
+        let inspector_width = self.inspector_window_width();
+        let old_zoom = self.zoom;
+        self.zoom = zoom;
+        if self.zoom != old_zoom {
+            let pane = self.inspector;
+            self.inspector = PaneState::new(self.inspector_default_width / self.zoom.scale())
+                .range(INSPECTOR_MIN / self.zoom.scale(), INSPECTOR_MAX / self.zoom.scale())
+                .with_width(inspector_width / self.zoom.scale());
+            self.inspector.set_open(pane.is_open());
         }
+        if let Live::Created { child, .. } = &mut self.live {
+            child.set_zoom(self.zoom.scale());
+        }
+        // An unchanged view-point rect does not trigger on_layout when zoom changes.
+        if let Some(rect) = &mut self.live_bounds {
+            *rect = rect.map(|value| value * self.zoom.scale() / old_zoom.scale());
+            if let Live::Created { child, .. } = &mut self.live { child.set_bounds(*rect); }
+        }
+        if self.zoom != old_zoom || action == WindowKey::ActualSize {
+            self.toast = Some(Notice { message: format!("{:.0}%", self.zoom.scale() * 100.0),
+                until: f64::INFINITY, show_dot: false });
+        }
+        tx.instant();
         true
     }
 
@@ -121,10 +118,9 @@ pub(super) fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
         keys::parity_key(ev),
         Some(crossterm::event::KeyCode::Left | crossterm::event::KeyCode::Right)
     ) {
-        let (_, cols) = s.measured.get().unwrap_or(DEFAULT_GRID);
+        let cols = s.measured.get().unwrap_or(DEFAULT_GRID).columns.count().get();
         let shown = s.feed.stories.len();
         if shown > 0 && !s.feed.request.is_loading() {
-            let cols = cols.max(1);
             let per_column = shown.div_ceil(cols);
             let column = s.feed.selected / per_column;
             let right = matches!(ev.key, rune::Key::Right);
@@ -134,8 +130,8 @@ pub(super) fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
                 let start = if right { (column + 1) * per_column } else { (column - 1) * per_column };
                 s.feed.selected = (start + s.feed.selected % per_column).min(shown - 1);
             } else if !right || s.feed.display_cursor + shown < s.feed.id_snapshot.len() {
-                let mut action = if right { feed_state::next_page(&s.feed.state(), s.cells()) }
-                    else { feed_state::prev_page(&s.feed.state(), s.cells()) };
+                let mut action = if right { feed_state::next_page(&s.feed.state(), s.cells().get()) }
+                    else { feed_state::prev_page(&s.feed.state(), s.cells().get()) };
                 if let feed_state::FeedAction::TurnPage { landing, .. } = &mut action {
                     *landing = Some(if right { hn_lib::app::PageLanding::Start } else { hn_lib::app::PageLanding::End });
                     s.apply(action);
@@ -147,7 +143,7 @@ pub(super) fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
         }
         return true;
     }
-    let cells = s.cells();
+    let cells = s.cells().get();
     let state = s.feed.state();
     let action = match keys::story_action(ev) {
         StoryAction::None => return false,
@@ -205,7 +201,6 @@ pub(super) fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
 /// it is open, then the source viewer, then the discussion, and only then the feed.
 pub(super) fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
     let key = keys::story_key(ev);
-    if matches!(key, StoryKey::Back) { return s.story_back(tx); }
     let visible_comment = s.visible_comment.get().and_then(|(id, source, row, viewport)| {
         let y = row[0] - s.comment_offsets[usize::from(source)].get();
         let top = viewport[0] + if source { 0.0 } else { 27.0 };
@@ -268,10 +263,9 @@ pub(super) fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
         }
     }
     let in_source = story.source().is_some();
-    let (root, cursor) = story.with_thread(|thread| (thread.root(), thread.cursor()));
     match key {
         StoryKey::None => false,
-        StoryKey::Back => unreachable!("back is handled before borrowing the story"),
+        StoryKey::Back => s.story_back(tx),
         StoryKey::NextCitation => {
             if story.citations().next().is_none() { return false; }
             story.next_citation();
@@ -285,6 +279,7 @@ pub(super) fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             true
         }
         StoryKey::Enter => {
+            let (root, cursor) = story.with_thread(|thread| (thread.root(), thread.cursor()));
             // A selected citation is what Enter reads; otherwise it is the thread's own expand,
             // which re-roots on a `continue thread` row.
             if story.open_source() {
@@ -320,6 +315,7 @@ pub(super) fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
         StoryKey::NextComment | StoryKey::PrevComment | StoryKey::NextSibling | StoryKey::PrevSibling
         | StoryKey::Parent | StoryKey::Fold | StoryKey::FirstComment | StoryKey::LastComment
         | StoryKey::PopTrail => {
+            let (root, cursor) = story.with_thread(|thread| (thread.root(), thread.cursor()));
             if !in_source { story.clear_citation_focus(); }
             let source_root = story.source().map(|source| source.id());
             let loading = story.pending_reply.as_ref().is_some_and(|request| Some(request.batch.parent_id()) == cursor);
@@ -340,6 +336,7 @@ pub(super) fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             true
         }
         StoryKey::Unfold => {
+            let (root, cursor) = story.with_thread(|thread| (thread.root(), thread.cursor()));
             if !in_source { story.clear_citation_focus(); }
             let id = cursor;
             let retry = id.is_some_and(|id| story.thread.children_of(id).is_empty()

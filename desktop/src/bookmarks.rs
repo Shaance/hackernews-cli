@@ -10,7 +10,7 @@ use hn_lib::bookmarks::{self, SavedStore};
 use hn_lib::HNCLIItem;
 
 pub struct SavedView {
-    /// `None` means in-memory only: toggles work, nothing is written or read.
+    /// `None` is either in-memory only or a path that could not be resolved.
     path: Option<PathBuf>,
     store: SavedStore,
     /// The last load or save failure, shown as the Saved view's banner.
@@ -82,8 +82,6 @@ impl SavedView {
     /// Re-read the file. A corrupt file keeps the previous store and raises the banner.
     pub fn reload(&mut self) {
         let Some(path) = self.path.clone() else {
-            self.error = None;
-            self.loaded = true;
             return;
         };
         match bookmarks::load(&path) {
@@ -138,11 +136,13 @@ impl SavedView {
     /// the file holds, so saving it would destroy the stories that are still there. The toggle
     /// is refused and the banner says why until a Reload succeeds.
     pub fn toggle(&mut self, item: &HNCLIItem) -> bool {
-        if self.path.is_some() && !self.loaded {
-            self.error = Some(format!(
-                "{} could not be read, so it was not overwritten. Reload to retry.",
-                self.path_label()
-            ));
+        if !self.loaded {
+            if self.path.is_some() {
+                self.error = Some(format!(
+                    "{} could not be read, so it was not overwritten. Reload to retry.",
+                    self.path_label()
+                ));
+            }
             return self.contains(item.id);
         }
         let mut next = self.store.clone();
