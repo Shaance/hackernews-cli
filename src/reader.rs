@@ -65,17 +65,17 @@ pub struct Source {
     pub text: String,
     pub excerpt: String,
 }
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Point {
     pub text: String,
     pub sources: Vec<i32>,
 }
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Discussion {
     pub overview: String,
     pub points: Vec<Point>,
 }
-#[derive(Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Article {
     pub text: String,
 }

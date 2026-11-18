@@ -4,8 +4,9 @@ use super::{App, Arrival, Notice, Live};
 use std::sync::Arc;
 use hn_lib::HNCLIItem;
 use rune::Tx;
-use crate::story_io::StoryRequest;
-use crate::story::Story;
+use crate::story_io::{StoryRequest, StoryUpdate};
+use crate::story::{ArticleSummaryState, RestoredSummary, Story, SummaryState};
+use crate::summary_store::SummaryStore;
 use super::input::reveal_citation;
 
 impl App {
@@ -32,9 +33,37 @@ impl App {
             reading.story = story;
             self.story = Some(reading);
         } else {
-            self.story = Some(Story::opening(story.clone(), self.configured() && self.config.automatic));
+            let mut open = Story::opening(story.clone(), self.configured() && self.config.automatic);
+            self.restore_summary(&mut open);
+            self.story = Some(open);
             self.request_story(story);
         }
+    }
+
+    fn restore_summary(&mut self, open: &mut Story) {
+        let Some(store) = &mut self.summary_store else { return; };
+        let Some(saved) = store.load(open.id()) else { return; };
+        let mut article_age = None;
+        let mut discussion = None;
+        if let Some(article) = saved.article {
+            article_age = Some(store.age(article.saved_at));
+            open.article_summary = ArticleSummaryState::Generating { previous: None };
+            open.land_update(StoryUpdate::ArticleSummary {
+                story_id: open.id(), summary: Ok(article.article),
+                provenance: article.provenance, empty_capture: false,
+            });
+        }
+        if let Some(saved_discussion) = saved.discussion {
+            discussion = Some((store.age(saved_discussion.saved_at), saved_discussion.comments_at_save));
+            open.summary = SummaryState::Generating { previous: None };
+            open.land_update(StoryUpdate::Summary {
+                story_id: open.id(), summary: Ok((saved_discussion.discussion, saved_discussion.sources)),
+                provenance: saved_discussion.provenance,
+            });
+        }
+        open.restored_summary = (article_age.is_some() || discussion.is_some()).then(|| RestoredSummary {
+            article_age, discussion, observed: std::time::Instant::now(),
+        });
     }
 
     /// The row the feed has selected, if it is a story that loaded.
@@ -91,13 +120,47 @@ impl App {
             story,
             config: self.config.clone(),
         };
+        self.bridge.request_story(self.source.clone(), request);
         if self.headless {
-            let filled = self.bridge.story_now(self.source.as_ref(), request);
-            if let Some(open) = &mut self.story {
-                open.land(filled);
+            self.finish_story_now();
+        }
+    }
+
+    pub(super) fn take_story_update(&mut self) -> Option<StoryUpdate> {
+        let configured = self.configured();
+        let article = self.story.as_ref().is_some_and(|story|
+            matches!(story.article_summary, ArticleSummaryState::Generating { .. }));
+        let discussion = self.story.as_ref().is_some_and(|story| story.summary.is_generating());
+        self.bridge.take_story(&self.config, configured && article, configured && discussion)
+    }
+
+    pub(super) fn land_story_update(&mut self, update: StoryUpdate) -> bool {
+        let fresh_article = matches!(&update, StoryUpdate::ArticleSummary { summary: Ok(_), .. });
+        let fresh_discussion = matches!(&update, StoryUpdate::Summary { summary: Ok(_), .. });
+        let comments = self.story.as_ref().and_then(|story| story.story.comments)
+            .and_then(|count| u32::try_from(count).ok()).unwrap_or(0);
+        let save = self.summary_store.as_ref().and_then(|_| SummaryStore::prepare(&update, comments));
+        let landed = self.story.as_mut().is_some_and(|story| story.land_update(update));
+        if landed {
+            if let Some(story) = &mut self.story && let Some(restored) = &mut story.restored_summary {
+                if fresh_article { restored.article_age = None; }
+                if fresh_discussion { restored.discussion = None; }
+                if restored.article_age.is_none() && restored.discussion.is_none() {
+                    story.restored_summary = None;
+                }
             }
-        } else {
-            self.bridge.request_story(self.source.clone(), request);
+            if let (Some(store), Some(save)) = (&mut self.summary_store, save) { store.save(save); }
+        }
+        landed
+    }
+
+    fn finish_story_now(&mut self) {
+        while self.bridge.is_story_pending() {
+            if let Some(update) = self.take_story_update() {
+                self.land_story_update(update);
+            } else {
+                std::thread::yield_now();
+            }
         }
     }
 
@@ -194,6 +257,12 @@ impl App {
     }
 
     /// Retry or regenerate summaries from the current captures, keeping the thread in place.
+    /// The saved line's Regenerate. Without a key there is nothing to regenerate with, so it
+    /// opens the summary settings instead of stopping the restored summaries.
+    pub(crate) fn regenerate_saved_summary(&mut self) {
+        if self.configured() { self.retry_summary(); } else { self.open_summary_settings(); }
+    }
+
     pub(crate) fn retry_summary(&mut self) {
         let configured = self.configured();
         if let Some(story) = self.story.as_mut() {
@@ -207,13 +276,7 @@ impl App {
             story.retry(configured);
             self.bridge.request_summaries(self.source.clone(), request, article, sources);
             if self.headless {
-                while self.bridge.is_story_pending() {
-                    if let Some(update) = self.bridge.take_story(&self.config, true, true) {
-                        if let Some(story) = self.story.as_mut() { story.land_update(update); }
-                    } else {
-                        std::thread::yield_now();
-                    }
-                }
+                self.finish_story_now();
             }
         }
     }

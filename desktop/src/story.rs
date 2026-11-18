@@ -292,6 +292,7 @@ pub struct Story {
     pub article: ArticleState,
     pub article_summary: ArticleSummaryState,
     pub summary: SummaryState,
+    pub(crate) restored_summary: Option<RestoredSummary>,
     /// The discussion: the tree, the fold set, the cursor, the re-root and focus mode.
     pub thread: Thread,
     pub discussion: Option<Result<(), String>>,
@@ -306,6 +307,13 @@ pub struct Story {
     pub links: Option<LinkChooser>,
 }
 
+/// The age and comment baseline of the summaries restored when this reading opened.
+pub(crate) struct RestoredSummary {
+    pub article_age: Option<u64>,
+    pub discussion: Option<(u64, u32)>,
+    pub observed: std::time::Instant,
+}
+
 impl Story {
     /// A story that has just been opened: the article and the summary are both in flight.
     pub fn opening(story: HNCLIItem, configured: bool) -> Story {
@@ -313,6 +321,7 @@ impl Story {
             story,
             article: ArticleState::Loading,
             article_summary: if configured { ArticleSummaryState::Generating { previous: None } } else { ArticleSummaryState::Unconfigured },
+            restored_summary: None,
             summary: if configured {
                 SummaryState::Generating {
                     previous: None,
@@ -341,10 +350,11 @@ impl Story {
             return false;
         }
         let story_id = filled.story_id;
+        let empty_capture = filled.article.as_ref().is_ok_and(|(text, _)| text.trim().is_empty());
         self.land_update(StoryUpdate::Article { story_id, article: filled.article, summary_skipped: false });
-        self.land_update(StoryUpdate::ArticleSummary { story_id, summary: filled.article_summary });
+        self.land_update(StoryUpdate::ArticleSummary { story_id, summary: filled.article_summary, provenance: filled.provenance.clone(), empty_capture });
         self.land_update(StoryUpdate::Discussion { story_id, comments: filled.comments, summary_skipped: false });
-        self.land_update(StoryUpdate::Summary { story_id, summary: filled.summary });
+        self.land_update(StoryUpdate::Summary { story_id, summary: filled.summary, provenance: filled.provenance });
         true
     }
 
@@ -364,7 +374,7 @@ impl Story {
                     },
                 };
             }
-            StoryUpdate::ArticleSummary { story_id, summary } if story_id == self.id() => {
+            StoryUpdate::ArticleSummary { story_id, summary, .. } if story_id == self.id() => {
                 if !matches!(self.article_summary, ArticleSummaryState::Generating { .. }) { return false; }
                 self.land_article_summary(summary);
             }
@@ -393,7 +403,7 @@ impl Story {
                     }
                 });
             }
-            StoryUpdate::Summary { story_id, summary } if story_id == self.id() => {
+            StoryUpdate::Summary { story_id, summary, .. } if story_id == self.id() => {
                 if !self.summary.is_generating() { return false; }
                 self.land_summary(summary);
             }
@@ -741,6 +751,7 @@ mod tests {
     fn filled(summary: Result<Discussion, SummaryError>) -> StoryFilled {
         StoryFilled {
             story_id: 2,
+            provenance: crate::story_io::Provenance::from(&hn_lib::reader::Config::default()),
             article: Ok(("# Libghostty 1.0\n\nBody.".to_string(), false)),
             article_summary: Ok(Article { text: "Article overview.".to_string() }),
             comments: Ok(CapturedComments { comments: fixtures::thread(), sources: fixtures::sources() }),
@@ -853,7 +864,7 @@ mod tests {
         sources.iter_mut().find(|source| source.id == 901).unwrap().text = "replacement capture".into();
         let mut replacement = discussion();
         replacement.overview = "A new discussion summary".into();
-        assert!(story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok((replacement, sources)) }));
+        assert!(story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok((replacement, sources)), provenance: crate::story_io::Provenance::from(&hn_lib::reader::Config::default()) }));
         assert_eq!(story.source().unwrap().captured().text, original);
         assert_eq!(story.summary.readable().unwrap().overview, "Commenters split on the ABI.");
         assert!(story.close_source());
@@ -877,7 +888,7 @@ mod tests {
                 1 => for point in &mut replacement.points { point.sources.retain(|id| *id != 901); },
                 _ => for point in &mut replacement.points { point.sources.clear(); },
             }
-            story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok((replacement, fixtures::sources())) });
+            story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok((replacement, fixtures::sources())), provenance: crate::story_io::Provenance::from(&hn_lib::reader::Config::default()) });
             assert!(story.close_source());
             assert_eq!(story.focused_citation().is_some(), replacement_kind != 2);
             match replacement_kind {
@@ -896,7 +907,7 @@ mod tests {
         story.retry(true);
         let mut replacement = discussion();
         for point in &mut replacement.points { point.sources.clear(); }
-        assert!(story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok((replacement, fixtures::sources())) }));
+        assert!(story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok((replacement, fixtures::sources())), provenance: crate::story_io::Provenance::from(&hn_lib::reader::Config::default()) }));
         assert!(story.focused_citation().is_none());
         assert!(story.citations().next().is_none());
         assert!(!story.open_source());
@@ -910,6 +921,7 @@ mod tests {
         assert_eq!(story.article_summary.readable(), Some("Article overview."));
         story.land_update(StoryUpdate::ArticleSummary {
             story_id: 2, summary: Err(SummaryError::new("Provider unavailable", false)),
+            provenance: crate::story_io::Provenance::from(&hn_lib::reader::Config::default()), empty_capture: false,
         });
         assert!(matches!(story.article_summary, ArticleSummaryState::Failed { .. }));
         assert_eq!(story.article_summary.readable(), Some("Article overview."));
@@ -1044,4 +1056,5 @@ mod tests {
         assert!(chooser.select(2));
         assert_eq!(story.take_link().as_deref(), Some("https://example.com/b"));
     }
+
 }

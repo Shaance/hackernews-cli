@@ -72,6 +72,7 @@ pub(super) fn app(headless: bool, saved: SavedView) -> App {
         visible_comment: Cell::new(None),
         comment_offsets: [Rc::new(Cell::new(0.0)), Rc::new(Cell::new(0.0))],
         readings: HashMap::new(),
+        summary_store: None,
         scroll_pacing: Rc::new(Cell::new(ScrollPacing::Idle)),
         scroll_waker: None,
         inspector: Cell::new(inspector()),

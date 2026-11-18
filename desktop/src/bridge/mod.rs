@@ -27,7 +27,7 @@ use tokio::task::JoinHandle;
 
 use crate::feed::Filled;
 use crate::service::Source;
-use crate::story_io::{CapturedComments, CommentsRefreshed, ReplyFilled, ReplyRequest, StoryFilled, StoryRequest, StoryUpdate, SummaryError};
+use crate::story_io::{CapturedComments, CommentsRefreshed, Provenance, ReplyFilled, ReplyRequest, StoryFilled, StoryRequest, StoryUpdate, SummaryError};
 
 pub mod feed;
 
@@ -60,7 +60,7 @@ fn take_task<T>(task: &mut Option<JoinHandle<T>>, waker: Option<&TaskWaker>) -> 
 
 enum ArticlePhase {
     Captured { source: Arc<Source>, request: StoryRequest, article: Result<(String, bool), String>, manual: bool },
-    Summary { story_id: i32, summary: Result<Article, SummaryError> },
+    Summary { story_id: i32, summary: Result<Article, SummaryError>, provenance: Provenance, empty_capture: bool },
 }
 
 enum StoryPhase {
@@ -70,7 +70,7 @@ enum StoryPhase {
         comments: Result<CapturedComments, String>,
         manual: bool,
     },
-    Summary { story_id: i32, summary: Result<(Discussion, Vec<CapturedSource>), SummaryError> },
+    Summary { story_id: i32, summary: Result<(Discussion, Vec<CapturedSource>), SummaryError>, provenance: Provenance },
 }
 
 impl Bridge {
@@ -133,6 +133,8 @@ impl Bridge {
             match article {
                 Some(article) => ArticlePhase::Summary {
                     story_id: article_request.story.id,
+                    provenance: Provenance::from(&article_request.config),
+                    empty_capture: article.0.trim().is_empty(),
                     summary: article_source.article_summary(&article_request.config, &article_request.story, &article).await,
                 },
                 None => {
@@ -144,8 +146,9 @@ impl Bridge {
         self.story = Some(self.handle.spawn(async move {
             match sources {
                 Some(sources) => {
+                    let provenance = Provenance::from(&request.config);
                     let summary = source.summary(&request.config, &request.story, &sources).await.map(|summary| (summary, sources));
-                    StoryPhase::Summary { story_id: request.story.id, summary }
+                    StoryPhase::Summary { story_id: request.story.id, summary, provenance }
                 }
                 None => {
                     let comments = source.thread(request.story.id).await.map_err(|e| e.to_string());
@@ -197,13 +200,15 @@ impl Bridge {
                         let captured = captured.clone();
                         let config = config.clone();
                         self.article = Some(self.handle.spawn(async move {
+                            let provenance = Provenance::from(&config);
+                            let empty_capture = captured.0.trim().is_empty();
                             let summary = source.article_summary(&config, &request.story, &captured).await;
-                            ArticlePhase::Summary { story_id, summary }
+                            ArticlePhase::Summary { story_id, summary, provenance, empty_capture }
                         }));
                     }
                     StoryUpdate::Article { story_id, article, summary_skipped: !manual && !config.automatic }
                 }
-                ArticlePhase::Summary { story_id, summary } => StoryUpdate::ArticleSummary { story_id, summary },
+                ArticlePhase::Summary { story_id, summary, provenance, empty_capture } => StoryUpdate::ArticleSummary { story_id, summary, provenance, empty_capture },
             });
         }
         match take_task(&mut self.story, self.waker.as_ref())? {
@@ -213,13 +218,14 @@ impl Bridge {
                     let sources = captured.sources.clone();
                     let config = config.clone();
                     self.story = Some(self.handle.spawn(async move {
+                        let provenance = Provenance::from(&config);
                         let summary = source.summary(&config, &request.story, &sources).await.map(|summary| (summary, sources));
-                        StoryPhase::Summary { story_id, summary }
+                        StoryPhase::Summary { story_id, summary, provenance }
                     }));
                 }
                 Some(StoryUpdate::Discussion { story_id, comments, summary_skipped: !manual && !config.automatic })
             }
-            StoryPhase::Summary { story_id, summary } => Some(StoryUpdate::Summary { story_id, summary }),
+            StoryPhase::Summary { story_id, summary, provenance } => Some(StoryUpdate::Summary { story_id, summary, provenance }),
         }
     }
 
@@ -288,6 +294,7 @@ async fn run_story(source: &Source, request: StoryRequest) -> StoryFilled {
     });
     StoryFilled {
         story_id,
+        provenance: Provenance::from(&request.config),
         article,
         article_summary,
         comments,

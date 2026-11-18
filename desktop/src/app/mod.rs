@@ -44,6 +44,7 @@ use crate::layout::{Layout, ZoomStep};
 use crate::service::Source;
 use crate::settings::Settings;
 use crate::story::Story;
+use crate::summary_store::SummaryStore;
 
 /// One feed row, in points. The measured row count is the viewport height over this.
 const ROW_HEIGHT: f32 = 56.0;
@@ -135,6 +136,7 @@ pub struct App {
     comment_offsets: [Rc<Cell<f32>>; 2],
     /// Readings kept for this window's lifetime, including their summary citation snapshots.
     readings: HashMap<i32, Story>,
+    summary_store: Option<SummaryStore>,
     /// The reading viewports' scroll observers and poll share this frame-pacing state.
     scroll_pacing: Rc<Cell<ScrollPacing>>,
     scroll_waker: Option<Waker>,
@@ -222,7 +224,10 @@ impl App {
 }
 
 fn init() -> App {
-    let headless = rune::is_headless();
+    init_with_headless(rune::is_headless())
+}
+
+fn init_with_headless(headless: bool) -> App {
     let source = if headless {
         Source::fake()
     } else {
@@ -259,6 +264,10 @@ fn init() -> App {
         .map(Layout::load)
         .unwrap_or_default();
     let zoom = layout.zoom_level();
+    let mut summary_store = if headless { None } else {
+        Layout::path().and_then(|path| path.parent().map(|parent| SummaryStore::disk(parent.join("summaries"))))
+    };
+    if let Some(store) = &mut summary_store { store.prune(); }
     App {
         feed: FeedModel::new(),
         saved,
@@ -276,6 +285,7 @@ fn init() -> App {
         visible_comment: Cell::new(None),
         comment_offsets: [Rc::new(Cell::new(0.0)), Rc::new(Cell::new(0.0))],
         readings: HashMap::new(),
+        summary_store,
         scroll_pacing: Rc::new(Cell::new(ScrollPacing::Idle)),
         scroll_waker: None,
         inspector: Cell::new(PaneState::new(INSPECTOR_WIDTH / zoom.scale())
@@ -311,6 +321,7 @@ mod tests {
     mod saved;
     mod story_lifecycle;
     mod summary_lifecycle;
+    mod summary_persistence;
     mod discussion;
     mod citation;
     mod keys;

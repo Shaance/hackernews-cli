@@ -3,6 +3,25 @@
 use hn_lib::app::Comment;
 use hn_lib::reader::{Article, Config, Discussion, Source as CapturedSource};
 use hn_lib::HNCLIItem;
+use serde::{Deserialize, Serialize};
+
+/// The non-secret settings used for a particular provider request.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Provenance {
+    pub provider: String,
+    pub model: String,
+    pub profile: String,
+}
+
+impl From<&Config> for Provenance {
+    fn from(config: &Config) -> Self {
+        Self {
+            provider: config.provider.label().into(),
+            model: config.profile.model(config.provider).into(),
+            profile: config.profile.label().into(),
+        }
+    }
+}
 
 /// One story open: the item to read, and the summary settings to read it with.
 ///
@@ -25,6 +44,7 @@ pub struct CapturedComments {
 /// A failed article is a `String`; the card uses [`SummaryError`] to classify a failed summary.
 pub struct StoryFilled {
     pub story_id: i32,
+    pub provenance: Provenance,
     pub article: Result<(String, bool), String>,
     pub article_summary: Result<Article, SummaryError>,
     /// The discussion as a tree: the top-level comments and their replies, level by level.
@@ -36,8 +56,8 @@ pub struct StoryFilled {
 pub enum StoryUpdate {
     Article { story_id: i32, article: Result<(String, bool), String>, summary_skipped: bool },
     Discussion { story_id: i32, comments: Result<CapturedComments, String>, summary_skipped: bool },
-    ArticleSummary { story_id: i32, summary: Result<Article, SummaryError> },
-    Summary { story_id: i32, summary: Result<(Discussion, Vec<CapturedSource>), SummaryError> },
+    ArticleSummary { story_id: i32, summary: Result<Article, SummaryError>, provenance: Provenance, empty_capture: bool },
+    Summary { story_id: i32, summary: Result<(Discussion, Vec<CapturedSource>), SummaryError>, provenance: Provenance },
 }
 
 pub struct CommentsRefreshed {

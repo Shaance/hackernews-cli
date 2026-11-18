@@ -19,4 +19,5 @@ pub mod settings;
 pub mod story;
 pub mod story_io;
 pub mod story_view;
+mod summary_store;
 pub mod webview;

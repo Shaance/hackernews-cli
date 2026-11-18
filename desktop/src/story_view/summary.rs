@@ -6,7 +6,7 @@ use rune_kit::{Button, ButtonVariant, ControlSize, Kit, Spinner};
 
 use crate::app::App;
 use crate::app::chrome::quiet_button;
-use crate::story::{ArticleSummaryState, Story, Summary, SummaryState};
+use crate::story::{ArticleSummaryState, RestoredSummary, Story, Summary, SummaryState};
 
 use super::reading_chrome::{reading_transition, skeleton_line};
 
@@ -93,8 +93,33 @@ fn expanded_summary(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: b
     let scroll = col().key("summary-scroll").role("region").label("Summary content").focusable(true);
     // Inline citations share the viewport's keyboard focus; the selected chip shows it.
     let scroll = if s.focused_citation().is_some() { scroll.no_focus_ring() } else { scroll };
+    let header = if let Some(saved) = &s.restored_summary {
+        col().w_full().gap(4.0).child(summary_header(k, t))
+            // Regenerate is a link inside the saved status, styled like a citation, so Hide stays
+            // the card's only control.
+            // While either half is regenerating the link is withheld, so a second click can't
+            // start a second pair of requests.
+            .child({
+                let status = saved_label(saved, s.story.comments);
+                let generating = matches!(s.article_summary, ArticleSummaryState::Generating { .. })
+                    || s.summary.is_generating();
+                if generating {
+                    text(status).key("summary-saved").font(type_::LABEL).color(t.text_secondary)
+                } else {
+                    let status = format!("{status} · ");
+                    let range = status.len()..status.len() + "Regenerate".len();
+                    text(format!("{status}Regenerate")).key("summary-saved").font(type_::LABEL).color(t.text_secondary)
+                        .spans(vec![Span::new(range.start, range.end).underline(accent)])
+                        .link(Link::new(range, "regenerate").role("button").label("Regenerate summary")
+                            .hover(LinkPaint::new().color(t.text).underline(accent)))
+                        .on_link(|s: &mut App, _, _| s.regenerate_saved_summary())
+                }
+            })
+    } else {
+        summary_header(k, t)
+    };
     col().key("summary-open").w_full().gap(10.0).px(14.0).pt(14.0).pb(14.0)
-        .child(summary_header(k, t))
+        .child(header)
         .child(scroll
             .on_key(|s: &mut App, ev: &rune::KeyEvent, tx: &mut Tx| match ev.key {
                 rune::Key::PageDown => { s.keyboard_navigation(ev); tx.scroll_page("summary-scroll", 1); true }
@@ -104,6 +129,49 @@ fn expanded_summary(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: b
             .max_h((max_height - 62.0).max(80.0)).scroll(ScrollSpec { stick_bottom: false }).on_scroll_offset(on_scroll)
             .on_wheel(App::pointer_wheel)
             .scroll_edge_fade(28.0).child(body))
+}
+
+fn saved_label(saved: &RestoredSummary, current_comments: Option<i32>) -> String {
+    let age = saved.article_age.into_iter().chain(saved.discussion.map(|(age, _)| age)).max().unwrap_or_default();
+    let seconds = age.saturating_add(saved.observed.elapsed().as_secs());
+    let age = match seconds {
+        0..=59 => "just now".to_string(),
+        60..=3599 => format!("{}m ago", seconds / 60),
+        3600..=86399 => format!("{}h ago", seconds / 3600),
+        _ => format!("{}d ago", seconds / 86400),
+    };
+    let mut label = format!("Saved {age}");
+    if let (Some((_, saved)), Some(current)) = (saved.discussion, current_comments.and_then(|n| u32::try_from(n).ok())) {
+        let new = current.saturating_sub(saved);
+        if new > 0 {
+            label.push_str(&format!(" · {new} new comment{}", if new == 1 { "" } else { "s" }));
+        }
+    }
+    label
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn saved_age_and_comment_labels() {
+        for (seconds, expected) in [
+            (0, "Saved just now"),
+            (59, "Saved just now"),
+            (60, "Saved 1m ago"),
+            (3599, "Saved 59m ago"),
+            (3600, "Saved 1h ago"),
+            (86399, "Saved 23h ago"),
+            (86400, "Saved 1d ago"),
+        ] {
+            let restored = RestoredSummary { article_age: Some(seconds), discussion: Some((seconds, 100)), observed: std::time::Instant::now() };
+            assert_eq!(saved_label(&restored, Some(100)), expected);
+            assert_eq!(saved_label(&restored, Some(101)), format!("{expected} · 1 new comment"));
+            assert_eq!(saved_label(&restored, Some(112)), format!("{expected} · 12 new comments"));
+            assert_eq!(saved_label(&restored, Some(99)), expected);
+        }
+    }
 }
 
 fn summary_header(k: &Kit, t: tok::Theme) -> El {

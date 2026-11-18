@@ -79,6 +79,35 @@ pub(super) fn scene_summary_generating(s: &mut App) {
     }
 }
 
+/// A restored reading with a fixed clock and a newer discussion count.
+pub(super) fn scene_summary_saved(s: &mut App) {
+    use hn_lib::reader::Article;
+    use crate::story_io::Provenance;
+    use crate::summary_store::{SavedArticle, SavedDiscussion, SavedSummary, SummaryStore};
+
+    let mut store = SummaryStore::memory(1_700_000_000);
+    let provenance = Provenance::from(&Config::default());
+    let saved = SavedSummary {
+        version: 1,
+        story_id: crate::fixtures::STORY_ID,
+        article: Some(SavedArticle {
+            saved_at: 1_700_000_000 - 5 * 3600,
+            provenance: provenance.clone(),
+            article: Article { text: "The article describes Libghostty and its design.".into() },
+        }),
+        discussion: Some(SavedDiscussion {
+            saved_at: 1_700_000_000 - 5 * 3600,
+            comments_at_save: 110,
+            provenance,
+            discussion: crate::fixtures::summary(),
+            sources: crate::fixtures::sources(),
+        }),
+    };
+    store.write(&saved).expect("the in-memory summary fixture serializes");
+    s.summary_store = Some(store);
+    scene_story(s);
+}
+
 /// The summary settings dialog, open on a draft that already holds a key. The key is a fixture
 /// and the field is secure, so the golden proves the mask rather than the value: the string
 /// appears nowhere in the tree.

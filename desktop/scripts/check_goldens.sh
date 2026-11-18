@@ -100,6 +100,7 @@ STORY_SCENES=(
   "thread|thread|1180x760|scripts/thread.json"
   "citation|citation|1180x760|scripts/story.json"
   "summary-generating|summary-generating|1180x760|scripts/story.json"
+  "summary-saved|summary-saved|1180x760|scripts/story.json"
   "settings|settings|1180x760|scripts/focus.json"
   "settings-story|settings-story|1180x760|scripts/focus.json"
   "help|help|1180x760|scripts/focus.json"

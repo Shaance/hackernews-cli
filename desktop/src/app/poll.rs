@@ -46,18 +46,12 @@ pub(super) fn poll_updates(s: &mut App, now: f64, tx: &mut Tx, back_requested: b
         changed |= landed;
         if landed { feed_arrived = s.accept_arrival(); }
     }
-    while let Some(update) = {
-        let configured = s.configured();
-        let article = s.story.as_ref().is_some_and(|story|
-            matches!(story.article_summary, crate::story::ArticleSummaryState::Generating { .. }));
-        let discussion = s.story.as_ref().is_some_and(|story| story.summary.is_generating());
-        s.bridge.take_story(&s.config, configured && article, configured && discussion)
-    } {
+    while let Some(update) = s.take_story_update() {
         let summary_finished = matches!(&update,
             StoryUpdate::Summary { .. } | StoryUpdate::Discussion { comments: Err(_), .. });
         let visible = s.inspector.get().is_open() && s.settings.is_none() && !s.help;
         // A landing for a story that is no longer open is dropped by `Story::land_update`.
-        let landed = s.story.as_mut().map(|open| {
+        let appearance = s.story.as_ref().map(|open| {
             let first_result = match &update {
                 StoryUpdate::ArticleSummary { summary: Ok(_), .. } => matches!(
                     open.article_summary, crate::story::ArticleSummaryState::Generating { previous: None }),
@@ -67,13 +61,14 @@ pub(super) fn poll_updates(s: &mut App, now: f64, tx: &mut Tx, back_requested: b
             };
             let show = visible && open.summary_open && open.source().is_none();
             let visible_success = show && matches!(&update, StoryUpdate::Summary { summary: Ok(_), .. });
-            let landed = open.land_update(update);
-            (landed, landed && first_result && show,
-                (landed && summary_finished && !visible_success).then(|| open.summary_notice()).flatten())
+            (first_result && show, visible_success)
         });
-        if let Some((landed, arrival, notice)) = landed {
+        let landed = s.land_story_update(update);
+        if let Some((arrival, visible_success)) = appearance {
             changed |= landed;
-            summary_arrived |= arrival;
+            summary_arrived |= landed && arrival;
+            let notice = (landed && summary_finished && !visible_success)
+                .then(|| s.story.as_ref().and_then(|open| open.summary_notice())).flatten();
             // The card is in the inspector and may be folded or scrolled away, so the summary's
             // outcome is confirmed where the reader is looking.
             if let Some(message) = notice {
