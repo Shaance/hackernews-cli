@@ -375,8 +375,9 @@ Real app, real config, real Anthropic summary key, 1344×900 window. Evidence in
   leaving a citation snaps back to the summary, which is then outlined in the focus ring.
 - Status: fixed in `2ecc4b9` (the feed arrives 24 pt from the left over a 0.22 s spring on back, both from
   keys and from the native back event) and `dc8bddc` (leaving a citation animates; the summary scroll drops
-  its focus ring while a citation is focused). Checked headless with trace samples; the live check over a
-  loaded page is still owed.
+  its focus ring while a citation is focused). Checked headless with trace samples, then live over a loaded
+  page on 2026-11-18: the page view drops first, then the feed slides in and fades up over ~190 ms; leaving a
+  citation fades the discussion back in.
 
 ### N8. A summary point reading "placeholder [1]" (user report, unresolved)
 - Seen once by the user. No code, prompt or schema produces the string, and none of the 13 responses kept in
@@ -386,6 +387,23 @@ Real app, real config, real Anthropic summary key, 1344×900 window. Evidence in
   record is 10:14 on 2026-11-18. A story already summarized in the same session is served from memory and
   sends no request, so a repeat view leaves no record.
 - Next time it appears, note the story title and time; the matching record shows whether the model wrote it.
+- Since `866d4e9` new records go to `~/.local/state/hn/summary-responses/`; the old folder keeps the earlier ones.
+
+### N9. Saved summaries: review findings deferred (`aca07ee`)
+A read-only review of the persistence change found seven issues; four were fixed before merge (placeholder
+discussion saved, saved line cleared by the other half, Regenerate with no key or twice, stale temp file).
+These three were deferred:
+- Two app processes saving different halves of the same story at the same moment can lose one half, and
+  launch-time pruning can race a fresh write. `desktop.json` and `summary.json` have the same read-modify-write
+  shape; no single-instance case produces it in practice. Fix with a per-story lock if a second instance ever
+  becomes normal.
+- Regenerating when the page extraction comes back empty replaces a restored article summary in memory with
+  "No article text to summarize." (not saved, so a restart restores the good one). Same behaviour as before
+  persistence existed.
+- Closing a story mid-request and reopening it from a refreshed feed saves the newer comment count against the
+  older capture, so the next "N new comments" is too small. Fix by carrying the count with the request, as
+  provenance is.
+Not exercised live: Regenerate's file update, a real "N new comments" delta, and the 30-day prune.
 
 ## Where the code differs from DESIGN.md's motion spec
 
