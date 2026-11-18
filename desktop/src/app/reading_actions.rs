@@ -64,7 +64,7 @@ impl App {
             });
         if let Some(story) = item {
             if let Err(err) = hn_lib::url_open::open_story_url(&story.url, story.id) {
-                self.feed.status.error = Some(err.to_string());
+                self.feed.error = Some(err.to_string());
             }
         }
     }

@@ -1,6 +1,6 @@
 //! Feed tabs, story rows, banners and footer.
 
-use super::{App, Arrival, Ranking, DEFAULT_GRID, FEED_GUTTER, ROW_HEIGHT};
+use super::{App, Arrival, Ranking, RequestLifecycle, DEFAULT_GRID, FEED_GUTTER, ROW_HEIGHT};
 use hn_lib::app::StoryType;
 use hn_lib::{feed_state, HNCLIItem};
 use rune::tok::{self, radius, type_};
@@ -40,7 +40,7 @@ pub(super) fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: us
         body = body.child(banner(s, error, k, t));
     }
     // A failed ranking or window is a state with a retry, never a blank list.
-    if let Some(error) = s.feed.status.error.as_deref() {
+    if let Some(error) = s.feed.error.as_deref() {
         body = body.child(feed_error(error, k, t));
     }
     body.child(
@@ -71,7 +71,7 @@ fn feed_list(s: &App, t: tok::Theme, accent: Color, cols: usize, reduced: bool) 
         else { s.feed.stories.len().saturating_sub(start).min(capacity) };
     let per_column = shown.div_ceil(cols.max(1));
     // Keep the scroll viewport stable; only a completed page turn remounts this group.
-    if s.feed.status.loading && s.feed.stories.is_empty() && s.feed.status.error.is_none() {
+    if s.feed.request.is_loading() && s.feed.stories.is_empty() && s.feed.error.is_none() {
         return feed_skeleton(s, t, cols, reduced);
     }
     let mut transition = Transition::none();
@@ -93,7 +93,7 @@ fn feed_list(s: &App, t: tok::Theme, accent: Color, cols: usize, reduced: bool) 
         .pt(FEED_GUTTER)
         .pb(FEED_GUTTER)
         .gap(if cols == 2 { 0.0 } else { 2.0 });
-    if shown == 0 && s.feed.status.error.is_none()
+    if shown == 0 && s.feed.error.is_none()
         && (s.feed.tab != StoryType::Saved || s.saved.error().is_none()) {
         let label = if s.feed.tab == StoryType::Saved { "Press S on a story to save it" } else { "No stories to show" };
         list = list.px(24.0).role("status").label(label)
@@ -148,7 +148,7 @@ fn story_row(s: &App, i: usize, t: tok::Theme, accent: Color, reduced: bool) -> 
         .on_press(move |s: &mut App| {
             // While a page turn is in flight the rows on screen are the page being left:
             // selecting one would select it under the ranks of the page being loaded.
-            if s.feed.status.loading {
+            if s.feed.request.is_loading() {
                 return;
             }
             if let Some(index) = s.feed.stories.iter().position(|story| story.id == id) {
@@ -157,7 +157,7 @@ fn story_row(s: &App, i: usize, t: tok::Theme, accent: Color, reduced: bool) -> 
             }
         })
         .on_pointer_move_local(move |s: &mut App, _, tx| {
-            if !s.feed.status.loading && let Some(index) = s.feed.stories.iter().position(|story| story.id == id)
+            if !s.feed.request.is_loading() && let Some(index) = s.feed.stories.iter().position(|story| story.id == id)
                 && s.feed.selected != index {
                 s.feed.selected = index;
                 s.keyboard_selection = false;
@@ -292,17 +292,17 @@ fn footer(s: &App, k: &Kit, t: tok::Theme, accent: Color, reduced: bool, contras
     }
     f = f.child(h(&["1", "4"], "tabs"))
         .child(el().grow(1.0));
-    if !s.feed.status.loading && s.feed.exhausted(s.cells()) {
+    if !s.feed.request.is_loading() && s.feed.exhausted(s.cells()) {
         f = f.child(
             text("No more stories")
                 .font(type_::LABEL)
                 .color(t.text_secondary),
         );
     }
-    if s.feed.status.loading && s.feed.stories.is_empty() && s.feed.status.error.is_none() {
+    if s.feed.request.is_loading() && s.feed.stories.is_empty() && s.feed.error.is_none() {
         f = f.child(text(loading_label(s.feed.tab)).font(type_::LABEL).color(t.text_secondary).a11y_hidden());
-    } else if s.feed.status.loading && !s.feed.stories.is_empty() {
-        let label = if s.requested.is_some_and(|(_, ranking, _)| ranking == Ranking::Fresh) {
+    } else if s.feed.request.is_loading() && !s.feed.stories.is_empty() {
+        let label = if matches!(s.feed.request, RequestLifecycle::Loading(_, Ranking::Fresh, _)) {
             "Refreshing…"
         } else {
             "Loading page…"

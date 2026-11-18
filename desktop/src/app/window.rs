@@ -1,6 +1,6 @@
 //! Window composition, startup and native menus.
 
-use super::{App, Pane, Live, OPEN_STORY, ROW_HEIGHT, BREAKPOINT, FEED_GUTTER, DEFAULT_FEED_HEIGHT, init};
+use super::{App, Pane, Live, RequestLifecycle, OPEN_STORY, ROW_HEIGHT, BREAKPOINT, FEED_GUTTER, DEFAULT_FEED_HEIGHT, init};
 use hn_lib::app::StoryType;
 use rune::tok;
 use rune::tok::type_;
@@ -73,9 +73,10 @@ pub(super) fn view(s: &App, cx: &mut Cx<App>) -> El {
     }
     // Saved is one scrollable list. Change its columns in the same commit that reveals the
     // selection at its new position, rather than putting it offscreen for a frame.
-    let feed_cols = if s.feed.tab == StoryType::Saved {
-        s.requested.map_or(cols, |(_, _, grid)| grid.1)
-    } else { cols };
+    let feed_cols = match (s.feed.tab, s.feed.request) {
+        (StoryType::Saved, RequestLifecycle::Loading(_, _, grid) | RequestLifecycle::Settled(_, _, grid)) => grid.1,
+        _ => cols,
+    };
 
     let handoff = if reduced { Transition::none() } else {
         Transition::asymmetric(Transition::opacity(), Transition::none())

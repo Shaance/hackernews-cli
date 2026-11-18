@@ -48,7 +48,6 @@ pub(super) fn app(headless: bool, saved: SavedView) -> App {
         source: Arc::new(Source::fake()),
         bridge: Bridge::new().expect("a tokio runtime for the feed's requests"),
         measured: Cell::new(None),
-        requested: None,
         feed_revision: 0,
         pending_arrival: Some(Arrival::Initial),
         arrival: Arrival::Initial,

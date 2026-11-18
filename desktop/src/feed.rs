@@ -1,6 +1,5 @@
 //! The feed's state machine: `hn_lib::feed_state`'s pure transitions, applied to owned fields.
 //!
-//! `FeedModel` mirrors `FeedState` field for field, so every transition is the shared one:
 //! [`FeedModel::state`] hands the frozen contract a snapshot, the contract returns a
 //! [`FeedAction`], and [`FeedModel::apply`] writes it back. Paging arithmetic — the visible
 //! window, the aligned API pages it needs, the stepper — is `feed_state::fill_grid` and
@@ -22,6 +21,33 @@ pub struct Fill {
     pub tab: StoryType,
     pub from_rank: usize,
     pub count: usize,
+}
+
+/// Refresh and tab switches take a new ranking; paging and resize keep the shown ranks.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Ranking {
+    Fresh,
+    Keep,
+}
+
+/// The latest fill, ranking policy and measured grid, including after settlement.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum RequestLifecycle {
+    BeforeFirst,
+    Loading(Fill, Ranking, (usize, usize)),
+    Settled(Fill, Ranking, (usize, usize)),
+}
+
+impl RequestLifecycle {
+    pub fn is_loading(self) -> bool {
+        matches!(self, Self::Loading(..))
+    }
+
+    fn settle(&mut self) {
+        if let Self::Loading(fill, ranking, grid) = *self {
+            *self = Self::Settled(fill, ranking, grid);
+        }
+    }
 }
 
 /// What applying an action asks the caller to do next.
@@ -60,7 +86,9 @@ pub struct FeedModel {
     /// The story a refresh or reflow must keep selected when its fill lands.
     pub pending_anchor: Option<i32>,
     pub selected: usize,
-    pub status: FeedStatus,
+    pub(crate) request: RequestLifecycle,
+    pub error: Option<String>,
+    pub stale: bool,
     pub stories_for: Option<(StoryType, u32)>,
     pub feed_positions: HashMap<StoryType, FeedPosition>,
     pub page_landing: Option<PageLanding>,
@@ -86,7 +114,9 @@ impl FeedModel {
             pending_cursor: None,
             pending_anchor: None,
             selected: 0,
-            status: FeedStatus::default(),
+            request: RequestLifecycle::BeforeFirst,
+            error: None,
+            stale: false,
             stories_for: None,
             feed_positions: HashMap::new(),
             page_landing: None,
@@ -104,7 +134,11 @@ impl FeedModel {
             page_size: self.page_size,
             display_cursor: self.display_cursor,
             selected: self.selected,
-            status: self.status.clone(),
+            status: FeedStatus {
+                loading: self.request.is_loading(),
+                error: self.error.clone(),
+                stale: self.stale,
+            },
             stories_for: self.stories_for,
             feed_positions: self.feed_positions.clone(),
             page_landing: self.page_landing,
@@ -149,7 +183,7 @@ impl FeedModel {
             FeedAction::Move { selected } => {
                 // While a page turn is in flight the rows on screen are the page being left:
                 // selecting one would select it under the ranks of the page being loaded.
-                if self.status.loading {
+                if self.request.is_loading() {
                     return Applied::default();
                 }
                 self.selected = selected;
@@ -164,17 +198,18 @@ impl FeedModel {
             } => {
                 // One page turn at a time: a second one would page from a cursor that is not
                 // on screen yet.
-                if self.status.loading {
+                if self.request.is_loading() {
                     return Applied::default();
                 }
                 self.pending_cursor = Some(display_cursor);
                 if landing.is_some() {
                     self.page_landing = landing;
                 }
-                self.status.loading = true;
+                let fill = self.fill(grid.0, grid.1);
+                self.request = RequestLifecycle::Loading(fill, Ranking::Keep, grid);
                 Applied {
                     changed: true,
-                    fill: Some(self.fill(grid.0, grid.1)),
+                    fill: Some(fill),
                 }
             }
             FeedAction::SwitchTab { tab, page } => {
@@ -188,13 +223,13 @@ impl FeedModel {
                 self.failed.clear();
                 self.stories_for = None;
                 self.page_landing = None;
-                self.status = FeedStatus {
-                    loading: true,
-                    ..FeedStatus::default()
-                };
+                self.error = None;
+                self.stale = false;
+                let fill = self.fill(grid.0, grid.1);
+                self.request = RequestLifecycle::Loading(fill, Ranking::Fresh, grid);
                 Applied {
                     changed: true,
-                    fill: Some(self.fill(grid.0, grid.1)),
+                    fill: Some(fill),
                 }
             }
             FeedAction::ToggleSaved { id, saved } => {
@@ -211,7 +246,7 @@ impl FeedModel {
             }
             FeedAction::ApplyPage { tab, page, .. } => {
                 self.stories_for = Some((tab, page));
-                self.status.loading = false;
+                self.request.settle();
                 Applied {
                     changed: true,
                     fill: None,
@@ -232,8 +267,8 @@ impl FeedModel {
         // A ranking that could not be fetched is an error state, not an empty feed: the window
         // the reader is looking at stays, and the banner offers a retry.
         if let Some(error) = filled.error {
-            self.status.loading = false;
-            self.status.error = Some(error);
+            self.request.settle();
+            self.error = Some(error);
             self.pending_cursor = None;
             return true;
         }
@@ -259,8 +294,8 @@ impl FeedModel {
                 },
             }
         }
-        self.status.loading = false;
-        self.status.error = None;
+        self.request.settle();
+        self.error = None;
         self.stories_for = Some((self.tab, self.stepper()));
         match self.page_landing.take() {
             Some(PageLanding::Start) => self.selected = 0,
@@ -289,7 +324,9 @@ impl FeedModel {
         self.pending_anchor = None;
         self.page_landing = None;
         self.selected = self.selected.min(self.stories.len().saturating_sub(1));
-        self.status = FeedStatus::default();
+        self.request.settle();
+        self.error = None;
+        self.stale = false;
         self.stories_for = Some((StoryType::Saved, 1));
         true
     }
@@ -313,11 +350,11 @@ impl FeedModel {
     /// Give up on a request that has not landed within `timeout` seconds. Without this a
     /// dropped answer leaves the feed loading forever, and every page turn is refused.
     pub fn timed_out(&mut self, elapsed: f64, timeout: f64) -> bool {
-        if !self.status.loading || elapsed < timeout {
+        if !self.request.is_loading() || elapsed < timeout {
             return false;
         }
-        self.status.loading = false;
-        self.status.error = Some("The feed did not load. Press r to retry.".to_string());
+        self.request.settle();
+        self.error = Some("The feed did not load. Press r to retry.".to_string());
         self.pending_cursor = None;
         true
     }
@@ -397,6 +434,7 @@ mod tests {
     fn loaded(rows: usize, columns: usize) -> FeedModel {
         let mut feed = FeedModel::new();
         let fill = feed.fill(rows, columns);
+        feed.request = RequestLifecycle::Loading(fill, Ranking::Fresh, (rows, columns));
         feed.apply_fill(filled(fill.tab, fill.from_rank, fill.count));
         feed
     }
@@ -404,6 +442,8 @@ mod tests {
     #[test]
     fn the_grid_is_the_shared_fill_formula() {
         let feed = FeedModel::new();
+        assert_eq!(feed.request, RequestLifecycle::BeforeFirst);
+        assert!(!feed.state().status.loading);
         assert_eq!(feed.grid(11, 1), (0, 11, 1));
         assert_eq!(feed.grid(14, 2), (0, 28, 1));
         assert_eq!(feed.grid(19, 2), (0, 38, 2));
@@ -413,6 +453,7 @@ mod tests {
     #[test]
     fn a_fill_keeps_rank_order_and_marks_failures_in_place() {
         let mut feed = FeedModel::new();
+        feed.request = RequestLifecycle::Loading(feed.fill(5, 1), Ranking::Fresh, (5, 1));
         let mut fill = filled(StoryType::Top, 0, 5);
         fill.items[2] = Err(3);
         assert!(feed.apply_fill(fill));
@@ -664,15 +705,24 @@ mod tests {
         let mut feed = loaded(11, 1);
         feed.selected = 10;
         feed.apply(feed_state::next_story(&feed.state(), 11), (11, 1));
-        assert!(feed.status.loading);
+        assert!(feed.request.is_loading());
+        let request = feed.fill(11, 1);
+        assert_eq!(feed.request, RequestLifecycle::Loading(request, Ranking::Keep, (11, 1)));
+        feed.error = Some("independent error".into());
+        feed.stale = true;
+        let state = feed.state();
+        assert!(state.status.loading && state.status.stale);
+        assert_eq!(state.status.error.as_deref(), Some("independent error"));
         // A fill for the page being left is stale and dropped.
         assert!(!feed.apply_fill(filled(StoryType::Top, 0, 11)));
-        assert!(feed.status.loading, "the newest request is still in flight");
+        assert!(feed.request.is_loading(), "the newest request is still in flight");
         // The timeout is what ends the wait when no answer comes.
         assert!(!feed.timed_out(1.0, 10.0), "not yet");
         assert!(feed.timed_out(10.0, 10.0));
-        assert!(!feed.status.loading);
-        assert!(feed.status.error.is_some(), "the feed says it did not load");
+        assert!(!feed.request.is_loading());
+        assert_eq!(feed.request, RequestLifecycle::Settled(request, Ranking::Keep, (11, 1)));
+        assert!(!feed.state().status.loading && feed.state().status.stale);
+        assert!(feed.error.is_some(), "the feed says it did not load");
         assert_eq!(feed.pending_cursor, None, "the pending turn is dropped");
         assert_eq!(feed.display_cursor, 0, "the page on screen is still page 1");
         assert_eq!(feed.stories[0].id, 1, "and it is still there");
@@ -690,14 +740,14 @@ mod tests {
             error: Some("the ranking request failed".to_string()),
         }));
         assert_eq!(feed.stories.len(), before, "the window the reader has stays");
-        assert!(!feed.status.loading);
+        assert!(!feed.request.is_loading());
         assert_eq!(
-            feed.status.error.as_deref(),
+            feed.error.as_deref(),
             Some("the ranking request failed")
         );
         // A later successful fill clears it.
         feed.apply_fill(filled(StoryType::Top, 0, 11));
-        assert!(feed.status.error.is_none());
+        assert!(feed.error.is_none());
     }
 
     #[test]
@@ -724,6 +774,8 @@ mod tests {
     fn saved_renders_the_whole_store_not_the_viewport() {
         let mut feed = FeedModel::new();
         feed.tab = StoryType::Saved;
+        let request = feed.fill(11, 1);
+        feed.request = RequestLifecycle::Loading(request, Ranking::Fresh, (11, 1));
         // Four saved stories, newest first, in a viewport that holds eleven cells.
         let store: Vec<HNCLIItem> = [11, 6, 2, 1]
             .into_iter()
@@ -731,6 +783,7 @@ mod tests {
             .map(|(index, id)| fixtures::item(index, id))
             .collect();
         assert!(feed.apply_saved(&store));
+        assert_eq!(feed.request, RequestLifecycle::Settled(request, Ranking::Fresh, (11, 1)));
         assert_eq!(feed.stories.len(), 4, "every saved story, not a window of them");
         assert_eq!(
             feed.stories.iter().map(|story| story.id).collect::<Vec<_>>(),
@@ -738,7 +791,7 @@ mod tests {
             "save-time order"
         );
         assert_eq!(feed.id_snapshot, vec![11, 6, 2, 1]);
-        assert!(!feed.status.loading, "the store is local: nothing is in flight");
+        assert!(!feed.request.is_loading(), "the store is local: nothing is in flight");
         assert_eq!(feed.stories_for, Some((StoryType::Saved, 1)));
         // The viewport still applies to display: the fill is the visible window.
         assert_eq!(feed.fill(11, 1).count, 11);

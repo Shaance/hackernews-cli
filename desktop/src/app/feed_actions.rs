@@ -1,6 +1,6 @@
 //! Feed requests, saved stories and accepted arrivals.
 
-use super::{App, Notice, Ranking, Arrival, DEFAULT_GRID};
+use super::{App, Notice, Ranking, RequestLifecycle, Arrival, DEFAULT_GRID};
 use hn_lib::app::StoryType;
 use hn_lib::feed_state;
 use crate::bridge::feed::Request;
@@ -14,8 +14,8 @@ impl App {
     /// never reaches the source, so the viewport applies to display only.
     pub(super) fn request(&mut self, grid: (usize, usize), ranking: Ranking) {
         let fill = self.feed.fill(grid.0, grid.1);
-        self.requested = Some((fill, ranking, grid));
-        self.feed.status.error = None;
+        self.feed.request = RequestLifecycle::Loading(fill, ranking, grid);
+        self.feed.error = None;
         if fill.tab == StoryType::Saved {
             self.feed.apply_saved(self.saved.store());
             self.accept_arrival();
@@ -44,7 +44,6 @@ impl App {
                 }
             }
         }
-        self.feed.status.loading = true;
         let request = Request::new(fill, snapshot);
         if self.headless {
             let filled = self.bridge.fill_now(self.source.as_ref(), request);
@@ -130,7 +129,7 @@ impl App {
 
     pub(super) fn accept_arrival(&mut self) -> bool {
         let Some(arrival) = self.pending_arrival.take() else { return false; };
-        if self.feed.status.error.is_some() { self.arrival = Arrival::None; return false; }
+        if self.feed.error.is_some() { self.arrival = Arrival::None; return false; }
         self.arrival = arrival;
         if arrival != Arrival::Initial {
             self.feed_revision += 1;

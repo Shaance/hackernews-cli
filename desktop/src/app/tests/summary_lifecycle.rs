@@ -22,7 +22,7 @@ fn button_style(elements: &[rune::ElementInfo], label: &str) -> (f32, Color, Col
 #[test]
 fn retry_controls_share_quiet_style_except_primary_summary_retry() {
     let mut feed = app(true, SavedView::in_memory());
-    feed.feed.status.error = Some("offline".into());
+    feed.feed.error = Some("offline".into());
     let mut rt = rune::Runtime::new(feed, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
     rt.frame(0.0);
     let quiet = button_style(&rt.elements(), "Retry");

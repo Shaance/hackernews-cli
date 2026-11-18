@@ -144,7 +144,7 @@ fn feed_hover_selects_row_click_opens_and_save_stays_separate() {
 fn the_saved_view_renders_from_the_store_and_never_asks_the_source() {
     let mut s = app(false, saved_store());
     s.feed.tab = StoryType::Saved;
-    s.request((11, 1), Ranking::Fresh);
+    s.request((11, 2), Ranking::Fresh);
     assert!(!s.bridge.is_pending(), "no request went out");
     assert_eq!(
         s.feed.stories.len(),
@@ -160,7 +160,13 @@ fn the_saved_view_renders_from_the_store_and_never_asks_the_source() {
         vec![11, 6, 2, 1],
         "save-time order"
     );
-    assert!(!s.feed.status.loading, "the store is local: nothing is in flight");
+    assert!(!s.feed.request.is_loading(), "the store is local: nothing is in flight");
+    let fill = s.feed.fill(11, 2);
+    s.measured.set(Some((22, 1)));
+    poll(&mut s, 0.0, &mut rune::Tx::default());
+    assert_eq!(s.feed.request, RequestLifecycle::Settled(fill, Ranking::Fresh, (22, 1)),
+        "an equal-capacity resize still updates Saved's last grid");
+    assert!(!s.bridge.is_pending());
 }
 
 #[test]

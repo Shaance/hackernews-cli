@@ -1,6 +1,6 @@
 //! Window setup and asynchronous result polling.
 
-use super::{App, Notice, Ranking, Arrival, ScrollPacing, DEFAULT_GRID, TOAST_SECONDS, LOAD_TIMEOUT, LAYOUT_SECONDS, SCROLL_PACING_SECONDS};
+use super::{App, Notice, Ranking, RequestLifecycle, Arrival, ScrollPacing, DEFAULT_GRID, TOAST_SECONDS, LOAD_TIMEOUT, LAYOUT_SECONDS, SCROLL_PACING_SECONDS};
 use std::time::Duration;
 use hn_lib::app::StoryType;
 use rune::Tx;
@@ -110,10 +110,10 @@ pub(super) fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
         if s.feed.stories.iter().any(|story| story.id == id) {
             s.open_id(id);
             changed = true;
-        } else if s.feed.status.loading || s.feed.stories.is_empty() {
+        } else if s.feed.request.is_loading() || s.feed.stories.is_empty() {
             s.open_story = Some(id);
         } else {
-            s.feed.status.error = Some(format!("--open-story {id}: not on this page"));
+            s.feed.error = Some(format!("--open-story {id}: not on this page"));
             changed = true;
         }
     }
@@ -125,7 +125,8 @@ pub(super) fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
     if let Some(grid) = s.measured.get() {
         let need = s.feed.fill(grid.0, grid.1);
         if s.feed.tab == StoryType::Saved
-            && s.requested.is_some_and(|(_, _, previous)| previous != grid)
+            && matches!(s.feed.request, RequestLifecycle::Loading(_, _, previous)
+                | RequestLifecycle::Settled(_, _, previous) if previous != grid)
         {
             if let Some(id) = s.feed.selected_id() {
                 tx.scroll_into_view(format!("story-{id}"));
@@ -133,7 +134,13 @@ pub(super) fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
             tx.instant();
             changed = true;
         }
-        if s.requested.map(|(fill, _, _)| fill) != Some(need) {
+        let ranking = match &mut s.feed.request {
+            RequestLifecycle::Loading(fill, _, previous) | RequestLifecycle::Settled(fill, _, previous)
+                if *fill == need => { *previous = grid; None }
+            RequestLifecycle::Loading(_, ranking, _) => Some(*ranking),
+            RequestLifecycle::BeforeFirst | RequestLifecycle::Settled(..) => Some(Ranking::Keep),
+        };
+        if let Some(ranking) = ranking {
             // A page turn has its own destination. Reflow the page on screen only when
             // there is no such turn, or when an earlier reflow is already pending.
             if s.feed.tab != StoryType::Saved && need.count > 0
@@ -146,22 +153,15 @@ pub(super) fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
                     s.feed.pending_cursor = (offset > 0).then_some(s.feed.display_cursor + offset);
                 }
             }
-            let ranking = if s.feed.status.loading {
-                s.requested.map_or(Ranking::Keep, |(_, ranking, _)| ranking)
-            } else {
-                Ranking::Keep
-            };
             if !matches!(s.pending_arrival, Some(Arrival::Initial | Arrival::Tab(_))) {
                 s.pending_arrival = None;
             }
             s.request(grid, ranking);
             changed = true;
-        } else if let Some((_, _, previous)) = &mut s.requested {
-            *previous = grid;
         }
     }
     // A request that never lands must not leave the feed loading forever.
-    if s.feed.status.loading {
+    if s.feed.request.is_loading() {
         let since = *s.loading_since.get_or_insert(now);
         if s.feed.timed_out(now - since, LOAD_TIMEOUT) {
             s.bridge.cancel_feed();

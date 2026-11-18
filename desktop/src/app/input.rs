@@ -123,7 +123,7 @@ pub(super) fn on_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
     ) {
         let (_, cols) = s.measured.get().unwrap_or(DEFAULT_GRID);
         let shown = s.feed.stories.len();
-        if shown > 0 && !s.feed.status.loading {
+        if shown > 0 && !s.feed.request.is_loading() {
             let cols = cols.max(1);
             let per_column = shown.div_ceil(cols);
             let column = s.feed.selected / per_column;

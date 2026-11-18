@@ -118,10 +118,13 @@ fn desktop_column_loading_empty_and_modifiers_do_not_page() {
         &mut Tx::default(),
     );
     assert_eq!(s.feed.selected, 5);
-    s.feed.status.loading = true;
+    s.headless = false;
+    s.request((11, 2), Ranking::Fresh);
     press(&mut s, rune::Key::Right);
     assert_eq!(s.feed.selected, 5);
-    s.feed.status.loading = false;
+    s.bridge.cancel_feed();
+    s.headless = true;
+    s.request((11, 2), Ranking::Fresh);
     s.feed.stories.clear();
     press(&mut s, rune::Key::Right);
     assert_eq!(s.feed.display_cursor, 0);
@@ -174,7 +177,7 @@ fn fully_cached_windows_skip_source_requests_but_refresh_and_partial_windows_fet
     let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
     let before = *fake.requests.lock().unwrap();
     press(&mut s, rune::Key::Text("p".into()));
-    assert!(!s.feed.status.loading);
+    assert!(!s.feed.request.is_loading());
     let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
     assert_eq!(*fake.requests.lock().unwrap(), before, "cached return issues zero requests");
     let mut updated = s.feed.stories[0].clone();
@@ -212,14 +215,14 @@ fn a_cached_window_cancels_only_the_superseded_feed_worker() {
     assert!(s.bridge.is_pending());
     assert!(s.bridge.is_story_pending());
     s.request((11, 1), Ranking::Keep);
-    assert!(!s.feed.status.loading);
+    assert!(!s.feed.request.is_loading());
     assert!(!s.bridge.is_pending(), "a held window supersedes the feed worker");
     assert!(s.bridge.is_story_pending(), "feed cache must not cancel the independent story request");
     let title = s.feed.stories[0].title.clone();
     std::thread::sleep(Duration::from_millis(80));
     poll(&mut s, 0.0, &mut Tx::default());
     assert_eq!(s.feed.stories[0].title, title);
-    assert!(!s.feed.status.loading);
+    assert!(!s.feed.request.is_loading());
 }
 
 #[test]
@@ -252,11 +255,11 @@ fn a_failed_ranking_reaches_the_feed_error_state() {
     }
     s.refresh();
     assert_eq!(
-        s.feed.status.error.as_deref(),
+        s.feed.error.as_deref(),
         Some("the ranking request failed"),
         "the failure is a state the view renders with a retry"
     );
     assert_eq!(s.feed.stories.len(), before, "the feed is not blanked");
-    assert!(!s.feed.status.loading);
+    assert!(!s.feed.request.is_loading());
 }
 

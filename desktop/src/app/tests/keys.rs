@@ -207,7 +207,6 @@ fn full_feed_has_fixed_top_inset_and_pointer_tabs_return_navigation_to_rows() {
         let line = loading.iter().find(|e| e.path.ends_with("feed-placeholder/#0")).unwrap().rect;
         assert!((line[1] - viewport[1] - FEED_GUTTER).abs() < 0.5);
         rt.state.bridge.cancel_feed();
-        rt.state.requested = None;
         rt.state.headless = true;
         rt.poll = Some(poll);
         rt.set_viewport(if cols == 1 { (1600.0, 900.0) } else { (800.0, 640.0) }, 1.0);
@@ -269,11 +268,11 @@ fn arrows_during_a_pending_shortcut_do_not_navigate_the_tab_radios() {
     route(&mut rt, rune::Key::Text("2".into()));
     route(&mut rt, rune::Key::Down);
     assert_eq!(rt.state.feed.tab, StoryType::New);
-    assert!(rt.state.feed.status.loading, "worker delivery is held until pending input is checked");
+    assert!(rt.state.feed.request.is_loading(), "worker delivery is held until pending input is checked");
     assert_eq!(rt.state.feed.selected, 0);
     rt.poll = Some(poll);
     let deadline = std::time::Instant::now() + Duration::from_secs(2);
-    while rt.state.feed.status.loading {
+    while rt.state.feed.request.is_loading() {
         std::thread::yield_now();
         rt.frame(0.0);
         assert!(std::time::Instant::now() < deadline);

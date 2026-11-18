@@ -39,7 +39,7 @@ use rune_kit::PaneState;
 
 use crate::bookmarks::SavedView;
 use crate::bridge::Bridge;
-use crate::feed::{FeedModel, Fill};
+use crate::feed::{FeedModel, Ranking, RequestLifecycle};
 use crate::layout::Layout;
 use crate::service::Source;
 use crate::settings::Settings;
@@ -74,16 +74,6 @@ struct Notice {
     message: String,
     until: f64,
     show_dot: bool,
-}
-
-/// Whether a request takes a new ranking or pages against the one the feed already has.
-///
-/// Only a refresh (and the first load of a tab) re-snapshots: a page turn or a resize must keep
-/// the ranks the reader was shown, or the story under the cursor changes under them.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Ranking {
-    Fresh,
-    Keep,
 }
 
 /// Why a newly accepted feed group arrives. Refresh and resize keep their current identity.
@@ -128,8 +118,6 @@ pub struct App {
     bridge: Bridge,
     /// The grid the last commit measured. Written by `view`, read by `poll`.
     measured: Cell<Option<(usize, usize)>>,
-    /// The newest fill, ranking policy and grid, so resize preserves in-flight work.
-    requested: Option<(Fill, Ranking, (usize, usize))>,
     /// Accepted tab/page changes replace this group; refresh and resize keep its identity.
     feed_revision: usize,
     pending_arrival: Option<Arrival>,
@@ -279,7 +267,6 @@ fn init() -> App {
         source: Arc::new(source),
         bridge: Bridge::new().expect("a tokio runtime for the feed's requests"),
         measured: Cell::new(None),
-        requested: None,
         feed_revision: 0,
         pending_arrival: Some(Arrival::Initial),
         arrival: Arrival::Initial,
