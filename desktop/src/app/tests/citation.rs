@@ -139,20 +139,34 @@ fn source_selection_context_and_pointer_tab_follow_the_visible_citation() {
 }
 
 #[test]
-fn captured_source_remains_selected_when_the_live_comment_is_gone() {
-    let mut s = app(true, SavedView::in_memory());
-    s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
-    s.story.as_mut().unwrap().thread = crate::comments::Thread::empty();
-    let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
-    rt.on_key = Some(on_key);
-    rt.frame(0.0);
-    route(&mut rt, rune::Key::Tab);
-    route(&mut rt, rune::Key::Enter);
-    let rows = rt.elements();
-    assert!(rows.iter().any(|e| e.key.as_deref() == Some("source-comment-901") && e.item_selected));
-    assert!(rows.iter().any(|e| e.key.as_deref() == Some("source-comment-text")));
-    route(&mut rt, rune::Key::Down);
-    assert_eq!(rt.state.story.as_ref().unwrap().source().unwrap().nav.cursor, Some(901));
+fn captured_source_remains_selected_when_the_live_comment_changes_or_is_gone() {
+    for live in [false, true] {
+        let mut s = app(true, SavedView::in_memory());
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        let story = s.story.as_mut().unwrap();
+        let captured = story.summary.displayed().unwrap().sources().iter().find(|source| source.id == 901).unwrap().clone();
+        if live {
+            let mut comments = crate::fixtures::comments();
+            comments[0].author = "new author".into();
+            comments[0].text = "new text".into();
+            story.thread.merge_comments(&comments, &[]);
+        } else {
+            story.thread = crate::comments::Thread::empty();
+        }
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.frame(0.0);
+        route(&mut rt, rune::Key::Tab);
+        route(&mut rt, rune::Key::Enter);
+        let rows = rt.elements();
+        assert!(rows.iter().any(|e| e.key.as_deref() == Some("source-comment-901") && e.item_selected));
+        assert!(rows.iter().any(|e| e.key.as_deref() == Some("comment-author-901") && e.text.as_deref() == Some(captured.author.as_str())));
+        assert!(rows.iter().any(|e| e.key.as_deref() == Some("source-comment-text") && e.text.as_deref() == Some(captured.text.as_str())));
+        if !live {
+            route(&mut rt, rune::Key::Down);
+            assert_eq!(rt.state.story.as_ref().unwrap().source().unwrap().nav.cursor, Some(901));
+        }
+    }
 }
 
 #[test]
@@ -309,7 +323,7 @@ fn returning_to_a_replacement_without_citations_restores_summary_focus() {
     let mut replacement = crate::fixtures::summary();
     for point in &mut replacement.points { point.sources.clear(); }
     story.land_update(StoryUpdate::Summary {
-        story_id: story.id(), summary: Ok(replacement), sources: crate::fixtures::sources(),
+        story_id: story.id(), summary: Ok((replacement, crate::fixtures::sources())),
     });
     let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
     rt.on_key = Some(on_key);

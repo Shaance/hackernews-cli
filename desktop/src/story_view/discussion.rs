@@ -183,7 +183,11 @@ pub(super) fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme
     let thread = &s.thread;
     let captured = match context { RenderContext::Source(source) => Some(source.captured()).filter(|source| source.id == id), RenderContext::Discussion => None };
     let node = thread.node(id);
-    if node.is_none() && captured.is_none() { return el(); }
+    let (author, body, readable) = match (captured, node) {
+        (Some(source), _) => (source.author.as_str(), source.text.as_str(), true),
+        (None, Some(node)) => (node.author.as_str(), node.text.as_str(), node.readable),
+        (None, None) => return el(),
+    };
     let nav = match context { RenderContext::Source(source) => Some(&source.nav), RenderContext::Discussion => None };
     let context = matches!(context, RenderContext::Source(_));
     let cursor = nav.map_or_else(|| thread.cursor(), |nav| nav.cursor);
@@ -191,12 +195,9 @@ pub(super) fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme
     let selected = cursor == Some(id);
     let folded = nav.map_or_else(|| thread.is_folded(id), |nav| nav.folded.contains(&id));
     let capped = if context { depth + 1 >= MAX_DEPTH && thread.has_children(id) } else { thread.capped(id) };
-    let readable = captured.is_some() || node.is_some_and(|node| node.readable);
-    let author = captured.map(|source| source.author.as_str()).or_else(|| node.map(|node| node.author.as_str())).unwrap_or("");
-    let body = captured.map(|source| source.text.as_str()).or_else(|| node.map(|node| node.text.as_str())).unwrap_or("");
     let replies = thread.child_count(id);
     let loaded = node.is_some_and(|node| !node.children.is_empty());
-    let loading = s.pending_reply.as_ref().is_some_and(|r| r.parent_id == id);
+    let loading = s.pending_reply.as_ref().is_some_and(|r| r.batch.parent_id() == id);
     let expanded = (loaded || loading) && !folded && !capped;
     let mut r = col()
         .key(format!("{}comment-{id}", if context { "source-" } else { "" }))
@@ -257,7 +258,7 @@ pub(super) fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme
         );
     }
     let retry_primary = !readable && !loaded && !folded && !capped && !loading
-        && thread.reply_batch(id, false).is_empty() && !thread.reply_batch(id, true).is_empty();
+        && thread.reply_batch(id, false).is_none() && thread.reply_batch(id, true).is_some();
     let action = if capped { "Continue thread" } else if folded { "Show replies" }
         else if retry_primary { "Retry replies" } else if !loaded && !loading { "Load replies" }
         else { "Hide replies" };
@@ -366,8 +367,8 @@ pub(super) fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme
         } else {
             for (retry, label) in [(false, "Load replies"), (true, "Retry replies")] {
                 if !readable && !loaded && (!retry || retry_primary) { continue; }
-                let count = thread.reply_batch(id, retry).len();
-                if count == 0 { continue; }
+                let Some(batch) = thread.reply_batch(id, retry) else { continue; };
+                let count = batch.ids().len();
                 let label = if !retry && !thread.children_of(id).is_empty() { "Load more replies" } else { label };
                 let label = format!("{label} ({count})");
                 r = r.child(quiet_button(label).disabled(s.pending_reply.is_some())

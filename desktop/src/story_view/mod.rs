@@ -178,6 +178,9 @@ mod tests {
         for key in ["comment-author-9010", "comment-age-9010", "comment-text-9010"] {
             assert!(!elements.iter().any(|e| e.key.as_deref() == Some(key)));
         }
+        rt.update(|story, tx| { story.thread = crate::comments::Thread::empty(); tx.instant(); });
+        rt.frame(0.0);
+        assert!(!rt.elements().iter().any(|e| e.key.as_deref() == Some("comment-9010")));
     }
 
     #[test]

@@ -343,8 +343,8 @@ impl Story {
         let story_id = filled.story_id;
         self.land_update(StoryUpdate::Article { story_id, article: filled.article, summary_skipped: false });
         self.land_update(StoryUpdate::ArticleSummary { story_id, summary: filled.article_summary });
-        self.land_update(StoryUpdate::Discussion { story_id, comments: filled.comments, sources: filled.sources.clone(), summary_skipped: false });
-        self.land_update(StoryUpdate::Summary { story_id, summary: filled.summary, sources: filled.sources });
+        self.land_update(StoryUpdate::Discussion { story_id, comments: filled.comments, summary_skipped: false });
+        self.land_update(StoryUpdate::Summary { story_id, summary: filled.summary });
         true
     }
 
@@ -368,18 +368,18 @@ impl Story {
                 if !matches!(self.article_summary, ArticleSummaryState::Generating { .. }) { return false; }
                 self.land_article_summary(summary);
             }
-            StoryUpdate::Discussion { story_id, comments, sources, summary_skipped } if story_id == self.id() => {
+            StoryUpdate::Discussion { story_id, comments, summary_skipped } if story_id == self.id() => {
                 if summary_skipped { self.stop_summary(false); }
                 if matches!(self.discussion, Some(Ok(()))) {
                     // A newer comments refresh may have arrived before this initial capture.
                     if let Err(message) = comments && self.summary.is_generating() {
-                        self.land_summary(Err(SummaryError::new(format!("Discussion unavailable: {message}"), false)), Vec::new());
+                        self.land_summary(Err(SummaryError::new(format!("Discussion unavailable: {message}"), false)));
                     }
                     return true;
                 }
                 let first = self.discussion.is_none() && self.thread.is_empty();
                 self.discussion = Some(match comments {
-                    Ok(comments) => {
+                    Ok(crate::story_io::CapturedComments { comments, sources }) => {
                         if first { self.thread = Thread::from_comments(&comments); }
                         else { self.thread.merge_comments(&comments, &[]); }
                         self.merge_current_sources(&comments, sources);
@@ -387,15 +387,15 @@ impl Story {
                     },
                     Err(message) => {
                         if self.summary.is_generating() {
-                            self.land_summary(Err(SummaryError::new(format!("Discussion unavailable: {message}"), false)), Vec::new());
+                            self.land_summary(Err(SummaryError::new(format!("Discussion unavailable: {message}"), false)));
                         }
                         Err(message)
                     }
                 });
             }
-            StoryUpdate::Summary { story_id, summary, sources } if story_id == self.id() => {
+            StoryUpdate::Summary { story_id, summary } if story_id == self.id() => {
                 if !self.summary.is_generating() { return false; }
-                self.land_summary(summary, sources);
+                self.land_summary(summary);
             }
             _ => return false,
         }
@@ -410,10 +410,10 @@ impl Story {
         };
     }
 
-    fn land_summary(&mut self, summary: Result<Discussion, SummaryError>, sources: Vec<CapturedSource>) {
+    fn land_summary(&mut self, summary: Result<(Discussion, Vec<CapturedSource>), SummaryError>) {
         let previous = self.summary.take_displayed();
         self.summary = match summary {
-            Ok(discussion) => {
+            Ok((discussion, sources)) => {
                 let (summary, mut cursor) = Summary::capture(discussion, sources);
                 match previous {
                     Some(DisplayedSummary(DisplayState::Source(mut source))) => {
@@ -442,10 +442,8 @@ impl Story {
 
     pub fn request_replies(&mut self, parent_id: i32, retry: bool) -> Option<crate::story_io::ReplyRequest> {
         if self.pending_reply.is_some() { return None; }
-        let ids = self.thread.reply_batch(parent_id, retry);
-        if ids.is_empty() { return None; }
-        let request = crate::story_io::ReplyRequest { story_id: self.id(), parent_id, ids,
-            depth: self.thread.tree_depth(parent_id)? as usize + 1 };
+        let batch = self.thread.reply_batch(parent_id, retry)?;
+        let request = crate::story_io::ReplyRequest { story_id: self.id(), batch };
         self.pending_reply = Some(request.clone());
         Some(request)
     }
@@ -455,7 +453,7 @@ impl Story {
         let selected = self.source().and_then(|source| self.thread.source_rows(&source.nav)
             .iter().position(|row| Some(row.id) == source.nav.cursor));
         self.pending_reply = None;
-        self.thread.merge_replies(filled.request.parent_id, &filled.request.ids, filled.comments);
+        self.thread.merge_replies(&filled.request.batch, filled.comments);
         self.repair_source_navigation(selected);
         true
     }
@@ -667,15 +665,15 @@ impl Story {
             else { ArticleSummaryState::Unconfigured };
     }
 
-    pub fn land_refresh(&mut self, result: CommentsRefreshed, sources: Vec<CapturedSource>) {
+    pub fn land_refresh(&mut self, result: CommentsRefreshed) {
         self.refreshing_comments = false;
         let CommentsRefreshed { comments, descendants, warning, .. } = result;
         let selected = self.source().and_then(|source| self.thread.source_rows(&source.nav)
             .iter().position(|row| Some(row.id) == source.nav.cursor));
-        self.thread.merge_comments(comments.as_deref().unwrap_or(&[]), &descendants);
+        self.thread.merge_comments(comments.as_ref().map(|capture| capture.comments.as_slice()).unwrap_or(&[]), &descendants);
         self.repair_source_navigation(selected);
         self.refresh_error = match comments {
-            Ok(comments) => {
+            Ok(crate::story_io::CapturedComments { comments, sources }) => {
                 self.merge_current_sources(&comments, sources);
                 self.discussion = Some(Ok(()));
                 warning
@@ -706,7 +704,7 @@ impl Story {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::story_io::SummaryError;
+    use crate::story_io::{CapturedComments, SummaryError};
     use crate::fixtures;
     use hn_lib::reader::Point;
 
@@ -722,15 +720,15 @@ mod tests {
             let mut newer = fixtures::comments();
             newer[0].text = "newer comment".into();
             story.land_refresh(CommentsRefreshed {
-                story_id: story.id(), comments: Ok(newer.clone()), descendants: Vec::new(), warning: None,
-            }, source.capture(&newer));
+                story_id: story.id(), comments: Ok(CapturedComments { comments: newer.clone(), sources: source.capture(&newer) }),
+                descendants: Vec::new(), warning: None,
+            });
             let mut older = newer.clone();
             older[0].text = "older comment".into();
             let old_capture = source.capture(&older);
             story.land_update(StoryUpdate::Discussion {
                 story_id: story.id(),
-                comments: if fails { Err("initial capture failed".into()) } else { Ok(older) },
-                sources: old_capture,
+                comments: if fails { Err("initial capture failed".into()) } else { Ok(CapturedComments { comments: older, sources: old_capture }) },
                 summary_skipped: false,
             });
             assert_eq!(story.discussion, Some(Ok(())));
@@ -745,9 +743,8 @@ mod tests {
             story_id: 2,
             article: Ok(("# Libghostty 1.0\n\nBody.".to_string(), false)),
             article_summary: Ok(Article { text: "Article overview.".to_string() }),
-            comments: Ok(fixtures::thread()),
-            sources: fixtures::sources(),
-            summary,
+            comments: Ok(CapturedComments { comments: fixtures::thread(), sources: fixtures::sources() }),
+            summary: summary.map(|discussion| (discussion, fixtures::sources())),
         }
     }
 
@@ -856,7 +853,7 @@ mod tests {
         sources.iter_mut().find(|source| source.id == 901).unwrap().text = "replacement capture".into();
         let mut replacement = discussion();
         replacement.overview = "A new discussion summary".into();
-        assert!(story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok(replacement), sources }));
+        assert!(story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok((replacement, sources)) }));
         assert_eq!(story.source().unwrap().captured().text, original);
         assert_eq!(story.summary.readable().unwrap().overview, "Commenters split on the ABI.");
         assert!(story.close_source());
@@ -880,7 +877,7 @@ mod tests {
                 1 => for point in &mut replacement.points { point.sources.retain(|id| *id != 901); },
                 _ => for point in &mut replacement.points { point.sources.clear(); },
             }
-            story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok(replacement), sources: fixtures::sources() });
+            story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok((replacement, fixtures::sources())) });
             assert!(story.close_source());
             assert_eq!(story.focused_citation().is_some(), replacement_kind != 2);
             match replacement_kind {
@@ -899,7 +896,7 @@ mod tests {
         story.retry(true);
         let mut replacement = discussion();
         for point in &mut replacement.points { point.sources.clear(); }
-        assert!(story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok(replacement), sources: fixtures::sources() }));
+        assert!(story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok((replacement, fixtures::sources())) }));
         assert!(story.focused_citation().is_none());
         assert!(story.citations().next().is_none());
         assert!(!story.open_source());
@@ -959,7 +956,8 @@ mod tests {
     fn a_citation_the_capture_does_not_hold_is_not_a_chip() {
         let mut story = story();
         let mut landing = filled(Ok(discussion()));
-        landing.sources.retain(|source| source.id != 903);
+        landing.comments.as_mut().unwrap().sources.retain(|source| source.id != 903);
+        landing.summary.as_mut().unwrap().1.retain(|source| source.id != 903);
         story.land(landing);
         assert_eq!(
             story.citations().map(|citation| citation.source.id).collect::<Vec<_>>(),

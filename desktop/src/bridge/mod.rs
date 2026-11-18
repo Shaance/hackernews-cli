@@ -20,7 +20,6 @@ use std::sync::Arc;
 use std::task::{Context, Poll, Wake, Waker as TaskWaker};
 
 use anyhow::Result;
-use hn_lib::app::Comment;
 use hn_lib::reader::{Article, Config, Discussion, Source as CapturedSource};
 use rune::{Latest, Waker};
 use tokio::runtime::{Handle, Runtime};
@@ -28,7 +27,7 @@ use tokio::task::JoinHandle;
 
 use crate::feed::Filled;
 use crate::service::Source;
-use crate::story_io::{CommentsRefreshed, ReplyFilled, ReplyRequest, StoryFilled, StoryRequest, StoryUpdate, SummaryError};
+use crate::story_io::{CapturedComments, CommentsRefreshed, ReplyFilled, ReplyRequest, StoryFilled, StoryRequest, StoryUpdate, SummaryError};
 
 pub mod feed;
 
@@ -68,11 +67,10 @@ enum StoryPhase {
     Captured {
         source: Arc<Source>,
         request: StoryRequest,
-        comments: Result<Vec<Comment>, String>,
-        sources: Vec<CapturedSource>,
+        comments: Result<CapturedComments, String>,
         manual: bool,
     },
-    Summary { story_id: i32, summary: Result<Discussion, SummaryError>, sources: Vec<CapturedSource> },
+    Summary { story_id: i32, summary: Result<(Discussion, Vec<CapturedSource>), SummaryError> },
 }
 
 impl Bridge {
@@ -120,8 +118,7 @@ impl Bridge {
         }));
         self.story = Some(self.handle.spawn(async move {
             let comments = source.thread(request.story.id).await.map_err(|e| e.to_string());
-            let sources = comments.as_ref().map(|comments| source.capture(comments)).unwrap_or_default();
-            StoryPhase::Captured { source, request, comments, sources, manual: false }
+            StoryPhase::Captured { source, request, comments, manual: false }
         }));
         // Input dispatch may run after the frame's poll; schedule one to register these tasks.
         if let Some(waker) = &self.waker { waker.wake_by_ref(); }
@@ -147,13 +144,12 @@ impl Bridge {
         self.story = Some(self.handle.spawn(async move {
             match sources {
                 Some(sources) => {
-                    let summary = source.summary(&request.config, &request.story, &sources).await;
-                    StoryPhase::Summary { story_id: request.story.id, summary, sources }
+                    let summary = source.summary(&request.config, &request.story, &sources).await.map(|summary| (summary, sources));
+                    StoryPhase::Summary { story_id: request.story.id, summary }
                 }
                 None => {
                     let comments = source.thread(request.story.id).await.map_err(|e| e.to_string());
-                    let sources = comments.as_ref().map(|comments| source.capture(comments)).unwrap_or_default();
-                    StoryPhase::Captured { source, request, comments, sources, manual: true }
+                    StoryPhase::Captured { source, request, comments, manual: true }
                 }
             }
         }));
@@ -211,19 +207,19 @@ impl Bridge {
             });
         }
         match take_task(&mut self.story, self.waker.as_ref())? {
-            StoryPhase::Captured { source, request, comments, sources, manual } => {
+            StoryPhase::Captured { source, request, comments, manual } => {
                 let story_id = request.story.id;
-                if comments.is_ok() && (manual || config.automatic) && summarize_discussion && (!source.is_live() || !config.key().is_empty()) {
-                    let captured = sources.clone();
+                if let Ok(captured) = &comments && (manual || config.automatic) && summarize_discussion && (!source.is_live() || !config.key().is_empty()) {
+                    let sources = captured.sources.clone();
                     let config = config.clone();
                     self.story = Some(self.handle.spawn(async move {
-                        let summary = source.summary(&config, &request.story, &captured).await;
-                        StoryPhase::Summary { story_id, summary, sources: captured }
+                        let summary = source.summary(&config, &request.story, &sources).await.map(|summary| (summary, sources));
+                        StoryPhase::Summary { story_id, summary }
                     }));
                 }
-                Some(StoryUpdate::Discussion { story_id, comments, sources, summary_skipped: !manual && !config.automatic })
+                Some(StoryUpdate::Discussion { story_id, comments, summary_skipped: !manual && !config.automatic })
             }
-            StoryPhase::Summary { story_id, summary, sources } => Some(StoryUpdate::Summary { story_id, summary, sources }),
+            StoryPhase::Summary { story_id, summary } => Some(StoryUpdate::Summary { story_id, summary }),
         }
     }
 
@@ -272,7 +268,7 @@ impl Bridge {
 /// from the top-level comments only; the capture stays paired with its summary citations.
 async fn run_story(source: &Source, request: StoryRequest) -> StoryFilled {
     let story_id = request.story.id;
-    let ((article, article_summary), (comments, sources, summary)) = tokio::join!(async {
+    let ((article, article_summary), (comments, summary)) = tokio::join!(async {
         let article = source.article(&request.story).await;
         let summary = match &article {
             Ok(_) if !request.config.automatic => Err(SummaryError::new("Automatic summaries are off", false)),
@@ -282,26 +278,25 @@ async fn run_story(source: &Source, request: StoryRequest) -> StoryFilled {
         (article, summary)
     }, async {
         let comments = source.thread(story_id).await.map_err(|e| e.to_string());
-        let sources = comments.as_ref().map(|comments| source.capture(comments)).unwrap_or_default();
         let summary = match &comments {
             Ok(_) if !request.config.automatic => Err(SummaryError::new("Automatic summaries are off", false)),
-            Ok(_) => source.summary(&request.config, &request.story, &sources).await,
+            Ok(captured) => source.summary(&request.config, &request.story, &captured.sources).await
+                .map(|summary| (summary, captured.sources.clone())),
             Err(message) => Err(SummaryError::new(format!("Discussion unavailable: {message}"), false)),
         };
-        (comments, sources, summary)
+        (comments, summary)
     });
     StoryFilled {
         story_id,
         article,
         article_summary,
         comments,
-        sources,
         summary,
     }
 }
 
 async fn run_replies(source: &Source, request: ReplyRequest) -> ReplyFilled {
-    let comments = source.children(&request.ids, request.depth).await.map_err(|e| e.to_string());
+    let comments = source.children(request.batch.ids(), request.batch.depth()).await.map_err(|e| e.to_string());
     ReplyFilled { request, comments }
 }
 
@@ -526,7 +521,7 @@ mod tests {
             }}));
             let discussion_source = source.clone();
             bridge.story = Some(bridge.handle.spawn(async move { StoryPhase::Captured {
-                source: discussion_source, request, comments: Ok(comments), sources, manual: false,
+                source: discussion_source, request, comments: Ok(CapturedComments { comments, sources }), manual: false,
             }}));
             bridge.park_story(1);
             bridge.resume_story(1);
@@ -583,13 +578,13 @@ mod tests {
             "the article comes from the reader's own extractor"
         );
         assert_eq!(
-            filled.comments.as_ref().unwrap().len(),
+            filled.comments.as_ref().unwrap().comments.len(),
             5,
             "initial discussion contains every root, without fetching replies"
         );
         assert_eq!(
             filled
-                .comments.as_ref().unwrap()
+                .comments.as_ref().unwrap().comments
                 .iter()
                 .filter(|comment| comment.depth == 0)
                 .count(),
@@ -597,12 +592,13 @@ mod tests {
             "five top-level threads"
         );
         assert_eq!(
-            filled.sources.len(),
+            filled.comments.as_ref().unwrap().sources.len(),
             5,
             "one captured source per top-level comment, which is what the card counts"
         );
-        let summary = filled.summary.expect("the fake provider always answers");
+        let (summary, sources) = filled.summary.expect("the fake provider always answers");
         assert_eq!(summary.points.len(), 3);
+        assert_eq!(sources.len(), 5);
     }
 
     #[test]

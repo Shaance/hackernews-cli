@@ -83,6 +83,20 @@ pub struct Row {
     pub depth: u32,
 }
 
+/// A nonempty batch tied to the parent found in this thread.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReplyBatch {
+    parent_id: i32,
+    depth: usize,
+    ids: Vec<i32>,
+}
+
+impl ReplyBatch {
+    pub fn parent_id(&self) -> i32 { self.parent_id }
+    pub fn depth(&self) -> usize { self.depth }
+    pub fn ids(&self) -> &[i32] { &self.ids }
+}
+
 /// A source has its own navigation lifetime while sharing the discussion's nodes.
 #[derive(Debug, Clone)]
 pub(crate) struct Navigation {
@@ -191,7 +205,7 @@ impl Thread {
 
     /// Loaded descendants, including folded branches, but excluding unfetched reply IDs.
     pub fn loaded_reply_ids(&self) -> Vec<i32> {
-        self.roots.iter().flat_map(|id| self.subtree(*id).into_iter().skip(1)).collect()
+        self.roots.iter().flat_map(|id| self.descendants(*id)).collect()
     }
 
     /// Known, potentially readable direct replies. Unfetched IDs count until resolved.
@@ -227,14 +241,18 @@ impl Thread {
         self.roots.retain(|id| !removed.contains(id));
     }
 
-    pub fn reply_batch(&self, id: i32, retry: bool) -> Vec<i32> {
-        let Some(node) = self.node(id) else { return Vec::new(); };
+    pub fn reply_batch(&self, id: i32, retry: bool) -> Option<ReplyBatch> {
+        let node = self.node(id)?;
         let failed = match &node.branch { BranchStatus::Ready => &[][..], BranchStatus::Failed { ids, .. } => ids };
-        node.known_children.iter().filter(|id| !self.nodes.contains_key(id)
-            && if retry { failed.contains(id) } else { !failed.contains(id) }).take(50).copied().collect()
+        let ids: Vec<_> = node.known_children.iter().filter(|id| !self.nodes.contains_key(id)
+            && if retry { failed.contains(id) } else { !failed.contains(id) }).take(50).copied().collect();
+        (!ids.is_empty()).then(|| ReplyBatch { parent_id: id,
+            depth: std::iter::successors(node.parent, |parent| self.parent_of(*parent)).count() + 1, ids })
     }
 
-    pub fn merge_replies(&mut self, parent: i32, requested: &[i32], result: Result<Vec<Comment>, String>) {
+    pub fn merge_replies(&mut self, batch: &ReplyBatch, result: Result<Vec<Comment>, String>) {
+        let parent = batch.parent_id;
+        let requested = &batch.ids;
         let selected_row = self.cursor.and_then(|id| self.visible_row(id));
         let Some(mut parent_node) = self.nodes.remove(&parent) else { return; };
         let previous = match &parent_node.branch { BranchStatus::Ready => Vec::new(), BranchStatus::Failed { ids, .. } => ids.clone() };
@@ -411,13 +429,13 @@ impl Thread {
     /// Every reply under `id`, including the ones behind a `continue thread →`: what the cap's
     /// label counts, because re-rooting there is what makes them rows.
     pub fn reply_count(&self, id: i32) -> usize {
-        self.subtree(id).len().saturating_sub(1)
+        self.descendants(id).len()
     }
 
-    /// `id` and everything under it, depth first.
-    pub fn subtree(&self, id: i32) -> Vec<i32> {
+    /// Everything under `id`, depth first.
+    fn descendants(&self, id: i32) -> Vec<i32> {
         let mut out = Vec::new();
-        let mut stack = vec![id];
+        let mut stack: Vec<_> = self.children_of(id).into_iter().rev().collect();
         while let Some(at) = stack.pop() {
             out.push(at);
             stack.extend(self.children_of(at).into_iter().rev());
@@ -801,16 +819,18 @@ mod tests {
         assert_eq!(ids(&thread.rows()), vec![10]);
         assert!(thread.node(10).unwrap().links.is_empty());
         assert_eq!(thread.child_count(10), 3);
-        assert_eq!(thread.reply_batch(10, false), vec![11, 12, 13]);
-        thread.merge_replies(10, &[11, 12, 13], Err("Offline".into()));
+        let batch = thread.reply_batch(10, false).unwrap();
+        assert_eq!(batch.ids(), &[11, 12, 13]);
+        thread.merge_replies(&batch, Err("Offline".into()));
         assert_eq!(ids(&thread.rows()), vec![10]);
-        assert_eq!(thread.reply_batch(10, true), vec![11, 12, 13]);
-        thread.merge_replies(10, &[11, 12, 13], Ok(vec![good, dead]));
+        let retry = thread.reply_batch(10, true).unwrap();
+        assert_eq!(retry.ids(), &[11, 12, 13]);
+        thread.merge_replies(&retry, Ok(vec![good, dead]));
         assert_eq!(ids(&thread.rows()), vec![10, 11]);
         assert_eq!(thread.children_of(10), vec![11]);
         assert_eq!(thread.child_count(10), 2, "the missing reply remains retryable");
-        assert_eq!(thread.reply_batch(10, true), vec![13]);
-        assert!(thread.reply_batch(10, false).is_empty(), "dead replies do not loop");
+        assert_eq!(thread.reply_batch(10, true).unwrap().ids(), &[13]);
+        assert!(thread.reply_batch(10, false).is_none(), "dead replies do not loop");
         assert_eq!(thread.parent_of(11), Some(10));
         assert_eq!(thread.depth_of(11), Some(1));
         assert!(thread.fold());
@@ -820,7 +840,8 @@ mod tests {
         let mut recovered = fixtures::comments().remove(0);
         recovered.id = 13;
         recovered.child_ids.clear();
-        thread.merge_replies(10, &[13], Ok(vec![recovered]));
+        let retry = thread.reply_batch(10, true).unwrap();
+        thread.merge_replies(&retry, Ok(vec![recovered]));
         assert_eq!(thread.children_of(10), vec![11, 13]);
         assert!(matches!(thread.node(10).unwrap().branch, BranchStatus::Ready));
     }
@@ -841,11 +862,12 @@ mod tests {
         empty.text.clear();
         let mut thread = Thread::from_comments(&[before, group, after]);
         assert!(thread.select(2));
-        thread.merge_replies(2, &[3], Ok(vec![empty]));
+        let batch = thread.reply_batch(2, false).unwrap();
+        thread.merge_replies(&batch, Ok(vec![empty]));
         assert_eq!(ids(&thread.rows()), vec![1, 4]);
         assert_eq!(thread.cursor(), Some(4));
         assert!(!thread.has_children(2));
-        assert!(thread.reply_batch(2, true).is_empty());
+        assert!(thread.reply_batch(2, true).is_none());
         assert!(thread.node(3).is_some(), "the filtered success cannot become a retry");
     }
 
@@ -867,7 +889,8 @@ mod tests {
         dead.id = 4;
         dead.deleted = true;
         dead.child_ids.clear();
-        thread.merge_replies(3, &[4], Ok(vec![dead]));
+        let batch = thread.reply_batch(3, false).unwrap();
+        thread.merge_replies(&batch, Ok(vec![dead]));
         assert_eq!(thread.root(), None);
         assert_eq!(thread.cursor(), Some(1));
         assert_eq!(ids(&thread.rows()), vec![1]);
@@ -886,19 +909,23 @@ mod tests {
         assert_eq!(thread.roots(), 1, "duplicate IDs never become duplicate rows");
         assert_eq!(thread.node(root.id).unwrap().text, drawn_text(&root.text), "the first capture wins");
         assert!(thread.has_children(root.id));
-        let first = thread.reply_batch(root.id, false);
-        assert_eq!(first, (1000..1050).collect::<Vec<_>>());
-        let comments: Vec<_> = first.iter().skip(1).map(|id| { let mut c = root.clone(); c.id = *id; c.depth = 1; c.child_ids.clear(); c }).collect();
-        thread.merge_replies(root.id, &first, Ok(comments));
-        assert_eq!(thread.reply_batch(root.id, true), vec![1000]);
-        let second = thread.reply_batch(root.id, false);
-        assert_eq!(second, (1050..1100).collect::<Vec<_>>());
-        thread.merge_replies(root.id, &second, Err("Offline".into()));
-        assert_eq!(thread.reply_batch(root.id, false), (1100..1123).collect::<Vec<_>>());
+        assert!(thread.reply_batch(999_999, false).is_none());
+        assert!(thread.reply_batch(root.id, true).is_none());
+        let first = thread.reply_batch(root.id, false).unwrap();
+        assert_eq!(first.ids(), (1000..1050).collect::<Vec<_>>());
+        assert_eq!((first.parent_id(), first.depth()), (root.id, 1));
+        let comments: Vec<_> = first.ids().iter().skip(1).map(|id| { let mut c = root.clone(); c.id = *id; c.depth = 1; c.child_ids.clear(); c }).collect();
+        thread.merge_replies(&first, Ok(comments));
+        assert_eq!(thread.reply_batch(root.id, true).unwrap().ids(), &[1000]);
+        let second = thread.reply_batch(root.id, false).unwrap();
+        assert_eq!(second.ids(), (1050..1100).collect::<Vec<_>>());
+        thread.merge_replies(&second, Err("Offline".into()));
+        assert_eq!(thread.reply_batch(root.id, false).unwrap().ids(), (1100..1123).collect::<Vec<_>>());
         let mut recovered = root.clone(); recovered.id = 1000; recovered.child_ids.clear(); recovered.depth = 1;
-        thread.merge_replies(root.id, &[1000], Ok(vec![recovered]));
+        let retry = thread.reply_batch(root.id, true).unwrap();
+        thread.merge_replies(&retry, Ok(vec![recovered]));
         assert_eq!(thread.children_of(root.id)[0], 1000, "retries restore API order");
-        assert_eq!(thread.reply_batch(root.id, true), second);
+        assert_eq!(thread.reply_batch(root.id, true), Some(second));
         assert_eq!(thread.roots(), 1);
         assert_eq!(thread.len(), 51);
 
@@ -908,7 +935,9 @@ mod tests {
         let roots: Vec<_> = thread.rows().into_iter().filter(|row| row.depth == 0).map(|row| row.id).collect();
         assert_eq!(roots, vec![root.id, 1200, 1190], "new roots retain capture order");
         let mut stale_reply = root.clone(); stale_reply.id = 1300; stale_reply.child_ids.clear();
-        thread.merge_replies(999_999, &[1300], Ok(vec![stale_reply]));
+        let mut missing = root.clone(); missing.id = 999_999; missing.child_ids = vec![1300];
+        let stale = Thread::from_comments(&[missing]).reply_batch(999_999, false).unwrap();
+        thread.merge_replies(&stale, Ok(vec![stale_reply]));
         assert!(thread.node(1300).is_none());
         assert_eq!(thread.rows().into_iter().filter(|row| row.depth == 0).map(|row| row.id).collect::<Vec<_>>(), roots);
     }
@@ -917,6 +946,8 @@ mod tests {
     fn the_tree_draws_depth_first_and_stops_at_the_cap() {
         let thread = thread();
         let rows = thread.rows();
+        assert_eq!(thread.loaded_reply_ids(), vec![9010, 90100, 901000, 9010000, 90100000,
+            90100001, 9010001, 9010002, 90101, 9011, 9030, 90300], "loaded replies retain depth-first order beyond the cap");
         assert_eq!(
             ids(&rows),
             vec![901, 9010, 90100, 901000, 90101, 9011, 902, 903, 9030, 90300, 904, 905],

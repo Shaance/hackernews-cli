@@ -21,7 +21,7 @@ use hn_lib::reader::{
 };
 use hn_lib::{HNCLIItem, HackerNewsCliService, HackerNewsCliServiceImpl};
 
-use crate::story_io::SummaryError;
+use crate::story_io::{CapturedComments, SummaryError};
 
 use self::fake::FakeService;
 
@@ -131,8 +131,9 @@ impl Source {
     }
 
     /// Initial discussion capture: every root, with known child IDs retained for disclosure.
-    pub async fn thread(&self, story_id: i32) -> Result<Vec<Comment>> {
-        self.comments(story_id).await
+    pub async fn thread(&self, story_id: i32) -> Result<CapturedComments> {
+        let comments = self.comments(story_id).await?;
+        Ok(CapturedComments { sources: self.capture(&comments), comments })
     }
 
     pub async fn children(&self, ids: &[i32], depth: usize) -> Result<Vec<Comment>> {

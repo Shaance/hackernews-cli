@@ -322,7 +322,7 @@ pub(super) fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
         | StoryKey::PopTrail => {
             if !in_source { story.clear_citation_focus(); }
             let source_root = story.source().map(|source| source.id());
-            let loading = story.pending_reply.as_ref().is_some_and(|request| Some(request.parent_id) == cursor);
+            let loading = story.pending_reply.as_ref().is_some_and(|request| Some(request.batch.parent_id()) == cursor);
             let changed = story.with_thread(|thread| match key {
                 StoryKey::NextComment => thread.next(),
                 StoryKey::PrevComment => thread.prev(),
@@ -343,8 +343,8 @@ pub(super) fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             if !in_source { story.clear_citation_focus(); }
             let id = cursor;
             let retry = id.is_some_and(|id| story.thread.children_of(id).is_empty()
-                && story.thread.reply_batch(id, false).is_empty()
-                && !story.thread.reply_batch(id, true).is_empty());
+                && story.thread.reply_batch(id, false).is_none()
+                && story.thread.reply_batch(id, true).is_some());
             if story.with_thread(|thread| thread.unfold()) { thread_moved(story, root, true, visible_comment, tx); }
             if let Some(id) = id { s.load_replies(id, retry); }
             true

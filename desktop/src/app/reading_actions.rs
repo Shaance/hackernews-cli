@@ -164,7 +164,7 @@ impl App {
     pub(super) fn load_source_replies(&mut self) {
         let id = self.story.as_ref().and_then(|story| {
             let id = story.source()?.id();
-            (story.thread.children_of(id).is_empty() && !story.thread.reply_batch(id, false).is_empty()).then_some(id)
+            (story.thread.children_of(id).is_empty() && story.thread.reply_batch(id, false).is_some()).then_some(id)
         });
         if let Some(id) = id { self.load_replies(id, false); }
     }
@@ -179,13 +179,13 @@ impl App {
         let Some(story) = self.story.as_mut() else { return; };
         if story.source().is_none() { story.clear_citation_focus(); }
         story.with_thread(|thread| { thread.select(id); });
-        if story.pending_reply.as_ref().is_some_and(|request| request.parent_id == id) {
+        if story.pending_reply.as_ref().is_some_and(|request| request.batch.parent_id() == id) {
             story.with_thread(|thread| { if thread.is_folded(id) { thread.unfold(); } else { thread.fold(); } });
             return;
         }
         let unloaded = story.thread.has_children(id) && story.thread.children_of(id).is_empty();
-        let retry = unloaded && story.thread.reply_batch(id, false).is_empty()
-            && !story.thread.reply_batch(id, true).is_empty();
+        let retry = unloaded && story.thread.reply_batch(id, false).is_none()
+            && story.thread.reply_batch(id, true).is_some();
         story.with_thread(|thread| { if unloaded { thread.unfold(); } else { thread.activate(); } });
         if unloaded { self.load_replies(id, retry); }
     }
@@ -232,8 +232,7 @@ impl App {
 
     pub(super) fn land_comment_refresh(&mut self, result: crate::story_io::CommentsRefreshed) -> bool {
         let Some(story) = self.story.as_mut().filter(|story| story.id() == result.story_id) else { return false; };
-        let sources = result.comments.as_ref().map(|comments| self.source.capture(comments)).unwrap_or_default();
-        story.land_refresh(result, sources);
+        story.land_refresh(result);
         true
     }
 }

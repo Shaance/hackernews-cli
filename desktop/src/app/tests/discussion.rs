@@ -558,7 +558,9 @@ fn unavailable_reply_group_retries_from_pointer_and_keyboard() {
         let child = crate::fixtures::thread().into_iter().find(|c| c.id == 9010).unwrap();
         *fake.comments.lock().unwrap() = vec![parent, child];
         s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
-        s.story.as_mut().unwrap().thread.merge_replies(901, &[9010], Err("Offline".into()));
+        let story = s.story.as_mut().unwrap();
+        let batch = story.thread.reply_batch(901, false).unwrap();
+        story.thread.merge_replies(&batch, Err("Offline".into()));
         let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
         rt.on_key = Some(on_key);
         rt.frame(0.0);
@@ -576,7 +578,7 @@ fn unavailable_reply_group_retries_from_pointer_and_keyboard() {
         }
         let story = rt.state.story.as_ref().unwrap();
         assert_eq!(story.thread.children_of(901), &[9010]);
-        assert!(story.thread.reply_batch(901, true).is_empty());
+        assert!(story.thread.reply_batch(901, true).is_none());
     }
 }
 
@@ -777,7 +779,7 @@ fn refresh_adds_roots_and_replies_without_replacing_summary_or_reading_position(
     let story = s.story.as_ref().unwrap();
     assert!(story.thread.node(987654).is_some());
     assert_eq!(story.thread.children_of(901), &[9010, 9011]);
-    assert!(story.thread.reply_batch(901, false).contains(&987655));
+    assert!(story.thread.reply_batch(901, false).unwrap().ids().contains(&987655));
     assert_eq!(story.thread.cursor(), Some(9010));
     assert_eq!(story.thread.root(), Some(901));
     assert!(story.thread.focus());
@@ -837,6 +839,7 @@ fn refresh_updates_loaded_nested_replies_and_keeps_new_children_lazy() {
     assert!(story.thread.select(90100));
     assert!(story.thread.fold());
     let pending = story.request_replies(90100, false).unwrap();
+    assert_eq!((pending.batch.parent_id(), pending.batch.depth()), (90100, 3));
     let before = summary_contents(story.summary.readable().unwrap());
     let sources: Vec<_> = story.summary.displayed().unwrap().sources().iter().map(|source| (source.id, source.text.clone())).collect();
     let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
@@ -855,10 +858,10 @@ fn refresh_updates_loaded_nested_replies_and_keeps_new_children_lazy() {
     assert!(story.thread.is_folded(90100));
     assert_eq!(summary_contents(story.summary.readable().unwrap()), before);
     assert_eq!(story.summary.displayed().unwrap().sources().iter().map(|source| (source.id, source.text.clone())).collect::<Vec<_>>(), sources);
-    let replies = crate::fixtures::replies(&pending.ids);
+    let replies = crate::fixtures::replies(pending.batch.ids());
     assert!(story.land_replies(crate::story_io::ReplyFilled { request: pending, comments: Ok(replies) }));
     assert_eq!(story.thread.children_of(90100), &[901000]);
-    assert_eq!(story.thread.reply_batch(90100, false), vec![987655]);
+    assert_eq!(story.thread.reply_batch(90100, false).unwrap().ids(), &[987655]);
     assert!(story.thread.node(987655).is_none());
     let Source::Fake(fake) = s.source.as_ref() else { unreachable!() };
     let requests = fake.comment_requests.lock().unwrap();

@@ -14,6 +14,12 @@ pub struct StoryRequest {
     pub config: Config,
 }
 
+/// The roots and the sources captured from those same roots.
+pub struct CapturedComments {
+    pub comments: Vec<Comment>,
+    pub sources: Vec<CapturedSource>,
+}
+
 /// The aggregate answer used for synchronous, deterministic story opens.
 ///
 /// A failed article is a `String`; the card uses [`SummaryError`] to classify a failed summary.
@@ -22,22 +28,21 @@ pub struct StoryFilled {
     pub article: Result<(String, bool), String>,
     pub article_summary: Result<Article, SummaryError>,
     /// The discussion as a tree: the top-level comments and their replies, level by level.
-    pub comments: Result<Vec<Comment>, String>,
-    pub sources: Vec<CapturedSource>,
-    pub summary: Result<Discussion, SummaryError>,
+    pub comments: Result<CapturedComments, String>,
+    pub summary: Result<(Discussion, Vec<CapturedSource>), SummaryError>,
 }
 
 /// A result that can be shown without waiting for the other story work.
 pub enum StoryUpdate {
     Article { story_id: i32, article: Result<(String, bool), String>, summary_skipped: bool },
-    Discussion { story_id: i32, comments: Result<Vec<Comment>, String>, sources: Vec<CapturedSource>, summary_skipped: bool },
+    Discussion { story_id: i32, comments: Result<CapturedComments, String>, summary_skipped: bool },
     ArticleSummary { story_id: i32, summary: Result<Article, SummaryError> },
-    Summary { story_id: i32, summary: Result<Discussion, SummaryError>, sources: Vec<CapturedSource> },
+    Summary { story_id: i32, summary: Result<(Discussion, Vec<CapturedSource>), SummaryError> },
 }
 
 pub struct CommentsRefreshed {
     pub story_id: i32,
-    pub comments: Result<Vec<Comment>, String>,
+    pub comments: Result<CapturedComments, String>,
     pub descendants: Vec<Comment>,
     pub warning: Option<String>,
 }
@@ -45,9 +50,7 @@ pub struct CommentsRefreshed {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReplyRequest {
     pub story_id: i32,
-    pub parent_id: i32,
-    pub ids: Vec<i32>,
-    pub depth: usize,
+    pub batch: crate::comments::ReplyBatch,
 }
 
 pub struct ReplyFilled {
