@@ -1,10 +1,38 @@
-# HackerNews TUI
+# hn
 
-Read [Hacker News](https://news.ycombinator.com/) stories and comment threads in your terminal. Save stories for later, keep your place in a discussion, and optionally generate article and discussion summaries through OpenRouter or Anthropic.
+**Hacker News for people who read the comments.** A native Mac app and a terminal app, both driven from the keyboard. Both can summarize a story and its discussion, and every point in a summary links to the comment it came from.
+
+![The Mac app: moving through the two-column feed, opening a story beside its live page, the summary writing itself in, then Tab to a citation and Enter to read the comment it came from](docs/screenshots/desktop/demo.webp)
+
+| | Mac app | Terminal app |
+|---|---|---|
+| **Get it** | [Download HN for macOS](https://github.com/Shaance/hackernews-cli/releases/download/desktop-v1.0.0/HN-desktop-v1.0.0-macos-arm64.zip): Apple Silicon, macOS 13+, signed and notarized | `cargo install --path . --locked`, then `hn` |
+| **The article** | The story's live page, beside the discussion | Opens in a Ghostty pane beside the discussion, or your browser |
+| **More** | [desktop/README.md](desktop/README.md) | [Terminal app](#terminal-app), below |
+
+## The Mac app
+
+| Dark | Light |
+|---|---|
+| ![The Berlin story: its live page on the left, the article and discussion summary with numbered citations above the comments on the right](docs/screenshots/desktop/story-dark.png) | ![The same story in the light appearance](docs/screenshots/desktop/story-light.png) |
+
+- **The real page, next to the thread.** Opening a story puts its page on the left and the discussion on the right. Drag the divider, or hide the discussion with `⌘\`.
+- **Summaries you can check.** The article and discussion summaries stay pinned above the comments. `Tab` selects a citation and `Enter` opens the comment behind it, with its replies.
+- **The terminal app's keys.** `j`/`k` to move, `Enter` to open, `Esc` to go back, `s` to save, and `1`–`4` for Top, New, Best and Saved. `?` lists every key.
+- **Uses the room it has.** On a wide window the feed shows two columns. `⌘=`, `⌘-` and `⌘0` zoom the whole window, the page included.
+- **Shares your setup.** Saved stories and summary settings, API key included, live in the same files the terminal app uses.
+
+| Read the cited comment | Two-column feed |
+|---|---|
+| ![Citation 1 opened: the article's author replying in the thread](docs/screenshots/desktop/citation.png) | ![The Top feed in two columns, with one story selected](docs/screenshots/desktop/feed.png) |
+
+**Install:** download the zip above, unzip it, and drag **HN** to Applications. Summaries are optional: open Settings with `⌘,` and add an OpenRouter or Anthropic key. To build it yourself, run `cd desktop && cargo run --release`; rustup fetches the pinned toolchain. The [desktop README](desktop/README.md) covers the details.
+
+## Terminal app
+
+Read stories and comment threads in your terminal. Save stories for later, keep your place in a discussion, and optionally generate article and discussion summaries through OpenRouter or Anthropic.
 
 On macOS with Ghostty, you can open the original article in a companion browser pane beside the discussion. Other setups open it in your default browser.
-
-> **Highly experimental desktop app:** The [Rune desktop app](desktop/README.md) is an unfinished work in progress and does not represent the final version. Its design, features, and behavior may change substantially; expect bugs and incomplete functionality.
 
 ![Opening a story with its summary, focusing a citation, reading the cited comment, then opening the article in a Ghostty browser pane beside it](docs/screenshots/demo.gif)
 
