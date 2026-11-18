@@ -62,7 +62,6 @@ pub enum BranchStatus {
 /// One comment in the thread.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Node {
-    pub id: i32,
     /// Unreadable parents remain as reply controls; unreadable leaves have no visible row.
     pub readable: bool,
     pub author: String,
@@ -102,8 +101,7 @@ impl Navigation {
 /// The thread: the tree, the fold set, the cursor, the re-root and focus mode.
 #[derive(Debug, Clone, Default)]
 pub struct Thread {
-    nodes: Vec<Node>,
-    index: HashMap<i32, usize>,
+    nodes: HashMap<i32, Node>,
     roots: Vec<i32>,
     folded: HashSet<i32>,
     cursor: Option<i32>,
@@ -125,46 +123,30 @@ impl Thread {
     /// `j` has somewhere to move from the moment the discussion lands.
     pub fn from_comments(comments: &[Comment]) -> Thread {
         let mut seen = HashSet::new();
-        let mut nodes: Vec<Node> = comments
-            .iter().filter(|comment| seen.insert(comment.id))
+        let comments: Vec<_> = comments.iter().filter(|comment| seen.insert(comment.id)).collect();
+        let parents: HashMap<_, _> = comments.iter().flat_map(|comment| {
+            comment.child_ids.iter().map(move |child| (*child, comment.id))
+        }).filter(|(child, _)| seen.contains(child)).collect();
+        let roots = comments.iter().filter(|comment| !parents.contains_key(&comment.id))
+            .map(|comment| comment.id).collect();
+        let nodes = comments.into_iter()
             .map(|comment| {
                 let readable = readable(comment);
-                Node {
-                    id: comment.id,
+                (comment.id, Node {
                     readable,
                     author: if readable { comment.author.clone() } else { String::new() },
                     time_ago: if readable { comment.time_ago.clone() } else { String::new() },
                     text: if readable { drawn_text(&comment.text) } else { String::new() },
                     links: if readable { comment.links.clone() } else { Vec::new() },
-                    parent: None,
-                    children: Vec::new(),
+                    parent: parents.get(&comment.id).copied(),
+                    children: comment.child_ids.iter().filter(|id| seen.contains(id)).copied().collect(),
                     known_children: comment.child_ids.clone(),
                     branch: BranchStatus::Ready,
-                }
+                })
             })
-            .collect();
-        let index: HashMap<i32, usize> = nodes
-            .iter()
-            .enumerate()
-            .map(|(at, node)| (node.id, at))
-            .collect();
-        for at in 0..nodes.len() {
-            let parent = nodes[at].id;
-            for child in &nodes[at].known_children.clone() {
-                if let Some(&child_at) = index.get(child) {
-                    nodes[child_at].parent = Some(parent);
-                    nodes[at].children.push(*child);
-                }
-            }
-        }
-        let roots: Vec<i32> = nodes
-            .iter()
-            .filter(|node| node.parent.is_none())
-            .map(|node| node.id)
             .collect();
         let mut thread = Thread {
             nodes,
-            index,
             roots,
             folded: HashSet::new(),
             cursor: None,
@@ -182,10 +164,10 @@ impl Thread {
         let fresh = Thread::from_comments(roots);
         let fresh_roots = fresh.roots;
         let loaded = Thread::from_comments(descendants);
-        for (is_root, node) in fresh.nodes.into_iter().map(|node| (true, node))
+        self.roots.extend(fresh_roots.iter().copied().filter(|id| !self.nodes.contains_key(id)));
+        for (is_root, (id, node)) in fresh.nodes.into_iter().map(|node| (true, node))
             .chain(loaded.nodes.into_iter().map(|node| (false, node))) {
-            if let Some(&at) = self.index.get(&node.id) {
-                let old = &mut self.nodes[at];
+            if let Some(old) = self.nodes.get_mut(&id) {
                 old.readable = node.readable;
                 old.author = node.author;
                 old.time_ago = node.time_ago;
@@ -194,10 +176,8 @@ impl Thread {
                 for id in node.known_children {
                     if !old.known_children.contains(&id) { old.known_children.push(id); }
                 }
-            } else if is_root && fresh_roots.contains(&node.id) {
-                self.roots.push(node.id);
-                self.index.insert(node.id, self.nodes.len());
-                self.nodes.push(node);
+            } else if is_root && fresh_roots.contains(&id) {
+                self.nodes.insert(id, node);
             }
         }
         self.prune_unreadable();
@@ -233,14 +213,14 @@ impl Thread {
         let mut removed = HashSet::new();
         loop {
             let mut changed = false;
-            for node in &self.nodes {
+            for (&id, node) in &self.nodes {
                 if !node.readable && node.known_children.iter().all(|id| removed.contains(id)) {
-                    changed |= removed.insert(node.id);
+                    changed |= removed.insert(id);
                 }
             }
             if !changed { break; }
         }
-        for node in &mut self.nodes {
+        for node in self.nodes.values_mut() {
             node.known_children.retain(|id| !removed.contains(id));
             node.children.retain(|id| !removed.contains(id));
         }
@@ -250,28 +230,32 @@ impl Thread {
     pub fn reply_batch(&self, id: i32, retry: bool) -> Vec<i32> {
         let Some(node) = self.node(id) else { return Vec::new(); };
         let failed = match &node.branch { BranchStatus::Ready => &[][..], BranchStatus::Failed { ids, .. } => ids };
-        node.known_children.iter().filter(|id| !self.index.contains_key(id)
+        node.known_children.iter().filter(|id| !self.nodes.contains_key(id)
             && if retry { failed.contains(id) } else { !failed.contains(id) }).take(50).copied().collect()
     }
 
     pub fn merge_replies(&mut self, parent: i32, requested: &[i32], result: Result<Vec<Comment>, String>) {
-        let Some(&at) = self.index.get(&parent) else { return; };
         let selected_row = self.cursor.and_then(|id| self.visible_row(id));
-        let previous = match &self.nodes[at].branch { BranchStatus::Ready => Vec::new(), BranchStatus::Failed { ids, .. } => ids.clone() };
+        let Some(mut parent_node) = self.nodes.remove(&parent) else { return; };
+        let previous = match &parent_node.branch { BranchStatus::Ready => Vec::new(), BranchStatus::Failed { ids, .. } => ids.clone() };
         let (comments, error) = match result { Ok(comments) => (comments, None), Err(message) => (Vec::new(), Some(message)) };
-        for mut node in Thread::from_comments(&comments).nodes {
-            if self.index.contains_key(&node.id) { continue; }
-            node.parent = Some(parent);
-            self.index.insert(node.id, self.nodes.len());
-            self.nodes.push(node);
+        let mut replies = Thread::from_comments(&comments).nodes;
+        replies.remove(&parent);
+        for (id, mut node) in replies {
+            if let std::collections::hash_map::Entry::Vacant(entry) = self.nodes.entry(id) {
+                node.parent = Some(parent);
+                entry.insert(node);
+            }
         }
-        let known = self.nodes[at].known_children.clone();
-        self.nodes[at].children = known.iter().filter(|id| self.index.contains_key(id)).copied().collect();
-        let failed: Vec<_> = known.into_iter().filter(|id| !self.index.contains_key(id)
-            && (previous.contains(id) || requested.contains(id))).collect();
-        self.nodes[at].branch = if failed.is_empty() { BranchStatus::Ready } else {
+        // The parent is temporarily owned here but still counts as a loaded ID.
+        let loaded = |id: &i32| *id == parent || self.nodes.contains_key(id);
+        parent_node.children = parent_node.known_children.iter().filter(|id| loaded(id)).copied().collect();
+        let failed: Vec<_> = parent_node.known_children.iter().filter(|id| !loaded(id)
+            && (previous.contains(id) || requested.contains(id))).copied().collect();
+        parent_node.branch = if failed.is_empty() { BranchStatus::Ready } else {
             BranchStatus::Failed { message: error.unwrap_or_else(|| format!("{} replies unavailable", failed.len())), ids: failed }
         };
+        self.nodes.insert(parent, parent_node);
         self.prune_unreadable();
         if self.root.is_some_and(|id| !self.displayable(id)) { self.root = None; }
         if self.cursor.is_some_and(|id| !self.displayable(id)) {
@@ -283,7 +267,7 @@ impl Thread {
 
     /// How many comments the capture holds.
     pub fn len(&self) -> usize {
-        self.nodes.iter().filter(|node| node.readable).count()
+        self.nodes.values().filter(|node| node.readable).count()
     }
 
     pub fn is_empty(&self) -> bool {
@@ -296,7 +280,7 @@ impl Thread {
     }
 
     pub fn node(&self, id: i32) -> Option<&Node> {
-        self.index.get(&id).map(|&at| &self.nodes[at])
+        self.nodes.get(&id)
     }
 
     pub fn cursor(&self) -> Option<i32> {
@@ -707,7 +691,7 @@ impl Thread {
     pub fn tree_depth(&self, id: i32) -> Option<u32> {
         let mut depth = 0;
         let mut at = id;
-        if !self.index.contains_key(&id) {
+        if !self.nodes.contains_key(&id) {
             return None;
         }
         while let Some(parent) = self.parent_of(at) {
@@ -895,8 +879,12 @@ mod tests {
     fn bounded_batches_preserve_order_and_failed_ids_do_not_block_unattempted_replies() {
         let mut root = crate::fixtures::comments().remove(0);
         root.child_ids = (1000..1123).collect();
-        let mut thread = Thread::from_comments(&[root.clone(), root.clone()]);
+        let mut duplicate = root.clone();
+        duplicate.text = "A later duplicate".into();
+        duplicate.child_ids.clear();
+        let mut thread = Thread::from_comments(&[root.clone(), duplicate]);
         assert_eq!(thread.roots(), 1, "duplicate IDs never become duplicate rows");
+        assert_eq!(thread.node(root.id).unwrap().text, drawn_text(&root.text), "the first capture wins");
         assert!(thread.has_children(root.id));
         let first = thread.reply_batch(root.id, false);
         assert_eq!(first, (1000..1050).collect::<Vec<_>>());
@@ -913,6 +901,16 @@ mod tests {
         assert_eq!(thread.reply_batch(root.id, true), second);
         assert_eq!(thread.roots(), 1);
         assert_eq!(thread.len(), 51);
+
+        let mut new_first = root.clone(); new_first.id = 1200; new_first.child_ids.clear();
+        let mut new_second = root.clone(); new_second.id = 1190; new_second.child_ids.clear();
+        thread.merge_comments(&[root.clone(), new_first, new_second], &[]);
+        let roots: Vec<_> = thread.rows().into_iter().filter(|row| row.depth == 0).map(|row| row.id).collect();
+        assert_eq!(roots, vec![root.id, 1200, 1190], "new roots retain capture order");
+        let mut stale_reply = root.clone(); stale_reply.id = 1300; stale_reply.child_ids.clear();
+        thread.merge_replies(999_999, &[1300], Ok(vec![stale_reply]));
+        assert!(thread.node(1300).is_none());
+        assert_eq!(thread.rows().into_iter().filter(|row| row.depth == 0).map(|row| row.id).collect::<Vec<_>>(), roots);
     }
 
     #[test]

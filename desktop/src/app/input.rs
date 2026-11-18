@@ -215,6 +215,10 @@ pub(super) fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
         return false;
     };
     // The chooser is a surface over the discussion: while it is open it owns j/k, Enter and Esc.
+    if key == StoryKey::Enter && let Some(url) = story.take_link() {
+        let _ = tx.open_url(&url);
+        return true;
+    }
     if story.links.is_some() {
         match key {
             StoryKey::NextCitation | StoryKey::PrevCitation => return false,
@@ -224,12 +228,6 @@ pub(super) fn on_story_key(s: &mut App, ev: &KeyEvent, tx: &mut Tx) -> bool {
             }
             StoryKey::PrevComment => {
                 story.prev_link();
-                return true;
-            }
-            StoryKey::Enter => {
-                if let Some(url) = story.take_link() {
-                    let _ = tx.open_url(&url);
-                }
                 return true;
             }
             _ => {}

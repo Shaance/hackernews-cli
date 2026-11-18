@@ -401,8 +401,7 @@ fn link_chooser(
             }
         });
     if let Some(chooser) = &s.links {
-        for (index, item) in chooser.items.iter().enumerate() {
-            let selected = index == chooser.selected;
+        for (index, (item, selected)) in chooser.items().enumerate() {
             pop = pop.child(
                 row()
                     .key(format!("link-{index}"))
@@ -420,11 +419,9 @@ fn link_chooser(
                         let Some(story) = s.story_mut() else {
                             return;
                         };
-                        if let Some(chooser) = &mut story.links {
-                            chooser.selected = index;
-                        }
-                        if let Some(url) = story.take_link() {
-                            let _ = tx.open_url(&url);
+                        if let Some(chooser) = &mut story.links && chooser.select(index) {
+                            let _ = tx.open_url(chooser.selected_url());
+                            story.close_links();
                         }
                     })
                     .child(

@@ -222,12 +222,12 @@ pub struct LinkItem {
 /// `L`'s chooser: the links the post and the focused comment carry.
 ///
 /// README.md's `L` is "choose a link from the post or selected comment", so the list is both,
-/// in that order, and the selection is a row index rather than a URL so two identical links stay
-/// two rows.
+/// in that order, with separate items so two identical links stay two rows.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LinkChooser {
-    pub items: Vec<LinkItem>,
-    pub selected: usize,
+    before: Vec<LinkItem>,
+    current: LinkItem,
+    after: VecDeque<LinkItem>,
 }
 
 /// The captured comment and its temporary, independent thread navigation.
@@ -246,21 +246,43 @@ impl SourceView {
 }
 
 impl LinkChooser {
+    fn new(items: Vec<LinkItem>) -> Option<Self> {
+        let mut items = items.into_iter();
+        Some(Self { before: Vec::new(), current: items.next()?, after: items.collect() })
+    }
+
+    pub(crate) fn items(&self) -> impl Iterator<Item = (&LinkItem, bool)> {
+        self.before.iter().map(|item| (item, false))
+            .chain(std::iter::once((&self.current, true)))
+            .chain(self.after.iter().map(|item| (item, false)))
+    }
+
     /// The link `Enter` would open.
-    pub fn selected_url(&self) -> Option<&str> {
-        self.items.get(self.selected).map(|item| item.url.as_str())
+    pub fn selected_url(&self) -> &str {
+        &self.current.url
     }
 
     fn step(&mut self, forward: bool) {
-        let count = self.items.len();
-        if count == 0 {
-            return;
+        if forward {
+            if let Some(next) = self.after.pop_front() {
+                self.before.push(std::mem::replace(&mut self.current, next));
+            } else if !self.before.is_empty() {
+                let next = self.before.remove(0);
+                self.after = std::mem::take(&mut self.before).into();
+                self.after.push_back(std::mem::replace(&mut self.current, next));
+            }
+        } else if let Some(previous) = self.before.pop() {
+            self.after.push_front(std::mem::replace(&mut self.current, previous));
+        } else if let Some(previous) = self.after.pop_back() {
+            self.before.push(std::mem::replace(&mut self.current, previous));
+            self.before.extend(self.after.drain(..));
         }
-        self.selected = if forward {
-            (self.selected + 1) % count
-        } else {
-            (self.selected + count - 1) % count
-        };
+    }
+
+    pub(crate) fn select(&mut self, index: usize) -> bool {
+        if index > self.before.len() + self.after.len() { return false; }
+        while self.before.len() != index { self.step(self.before.len() < index); }
+        true
     }
 }
 
@@ -579,10 +601,8 @@ impl Story {
                 url: url.clone(),
             }));
         }
-        if items.is_empty() {
-            return false;
-        }
-        self.links = Some(LinkChooser { items, selected: 0 });
+        let Some(chooser) = LinkChooser::new(items) else { return false; };
+        self.links = Some(chooser);
         true
     }
 
@@ -615,9 +635,7 @@ impl Story {
 
     /// `Enter` in the chooser: the URL to open, and the chooser closes behind it.
     pub fn take_link(&mut self) -> Option<String> {
-        let url = self.links.as_ref()?.selected_url()?.to_string();
-        self.links = None;
-        Some(url)
+        self.links.take().map(|chooser| chooser.current.url)
     }
 
     /// Stop pending summaries after the key is cleared, retaining already paid-for results.
@@ -975,11 +993,11 @@ mod tests {
         story.thread.select(905);
         assert!(story.open_links());
         let chooser = story.links.as_ref().unwrap();
-        assert_eq!(chooser.items.len(), 1);
-        assert_eq!(chooser.items[0].source, "dang");
+        assert_eq!(chooser.items().count(), 1);
+        assert_eq!(chooser.items().next().unwrap().0.source, "dang");
         assert_eq!(
             chooser.selected_url(),
-            Some("https://mitchellh.com/writing/libghostty-is-coming")
+            "https://mitchellh.com/writing/libghostty-is-coming"
         );
         // Enter takes the URL and closes the chooser behind it.
         assert_eq!(
@@ -998,12 +1016,34 @@ mod tests {
         story.thread.reroot(901000);
         story.thread.select(90100000);
         assert!(story.open_links());
-        assert_eq!(story.links.as_ref().unwrap().items.len(), 1);
+        assert_eq!(story.links.as_ref().unwrap().items().count(), 1);
         assert!(story.next_link());
-        assert_eq!(story.links.as_ref().unwrap().selected, 0, "one row wraps to itself");
+        assert!(story.links.as_ref().unwrap().items().next().unwrap().1, "one row wraps to itself");
         assert!(story.prev_link());
         assert!(story.close_links());
         assert!(!story.close_links(), "closing twice is not a transition");
         assert!(!story.next_link(), "a closed chooser does not move");
+
+        story.story.links = vec!["https://example.com/a".into(), "https://example.com/a".into(), "https://example.com/b".into()];
+        assert!(story.open_links());
+        let urls = |chooser: &LinkChooser| chooser.items().map(|(item, _)| item.url.clone()).collect::<Vec<_>>();
+        let original = urls(story.links.as_ref().unwrap());
+        assert_eq!(&original[..3], &["https://example.com/a", "https://example.com/a", "https://example.com/b"]);
+        for (forward, index) in [(false, 3), (true, 0), (true, 1), (true, 2), (true, 3), (true, 0)] {
+            assert!(if forward { story.next_link() } else { story.prev_link() });
+            let chooser = story.links.as_ref().unwrap();
+            assert_eq!(urls(chooser), original);
+            assert_eq!(chooser.items().position(|(_, selected)| selected), Some(index));
+        }
+        let chooser = story.links.as_mut().unwrap();
+        for index in [1, 3, 1] {
+            assert!(chooser.select(index));
+            assert_eq!(chooser.items().position(|(_, selected)| selected), Some(index));
+            assert_eq!(urls(chooser), original);
+        }
+        assert!(!chooser.select(4), "a stale pointer row must not select a different link");
+        assert_eq!(chooser.items().position(|(_, selected)| selected), Some(1));
+        assert!(chooser.select(2));
+        assert_eq!(story.take_link().as_deref(), Some("https://example.com/b"));
     }
 }
