@@ -101,6 +101,7 @@ STORY_SCENES=(
   "citation|citation|1180x760|scripts/story.json"
   "summary-generating|summary-generating|1180x760|scripts/story.json"
   "settings|settings|1180x760|scripts/focus.json"
+  "settings-story|settings-story|1180x760|scripts/focus.json"
   "help|help|1180x760|scripts/focus.json"
 )
 
@@ -736,22 +737,22 @@ else
   bad "settings key appears $leak times in the tree"
 fi
 
-# The two choices, and the model line the chosen profile resolves to on the chosen provider.
+# The two choices, and both models resolved for the chosen provider.
 provider=$(sq '[.accessibility | .. | objects | select(.role == "radio-group" and .name == "Provider")
   | .children[] | "\(.name):\(.states | join(","))"] | join(",")')
 profile=$(sq '[.accessibility | .. | objects | select(.role == "radio-group" and .name == "Summary quality")
   | .children[] | "\(.name):\(.states | join(","))"] | join(",")')
-model=$(sq '[.elements[] | select((.key // "") == "settings-model") | .text][0] // ""')
+models=$(sq '[.elements[] | select((.key // "") == "fast-model" or (.key // "") == "thorough-model") | .text] | join(",")')
 duplicate_labels=$(sq '[.accessibility | .. | objects | select(.role == "label")
   | select(.name == "Provider" or .name == "Automatic summaries" or .name == "Summary quality"
       or .name == "OpenRouter key" or .name == "Anthropic key")] | length')
 if [ "$provider" = "OpenRouter:checked,Anthropic:unchecked" ] \
   && [ "$profile" = "Fast:checked,Thorough:unchecked" ] \
   && [ "$duplicate_labels" = 0 ] \
-  && [ "$model" = "anthropic/claude-haiku-5.5" ]; then
-  pass "settings choices ($provider; $profile; model $model)"
+  && [ "$models" = "anthropic/claude-haiku-5.5,anthropic/claude-sonnet-5.5" ]; then
+  pass "settings choices ($provider; $profile; models $models)"
 else
-  bad "settings choices (provider '$provider', profile '$profile', model '$model', duplicate labels '$duplicate_labels')"
+  bad "settings choices (provider '$provider', profile '$profile', models '$models', duplicate labels '$duplicate_labels')"
 fi
 
 # Feed-opened settings has the switch and common buttons, but no story action.
@@ -810,16 +811,15 @@ else
   bad "M/Esc ($opened dialogs open, $closed after Esc, $kept comment rows, $regenerate Regenerate buttons)"
 fi
 
-# The dialog is a form, not a picture: a press on the Anthropic radio and on the Thorough segment
-# moves both, the key field follows the provider, and the model line re-resolves.
+# A press on Anthropic and Thorough updates both choices, the key field and the models.
 "$BIN" --scene settings --size 1180x760 --scale 2 --theme dark --script scripts/settings.json \
   --at mark:picked --tree "$ACTUAL/settings-picked.json" >/dev/null
 picked=$(jq -r '[.elements[] | select((.key // "") == "segment1")
   | select((.path // "") | contains("settings-providers")) | .itemSelected][0] // false' "$ACTUAL/settings-picked.json")
-thorough=$(jq -r '[.elements[] | select((.key // "") == "segment1")
-  | select((.path // "") | contains("settings-profile")) | .itemSelected][0] // false' "$ACTUAL/settings-picked.json")
+thorough=$(jq -r '[.elements[] | select((.key // "") == "thorough")
+  | select((.path // "") | contains("settings-quality")) | .itemSelected][0] // false' "$ACTUAL/settings-picked.json")
 field=$(jq -r '[.elements[] | select((.key // "") == "input") | .label][0] // ""' "$ACTUAL/settings-picked.json")
-model=$(jq -r '[.elements[] | select((.key // "") == "settings-model") | .text][0] // ""' "$ACTUAL/settings-picked.json")
+model=$(jq -r '[.elements[] | select((.key // "") == "thorough-model") | .text][0] // ""' "$ACTUAL/settings-picked.json")
 if [ "$picked" = true ] && [ "$thorough" = true ] && [ "$field" = "Anthropic key" ] \
   && [ "$model" = "claude-sonnet-5-5" ]; then
   pass "settings presses (Anthropic + Thorough -> $model, field '$field')"

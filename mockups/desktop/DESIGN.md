@@ -102,7 +102,7 @@ Two consequences worth stating, because they are the cost of a native child view
 | 07 | Focused thread | A deep reply under its ancestor trail, focus mode on: the chain at full contrast, sibling subtrees dimmed to 0.35. The trail is sticky, so "where am I" never scrolls away. |
 | 08 | Collapsed subtree | A folded chain in place: header, author, and the count of what is behind it. Nothing moves except the rows below, which close the gap. |
 | 09 | Saved | The feed's rows sorted by save time, `unsave` on hover, the `~/.local/share/hn/saved.json` path in the toolbar. Rows carry **no** saved dot — everything here is saved, so the dot would be noise. A corrupt file shows a banner with `Reload` and `Reveal in Finder` instead of silently emptying the list. |
-| 10 | Settings | Provider radio group (OpenRouter / Anthropic), masked API key, automatic summaries switch, Fast/Thorough profile with the model each resolves to, `Refresh sources & summary`. `Apply` writes `~/.config/hn/summary.json`; `Cancel` and `Esc` discard. The TUI's `M` overlay, given room to breathe. |
+| 10 | Settings | Raised Provider and Summaries panels hold a provider segmented control, masked API key, automatic summaries switch, and Fast/Thorough quality tiles with descriptions and provider-specific models. A pinned footer offers `Regenerate summary` when a story is open, `Cancel`, and `Apply`. Apply writes `hn/summary.json` under `XDG_CONFIG_HOME`, or `~/.config` by default; `Cancel` and `Esc` discard. |
 | 11 | Help | The `?` sheet: two columns of `Keybind` rows, grouped Feed / Discussion / Summary / Window. Focus is trapped while open; `Esc` or `?` closes. |
 
 On narrow windows the inspector is limited to half the window width, leaving the other half to the article.

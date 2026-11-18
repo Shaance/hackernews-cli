@@ -75,11 +75,6 @@ impl Settings {
         self.draft.profile = profile;
     }
 
-    /// The model the chosen profile resolves to on the chosen provider, as the TUI shows it.
-    pub fn model(&self) -> &'static str {
-        self.draft.profile.model(self.draft.provider)
-    }
-
     /// The key the reader typed, trimmed. Never logged, never rendered.
     fn typed_key(&self) -> &str {
         self.key.text.trim()

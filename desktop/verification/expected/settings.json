@@ -25,25 +25,25 @@
             "children": [
               {
                 "bounds": [
-                  360.0,
-                  207.9,
-                  460.0,
-                  344.3
+                  330.0,
+                  108.4,
+                  520.0,
+                  543.3
                 ],
                 "children": [
                   {
                     "bounds": [
-                      360.0,
-                      207.9,
-                      460.0,
+                      330.0,
+                      108.4,
+                      520.0,
                       50.0
                     ],
                     "children": [
                       {
                         "bounds": [
-                          376.0,
-                          223.9,
-                          410.0,
+                          346.0,
+                          124.4,
+                          470.0,
                           16.0
                         ],
                         "name": "Summary settings",
@@ -55,8 +55,8 @@
                           "focus"
                         ],
                         "bounds": [
-                          786.0,
-                          221.9,
+                          816.0,
+                          122.4,
                           20.0,
                           20.0
                         ],
@@ -70,18 +70,18 @@
                   },
                   {
                     "bounds": [
-                      360.0,
-                      257.9,
-                      460.0,
-                      294.3
+                      330.0,
+                      158.4,
+                      520.0,
+                      493.3
                     ],
                     "children": [
                       {
                         "bounds": [
-                          360.0,
-                          257.9,
-                          460.0,
-                          294.3
+                          330.0,
+                          158.4,
+                          520.0,
+                          493.3
                         ],
                         "children": [
                           {
@@ -91,10 +91,10 @@
                               "set-scroll-offset"
                             ],
                             "bounds": [
-                              376.0,
-                              257.9,
-                              428.0,
-                              238.3
+                              346.0,
+                              158.4,
+                              488.0,
+                              436.3
                             ],
                             "children": [
                               {
@@ -102,10 +102,10 @@
                                   "scroll-into-view"
                                 ],
                                 "bounds": [
-                                  376.0,
-                                  257.9,
-                                  428.0,
-                                  238.3
+                                  346.0,
+                                  158.4,
+                                  488.0,
+                                  436.3
                                 ],
                                 "children": [
                                   {
@@ -113,10 +113,10 @@
                                       "scroll-into-view"
                                     ],
                                     "bounds": [
-                                      376.0,
-                                      257.9,
-                                      428.0,
-                                      110.0
+                                      346.0,
+                                      158.4,
+                                      488.0,
+                                      168.4
                                     ],
                                     "children": [
                                       {
@@ -124,104 +124,161 @@
                                           "scroll-into-view"
                                         ],
                                         "bounds": [
-                                          376.0,
-                                          280.9,
-                                          194.8,
-                                          28.0
+                                          346.0,
+                                          158.4,
+                                          488.0,
+                                          14.4
                                         ],
-                                        "children": [
-                                          {
-                                            "actions": [
-                                              "click",
-                                              "focus",
-                                              "scroll-into-view"
-                                            ],
-                                            "bounds": [
-                                              376.0,
-                                              280.9,
-                                              97.4,
-                                              28.0
-                                            ],
-                                            "key": "segment0",
-                                            "name": "OpenRouter",
-                                            "position": 1,
-                                            "role": "radio-button",
-                                            "states": [
-                                              "checked"
-                                            ]
-                                          },
-                                          {
-                                            "actions": [
-                                              "click",
-                                              "focus",
-                                              "scroll-into-view"
-                                            ],
-                                            "bounds": [
-                                              473.4,
-                                              280.9,
-                                              97.4,
-                                              28.0
-                                            ],
-                                            "key": "segment1",
-                                            "name": "Anthropic",
-                                            "position": 2,
-                                            "role": "radio-button",
-                                            "states": [
-                                              "unchecked"
-                                            ]
-                                          }
-                                        ],
-                                        "key": "settings-providers",
+                                        "level": 2,
                                         "name": "Provider",
-                                        "role": "radio-group",
-                                        "setSize": 2
+                                        "role": "heading"
                                       },
                                       {
                                         "actions": [
                                           "scroll-into-view"
                                         ],
                                         "bounds": [
-                                          376.0,
-                                          339.9,
-                                          420.0,
-                                          28.0
+                                          346.0,
+                                          180.8,
+                                          488.0,
+                                          146.0
                                         ],
                                         "children": [
                                           {
                                             "actions": [
-                                              "click",
-                                              "focus",
-                                              "set-value",
-                                              "replace-selected-text",
-                                              "set-text-selection",
                                               "scroll-into-view"
                                             ],
                                             "bounds": [
-                                              384.0,
-                                              345.9,
-                                              412.0,
-                                              16.0
+                                              362.0,
+                                              196.8,
+                                              456.0,
+                                              28.0
                                             ],
-                                            "key": "input",
-                                            "name": "OpenRouter key",
-                                            "placeholder": "paste a key",
-                                            "role": "password-input",
-                                            "selection": [
-                                              1,
-                                              26,
-                                              1,
-                                              26
+                                            "children": [
+                                              {
+                                                "actions": [
+                                                  "click",
+                                                  "focus",
+                                                  "scroll-into-view"
+                                                ],
+                                                "bounds": [
+                                                  362.0,
+                                                  196.8,
+                                                  228.0,
+                                                  28.0
+                                                ],
+                                                "key": "segment0",
+                                                "name": "OpenRouter",
+                                                "position": 1,
+                                                "role": "radio-button",
+                                                "states": [
+                                                  "checked"
+                                                ]
+                                              },
+                                              {
+                                                "actions": [
+                                                  "click",
+                                                  "focus",
+                                                  "scroll-into-view"
+                                                ],
+                                                "bounds": [
+                                                  590.0,
+                                                  196.8,
+                                                  228.0,
+                                                  28.0
+                                                ],
+                                                "key": "segment1",
+                                                "name": "Anthropic",
+                                                "position": 2,
+                                                "role": "radio-button",
+                                                "states": [
+                                                  "unchecked"
+                                                ]
+                                              }
                                             ],
-                                            "states": [
-                                              "focused"
-                                            ]
+                                            "key": "settings-providers",
+                                            "name": "Provider",
+                                            "role": "radio-group",
+                                            "setSize": 2
+                                          },
+                                          {
+                                            "actions": [
+                                              "scroll-into-view"
+                                            ],
+                                            "bounds": [
+                                              362.0,
+                                              240.8,
+                                              456.0,
+                                              70.0
+                                            ],
+                                            "children": [
+                                              {
+                                                "actions": [
+                                                  "scroll-into-view"
+                                                ],
+                                                "bounds": [
+                                                  362.0,
+                                                  261.8,
+                                                  448.0,
+                                                  28.0
+                                                ],
+                                                "children": [
+                                                  {
+                                                    "actions": [
+                                                      "click",
+                                                      "focus",
+                                                      "set-value",
+                                                      "replace-selected-text",
+                                                      "set-text-selection",
+                                                      "scroll-into-view"
+                                                    ],
+                                                    "bounds": [
+                                                      370.0,
+                                                      267.8,
+                                                      440.0,
+                                                      16.0
+                                                    ],
+                                                    "key": "input",
+                                                    "name": "OpenRouter key",
+                                                    "placeholder": "paste a key",
+                                                    "role": "password-input",
+                                                    "selection": [
+                                                      1,
+                                                      26,
+                                                      1,
+                                                      26
+                                                    ],
+                                                    "states": [
+                                                      "focused"
+                                                    ]
+                                                  }
+                                                ],
+                                                "key": "value",
+                                                "role": "group"
+                                              },
+                                              {
+                                                "actions": [
+                                                  "scroll-into-view"
+                                                ],
+                                                "bounds": [
+                                                  362.0,
+                                                  295.8,
+                                                  456.0,
+                                                  15.0
+                                                ],
+                                                "name": "Saved to ~/.config/hn/summary.json by default when you apply.",
+                                                "role": "label"
+                                              }
+                                            ],
+                                            "key": "settings-key",
+                                            "role": "group"
                                           }
                                         ],
-                                        "key": "value",
+                                        "key": "settings-provider-panel",
                                         "role": "group"
                                       }
                                     ],
-                                    "key": "settings-key",
+                                    "key": "settings-provider-group",
                                     "role": "group"
                                   },
                                   {
@@ -229,131 +286,176 @@
                                       "scroll-into-view"
                                     ],
                                     "bounds": [
-                                      376.0,
-                                      387.9,
-                                      428.0,
-                                      37.3
+                                      346.0,
+                                      350.8,
+                                      488.0,
+                                      223.9
                                     ],
                                     "children": [
                                       {
                                         "actions": [
-                                          "click",
-                                          "focus",
                                           "scroll-into-view"
                                         ],
                                         "bounds": [
-                                          768.0,
-                                          388.0,
-                                          36.0,
-                                          16.0
+                                          346.0,
+                                          350.8,
+                                          488.0,
+                                          14.4
                                         ],
-                                        "name": "Automatic summaries",
-                                        "role": "switch",
-                                        "states": [
-                                          "checked"
-                                        ]
+                                        "level": 2,
+                                        "name": "Summaries",
+                                        "role": "heading"
                                       },
                                       {
                                         "actions": [
                                           "scroll-into-view"
                                         ],
                                         "bounds": [
-                                          376.0,
-                                          410.1,
-                                          428.0,
-                                          15.0
-                                        ],
-                                        "name": "Summarize stories on first open.",
-                                        "role": "label"
-                                      }
-                                    ],
-                                    "key": "settings-automatic",
-                                    "role": "group"
-                                  },
-                                  {
-                                    "actions": [
-                                      "scroll-into-view"
-                                    ],
-                                    "bounds": [
-                                      376.0,
-                                      445.1,
-                                      428.0,
-                                      51.0
-                                    ],
-                                    "children": [
-                                      {
-                                        "actions": [
-                                          "scroll-into-view"
-                                        ],
-                                        "bounds": [
-                                          376.0,
-                                          468.1,
-                                          167.4,
-                                          28.0
+                                          346.0,
+                                          373.1,
+                                          488.0,
+                                          201.5
                                         ],
                                         "children": [
                                           {
                                             "actions": [
-                                              "click",
-                                              "focus",
                                               "scroll-into-view"
                                             ],
                                             "bounds": [
-                                              376.0,
-                                              468.1,
-                                              83.7,
-                                              28.0
+                                              362.0,
+                                              389.1,
+                                              456.0,
+                                              35.3
                                             ],
-                                            "key": "segment0",
-                                            "name": "Fast",
-                                            "position": 1,
-                                            "role": "radio-button",
-                                            "states": [
-                                              "checked"
-                                            ]
+                                            "children": [
+                                              {
+                                                "actions": [
+                                                  "scroll-into-view"
+                                                ],
+                                                "bounds": [
+                                                  362.0,
+                                                  409.4,
+                                                  404.0,
+                                                  15.0
+                                                ],
+                                                "name": "Summarize a story the first time you open it.",
+                                                "role": "label"
+                                              },
+                                              {
+                                                "actions": [
+                                                  "click",
+                                                  "focus",
+                                                  "scroll-into-view"
+                                                ],
+                                                "bounds": [
+                                                  782.0,
+                                                  398.8,
+                                                  36.0,
+                                                  16.0
+                                                ],
+                                                "name": "Automatic summaries",
+                                                "role": "switch",
+                                                "states": [
+                                                  "checked"
+                                                ]
+                                              }
+                                            ],
+                                            "key": "settings-automatic",
+                                            "role": "group"
                                           },
                                           {
                                             "actions": [
-                                              "click",
-                                              "focus",
                                               "scroll-into-view"
                                             ],
                                             "bounds": [
-                                              459.7,
-                                              468.1,
-                                              83.7,
-                                              28.0
+                                              362.0,
+                                              440.4,
+                                              456.0,
+                                              1.0
                                             ],
-                                            "key": "segment1",
-                                            "name": "Thorough",
-                                            "position": 2,
-                                            "role": "radio-button",
-                                            "states": [
-                                              "unchecked"
-                                            ]
+                                            "key": "settings-summaries-separator",
+                                            "role": "group"
+                                          },
+                                          {
+                                            "actions": [
+                                              "scroll-into-view"
+                                            ],
+                                            "bounds": [
+                                              362.0,
+                                              457.4,
+                                              456.0,
+                                              101.3
+                                            ],
+                                            "children": [
+                                              {
+                                                "actions": [
+                                                  "scroll-into-view"
+                                                ],
+                                                "bounds": [
+                                                  362.0,
+                                                  480.4,
+                                                  456.0,
+                                                  78.3
+                                                ],
+                                                "children": [
+                                                  {
+                                                    "actions": [
+                                                      "click",
+                                                      "focus",
+                                                      "scroll-into-view"
+                                                    ],
+                                                    "bounds": [
+                                                      362.0,
+                                                      480.4,
+                                                      223.0,
+                                                      78.3
+                                                    ],
+                                                    "description": "A quick overview. anthropic/claude-haiku-5.5",
+                                                    "key": "fast",
+                                                    "name": "Fast",
+                                                    "position": 1,
+                                                    "role": "radio-button",
+                                                    "states": [
+                                                      "checked"
+                                                    ]
+                                                  },
+                                                  {
+                                                    "actions": [
+                                                      "click",
+                                                      "focus",
+                                                      "scroll-into-view"
+                                                    ],
+                                                    "bounds": [
+                                                      595.0,
+                                                      480.4,
+                                                      223.0,
+                                                      78.3
+                                                    ],
+                                                    "description": "Reads more of the discussion. anthropic/claude-sonnet-5.5",
+                                                    "key": "thorough",
+                                                    "name": "Thorough",
+                                                    "position": 2,
+                                                    "role": "radio-button",
+                                                    "states": [
+                                                      "unchecked"
+                                                    ]
+                                                  }
+                                                ],
+                                                "key": "settings-quality",
+                                                "name": "Summary quality",
+                                                "role": "radio-group",
+                                                "setSize": 2
+                                              }
+                                            ],
+                                            "key": "settings-profile",
+                                            "role": "group"
                                           }
                                         ],
-                                        "key": "settings-quality",
-                                        "name": "Summary quality",
-                                        "role": "radio-group",
-                                        "setSize": 2
-                                      },
-                                      {
-                                        "actions": [
-                                          "scroll-into-view"
-                                        ],
-                                        "bounds": [
-                                          553.4,
-                                          474.6,
-                                          156.6,
-                                          15.0
-                                        ],
-                                        "key": "settings-model",
-                                        "name": "anthropic/claude-haiku-5.5",
-                                        "role": "label"
+                                        "key": "settings-summaries-panel",
+                                        "role": "group"
                                       }
                                     ],
-                                    "key": "settings-profile",
+                                    "key": "settings-summaries-group",
                                     "role": "group"
                                   }
                                 ],
@@ -374,42 +476,64 @@
                           },
                           {
                             "bounds": [
-                              376.0,
-                              512.1,
-                              428.0,
-                              24.0
+                              330.0,
+                              594.6,
+                              520.0,
+                              57.0
                             ],
                             "children": [
                               {
-                                "actions": [
-                                  "click",
-                                  "focus"
-                                ],
                                 "bounds": [
-                                  668.7,
-                                  512.1,
-                                  67.2,
-                                  24.0
+                                  330.0,
+                                  594.6,
+                                  520.0,
+                                  1.0
                                 ],
-                                "name": "Cancel",
-                                "role": "button"
+                                "key": "settings-footer-separator",
+                                "role": "group"
                               },
                               {
-                                "actions": [
-                                  "click",
-                                  "focus"
-                                ],
                                 "bounds": [
-                                  743.9,
-                                  512.1,
-                                  60.1,
-                                  24.0
+                                  330.0,
+                                  595.6,
+                                  520.0,
+                                  56.0
                                 ],
-                                "name": "Apply",
-                                "role": "button"
+                                "children": [
+                                  {
+                                    "actions": [
+                                      "click",
+                                      "focus"
+                                    ],
+                                    "bounds": [
+                                      698.7,
+                                      611.6,
+                                      67.2,
+                                      24.0
+                                    ],
+                                    "name": "Cancel",
+                                    "role": "button"
+                                  },
+                                  {
+                                    "actions": [
+                                      "click",
+                                      "focus"
+                                    ],
+                                    "bounds": [
+                                      773.9,
+                                      611.6,
+                                      60.1,
+                                      24.0
+                                    ],
+                                    "name": "Apply",
+                                    "role": "button"
+                                  }
+                                ],
+                                "key": "settings-actions",
+                                "role": "group"
                               }
                             ],
-                            "key": "settings-actions",
+                            "key": "settings-footer",
                             "role": "group"
                           }
                         ],
@@ -4295,10 +4419,10 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog",
       "rect": [
-        360.0,
-        207.88,
-        460.0,
-        344.25
+        330.0,
+        108.38,
+        520.0,
+        543.25
       ],
       "role": "dialog",
       "scale": 1.0
@@ -4315,9 +4439,9 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/header",
       "rect": [
-        360.0,
-        207.88,
-        460.0,
+        330.0,
+        108.38,
+        520.0,
         50.0
       ],
       "role": "group",
@@ -4334,9 +4458,9 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/header/#0",
       "rect": [
-        376.0,
-        223.88,
-        410.0,
+        346.0,
+        124.38,
+        470.0,
         16.0
       ],
       "role": "group",
@@ -4354,9 +4478,9 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/header/#0/#0",
       "rect": [
-        376.0,
-        223.88,
-        410.0,
+        346.0,
+        124.38,
+        470.0,
         16.0
       ],
       "role": "text",
@@ -4376,8 +4500,8 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/header/close",
       "rect": [
-        786.0,
-        221.88,
+        816.0,
+        122.38,
         20.0,
         20.0
       ],
@@ -4397,8 +4521,8 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/header/close/icon",
       "rect": [
-        788.0,
-        223.88,
+        818.0,
+        124.38,
         16.0,
         16.0
       ],
@@ -4417,10 +4541,10 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body",
       "rect": [
-        360.0,
-        257.88,
-        460.0,
-        294.25
+        330.0,
+        158.38,
+        520.0,
+        493.25
       ],
       "role": "group",
       "scale": 1.0
@@ -4437,10 +4561,29 @@
       "opacity": 1.0,
       "path": "kit-root/settings-layer/settings-dialog/body/settings-body",
       "rect": [
-        360.0,
-        257.88,
-        460.0,
-        294.25
+        330.0,
+        158.38,
+        520.0,
+        493.25
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0",
+      "rect": [
+        330.0,
+        158.38,
+        520.0,
+        436.25
       ],
       "role": "group",
       "scale": 1.0
@@ -4455,12 +4598,12 @@
       "key": "settings-scroll",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll",
       "rect": [
-        376.0,
-        257.88,
-        428.0,
-        238.25
+        346.0,
+        158.38,
+        488.0,
+        436.25
       ],
       "role": "group",
       "scale": 1.0
@@ -4475,12 +4618,12 @@
       "key": "settings-fields",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields",
       "rect": [
-        376.0,
-        257.88,
-        428.0,
-        238.25
+        346.0,
+        158.38,
+        488.0,
+        436.25
       ],
       "role": "group",
       "scale": 1.0
@@ -4492,15 +4635,15 @@
       "focusable": false,
       "focused": false,
       "inert": false,
-      "key": "settings-key",
+      "key": "settings-provider-group",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-provider-group",
       "rect": [
-        376.0,
-        257.88,
-        428.0,
-        110.0
+        346.0,
+        158.38,
+        488.0,
+        168.38
       ],
       "role": "group",
       "scale": 1.0
@@ -4513,34 +4656,36 @@
       "focusable": false,
       "focused": false,
       "inert": false,
+      "level": 2,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key/#0",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-provider-group/#0",
       "rect": [
-        376.0,
-        257.88,
-        428.0,
-        15.0
+        346.0,
+        158.38,
+        488.0,
+        14.38
       ],
-      "role": "text",
+      "role": "heading",
       "scale": 1.0,
       "text": "Provider"
     },
     {
       "blur": 0.0,
-      "fill": "#00000000",
+      "fill": "#1c1d20ff",
       "focusVisible": false,
       "focusable": false,
       "focused": false,
       "inert": false,
+      "key": "settings-provider-panel",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key/#1",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-provider-group/settings-provider-panel",
       "rect": [
-        376.0,
-        280.88,
-        428.0,
-        28.0
+        346.0,
+        180.75,
+        488.0,
+        146.0
       ],
       "role": "group",
       "scale": 1.0
@@ -4556,11 +4701,11 @@
       "label": "Provider",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key/#1/settings-providers",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-provider-group/settings-provider-panel/settings-providers",
       "rect": [
-        376.0,
-        280.88,
-        194.84,
+        362.0,
+        196.75,
+        456.0,
         28.0
       ],
       "role": "radiogroup",
@@ -4570,26 +4715,6 @@
       "blur": 0.0,
       "fill": "#1c1d20ff",
       "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "key": "indicator",
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key/#1/settings-providers/indicator",
-      "rect": [
-        376.0,
-        280.88,
-        97.42,
-        28.0
-      ],
-      "role": "group",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "fill": "#00000000",
-      "focusVisible": false,
       "focusable": true,
       "focused": false,
       "inert": false,
@@ -4598,11 +4723,11 @@
       "label": "OpenRouter",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key/#1/settings-providers/segment0",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-provider-group/settings-provider-panel/settings-providers/segment0",
       "rect": [
-        376.0,
-        280.88,
-        97.42,
+        362.0,
+        196.75,
+        228.0,
         28.0
       ],
       "role": "radio",
@@ -4619,10 +4744,10 @@
       "key": "label",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key/#1/settings-providers/segment0/label",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-provider-group/settings-provider-panel/settings-providers/segment0/label",
       "rect": [
-        388.0,
-        288.38,
+        439.29,
+        204.25,
         73.42,
         13.0
       ],
@@ -4641,11 +4766,11 @@
       "label": "Anthropic",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key/#1/settings-providers/segment1",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-provider-group/settings-provider-panel/settings-providers/segment1",
       "rect": [
-        473.42,
-        280.88,
-        97.42,
+        590.0,
+        196.75,
+        228.0,
         28.0
       ],
       "role": "radio",
@@ -4662,16 +4787,36 @@
       "key": "label",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key/#1/settings-providers/segment1/label",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-provider-group/settings-provider-panel/settings-providers/segment1/label",
       "rect": [
-        492.34,
-        288.38,
+        674.2,
+        204.25,
         59.6,
         13.0
       ],
       "role": "text",
       "scale": 1.0,
       "text": "Anthropic"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "settings-key",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-provider-group/settings-provider-panel/settings-key",
+      "rect": [
+        362.0,
+        240.75,
+        456.0,
+        70.0
+      ],
+      "role": "group",
+      "scale": 1.0
     },
     {
       "blur": 0.0,
@@ -4683,11 +4828,11 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key/#2",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-provider-group/settings-provider-panel/settings-key/#0",
       "rect": [
-        376.0,
-        316.88,
-        428.0,
+        362.0,
+        240.75,
+        456.0,
         15.0
       ],
       "role": "text",
@@ -4703,11 +4848,11 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key/#3",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-provider-group/settings-provider-panel/settings-key/#1",
       "rect": [
-        376.0,
-        339.88,
-        428.0,
+        362.0,
+        261.75,
+        456.0,
         28.0
       ],
       "role": "textbox",
@@ -4723,11 +4868,11 @@
       "key": "value",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key/#3/value",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-provider-group/settings-provider-panel/settings-key/#1/value",
       "rect": [
-        376.0,
-        339.88,
-        420.0,
+        362.0,
+        261.75,
+        448.0,
         28.0
       ],
       "role": "group",
@@ -4742,10 +4887,10 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key/#3/value/#0",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-provider-group/settings-provider-panel/settings-key/#1/value/#0",
       "rect": [
-        376.0,
-        353.88,
+        362.0,
+        275.75,
         2.0,
         0.0
       ],
@@ -4755,8 +4900,8 @@
     {
       "blur": 0.0,
       "caret": [
-        574.13,
-        345.88,
+        560.13,
+        267.75,
         1.5,
         16.0
       ],
@@ -4770,16 +4915,99 @@
       "label": "OpenRouter key",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-key/#3/value/input",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-provider-group/settings-provider-panel/settings-key/#1/value/input",
       "rect": [
-        384.0,
-        345.88,
-        412.0,
+        370.0,
+        267.75,
+        440.0,
         16.0
       ],
       "role": "textbox",
       "scale": 1.0,
       "secure": true
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-provider-group/settings-provider-panel/settings-key/#2",
+      "rect": [
+        362.0,
+        295.75,
+        456.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Saved to ~/.config/hn/summary.json by default when you apply."
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "settings-summaries-group",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group",
+      "rect": [
+        346.0,
+        350.75,
+        488.0,
+        223.88
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "level": 2,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/#0",
+      "rect": [
+        346.0,
+        350.75,
+        488.0,
+        14.38
+      ],
+      "role": "heading",
+      "scale": 1.0,
+      "text": "Summaries"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#1c1d20ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "settings-summaries-panel",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel",
+      "rect": [
+        346.0,
+        373.13,
+        488.0,
+        201.5
+      ],
+      "role": "group",
+      "scale": 1.0
     },
     {
       "blur": 0.0,
@@ -4791,12 +5019,12 @@
       "key": "settings-automatic",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-automatic",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-automatic",
       "rect": [
-        376.0,
-        387.88,
-        428.0,
-        37.25
+        362.0,
+        389.13,
+        456.0,
+        35.25
       ],
       "role": "group",
       "scale": 1.0
@@ -4810,12 +5038,12 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-automatic/#0",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-automatic/#0",
       "rect": [
-        376.0,
-        387.88,
-        428.0,
-        16.25
+        362.0,
+        389.13,
+        404.0,
+        35.25
       ],
       "role": "group",
       "scale": 1.0
@@ -4830,16 +5058,37 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-automatic/#0/#0",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-automatic/#0/#0",
       "rect": [
-        376.0,
-        387.88,
-        132.98,
+        362.0,
+        389.13,
+        404.0,
         16.25
       ],
       "role": "text",
       "scale": 1.0,
       "text": "Automatic summaries"
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-automatic/#0/#1",
+      "rect": [
+        362.0,
+        409.38,
+        404.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Summarize a story the first time you open it."
     },
     {
       "blur": 0.0,
@@ -4851,10 +5100,10 @@
       "label": "Automatic summaries",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-automatic/#0/#1",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-automatic/#1",
       "rect": [
-        768.0,
-        388.0,
+        782.0,
+        398.75,
         36.0,
         16.0
       ],
@@ -4871,10 +5120,10 @@
       "key": "control",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-automatic/#0/#1/control",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-automatic/#1/control",
       "rect": [
-        768.0,
-        388.0,
+        782.0,
+        398.75,
         36.0,
         16.0
       ],
@@ -4891,10 +5140,10 @@
       "key": "thumb",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-automatic/#0/#1/control/thumb",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-automatic/#1/control/thumb",
       "rect": [
-        782.0,
-        389.0,
+        796.0,
+        399.75,
         21.0,
         14.0
       ],
@@ -4903,24 +5152,23 @@
     },
     {
       "blur": 0.0,
-      "color": "#a2a5aaff",
-      "fill": "#00000000",
+      "fill": "#ffffff0e",
       "focusVisible": false,
       "focusable": false,
       "focused": false,
       "inert": false,
+      "key": "settings-summaries-separator",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-automatic/#1",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-summaries-separator",
       "rect": [
-        376.0,
-        410.13,
-        428.0,
-        15.0
+        362.0,
+        440.38,
+        456.0,
+        1.0
       ],
-      "role": "text",
-      "scale": 1.0,
-      "text": "Summarize stories on first open."
+      "role": "group",
+      "scale": 1.0
     },
     {
       "blur": 0.0,
@@ -4932,12 +5180,12 @@
       "key": "settings-profile",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-profile",
       "rect": [
-        376.0,
-        445.13,
-        428.0,
-        51.0
+        362.0,
+        457.38,
+        456.0,
+        101.25
       ],
       "role": "group",
       "scale": 1.0
@@ -4952,39 +5200,20 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile/#0",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-profile/#0",
       "rect": [
-        376.0,
-        445.13,
-        428.0,
+        362.0,
+        457.38,
+        456.0,
         15.0
       ],
       "role": "text",
       "scale": 1.0,
-      "text": "Summary quality"
+      "text": "Quality"
     },
     {
       "blur": 0.0,
       "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": false,
-      "focused": false,
-      "inert": false,
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile/#1",
-      "rect": [
-        376.0,
-        468.13,
-        428.0,
-        28.0
-      ],
-      "role": "group",
-      "scale": 1.0
-    },
-    {
-      "blur": 0.0,
-      "fill": "#121314ff",
       "focusVisible": false,
       "focusable": false,
       "focused": false,
@@ -4993,56 +5222,55 @@
       "label": "Summary quality",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile/#1/settings-quality",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-profile/settings-quality",
       "rect": [
-        376.0,
-        468.13,
-        167.39,
-        28.0
+        362.0,
+        480.38,
+        456.0,
+        78.25
       ],
       "role": "radiogroup",
       "scale": 1.0
     },
     {
       "blur": 0.0,
-      "fill": "#1c1d20ff",
+      "fill": "#f48d2f1a",
       "focusVisible": false,
-      "focusable": false,
+      "focusable": true,
       "focused": false,
       "inert": false,
-      "key": "indicator",
+      "itemSelected": true,
+      "key": "fast",
+      "label": "Fast",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile/#1/settings-quality/indicator",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-profile/settings-quality/fast",
       "rect": [
-        376.0,
-        468.13,
-        83.7,
-        28.0
+        362.0,
+        480.38,
+        223.0,
+        78.25
       ],
-      "role": "group",
+      "role": "radio",
       "scale": 1.0
     },
     {
       "blur": 0.0,
       "fill": "#00000000",
       "focusVisible": false,
-      "focusable": true,
+      "focusable": false,
       "focused": false,
       "inert": false,
-      "itemSelected": true,
-      "key": "segment0",
-      "label": "Fast",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile/#1/settings-quality/segment0",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-profile/settings-quality/fast/#0",
       "rect": [
-        376.0,
-        468.13,
-        83.7,
-        28.0
+        374.0,
+        492.38,
+        199.0,
+        54.25
       ],
-      "role": "radio",
+      "role": "group",
       "scale": 1.0
     },
     {
@@ -5053,40 +5281,18 @@
       "focusable": false,
       "focused": false,
       "inert": false,
-      "key": "label",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile/#1/settings-quality/segment0/label",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-profile/settings-quality/fast/#0/#0",
       "rect": [
-        404.96,
-        475.63,
-        25.77,
-        13.0
+        374.0,
+        492.38,
+        199.0,
+        16.25
       ],
       "role": "text",
       "scale": 1.0,
       "text": "Fast"
-    },
-    {
-      "blur": 0.0,
-      "fill": "#00000000",
-      "focusVisible": false,
-      "focusable": true,
-      "focused": false,
-      "inert": false,
-      "key": "segment1",
-      "label": "Thorough",
-      "loopPhase": null,
-      "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile/#1/settings-quality/segment1",
-      "rect": [
-        459.7,
-        468.13,
-        83.7,
-        28.0
-      ],
-      "role": "radio",
-      "scale": 1.0
     },
     {
       "blur": 0.0,
@@ -5096,15 +5302,97 @@
       "focusable": false,
       "focused": false,
       "inert": false,
-      "key": "label",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile/#1/settings-quality/segment1/label",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-profile/settings-quality/fast/#0/#1",
       "rect": [
-        471.7,
-        475.63,
-        59.7,
-        13.0
+        374.0,
+        512.63,
+        199.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "A quick overview."
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "fast-model",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-profile/settings-quality/fast/#0/fast-model",
+      "rect": [
+        374.0,
+        531.63,
+        199.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "anthropic/claude-haiku-5.5"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": true,
+      "focused": false,
+      "inert": false,
+      "key": "thorough",
+      "label": "Thorough",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-profile/settings-quality/thorough",
+      "rect": [
+        595.0,
+        480.38,
+        223.0,
+        78.25
+      ],
+      "role": "radio",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-profile/settings-quality/thorough/#0",
+      "rect": [
+        607.0,
+        492.38,
+        199.0,
+        54.25
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#eff0f2ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-profile/settings-quality/thorough/#0/#0",
+      "rect": [
+        607.0,
+        492.38,
+        199.0,
+        16.25
       ],
       "role": "text",
       "scale": 1.0,
@@ -5118,19 +5406,80 @@
       "focusable": false,
       "focused": false,
       "inert": false,
-      "key": "settings-model",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-scroll/settings-fields/settings-profile/#1/settings-model",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-profile/settings-quality/thorough/#0/#1",
       "rect": [
-        553.39,
-        474.63,
-        156.55,
+        607.0,
+        512.63,
+        199.0,
         15.0
       ],
       "role": "text",
       "scale": 1.0,
-      "text": "anthropic/claude-haiku-5.5"
+      "text": "Reads more of the discussion."
+    },
+    {
+      "blur": 0.0,
+      "color": "#a2a5aaff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "thorough-model",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/#0/settings-scroll/settings-fields/settings-summaries-group/settings-summaries-panel/settings-profile/settings-quality/thorough/#0/thorough-model",
+      "rect": [
+        607.0,
+        531.63,
+        199.0,
+        15.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "anthropic/claude-sonnet-5.5"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "settings-footer",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-footer",
+      "rect": [
+        330.0,
+        594.63,
+        520.0,
+        57.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffff0e",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "settings-footer-separator",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-footer/settings-footer-separator",
+      "rect": [
+        330.0,
+        594.63,
+        520.0,
+        1.0
+      ],
+      "role": "group",
+      "scale": 1.0
     },
     {
       "blur": 0.0,
@@ -5142,12 +5491,12 @@
       "key": "settings-actions",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-footer/settings-actions",
       "rect": [
-        376.0,
-        512.13,
-        428.0,
-        24.0
+        330.0,
+        595.63,
+        520.0,
+        56.0
       ],
       "role": "group",
       "scale": 1.0
@@ -5161,11 +5510,11 @@
       "inert": false,
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#0",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-footer/settings-actions/#0",
       "rect": [
-        376.0,
-        524.13,
-        284.71,
+        346.0,
+        623.63,
+        344.71,
         0.0
       ],
       "role": "group",
@@ -5181,10 +5530,10 @@
       "label": "Cancel",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#1",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-footer/settings-actions/#1",
       "rect": [
-        668.71,
-        512.13,
+        698.71,
+        611.63,
         67.16,
         24.0
       ],
@@ -5202,10 +5551,10 @@
       "key": "label",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#1/label",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-footer/settings-actions/#1/label",
       "rect": [
-        680.71,
-        514.13,
+        710.71,
+        613.63,
         43.16,
         20.0
       ],
@@ -5223,10 +5572,10 @@
       "label": "Apply",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#2",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-footer/settings-actions/#2",
       "rect": [
-        743.87,
-        512.13,
+        773.87,
+        611.63,
         60.13,
         24.0
       ],
@@ -5244,10 +5593,10 @@
       "key": "label",
       "loopPhase": null,
       "opacity": 1.0,
-      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-actions/#2/label",
+      "path": "kit-root/settings-layer/settings-dialog/body/settings-body/settings-footer/settings-actions/#2/label",
       "rect": [
-        755.87,
-        514.13,
+        785.87,
+        613.63,
         36.13,
         20.0
       ],

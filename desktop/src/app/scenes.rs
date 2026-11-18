@@ -88,6 +88,12 @@ pub(super) fn scene_settings(s: &mut App) {
     s.settings = Some(Settings::open(&config, None, false));
 }
 
+/// Settings over an open story, including its regenerate action.
+pub(super) fn scene_settings_story(s: &mut App) {
+    scene_story(s);
+    scene_settings(s);
+}
+
 /// The keyboard sheet, open: two columns of the key map, generated from `keyboard_help::HELP`.
 pub(super) fn scene_help(s: &mut App) {
     s.help = true;

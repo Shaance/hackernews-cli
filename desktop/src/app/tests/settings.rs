@@ -19,6 +19,32 @@ fn regenerate_is_only_available_with_an_open_story() {
 }
 
 #[test]
+fn quality_tiles_select_and_expose_radio_state() {
+    let mut s = app(true, SavedView::in_memory());
+    scene_settings(&mut s);
+    let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+    rt.frame(0.0);
+    let [x, y, w, h] = rt.elements().iter().find(|e| e.key.as_deref() == Some("thorough")).unwrap().rect;
+    rt.pointer_down(x + w / 2.0, y + h / 2.0);
+    rt.pointer_up(x + w / 2.0, y + h / 2.0);
+    rt.frame(0.0);
+    assert_eq!(rt.state.settings.as_ref().unwrap().profile(), reader::Profile::Thorough);
+    let elements = rt.elements();
+    assert!(elements.iter().any(|e| e.role == "radiogroup" && e.label.as_deref() == Some("Summary quality")));
+    assert!(elements.iter().any(|e| e.key.as_deref() == Some("thorough") && e.role == "radio" && e.item_selected));
+    assert!(elements.iter().any(|e| e.key.as_deref() == Some("fast") && e.role == "radio" && !e.item_selected));
+
+    // Keep Thorough focused but unchecked, so each key must actually select it.
+    for key in [rune::Key::Enter, rune::Key::Text(" ".into())] {
+        rt.update(|s, _| s.settings_mut().unwrap().set_profile(reader::Profile::Fast));
+        rt.frame(0.0);
+        rt.key(rune::KeyEvent { key, mods: Default::default() });
+        rt.frame(0.0);
+        assert_eq!(rt.state.settings.as_ref().unwrap().profile(), reader::Profile::Thorough);
+    }
+}
+
+#[test]
 fn apply_settings_writes_the_config_and_closes_the_dialog() {
     let dir = temp_dir("apply");
     let path = dir.join("hn/summary.json");

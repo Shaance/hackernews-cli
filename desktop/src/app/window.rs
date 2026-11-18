@@ -285,6 +285,7 @@ pub fn spec() -> AppSpec<App> {
             ("citation", scene_citation),
             ("summary-generating", scene_summary_generating),
             ("settings", scene_settings),
+            ("settings-story", scene_settings_story),
             ("help", scene_help),
         ],
         setup: Some(setup),

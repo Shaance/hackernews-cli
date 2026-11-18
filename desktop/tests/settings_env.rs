@@ -48,9 +48,9 @@ fn apply_writes_the_config_the_terminal_app_reads_back() {
     // provider has its own key, and the Anthropic one is still empty.
     let mut again = Settings::open(&reloaded, Some(path.clone()), false);
     assert_eq!(again.provider(), Provider::OpenRouter);
-    assert_eq!(again.model(), "anthropic/claude-sonnet-5.5");
+    assert_eq!(again.profile().model(again.provider()), "anthropic/claude-sonnet-5.5");
     again.set_provider(Provider::Anthropic);
-    assert_eq!(again.model(), "claude-sonnet-5-5");
+    assert_eq!(again.profile().model(again.provider()), "claude-sonnet-5-5");
     again.set_key("sk-ant-roundtrip");
     again.apply().expect("the temp directory is writable");
     let both = reader::load_config(&path).expect("the file it just wrote");
