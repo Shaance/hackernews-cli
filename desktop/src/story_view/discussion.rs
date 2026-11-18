@@ -344,6 +344,8 @@ pub(super) fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme
                     .ml(26.0)
                     .font(type_::BODY)
                     .color(if !focus || selected { t.text } else { t.text_secondary })
+                    .selectable(true)
+                    .selection_color(k.selection())
                     .wrap_anywhere(),
             );
     }

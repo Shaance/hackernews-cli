@@ -49,7 +49,8 @@ fn expanded_summary(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: b
         let mut article = col().key("article-summary-content").w_full().gap(7.0)
             .transition(Transition::none()).instant_changes();
         if let Some(value) = s.article_summary.readable() {
-            article = article.child(text(value.to_string()).key("article-summary").font(type_::BODY).color(t.text).wrap());
+            article = article.child(text(value.to_string()).key("article-summary").font(type_::BODY).color(t.text)
+                .selectable(true).selection_color(k.selection()).wrap());
         }
         match &s.article_summary {
             ArticleSummaryState::Generating { previous } if previous.is_none() => {},
@@ -63,7 +64,7 @@ fn expanded_summary(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: b
         let mut discussion = col().key("discussion-summary-content").w_full().gap(7.0)
             .transition(Transition::none()).instant_changes();
         if let Some(summary) = s.summary.readable() {
-            discussion = discussion.child(bullets(s, summary, t, accent));
+            discussion = discussion.child(bullets(s, summary, k, t, accent));
         }
         match &s.summary {
             SummaryState::Generating { previous } if previous.is_none() => {},
@@ -131,7 +132,7 @@ fn summary_header(k: &Kit, t: tok::Theme) -> El {
 }
 
 /// Each source reference is a pressable inline range in the point it supports.
-fn bullets(s: &Story, summary: &Summary, t: tok::Theme, accent: Color) -> El {
+fn bullets(s: &Story, summary: &Summary, k: &Kit, t: tok::Theme, accent: Color) -> El {
     let mut list = col().key("summary-points").w_full().gap(10.0);
     let focused = s.focused_citation().filter(|_| s.source().is_none());
     for (index, bullet) in summary.bullets.iter().enumerate() {
@@ -161,7 +162,8 @@ fn bullets(s: &Story, summary: &Summary, t: tok::Theme, accent: Color) -> El {
             }
         }
         let mut paragraph = text(content).key(format!("summary-text-{index}"))
-            .grow(1.0).min_w(0.0).font(type_::BODY).color(t.text).wrap().spans(spans);
+            .grow(1.0).min_w(0.0).font(type_::BODY).color(t.text)
+            .selectable(true).selection_color(k.selection()).wrap().spans(spans);
         for link in links { paragraph = paragraph.link(link); }
         paragraph = paragraph.on_link(|s: &mut App, id, _| {
             if let Some(index) = id.strip_prefix("cite-").and_then(|value| value.parse().ok()) {

@@ -180,7 +180,7 @@ fn article_body(s: &Story, k: &Kit, t: tok::Theme) -> El {
                 .key("article-body")
                 .w_full()
                 .gap(10.0)
-                .child(Markdown::new(markdown.clone()).build(k).max_w(MEASURE));
+                .child(Markdown::new(markdown.clone()).selectable(true).build(k).max_w(MEASURE));
             if *partial {
                 body = body.child(
                     text("Truncated \u{00b7} the article is longer than the reader keeps.")

@@ -215,6 +215,89 @@ fn discussion_selection_after_source_return_gives_enter_back_to_the_comment() {
 }
 
 #[test]
+fn dragging_reading_text_copies_without_pressing_the_comment() {
+    let mut s = app(true, SavedView::in_memory());
+    scene_story(&mut s);
+    let thread = &mut s.story.as_mut().unwrap().thread;
+    if thread.focus() { thread.toggle_focus(); }
+    assert!(thread.select(9010));
+    let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+    rt.on_key = Some(on_key);
+    let clipboard = rune::clipboard::memory();
+    rt.use_clipboard(&clipboard);
+    rt.frame(0.0);
+
+    let [x, y, _, _] = rt.elements().iter().find(|e| e.key.as_deref() == Some("comment-text-901")).unwrap().rect;
+    rt.pointer_down(x + 2.0, y + 7.0); rt.frame(0.0);
+    rt.pointer_move(x + 125.0, y + 7.0); rt.frame(0.0);
+    rt.pointer_up(x + 125.0, y + 7.0); rt.frame(0.0);
+    let selected = rt.selected_text().expect("drag selects comment text");
+    assert!(selected.len() > 5);
+    assert!(rt.state.story.as_ref().unwrap().thread.node(901).unwrap().text.contains(&selected));
+    assert_eq!(rt.state.story.as_ref().unwrap().thread.cursor(), Some(9010), "a selection drag does not press its row");
+    let cmd_c = || KeyEvent { key: rune::Key::Command('c'), mods: rune::Mods { cmd: true, ..Default::default() } };
+    rt.key(cmd_c()); rt.frame(0.0);
+    assert_eq!(clipboard.text().as_deref().map(String::as_str), Some(selected.as_str()));
+
+    route(&mut rt, rune::Key::Tab);
+    assert!(rt.state.story.as_ref().unwrap().focused_citation().is_some());
+    let elements = rt.elements();
+    let [x, y, _, _] = elements.iter().find(|e| e.key.as_deref() == Some("summary-text-0")).unwrap().rect;
+    let [cx, cy, cw, ch] = elements.iter().find(|e| e.key.as_deref() == Some("cite-1")).unwrap().rect;
+    rt.pointer_down(x + 2.0, y + 7.0); rt.frame(0.0);
+    rt.pointer_move(cx + cw - 1.0, cy + ch / 2.0); rt.frame(0.0);
+    rt.pointer_up(cx + cw - 1.0, cy + ch / 2.0); rt.frame(0.0);
+    let selected = rt.selected_text().expect("drag selects summary point");
+    assert!(selected.contains("[1]") && selected.contains("[2]"), "inline citations remain part of a selection: {selected:?}");
+    assert!(rt.state.story.as_ref().unwrap().focused_citation().is_some());
+    rt.key(cmd_c()); rt.frame(0.0);
+    assert_eq!(clipboard.text().as_deref().map(String::as_str), Some(selected.as_str()));
+
+    route(&mut rt, rune::Key::Enter);
+    let [x, y, _, _] = rt.elements().iter().find(|e| e.key.as_deref() == Some("source-comment-text")).unwrap().rect;
+    rt.pointer_down(x + 2.0, y + 7.0); rt.frame(0.0);
+    rt.pointer_move(x + 100.0, y + 7.0); rt.frame(0.0);
+    rt.pointer_up(x + 100.0, y + 7.0); rt.frame(0.0);
+    let selected = rt.selected_text().expect("drag selects the captured comment");
+    rt.key(cmd_c()); rt.frame(0.0);
+    assert_eq!(clipboard.text().as_deref().map(String::as_str), Some(selected.as_str()));
+
+    route(&mut rt, rune::Key::Escape);
+    rt.update(|s, _| { s.story.as_mut().unwrap().thread.toggle_focus(); });
+    rt.frame(0.0);
+    let [x, y, _, _] = rt.elements().iter().find(|e| e.key.as_deref() == Some("comment-text-901")).unwrap().rect;
+    rt.pointer_down(x + 2.0, y + 7.0); rt.frame(0.0);
+    rt.pointer_move(x + 110.0, y + 7.0); rt.frame(0.0);
+    rt.pointer_up(x + 110.0, y + 7.0); rt.frame(0.0);
+    let selected = rt.selected_text().expect("drag selects a comment with focus mode on");
+    rt.key(cmd_c()); rt.frame(0.0);
+    assert_eq!(clipboard.text().as_deref().map(String::as_str), Some(selected.as_str()));
+}
+
+#[test]
+fn clicking_selectable_text_keeps_comment_and_citation_actions() {
+    let mut s = app(true, SavedView::in_memory());
+    scene_story(&mut s);
+    let thread = &mut s.story.as_mut().unwrap().thread;
+    if thread.focus() { thread.toggle_focus(); }
+    let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+    rt.on_key = Some(on_key);
+    rt.frame(0.0);
+
+    let [x, y, _, _] = rt.elements().iter().find(|e| e.key.as_deref() == Some("comment-text-9010")).unwrap().rect;
+    rt.pointer_down(x + 8.0, y + 7.0); rt.pointer_up(x + 8.0, y + 7.0); rt.frame(0.0);
+    assert_eq!(rt.state.story.as_ref().unwrap().thread.cursor(), Some(9010));
+    assert!(rt.selected_text().is_none());
+
+    let [x, y, _, _] = rt.elements().iter().find(|e| e.key.as_deref() == Some("summary-text-0")).unwrap().rect;
+    rt.pointer_down(x + 8.0, y + 7.0); rt.pointer_up(x + 8.0, y + 7.0); rt.frame(0.0);
+    assert!(rt.elements().iter().any(|e| e.key.as_deref() == Some("summary-scroll") && e.focused));
+    let [x, y, w, h] = rt.elements().iter().find(|e| e.key.as_deref() == Some("cite-0")).unwrap().rect;
+    rt.pointer_down(x + w / 2.0, y + h / 2.0); rt.pointer_up(x + w / 2.0, y + h / 2.0); rt.frame(0.0);
+    assert_eq!(rt.state.story.as_ref().unwrap().source().map(|source| source.id()), Some(901));
+}
+
+#[test]
 fn inline_citation_keyboard_opens_and_returns_to_its_reference() {
     let mut s = app(true, SavedView::in_memory());
     s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
