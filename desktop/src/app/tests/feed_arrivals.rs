@@ -1,6 +1,19 @@
 //! Feed loading, arrival and resize request behavior.
 
 use super::super::*;
+use std::time::Duration;
+use hn_lib::app::StoryType;
+use rune::tok;
+use rune::col;
+use rune::AppSpec;
+use rune::Cx;
+use rune::El;
+use rune::KeyEvent;
+use rune::Tx;
+use super::super::feed_view::feed_skeleton;
+use super::super::input::on_key;
+use super::super::poll::poll;
+use super::super::window::view;
 use super::support::*;
 
 #[test]

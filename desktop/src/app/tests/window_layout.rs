@@ -1,6 +1,16 @@
 //! Window zoom, inspector sizing and layout persistence.
 
 use super::super::*;
+use hn_lib::app::StoryType;
+use rune::KeyEvent;
+use rune::Tx;
+use super::super::window::close;
+#[cfg(target_os = "macos")]
+use super::super::window::WINDOW_MENUS;
+use super::super::input::on_key;
+use super::super::poll::poll;
+use super::super::scenes::scene_story;
+use super::super::window::view;
 use super::support::*;
 
 #[test]

@@ -1,0 +1,217 @@
+//! Window setup and asynchronous result polling.
+
+use super::{App, Notice, Ranking, Arrival, ScrollPacing, DEFAULT_GRID, TOAST_SECONDS, LOAD_TIMEOUT, LAYOUT_SECONDS, SCROLL_PACING_SECONDS};
+use std::time::Duration;
+use hn_lib::app::StoryType;
+use rune::Tx;
+use rune::Waker;
+use crate::story_io::StoryUpdate;
+use crate::story::SummaryState;
+use crate::webview;
+
+/// One aggregate fill request, then the waker that brings its answer back to `poll`.
+pub(super) fn setup(s: &mut App, waker: Waker) {
+    webview::set_waker(waker.clone());
+    s.scroll_waker = Some(waker.clone());
+    s.bridge.set_waker(waker);
+    // The remembered tab and page decide what the first request asks for, so they land before
+    // it. The measured grid re-requests if the window is not the default size.
+    s.restore();
+    s.request(DEFAULT_GRID, Ranking::Fresh);
+}
+
+pub(super) fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
+    let mut changed = false;
+    let mut toast_expired = false;
+    if webview::take_back() { changed |= s.story_back(tx); }
+    let mut feed_arrived = false;
+    let mut summary_arrived = false;
+    let mut replies_arrived = false;
+    match s.scroll_pacing.get() {
+        ScrollPacing::Moved => {
+            s.scroll_pacing.set(ScrollPacing::Until(now + SCROLL_PACING_SECONDS));
+            tx.wake_after(Duration::ZERO);
+        }
+        ScrollPacing::Until(until) if now < until => tx.wake_after(Duration::ZERO),
+        ScrollPacing::Until(_) => s.scroll_pacing.set(ScrollPacing::Idle),
+        ScrollPacing::Idle => {}
+    }
+    if let Some(filled) = s.bridge.take() {
+        let landed = s.feed.apply_fill(filled);
+        changed |= landed;
+        if landed { feed_arrived = s.accept_arrival(); }
+    }
+    while let Some(update) = {
+        let configured = s.configured();
+        let article = s.story.as_ref().is_some_and(|story|
+            matches!(story.article_summary, crate::story::ArticleSummaryState::Generating { .. }));
+        let discussion = s.story.as_ref().is_some_and(|story| story.summary.is_generating());
+        s.bridge.take_story(&s.config, configured && article, configured && discussion)
+    } {
+        let summary_finished = matches!(&update,
+            StoryUpdate::Summary { .. } | StoryUpdate::Discussion { comments: Err(_), .. });
+        let visible = s.inspector.is_open() && s.settings.is_none() && !s.help;
+        // A landing for a story that is no longer open is dropped by `Story::land_update`.
+        let landed = s.story.as_mut().map(|open| {
+            let first_result = match &update {
+                StoryUpdate::ArticleSummary { summary: Ok(_), .. } => matches!(
+                    open.article_summary, crate::story::ArticleSummaryState::Generating { previous: None }),
+                StoryUpdate::Summary { summary: Ok(_), .. } => matches!(
+                    open.summary, SummaryState::Generating { previous: None }),
+                _ => false,
+            };
+            let show = visible && open.summary_open && open.source.is_none();
+            let visible_success = show && matches!(&update, StoryUpdate::Summary { summary: Ok(_), .. });
+            let landed = open.land_update(update);
+            (landed, landed && first_result && show,
+                (landed && summary_finished && !visible_success).then(|| open.summary_notice()).flatten())
+        });
+        if let Some((landed, arrival, notice)) = landed {
+            changed |= landed;
+            summary_arrived |= arrival;
+            // The card is in the inspector and may be folded or scrolled away, so the summary's
+            // outcome is confirmed where the reader is looking.
+            if let Some(message) = notice {
+                s.toast = Some(Notice {
+                    message,
+                    until: f64::INFINITY,
+                    show_dot: true,
+                });
+            }
+        }
+    }
+    if let Some(result) = s.bridge.take_refresh() {
+        changed |= s.land_comment_refresh(result);
+    }
+    if let Some(filled) = s.bridge.take_replies() {
+        if let Some(story) = &mut s.story {
+            let before: std::collections::HashSet<_> = match &story.source {
+                Some(source) => story.thread.source_rows(&source.nav),
+                None => story.thread.rows(),
+            }.into_iter().map(|row| row.id).collect();
+            let landed = story.land_replies(filled);
+            let after = match &story.source {
+                Some(source) => story.thread.source_rows(&source.nav),
+                None => story.thread.rows(),
+            };
+            replies_arrived = landed && s.inspector.is_open() && s.settings.is_none() && !s.help
+                && after.iter().any(|row| !before.contains(&row.id));
+            changed |= landed;
+        }
+    }
+    // `O` / "Open in browser": the real page, in the system browser, via the TUI's safe
+    // opener (scheme-checked, HN item-page fallback). Headless runs never open anything.
+    if std::mem::take(&mut s.pending_external) {
+        s.open_current_external();
+    }
+    // `--open-story <id>`: open the story once the feed holds it. It waits for the first fill
+    // rather than opening something else, and says so if the id is not on this page.
+    if let Some(id) = s.open_story.take() {
+        if s.feed.stories.iter().any(|story| story.id == id) {
+            s.open_id(id);
+            changed = true;
+        } else if s.feed.status.loading || s.feed.stories.is_empty() {
+            s.open_story = Some(id);
+        } else {
+            s.feed.status.error = Some(format!("--open-story {id}: not on this page"));
+            changed = true;
+        }
+    }
+    // The live article pane: build the child view, load the open story's page, and keep it in
+    // step with the split. A no-op in a headless run, where the pane is the extracted text.
+    changed |= s.sync_live();
+    // One request per invalidation: the measured grid is the only thing that moves it. A
+    // resize keeps an in-flight fresh request fresh; otherwise it uses the accepted ranking.
+    if let Some(grid) = s.measured.get() {
+        let need = s.feed.fill(grid.0, grid.1);
+        if s.feed.tab == StoryType::Saved
+            && s.requested.is_some_and(|(_, _, previous)| previous != grid)
+        {
+            if let Some(id) = s.feed.selected_id() {
+                tx.scroll_into_view(format!("story-{id}"));
+            }
+            tx.instant();
+            changed = true;
+        }
+        if s.requested.map(|(fill, _, _)| fill) != Some(need) {
+            // A page turn has its own destination. Reflow the page on screen only when
+            // there is no such turn, or when an earlier reflow is already pending.
+            if s.feed.tab != StoryType::Saved && need.count > 0
+                && (s.feed.pending_cursor.is_none() || s.feed.pending_anchor.is_some())
+                && let Some(id) = s.feed.selected_id()
+            {
+                let offset = (s.feed.selected / need.count) * need.count;
+                if offset > 0 || s.feed.pending_cursor.is_some() {
+                    s.feed.pending_anchor.get_or_insert(id);
+                    s.feed.pending_cursor = (offset > 0).then_some(s.feed.display_cursor + offset);
+                }
+            }
+            let ranking = if s.feed.status.loading {
+                s.requested.map_or(Ranking::Keep, |(_, ranking, _)| ranking)
+            } else {
+                Ranking::Keep
+            };
+            if !matches!(s.pending_arrival, Some(Arrival::Initial | Arrival::Tab(_))) {
+                s.pending_arrival = None;
+            }
+            s.request(grid, ranking);
+            changed = true;
+        } else if let Some((_, _, previous)) = &mut s.requested {
+            *previous = grid;
+        }
+    }
+    // A request that never lands must not leave the feed loading forever.
+    if s.feed.status.loading {
+        let since = *s.loading_since.get_or_insert(now);
+        if s.feed.timed_out(now - since, LOAD_TIMEOUT) {
+            s.bridge.cancel_feed();
+            s.loading_since = None;
+            s.pending_arrival = None;
+            s.arrival = Arrival::None;
+            changed = true;
+        } else {
+            tx.wake_after(Duration::from_secs_f64(LOAD_TIMEOUT));
+        }
+    } else {
+        s.loading_since = None;
+    }
+    // The window size the reader left, asked for once. `AppSpec::size` is compile-time, so a
+    // restore is a resize; a headless run has no window and no remembered size.
+    if !s.headless && !s.restored {
+        s.restored = true;
+        if let Some(size) = s.layout.window {
+            tx.resize_window_instant(size);
+            changed = true;
+        }
+    }
+    // The window's own state, written when it moves and at most every [`LAYOUT_SECONDS`].
+    if !s.headless {
+        let snapshot = s.snapshot();
+        if snapshot != s.layout_written {
+            let waited = now - s.layout_saved_at;
+            if waited >= LAYOUT_SECONDS {
+                s.write_layout(snapshot, now);
+            } else {
+                tx.wake_after(Duration::from_secs_f64(LAYOUT_SECONDS - waited));
+            }
+        }
+    }
+    if let Some(notice) = &mut s.toast {
+        if notice.until.is_infinite() {
+            notice.until = now + TOAST_SECONDS;
+            tx.wake_after(Duration::from_secs_f64(TOAST_SECONDS));
+        } else if now >= notice.until {
+            s.toast = None;
+            changed = true;
+            toast_expired = true;
+        }
+    }
+    if changed {
+        if (feed_arrived || summary_arrived || replies_arrived || toast_expired) && !s.reduced {
+            tx.animated();
+        } else {
+            tx.instant();
+        }
+    }
+    changed
+}

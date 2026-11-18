@@ -1,6 +1,6 @@
 //! `hn-desktop`'s modules, as a library so `tests/` can reach them.
 //!
-//! The binary is a two-line shell around [`app::spec`]; everything else lives here. The split
+//! The binary is a two-line shell around [`app::window::spec`]; everything else lives here. The split
 //! exists because the Saved store's real path is only testable from an integration test, where
 //! `XDG_DATA_HOME` can be pointed at a temp directory without racing the unit tests.
 

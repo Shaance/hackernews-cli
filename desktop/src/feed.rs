@@ -357,6 +357,24 @@ fn placeholder(id: i32) -> HNCLIItem {
     }
 }
 
+pub(crate) fn tab_index(tab: StoryType) -> usize {
+    match tab {
+        StoryType::Top => 0,
+        StoryType::New => 1,
+        StoryType::Best => 2,
+        StoryType::Saved => 3,
+    }
+}
+
+pub(crate) fn tab_at(index: usize) -> StoryType {
+    match index {
+        1 => StoryType::New,
+        2 => StoryType::Best,
+        3 => StoryType::Saved,
+        _ => StoryType::Top,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

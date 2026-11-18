@@ -1,6 +1,13 @@
 //! Saved stories, hover actions and persistence feedback.
 
 use super::super::*;
+use hn_lib::app::StoryType;
+use rune::KeyEvent;
+use super::super::input::on_key;
+use super::super::poll::poll;
+use super::super::scenes::scene_saved_corrupt;
+use super::super::scenes::scene_story;
+use super::super::window::view;
 use super::support::*;
 
 #[test]

@@ -1,6 +1,11 @@
 //! Shared app test setup and interaction helpers.
 
 use super::super::*;
+use std::time::Duration;
+use rune::KeyEvent;
+use rune::Tx;
+use super::super::input::on_key;
+use super::super::poll::poll;
 
 pub(super) fn press(s: &mut App, key: rune::Key) {
     on_key(

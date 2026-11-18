@@ -1,6 +1,14 @@
 //! Keyboard routing, help and modal shortcuts.
 
 use super::super::*;
+use std::time::Duration;
+use hn_lib::app::StoryType;
+use rune::KeyEvent;
+use rune::Tx;
+use super::super::input::on_key;
+use super::super::poll::poll;
+use super::super::scenes::scene_comments;
+use super::super::window::view;
 use super::support::*;
 
 #[test]

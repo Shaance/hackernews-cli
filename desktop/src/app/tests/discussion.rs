@@ -1,6 +1,17 @@
 //! Discussion navigation, replies and scrolling.
 
 use super::super::*;
+use std::time::Duration;
+use rune::tok;
+use rune::AppSpec;
+use rune::KeyEvent;
+use rune::Tx;
+use crate::story::SummaryState;
+use super::super::input::on_key;
+use super::super::poll::poll;
+use super::super::scenes::scene_comments;
+use super::super::scenes::scene_story;
+use super::super::window::view;
 use super::support::*;
 
 #[test]

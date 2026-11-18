@@ -1,6 +1,9 @@
 //! Settings dialog behavior and configuration writes.
 
 use super::super::*;
+use super::super::scenes::scene_settings;
+use super::super::scenes::scene_story;
+use super::super::window::view;
 use super::support::*;
 
 #[test]

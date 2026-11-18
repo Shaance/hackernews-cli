@@ -1,6 +1,11 @@
 //! Citation selection and captured source navigation.
 
 use super::super::*;
+use rune::KeyEvent;
+use crate::story_io::StoryUpdate;
+use super::super::input::on_key;
+use super::super::scenes::scene_story;
+use super::super::window::view;
 use super::support::*;
 
 #[test]

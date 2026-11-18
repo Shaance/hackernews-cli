@@ -22,7 +22,8 @@ use rune::tok::{self, radius, type_};
 use rune::{Color, El, GrowthSpec, Link, LinkPaint, ScrollSpec, Span, Spring, SpringPair, TextStyle, Transition, Tx, col, el, icon, row, text};
 use rune_kit::{Button, ButtonVariant, ControlSize, Keybind, Kit, Markdown, Placement, Popover, Spinner};
 
-use crate::app::{App, quiet_button};
+use crate::app::{App, Pane};
+use crate::app::chrome::quiet_button;
 use crate::comments::{INDENT, MAX_DEPTH};
 use crate::story::{ArticleState, ArticleSummaryState, Story, Summary, SummaryState};
 
@@ -36,20 +37,6 @@ const HEADLINE: TextStyle = TextStyle::new(21.0, 600.0);
 /// The fallback banner's text. The pane is the live page; this is what the reader sees when a
 /// child view cannot exist (headless, non-macOS) or could not be built.
 pub const FALLBACK_BANNER: &str = "live page unavailable \u{2014} showing extracted text";
-
-/// What the article pane draws.
-///
-/// The live page is the default: the pane is a placeholder whose rect the child view is pinned
-/// to, and the page itself is drawn by the web engine, not by Rune. The extracted Markdown is
-/// the fallback, and it says so — a silent swap would leave the reader unsure whether they are
-/// looking at the page or at a capture of it.
-pub enum Pane<'a> {
-    /// The story's real page, in a child view over the pane's rect.
-    Live { loading: bool },
-    /// The extracted text, with a banner saying why the live page is not there. `reason` is the
-    /// child view's own failure, when there was one.
-    Extracted { reason: Option<&'a str> },
-}
 
 /// The article pane: a sticky title over the body, at the reading measure.
 ///
@@ -1076,7 +1063,7 @@ fn source_viewer(
 pub fn story_footer(s: &Story, k: &Kit, t: tok::Theme, hints: &rune::Live<f32>, reduced: bool, contrast: bool) -> El {
     let in_source = s.source.is_some();
     let back = if in_source { "Back to discussion" } else { "Back to feed" };
-    let h = |keys: &[&str], label: &str| crate::app::passive_hint(hint(k, t, keys, label), hints, reduced, contrast);
+    let h = |keys: &[&str], label: &str| crate::app::chrome::passive_hint(hint(k, t, keys, label), hints, reduced, contrast);
     let mut footer = row().key("story-footer").instant_changes().w_full().px(24.0).py(2.0).gap(18.0).flex_wrap().center_y()
         .child(row().key("story-back").role("button").label(back).focusable(true)
             .h(36.0).px(8.0).gap(6.0).center_y().radius(4.0)

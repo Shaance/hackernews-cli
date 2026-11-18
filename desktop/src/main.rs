@@ -13,8 +13,8 @@
 //!
 //! The article pane is the story's live page, a `WKWebView` child view pinned to the pane's
 //! rect; the readability capture runs behind it for the summary card and its citations. See
-//! `app::run`, which is where the window's platform handle reaches that child.
+//! `app::window::run`, which is where the window's platform handle reaches that child.
 
 fn main() {
-    hn_desktop::app::run();
+    hn_desktop::app::window::run();
 }

@@ -1,6 +1,15 @@
 //! Summary generation, retry and result handoffs.
 
 use super::super::*;
+use std::time::Duration;
+use rune::AppSpec;
+use rune::Color;
+use rune::Tx;
+use crate::story::SummaryState;
+use super::super::input::on_key;
+use super::super::poll::poll;
+use super::super::scenes::scene_story;
+use super::super::window::view;
 use super::support::*;
 
 fn button_style(elements: &[rune::ElementInfo], label: &str) -> (f32, Color, Color) {

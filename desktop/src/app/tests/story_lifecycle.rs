@@ -1,6 +1,13 @@
 //! Story opening, native ownership and phase handoffs.
 
 use super::super::*;
+use std::time::Duration;
+use rune::KeyEvent;
+use rune::Tx;
+use crate::story::SummaryState;
+use super::super::input::on_key;
+use super::super::poll::poll;
+use super::super::window::view;
 use super::support::*;
 
 #[test]

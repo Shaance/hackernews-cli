@@ -1,6 +1,15 @@
 //! Feed paging, selection and ranking behavior.
 
 use super::super::*;
+use std::time::Duration;
+use hn_lib::app::StoryType;
+use hn_lib::feed_state;
+use rune::KeyEvent;
+use rune::Tx;
+use super::super::input::on_key;
+use super::super::poll::poll;
+use super::super::scenes::scene_story;
+use super::super::window::view;
 use super::support::*;
 
 #[test]
