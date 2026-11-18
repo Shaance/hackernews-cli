@@ -125,7 +125,7 @@ say so.
    ships a versioned offline snapshot (`preview/fixtures/snapshot.json`) that a Rune window could
    read directly, so the data layer is done. Tradeoff: a second UI to maintain, on a pre-release
    framework, for a product whose whole identity is being a terminal app.
-2. **A pixel-truth harness for the visual audits.** `VISUAL_AUDIT.md` and `preview/` describe the
+2. **A pixel-truth harness for the visual audits.** `docs/notes/VISUAL_AUDIT.md` and `preview/` describe the
    TUI's look in prose and static web mockups. Rune's `--snap`/`--tree` would render those same
    screens as real pixels with deterministic, diffable screenshots and a machine-readable element
    tree. Tradeoff: it is a parallel renderer, so it can drift from what ratatui actually draws.

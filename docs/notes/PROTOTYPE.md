@@ -1,6 +1,6 @@
 # Prototype history
 
-Current setup and behavior are documented in [README.md](README.md). Use
+Current setup and behavior are documented in [README.md](../../README.md). Use
 `./scripts/dev.sh` from this checkout. The notes below describe past experiments;
 the old private Summarizer runner and its absolute paths are obsolete.
 

@@ -1,6 +1,6 @@
 # Local preview experiment
 
-> Historical experiment record. For the current public deployment and recovery procedure, see [preview/deploy/README.md](preview/deploy/README.md).
+> Historical experiment record. For the current public deployment and recovery procedure, see [preview/deploy/README.md](../../preview/deploy/README.md).
 
 Scope: local Mac only. No VPS, cloud deployment, paid AI calls, or production credentials. Branch isolated from the main checkout. The first trial uses Docker Desktop's Linux VM; rootless/gVisor parity is a separate experiment and must not be inferred from baseline Docker results.
 

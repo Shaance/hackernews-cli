@@ -5,7 +5,7 @@ drawn with Rune instead of a terminal. One window, one `SplitView`; opening a st
 story's **live page** in the main pane and the summary card plus the discussion in the inspector.
 
 `mockups/desktop/DESIGN.md` is the design of record — window anatomy, the motion spec, the
-screens, and the testing strategy. `DESKTOP_IMPLEMENTATION_PLAN.md` at the repo root is the plan
+screens, and the testing strategy. `docs/notes/DESKTOP_IMPLEMENTATION_PLAN.md` is the plan
 this crate was built to.
 
 ## The article pane is the live page

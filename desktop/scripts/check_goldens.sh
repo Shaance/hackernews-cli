@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The headless golden gate for hn-desktop (DESKTOP_IMPLEMENTATION_PLAN.md v4, "Acceptance gate").
+# The headless golden gate for hn-desktop (docs/notes/DESKTOP_IMPLEMENTATION_PLAN.md v4, "Acceptance gate").
 #
 # For every frozen scenario it renders the app offscreen, then checks four independent things:
 #

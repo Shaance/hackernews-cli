@@ -6,7 +6,7 @@
 
 After the other fixes land, start the behavior-preserving migration with **`app.rs` and `story_view.rs`**. They combine the most independently changing responsibilities and already have substantial behavior coverage. Follow with the bridge/service, keyboard catalog, discussion model, and story model. Keep `fixtures.rs` together: its size is mostly one coherent, deterministic scene dataset.
 
-There is a necessary design correction to the requested acyclic graph: the **current graph is cyclic**. `app` composes `story_view`, which imports `App`; `app` also owns `Settings`, whose view callbacks import `App`; and `bridge` imports `service`, which imports `bridge::SummaryError` ([app.rs:38](desktop/src/app.rs:38), [story_view.rs:25](desktop/src/story_view.rs:25), [settings.rs:151](desktop/src/settings.rs:151), [service.rs:31](desktop/src/service.rs:31)). Separating composition from the state type, settings model from its view, and story request/result types from the bridge resolves those dependencies without a new event system.
+There is a necessary design correction to the requested acyclic graph: the **current graph is cyclic**. `app` composes `story_view`, which imports `App`; `app` also owns `Settings`, whose view callbacks import `App`; and `bridge` imports `service`, which imports `bridge::SummaryError` ([app.rs:38](../../desktop/src/app.rs:38), [story_view.rs:25](../../desktop/src/story_view.rs:25), [settings.rs:151](../../desktop/src/settings.rs:151), [service.rs:31](../../desktop/src/service.rs:31)). Separating composition from the state type, settings model from its view, and story request/result types from the bridge resolves those dependencies without a new event system.
 
 “Split now” below means **first in the later migration**, not a change in this assessment. Counts and citations describe the working-tree snapshot at HEAD `24404bdda009e78a974a6b64b7c8d9b506da7b30`; they should be refreshed after the pending fixes.
 
@@ -16,24 +16,24 @@ Physical lines include comments and blanks. For source files, “test” begins 
 
 | File | Production | Test | Decision |
 |---|---:|---:|---|
-| [src/app.rs:2253](desktop/src/app.rs:2253) | **2,252** | 3,500 | Split now |
-| [src/bookmarks.rs:158](desktop/src/bookmarks.rs:158) | 157 | 115 | Under threshold |
-| [src/bridge.rs:482](desktop/src/bridge.rs:482) | **481** | 342 | Follow-up |
-| [src/comments.rs:743](desktop/src/comments.rs:743) | **742** | 396 | Follow-up |
-| [src/feed.rs:360](desktop/src/feed.rs:360) | 359 | 369 | Under threshold |
-| [src/fixtures.rs:464](desktop/src/fixtures.rs:464) | **463** | 83 | Leave |
-| [src/help.rs:1](desktop/src/help.rs:1) | 121 | 0 | Under threshold |
-| [src/keys.rs:564](desktop/src/keys.rs:564) | **563** | 508 | Follow-up |
-| [src/layout.rs:122](desktop/src/layout.rs:122) | 121 | 58 | Under threshold |
-| [src/lib.rs:1](desktop/src/lib.rs:1) | 20 | 0 | Under threshold |
-| [src/main.rs:1](desktop/src/main.rs:1) | 20 | 0 | Under threshold |
-| [src/service.rs:410](desktop/src/service.rs:410) | **409** | 109 | Follow-up |
-| [src/settings.rs:1](desktop/src/settings.rs:1) | 327 | 0 | Split to remove a cycle |
-| [src/story.rs:587](desktop/src/story.rs:587) | **586** | 311 | Follow-up |
-| [src/story_view.rs:1186](desktop/src/story_view.rs:1186) | **1,185** | 98 | Split now |
-| [src/webview.rs:1](desktop/src/webview.rs:1) | 266 | 0 | Under threshold |
-| [tests/bookmarks_env.rs:1](desktop/tests/bookmarks_env.rs:1) | 0 | 47 | Integration test |
-| [tests/settings_env.rs:1](desktop/tests/settings_env.rs:1) | 0 | 71 | Integration test |
+| [src/app.rs:2253](../../desktop/src/app.rs:2253) | **2,252** | 3,500 | Split now |
+| [src/bookmarks.rs:158](../../desktop/src/bookmarks.rs:158) | 157 | 115 | Under threshold |
+| [src/bridge.rs:482](../../desktop/src/bridge.rs:482) | **481** | 342 | Follow-up |
+| [src/comments.rs:743](../../desktop/src/comments.rs:743) | **742** | 396 | Follow-up |
+| [src/feed.rs:360](../../desktop/src/feed.rs:360) | 359 | 369 | Under threshold |
+| [src/fixtures.rs:464](../../desktop/src/fixtures.rs:464) | **463** | 83 | Leave |
+| [src/help.rs:1](../../desktop/src/help.rs:1) | 121 | 0 | Under threshold |
+| [src/keys.rs:564](../../desktop/src/keys.rs:564) | **563** | 508 | Follow-up |
+| [src/layout.rs:122](../../desktop/src/layout.rs:122) | 121 | 58 | Under threshold |
+| [src/lib.rs:1](../../desktop/src/lib.rs:1) | 20 | 0 | Under threshold |
+| [src/main.rs:1](../../desktop/src/main.rs:1) | 20 | 0 | Under threshold |
+| [src/service.rs:410](../../desktop/src/service.rs:410) | **409** | 109 | Follow-up |
+| [src/settings.rs:1](../../desktop/src/settings.rs:1) | 327 | 0 | Split to remove a cycle |
+| [src/story.rs:587](../../desktop/src/story.rs:587) | **586** | 311 | Follow-up |
+| [src/story_view.rs:1186](../../desktop/src/story_view.rs:1186) | **1,185** | 98 | Split now |
+| [src/webview.rs:1](../../desktop/src/webview.rs:1) | 266 | 0 | Under threshold |
+| [tests/bookmarks_env.rs:1](../../desktop/tests/bookmarks_env.rs:1) | 0 | 47 | Integration test |
+| [tests/settings_env.rs:1](../../desktop/tests/settings_env.rs:1) | 0 | 71 | Integration test |
 
 Total: **8,072 production / 6,007 test lines**, including the two integration tests.
 

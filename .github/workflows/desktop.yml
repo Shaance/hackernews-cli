@@ -1,6 +1,6 @@
 name: Desktop
 
-# The desktop shell's acceptance gate (DESKTOP_IMPLEMENTATION_PLAN.md v4).
+# The desktop shell's acceptance gate (docs/notes/DESKTOP_IMPLEMENTATION_PLAN.md v4).
 #
 # Pixel equality is only claimed on macOS: Rune renders through Metal there, and the goldens in
 # desktop/verification/expected/ were generated on Metal. Linux (Mesa lavapipe) and Windows

@@ -7,7 +7,7 @@ under `/private/tmp/claude-501/-Users-shaance-Documents-projects-hackernews-cli/
 (abbreviated `$A` below). Headless runs always take the extracted-Markdown fallback, so anything about the
 live WKWebView is marked "needs live check".
 
-The prior root audits (`VISUAL_AUDIT.md`, `SUMMARY_UX_AUDIT.md`, `DESIGN-DIRECTION.md`) are about the
+The prior audits in this folder (`VISUAL_AUDIT.md`, `SUMMARY_UX_AUDIT.md`, `DESIGN-DIRECTION.md`) are about the
 terminal app and the browser preview wrapper, not this crate, so none of their findings are repeated here.
 
 Severity: **ship-blocker** (would make a reader call it unfinished on first use), **should-fix**
