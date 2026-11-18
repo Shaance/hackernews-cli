@@ -21,6 +21,7 @@ use rune_kit::SplitView;
 use rune_kit::Toast;
 use rune_kit::ToastRegion;
 use rune_kit::Toolbar;
+#[cfg(target_os = "macos")]
 use crate::keys::WindowKey;
 use crate::story::Story;
 use super::chrome::{brand, pane_motion, saved_dot};

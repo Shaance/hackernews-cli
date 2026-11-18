@@ -103,8 +103,13 @@ jobs:
       - name: Trees, motion lint, fidelity
         env:
           HN_TREES_ONLY: "1"
-          VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
-        run: bash scripts/check_goldens.sh
+          # Noble updates dropped the architecture suffix from the Mesa manifests.
+          VK_LOADER_DRIVERS_SELECT: "lvp_icd*.json"
+          RUNE_GPU_LOG: "1"
+        run: |
+          ls -l /usr/share/vulkan/icd.d || true
+          vulkaninfo --summary || true
+          bash scripts/check_goldens.sh
 
       - name: Upload trees on failure
         if: failure()
