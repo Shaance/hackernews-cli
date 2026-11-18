@@ -343,6 +343,19 @@ Real app, real config, real Anthropic summary key, 1344×900 window. Evidence in
 ### N4. The app menu says "hn-desktop", not "HN"
 - Severity: polish. Verified: live (accessibility tree). "About hn-desktop", "Hide hn-desktop",
   "Quit hn-desktop" use the executable name; the bundle is "HN". View, Window and Help menus are right.
+- Status: fixed — the bundle's executable is named after the bundle (`package-macos.sh`).
+
+### N5. A selected citation is nearly invisible in the story view
+- Severity: polish, follow-up. Verified: live stills before and after `Tab` differ only in the `[1]` marker's
+  brightness. The reader cannot tell which point the citation belongs to until `Enter` opens it.
+
+### N6. The Desktop workflow's Linux job has never passed (CI only)
+- Severity: follow-up; the macOS release does not depend on it. Verified: all 11 runs since 2026-11-16 failed.
+  First it could not link (`-lxkbcommon`, fixed in `cc0635b`). It now builds and tests, then fails to render:
+  "no GPU adapter", so the lavapipe Vulkan driver at `VK_ICD_FILENAMES` is not loading on `ubuntu-24.04`.
+  Also a Linux-only unused-import warning (`crate::keys::WindowKey`, `src/app/window.rs:24`).
+- Also fixed in `cc0635b`: GitHub retired the `macos-14` image on 2026-11-02, which had cancelled every macOS
+  job before it got a runner; both workflows now use `macos-15`.
 
 ### N3. Article extraction returns navigation only on some sites (shared `hn_lib`)
 - Severity: follow-up (not desktop-specific). Verified: live. blog.cloudflare.com gave the summarizer "only the
