@@ -84,6 +84,7 @@ Two consequences worth stating, because they are the cost of a native child view
 - **The page owns its own keyboard while it has focus.** Clicking into the page gives the
   `WKWebView` first responder, and Rune's `on_key` no longer sees those keys. Clicking any Rune
   chrome — the toolbar, the header, the inspector — takes focus back.
+  A page script cannot take the keyboard until the reader clicks inside the page.
 - **The child is hidden while a dialog is open.** The settings dialog and the help sheet are
   Rune's, and a webview over them would bury the controls. Hiding is `setHidden`, not a teardown,
   so the page keeps its scroll position and session.

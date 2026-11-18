@@ -336,7 +336,9 @@ Real app, real config, real Anthropic summary key, 1344×900 window. Evidence in
 - Contract broken: DESIGN.md "The page owns its own keyboard while it has focus. Clicking into the page gives
   the `WKWebView` first responder" — only a click may hand it focus.
 - Fix: a key arriving while the page holds focus without a click in it goes to Rune instead, and hiding the
-  page hands focus back. Needs a live check on blog.cloudflare.com.
+  page hands focus back.
+- Status: fixed and checked live on the same Cloudflare story: `Tab` selects citation [1], `Enter` opens it;
+  after closing, `Return` opens a story and `Esc` closes settings.
 
 ### N4. The app menu says "hn-desktop", not "HN"
 - Severity: polish. Verified: live (accessibility tree). "About hn-desktop", "Hide hn-desktop",

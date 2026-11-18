@@ -31,7 +31,7 @@ mod macos {
 
     use block2::RcBlock;
     use objc2::{MainThreadMarker, rc::Retained, runtime::AnyObject};
-    use objc2_app_kit::{NSEvent, NSEventMask, NSEventModifierFlags, NSEventType};
+    use objc2_app_kit::{NSEvent, NSEventMask, NSEventModifierFlags, NSEventType, NSView};
     use rune::{Waker, WindowHandle};
     use wry::dpi::{LogicalPosition, LogicalSize};
     use wry::{PageLoadEvent, Rect, WebView, WebViewBuilder, WebViewExtMacOS};
@@ -44,20 +44,46 @@ mod macos {
         token: Retained<AnyObject>,
         press: Rc<Cell<BackPress>>,
         pending: Rc<Cell<bool>>,
+        page_clicked: Rc<Cell<bool>>,
     }
 
     impl BackMonitor {
+        fn return_focus(view: &NSView) {
+            if let Some(window) = view.window()
+                && let Some(responder) = window.firstResponder()
+                && let Some(responder) = responder.downcast_ref::<NSView>()
+                && responder.isDescendantOf(view)
+            {
+                // Wry retains this child's parent until after the monitor is removed.
+                if let Some(parent) = unsafe { view.superview() } {
+                    window.makeFirstResponder(Some(&parent));
+                }
+            }
+        }
+
         fn new(view: &WebView, waker: Option<Waker>) -> Result<Self, String> {
             let mtm = MainThreadMarker::new().ok_or("webview monitor must run on the main thread")?;
             let view = view.webview();
             let window = view.window().ok_or("webview has no window")?;
             let press = Rc::new(Cell::new(BackPress::Idle));
             let pending = Rc::new(Cell::new(false));
+            let page_clicked = Rc::new(Cell::new(false));
             let on_press = Rc::clone(&press);
             let on_pending = Rc::clone(&pending);
+            let on_page_clicked = Rc::clone(&page_clicked);
             let block = RcBlock::new(move |ptr: NonNull<NSEvent>| -> *mut NSEvent {
                 // AppKit invokes this local monitor on the main thread before dispatch.
                 let event = unsafe { ptr.as_ref() };
+                if event.r#type() == NSEventType::LeftMouseDown {
+                    if event.window(mtm).is_some_and(|event_window| std::ptr::eq(&*event_window, &*window)) {
+                        let point = view.convertPoint_fromView(event.locationInWindow(), None);
+                        let bounds = view.bounds();
+                        on_page_clicked.set(!view.isHiddenOrHasHiddenAncestor()
+                            && point.x >= bounds.origin.x && point.y >= bounds.origin.y
+                            && point.x < bounds.origin.x + bounds.size.width && point.y < bounds.origin.y + bounds.size.height);
+                    }
+                    return ptr.as_ptr();
+                }
                 if event.r#type() == NSEventType::KeyDown {
                     if event.keyCode() == 53
                         && !event.modifierFlags().intersects(NSEventModifierFlags::Command | NSEventModifierFlags::Control | NSEventModifierFlags::Option)
@@ -67,6 +93,11 @@ mod macos {
                         on_pending.set(true);
                         if let Some(waker) = &waker { waker(); }
                         return std::ptr::null_mut();
+                    }
+                    if !on_page_clicked.get()
+                        && event.window(mtm).is_some_and(|event_window| std::ptr::eq(&*event_window, &*window))
+                    {
+                        Self::return_focus(&view);
                     }
                     return ptr.as_ptr();
                 }
@@ -110,15 +141,17 @@ mod macos {
                 }
                 ptr.as_ptr()
             });
-            let mask = NSEventMask::OtherMouseDown | NSEventMask::OtherMouseDragged | NSEventMask::OtherMouseUp | NSEventMask::Swipe | NSEventMask::KeyDown;
+            let mask = NSEventMask::LeftMouseDown | NSEventMask::OtherMouseDown | NSEventMask::OtherMouseDragged | NSEventMask::OtherMouseUp | NSEventMask::Swipe | NSEventMask::KeyDown;
             // The block returns the original event or null and is retained by AppKit until removal.
             let token = unsafe { NSEvent::addLocalMonitorForEventsMatchingMask_handler(mask, &block) }
                 .ok_or("could not install webview mouse monitor")?;
-            Ok(Self { token, press, pending })
+            Ok(Self { token, press, pending, page_clicked })
         }
 
-        fn hide(&self) {
+        fn hide(&self, view: &WebView) {
             self.pending.set(false);
+            self.page_clicked.set(false);
+            Self::return_focus(&view.webview());
             if self.press.get() == BackPress::Held { self.press.set(BackPress::Cancelled); }
         }
     }
@@ -217,7 +250,7 @@ mod macos {
         /// Hide without dropping the page, retaining its scroll and session.
         pub fn hide(&mut self) -> bool {
             if matches!(self.visibility, Visibility::Shown(_)) {
-                self.monitor.hide();
+                self.monitor.hide(&self.view);
                 let _ = self.view.set_visible(false);
                 self.visibility = Visibility::Hidden;
                 true
