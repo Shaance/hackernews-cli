@@ -104,7 +104,7 @@ jobs:
         env:
           HN_TREES_ONLY: "1"
           # Noble updates dropped the architecture suffix from the Mesa manifests.
-          VK_LOADER_DRIVERS_SELECT: "lvp_icd*.json"
+          VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.json
           RUNE_GPU_LOG: "1"
         run: |
           ls -l /usr/share/vulkan/icd.d || true
