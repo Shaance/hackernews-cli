@@ -148,6 +148,7 @@ Fully cached feed windows return immediately without source requests. This sessi
 | Summary settings (provider, key, profile) | `$XDG_CONFIG_HOME/hn/summary.json` | `hn_lib::reader::Config` — the same file the TUI writes |
 | Saved stories | `$XDG_DATA_HOME/hn/saved.json` | `hn_lib::bookmarks` |
 | Window size, zoom, inspector width, tab, page, selection | `$XDG_STATE_HOME/hn/desktop.json` | `src/layout.rs` |
+| Saved summaries, one file per story: the article and discussion summaries, the comment text their citations open, and which provider and model wrote them. Halves older than 30 days are deleted at launch. | `$XDG_STATE_HOME/hn/summaries/<id>.json` | `src/summary_store.rs` |
 
 Each falls back to `~/.config`, `~/.local/share` and `~/.local/state` when the XDG variable is
 unset. The layout file is written at most every two seconds while the window moves, and once on

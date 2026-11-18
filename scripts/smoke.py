@@ -85,7 +85,7 @@ except BaseException:
     app.capture('failure');app.abort();raise
 finally:
     os.environ.pop(key_name,None)
-records=[json.loads(p.read_text()) for p in (work/'data/state/hn/openrouter').glob('*.json')]
+records=[json.loads(p.read_text()) for p in (work/'data/state/hn/summary-responses').glob('*.json')]
 assert len(records)==6, f"Expected exactly six requests, got {len(records)}"
 assert all(r['provider'].lower()==provider and r['http_status']==200 for r in records)
 assert all(key not in json.dumps(r) for r in records)

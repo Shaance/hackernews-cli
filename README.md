@@ -185,15 +185,15 @@ While viewing a cited source, `j/k`, Page Up/Down, and `g/G` scroll its text. In
 |---|---|---|
 | Saved story details | `~/.local/share/hn/saved.json` | Until unsaved or deleted |
 | Summary settings and any key entered in the form | `~/.config/hn/summary.json` | Across restarts |
-| Summary response diagnostics (both providers) | `~/.local/state/hn/openrouter/` | Until manually deleted |
+| Summary response diagnostics (both providers) | `~/.local/state/hn/summary-responses/` | Until manually deleted |
 | Optional article browser | `~/.local/share/hn/terminal-browser-v0.13.4/` | Across hn reinstalls |
 | Captured inputs, summaries, replies, and reading positions | Memory only | Current run |
 
 `XDG_DATA_HOME`, `XDG_CONFIG_HOME`, and `XDG_STATE_HOME` override the corresponding directory roots. Settings and diagnostic files use owner-only permissions on Unix. A key entered through the form is stored in the settings file; it is not an OS keychain entry.
 
-The diagnostic directory retains its original `openrouter` name. Each JSON file records the timestamp, provider, model, story title, HTTP status, generation ID, request ID when supplied, and raw response body. It can contain summary or error text. Request headers and full prompts/article/comment inputs are not logged, and an echoed active key is redacted. Logging failures do not interrupt reading or trigger another request.
+Each JSON file records the timestamp, provider, model, story title, HTTP status, generation ID, request ID when supplied, and raw response body. It can contain summary or error text. Request headers and full prompts/article/comment inputs are not logged, and an echoed active key is redacted. Logging failures do not interrupt reading or trigger another request.
 
-Diagnostics are for investigation and are not used as a summary cache. Deleting the diagnostic directory is safe.
+Diagnostics are for investigation and are not used as a summary cache. Deleting the diagnostic directory is safe. Earlier versions wrote them to `~/.local/state/hn/openrouter/`; that folder can be deleted.
 
 ## Development
 

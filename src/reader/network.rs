@@ -35,7 +35,7 @@ impl Default for Network {
                 .filter(|v| !v.is_empty())
                 .map(PathBuf::from)
                 .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/state")))
-                .map(|root| root.join("hn/openrouter")),
+                .map(|root| root.join("hn/summary-responses")),
         }
     }
 }
