@@ -91,9 +91,12 @@ fn expanded_summary(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: b
     }
     let more = rune::Live::new(0.0_f32);
     let on_more = more.clone();
+    let scroll = col().key("summary-scroll").role("region").label("Summary content").focusable(true);
+    // Inline citations share the viewport's keyboard focus; the selected chip shows it.
+    let scroll = if s.focused_citation().is_some() { scroll.no_focus_ring() } else { scroll };
     col().key("summary-open").w_full().gap(10.0).px(14.0).pt(14.0).pb(20.0)
         .child(summary_header(k, t))
-        .child(col().key("summary-scroll").role("region").label("Summary content").focusable(true)
+        .child(scroll
             .on_key(|s: &mut App, ev: &rune::KeyEvent, tx: &mut Tx| match ev.key {
                 rune::Key::PageDown => { s.keyboard_navigation(ev); tx.scroll_page("summary-scroll", 1); true }
                 rune::Key::PageUp => { s.keyboard_navigation(ev); tx.scroll_page("summary-scroll", -1); true }

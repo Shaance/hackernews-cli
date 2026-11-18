@@ -8,7 +8,7 @@ use rune::KeyEvent;
 use rune::Tx;
 use crate::story::SummaryState;
 use super::super::input::on_key;
-use super::super::poll::poll;
+use super::super::poll::{poll, poll_updates};
 use super::super::scenes::scene_comments;
 use super::super::scenes::scene_story;
 use super::super::window::view;
@@ -31,6 +31,78 @@ fn kit_button_focus_ring_is_amber_in_both_themes() {
         assert!(rt.instances.iter().any(|i| i.border == amber &&
             i.rect[0] <= x && i.rect[1] <= y && i.rect[2] >= w && i.rect[3] >= h),
             "focused kit button must paint an amber ring");
+    }
+}
+
+#[test]
+fn citation_return_keeps_keyboard_focus_and_matches_native_back_motion() {
+    for reduced in [false, true] {
+        let mut rune_frames = Vec::new();
+        for native in [false, true] {
+            let mut s = app(true, SavedView::in_memory());
+            s.reduced = reduced;
+            scene_story(&mut s);
+            let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+            rt.on_key = Some(on_key);
+            rt.frame(0.0);
+            route(&mut rt, rune::Key::Tab);
+            route(&mut rt, rune::Key::Enter);
+            rt.frame(0.3);
+            assert!(rt.elements().iter().any(|e| e.key.as_deref() == Some("source-viewer")));
+
+            if native {
+                rt.poll = Some(|s, now, tx| poll_updates(s, now, tx, true));
+            } else {
+                rt.key(KeyEvent { key: rune::Key::Escape, mods: Default::default() });
+            }
+            rt.frame(0.0);
+            rt.poll = None;
+            let mut frames = Vec::new();
+            for (ms, dt) in [(30, 0.03), (100, 0.07), (300, 0.20)] {
+                rt.frame(dt);
+                let elements = rt.elements();
+                let find = |key: &str| elements.iter().find(|e| e.key.as_deref() == Some(key));
+                assert!(find("source-viewer").is_none(), "source exits immediately");
+                let discussion = find("inspector").unwrap();
+                assert!(!discussion.inert && !discussion.exiting && find("comment-901").is_some());
+                frames.push((discussion.opacity, discussion.rect[0]));
+                println!("native={native} reduced={reduced} +{ms}ms: source absent, discussion opacity={:.4} x={:.2}",
+                    discussion.opacity, discussion.rect[0]);
+            }
+            if native {
+                assert_eq!(frames, rune_frames);
+            } else {
+                rune_frames = frames;
+                if reduced {
+                    assert!(rune_frames.iter().all(|frame| *frame == rune_frames[2] && frame.0 == 1.0));
+                } else {
+                    assert!(rune_frames[0].0 < rune_frames[1].0 && rune_frames[1].0 < rune_frames[2].0);
+                    assert!(rune_frames[0].1 < rune_frames[1].1 && rune_frames[1].1 < rune_frames[2].1);
+                }
+            }
+
+            rt.frame(0.3);
+            let elements = rt.elements();
+            let find = |key: &str| elements.iter().find(|e| e.key.as_deref() == Some(key)).unwrap();
+            let summary = find("summary-scroll");
+            assert!(summary.focused && summary.focusable);
+            assert!(find("cite-0").label.as_deref().unwrap().starts_with("Selected."));
+            find("citation-focus");
+            let [x, y, w, h] = summary.rect;
+            let amber = tok::accent(3, true).premul(1.0);
+            assert!(!rt.instances.iter().any(|i| i.border == amber &&
+                i.rect[0] <= x && i.rect[1] <= y && i.rect[2] >= w && i.rect[3] >= h),
+                "the selected citation supplies the focus cue");
+
+            route(&mut rt, rune::Key::Tab);
+            assert_eq!(rt.state.story().unwrap().focused_citation().unwrap().position, 1);
+            let cursor = |rt: &rune::Runtime<App>| rt.state.story().unwrap().thread.cursor();
+            let before = cursor(&rt);
+            route(&mut rt, rune::Key::Text("j".into()));
+            assert_ne!(cursor(&rt), before);
+            route(&mut rt, rune::Key::Text("k".into()));
+            assert_eq!(cursor(&rt), before);
+        }
     }
 }
 

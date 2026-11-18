@@ -21,11 +21,14 @@ pub(super) fn setup(s: &mut App, waker: Waker) {
 }
 
 pub(super) fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
-    let mut changed = false;
+    let back_requested = matches!(&s.live, Live::Created { child, .. } if child.take_back());
+    poll_updates(s, now, tx, back_requested)
+}
+
+pub(super) fn poll_updates(s: &mut App, now: f64, tx: &mut Tx, back_requested: bool) -> bool {
+    let native_back = back_requested && s.story_back(tx);
+    let mut changed = native_back;
     let mut toast_expired = false;
-    let native_back = matches!(&s.live, Live::Created { child, .. } if child.take_back()) && s.story_back(tx);
-    let story_closed = native_back && s.story.is_none();
-    changed |= native_back;
     let mut feed_arrived = false;
     let mut summary_arrived = false;
     let mut replies_arrived = false;
@@ -205,7 +208,7 @@ pub(super) fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
         }
     }
     if changed {
-        if (story_closed || feed_arrived || summary_arrived || replies_arrived || toast_expired) && !s.reduced {
+        if (native_back || feed_arrived || summary_arrived || replies_arrived || toast_expired) && !s.reduced {
             tx.animated();
         } else {
             tx.instant();
