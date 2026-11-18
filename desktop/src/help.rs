@@ -1,6 +1,6 @@
 //! The keyboard sheet: `?` or `⌘?`, DESIGN.md's screen 07.
 //!
-//! The contents are [`keys::HELP`], which the tests in `keys.rs` check against the routing
+//! The contents are [`crate::keyboard_help::HELP`], which the tests in `keys.rs` check against the routing
 //! tables — so the sheet cannot drift from the keys the window actually binds. This module is
 //! only the layout: two columns of `Keybind` rows, grouped Feed / Discussion / Summary / Window.
 //!
@@ -11,10 +11,10 @@ use rune::tok::{self, type_};
 use rune::{Color, El, ScrollSpec, col, row, text};
 use rune_kit::{Dialog, Keybind, Kit};
 
-use crate::keys::{self, HelpGroup};
+use crate::keyboard_help::{HelpGroup, HELP};
 
 /// The sheet's two columns, as DESIGN.md's mock shows. Which group goes where is
-/// [`keys::HelpGroup::column`]'s, because the split is by height rather than by halving the list.
+/// [`crate::keyboard_help::HelpGroup::column`]'s, because the split is by height rather than by halving the list.
 const COLUMNS: usize = 2;
 
 /// The sheet, in the overlay layer. `open` is the app's flag.
@@ -22,7 +22,7 @@ pub fn view(k: &Kit, t: tok::Theme, accent: Color, open: bool, layer: &mut Vec<E
     let mut columns = row().key("help-columns").w_full().gap(28.0).items_start();
     for column in 0..COLUMNS {
         let mut body = col().key(format!("help-column-{column}")).grow(1.0).gap(18.0);
-        for group in keys::HELP.iter().filter(|group| group.column == column) {
+        for group in HELP.iter().filter(|group| group.column == column) {
             body = body.child(section(group, k, t, accent));
         }
         columns = columns.child(body);

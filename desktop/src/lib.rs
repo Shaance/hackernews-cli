@@ -11,6 +11,7 @@ pub mod comments;
 pub mod feed;
 pub mod fixtures;
 pub mod help;
+pub mod keyboard_help;
 pub mod keys;
 pub mod layout;
 pub mod service;

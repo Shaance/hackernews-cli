@@ -98,7 +98,7 @@ pub(super) fn view(s: &App, cx: &mut Cx<App>) -> El {
     let (main, toolbar, inspector) = match &s.story {
         Some(story) => (
             story_main(story, &k, t, s.pane()).transition(handoff),
-            Toolbar::new().leading(story_view::story_toolbar(
+            Toolbar::new().leading(story_view::reading_chrome::story_toolbar(
                 t,
                 accent,
                 s.saved.contains(story.id()),
@@ -131,7 +131,7 @@ pub(super) fn view(s: &App, cx: &mut Cx<App>) -> El {
         })
         .child(shell.grow(1.0).min_h(0.0));
     if let Some(story) = &s.story {
-        base = base.child(el().w_full().h(1.0).fill(t.separator)).child(story_view::story_footer(story, &k, t, &s.hints, reduced, contrast));
+        base = base.child(el().w_full().h(1.0).fill(t.separator)).child(story_view::reading_chrome::story_footer(story, &k, t, &s.hints, reduced, contrast));
     }
     if let Some(notice) = &s.toast {
         let footer = if s.story.is_some() { "story-footer" } else { "feed-footer" };
@@ -171,7 +171,7 @@ fn story_main(story: &Story, k: &Kit, t: tok::Theme, pane: Pane<'_>) -> El {
         .w_full()
         .h_full()
         .child(
-            story_view::article_pane(story, k, t, pane)
+            story_view::article::article_pane(story, k, t, pane)
                 .grow(1.0)
                 .min_h(0.0),
         )
