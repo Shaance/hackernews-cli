@@ -322,6 +322,8 @@ fades in behind it, nothing else on the row moves. **Fold a thread → `REFLOW`*
 the comments below close the gap, and the folded header stays put so the click target does not
 move under the pointer. **Turn a page → directional arrival**: the incoming feed group moves 24 pt from the navigation direction while opacity rises from 0.2 to 1 over about 220 ms, without staggering. The old group disappears immediately. Keyboard selection is instant; pointer selection has a restrained 120 ms color response and reserves its accent marker slot. Reduced motion is instant. Left/Right move between feed columns at the same visual row (clamped on a short right column); at column edges arrows turn pages, landing at the first/last story. Explicit paging remains on n/p, Space, Page Down/Page Up and the buttons. Both columns move together as one group.
 
+**Back to the feed.** The story disappears immediately and the feed and its tabs arrive together from 24 pt to the left, fading from 0.2 to 1 over about 220 ms, with an instant return under reduced motion.
+
 An empty pending feed shows static placeholder rows at the real grid's spacing, with one busy status and a footer loading label. Delayed startup results enter 12 pt upward with the same 220 ms fade; already-ready first-paint content appears immediately. Tab results enter horizontally according to tab order, including immediate Saved results. Placeholder rows have no controls or fake story text. Refresh and paging retain existing rows; failures and settled-empty states have their own messages. Reduced motion lands every arrival immediately.
 
 Pane resize uses `PaneMotion::spring(SETTLE).scale_with_width(480, .15, .3)` so a narrow window

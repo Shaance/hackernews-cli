@@ -76,12 +76,13 @@ struct Notice {
     show_dot: bool,
 }
 
-/// Why a newly accepted feed group arrives. Refresh and resize keep their current identity.
+/// Why the feed arrives. Refresh and resize keep their current identity.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Arrival {
     Initial,
     Tab(i8),
     Page(i8),
+    Back,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -120,6 +121,7 @@ pub struct App {
     feed_revision: usize,
     pending_arrival: Option<Arrival>,
     arrival: Option<Arrival>,
+    feed_scroll_y: Rc<Cell<f32>>,
     /// The row under the pointer, for the hover actions.
     hover: Option<i32>,
     /// Whether the last selection came from the keyboard.
@@ -267,6 +269,7 @@ fn init() -> App {
         feed_revision: 0,
         pending_arrival: Some(Arrival::Initial),
         arrival: Some(Arrival::Initial),
+        feed_scroll_y: Rc::new(Cell::new(0.0)),
         hover: None,
         keyboard_selection: true,
         hints: rune::Live::new(1.0),

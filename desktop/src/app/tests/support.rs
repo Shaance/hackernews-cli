@@ -64,6 +64,7 @@ pub(super) fn app(headless: bool, saved: SavedView) -> App {
         feed_revision: 0,
         pending_arrival: Some(Arrival::Initial),
         arrival: Some(Arrival::Initial),
+        feed_scroll_y: Rc::new(Cell::new(0.0)),
         hover: None,
         keyboard_selection: true,
         hints: rune::Live::new(1.0),

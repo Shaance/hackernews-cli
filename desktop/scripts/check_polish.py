@@ -123,6 +123,39 @@ for reduced in [False, True]:
         one(elements, incoming)
         assert not any(e.get("key") == outgoing and e.get("opacity", 1) > .001 for e in elements)
     print(f"PASS feed/story handoffs: reduced={reduced}", flush=True)
+
+back = [key(.5, "Escape")]
+rest = capture("back-settled", events=back, at=1.)
+group_key = "feed-page-0"
+rest_x = one(rest, group_key)["rect"][0]
+tabs_x = one(rest, "feed-tabs")["rect"][0]
+opacity, offset = [], []
+for name, at, reduced in [("30ms", .53, False), ("100ms", .6, False),
+                          ("200ms", .7, False), ("instant", .5, True)]:
+    stem = f"back-{name}"
+    frame = capture(stem, events=back, at=at, reduced=reduced)
+    no_reading_ghosts(frame)
+    assert not any(e.get("text") and e.get("opacity", 1) > .001
+                   and any(f"/{scope}/" in e["path"] for scope in
+                           ("story-main", "story-toolbar", "story-footer", "inspector-pane"))
+                   for e in frame), (stem, "story text remains")
+    group, tabs = one(frame, group_key), one(frame, "feed-tabs")
+    assert tabs["opacity"] == group["opacity"]
+    assert abs((tabs["rect"][0] - tabs_x) - (group["rect"][0] - rest_x)) < .03
+    assert one(frame, "story-1")["itemSelected"]
+    trace = json.loads((args.output / f"{stem}.jsonl").read_text().splitlines()[-1])
+    if reduced:
+        assert group["opacity"] == 1 and group["rect"][0] == rest_x
+        assert not any(track[2] == 1 for track in trace.get("tk", [])), "reduced Back still animates"
+    else:
+        assert any(track[1:] == ["presence", 1] and str(track[0]).endswith("/main-pane/#0")
+                   for track in trace["tk"]), (stem, "no active feed arrival")
+        opacity.append(group["opacity"])
+        offset.append(group["rect"][0] - rest_x)
+assert .2 < opacity[0] < opacity[1] < opacity[2] <= 1, opacity
+assert -24 <= offset[0] < offset[1] < -2 and offset[1] < offset[2] <= 0, offset
+print(f"PASS Back to feed: opacity {opacity}, horizontal offset {offset} pt", flush=True)
+
 for reduced in [False, True]:
     mode = "reduced" if reduced else "normal"
     for theme in ["dark", "light"]:

@@ -37,6 +37,7 @@ pub(super) fn feed_tabs(s: &App, k: &Kit, t: tok::Theme, accent: Color, reduced:
 }
 
 pub(super) fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: Columns, reduced: bool, contrast: bool) -> El {
+    let scroll_y = s.feed_scroll_y.clone();
     let mut body = col().w_full().h_full();
     if let Some(error) = s.saved.error() {
         body = body.child(banner(s, error, k, t));
@@ -51,12 +52,21 @@ pub(super) fn feed_body(s: &App, k: &Kit, t: tok::Theme, accent: Color, cols: Co
             .scroll(ScrollSpec {
                 stick_bottom: false,
             })
+            .on_scroll_offset(move |pos| scroll_y.set(pos.offset[1]))
             .scroll_edge_fade(20.0)
             .grow(1.0)
             .min_h(0.0),
     )
     .child(el().w_full().h(1.0).fill(t.separator))
     .child(footer(s, k, t, accent, reduced, contrast))
+}
+
+pub(super) fn feed_arrival(x: f32, y: f32) -> Transition {
+    let enter = Transition::offset(x, y).combined(Transition::opacity());
+    let mut transition = Transition::asymmetric(enter, Transition::none())
+        .springs(SpringPair::new(Spring::new(0.22, 0.0), Spring::NONE));
+    transition.insertion.opacity = 0.2;
+    transition
 }
 
 /// Column-major: story `c * rows + r`, so the left column fills first and `j` walks straight
@@ -77,16 +87,11 @@ fn feed_list(s: &App, t: tok::Theme, accent: Color, cols: Columns, reduced: bool
         return feed_skeleton(s, t, cols, reduced);
     }
     let cols = cols.count().get();
-    let mut transition = Transition::none();
-    if !reduced && let Some(arrival) = s.arrival {
-        let enter = match arrival {
-            Arrival::Initial => Transition::offset(0.0, 12.0),
-            Arrival::Tab(direction) | Arrival::Page(direction) => Transition::offset(direction as f32 * 24.0, 0.0),
-        };
-        transition = Transition::asymmetric(enter.combined(Transition::opacity()), Transition::none())
-            .springs(SpringPair::new(Spring::new(0.22, 0.0), Spring::NONE));
-        transition.insertion.opacity = 0.2;
-    }
+    let transition = match s.arrival.filter(|_| !reduced) {
+        Some(Arrival::Initial) => feed_arrival(0.0, 12.0),
+        Some(Arrival::Tab(direction) | Arrival::Page(direction)) => feed_arrival(direction as f32 * 24.0, 0.0),
+        _ => Transition::none(),
+    };
     let mut list = col()
         .key(format!("feed-page-{}", s.feed_revision))
         .transition(transition)

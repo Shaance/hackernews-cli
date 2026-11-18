@@ -1,6 +1,6 @@
 //! Story opening, reading navigation and capture actions.
 
-use super::{App, Notice, Live};
+use super::{App, Arrival, Notice, Live};
 use std::sync::Arc;
 use hn_lib::HNCLIItem;
 use rune::Tx;
@@ -21,7 +21,7 @@ impl App {
         if self.story.as_ref().is_none_or(|open| open.id() != story.id) {
             self.live_bounds = None;
         }
-        // Returning to the feed is not another page arrival.
+        // Returning to the feed has its own arrival, independent of this page's fill.
         self.feed_revision = 0;
         self.pending_arrival = None;
         self.arrival = None;
@@ -106,6 +106,7 @@ impl App {
         self.hide_live();
         self.park_story();
         self.inspector.get_mut().set_open(false);
+        self.arrival = (!self.reduced).then_some(Arrival::Back);
     }
 
     fn park_story(&mut self) {
@@ -128,6 +129,8 @@ impl App {
             reveal_citation(story, tx, true);
         } else {
             self.close_story();
+            // The feed's scroll viewport is remounted on return.
+            tx.scroll_to_instant("feed-list", 0.0, self.feed_scroll_y.get());
         }
         true
     }

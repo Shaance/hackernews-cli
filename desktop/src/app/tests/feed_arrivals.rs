@@ -120,8 +120,49 @@ fn opening_a_story_during_a_page_request_does_not_rearm_the_feed_fade() {
     assert_eq!(s.feed.display_cursor, DEFAULT_GRID.rows.get(), "the page fill still lands");
     press(&mut s, rune::Key::Escape);
     assert!(s.story.is_none());
-    assert_eq!(s.feed_revision, 0, "returning to the feed must not replay the fade");
+    assert_eq!(s.feed_revision, 0, "returning to the feed must not replay the page arrival");
     assert!(s.pending_arrival.is_none());
+}
+
+#[test]
+fn escaping_a_story_uses_the_back_arrival_and_preserves_the_feed_position() {
+    for (override_reduced, system_reduced) in [(false, false), (true, false), (false, true)] {
+        let saved = (1..=24).map(|id| crate::fixtures::item(id as usize - 1, id)).collect();
+        let mut s = app(true, SavedView::seeded(saved));
+        s.reduced = override_reduced;
+        s.feed.tab = StoryType::Saved;
+        s.request(DEFAULT_GRID, Ranking::Fresh);
+        s.feed.selected = 12;
+        let selected = s.feed.selected_id().unwrap();
+        let key = format!("story-{selected}");
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.set_system_reduced_motion(system_reduced);
+        rt.on_key = Some(on_key);
+        rt.frame(0.0);
+        let selected_y = |rt: &rune::Runtime<App>| rt.elements().into_iter()
+            .find(|e| e.key.as_deref() == Some(&key)).unwrap().rect[1];
+        let initial_y = selected_y(&rt);
+        rt.update(|_, tx| tx.scroll_to_instant("feed-list", 0.0, 500.0));
+        rt.frame(0.0);
+        let scrolled_y = selected_y(&rt);
+        assert!(scrolled_y < initial_y);
+        route(&mut rt, rune::Key::Enter);
+        assert_eq!(rt.state.story().map(|story| story.id()), Some(selected));
+        rt.key(KeyEvent { key: rune::Key::Escape, mods: Default::default() });
+        rt.frame(0.0);
+        rt.frame(0.03);
+        assert!(rt.state.story.is_none());
+        assert_eq!(rt.state.arrival, (!override_reduced).then_some(Arrival::Back));
+        assert_eq!(rt.state.feed.selected_id(), Some(selected));
+        assert_eq!(selected_y(&rt), scrolled_y);
+        let group = rt.elements().into_iter()
+            .find(|e| e.key.as_deref() == Some("feed-page-0")).unwrap();
+        if override_reduced || system_reduced {
+            assert_eq!(group.opacity, 1.0);
+        } else {
+            assert!(group.opacity < 1.0);
+        }
+    }
 }
 
 #[test]

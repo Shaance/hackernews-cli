@@ -1,6 +1,6 @@
 //! Window composition, startup and native menus.
 
-use super::{App, Pane, Live, RequestLifecycle, OPEN_STORY, ROW_HEIGHT, BREAKPOINT, FEED_GUTTER, DEFAULT_FEED_HEIGHT, INSPECTOR_MAX, init};
+use super::{App, Arrival, Pane, Live, RequestLifecycle, OPEN_STORY, ROW_HEIGHT, BREAKPOINT, FEED_GUTTER, DEFAULT_FEED_HEIGHT, INSPECTOR_MAX, init};
 use hn_lib::app::StoryType;
 use rune::tok;
 use rune::tok::type_;
@@ -25,7 +25,7 @@ use rune_kit::Toolbar;
 use crate::keys::WindowKey;
 use crate::story::Story;
 use super::chrome::{brand, pane_motion, saved_dot};
-use super::feed_view::{feed_body, feed_tabs};
+use super::feed_view::{feed_arrival, feed_body, feed_tabs};
 use super::input::{on_key, on_story_key};
 use super::poll::{poll, setup};
 use super::scenes::*;
@@ -84,14 +84,20 @@ pub(super) fn view(s: &App, cx: &mut Cx<App>) -> El {
         Transition::asymmetric(Transition::opacity(), Transition::none())
             .springs(SpringPair::new(Spring::new(0.15, 0.0), Spring::NONE))
     };
-    let mut toolbar = Toolbar::new().leading(feed_tabs(s, &k, t, accent, reduced).transition(handoff));
+    let returning = s.arrival == Some(Arrival::Back);
+    let feed_handoff = if returning && !reduced { feed_arrival(-24.0, 0.0) } else { handoff };
+    let mut reading_handoff = Transition::opacity();
+    reading_handoff.springs.exit = Spring::NONE;
+    if reduced { reading_handoff = Transition::none(); }
+    let tabs = feed_tabs(s, &k, t, accent, reduced).transition(feed_handoff);
+    let mut toolbar = Toolbar::new().leading(if reduced { tabs.instant_changes() } else { tabs });
     let trailing = if s.feed.tab == StoryType::Saved {
         row().gap(8.0).center_y().child(text(s.saved.path_label())
                 .font(type_::LABEL)
                 .color(t.text_secondary)
                 .truncate_middle()).child(brand(t))
     } else { brand(t) };
-    toolbar = toolbar.trailing(trailing);
+    toolbar = toolbar.trailing(if reduced { trailing.transition(Transition::none()).instant_changes() } else { trailing });
 
     // One window, one `SplitView`: the feed is this window with the inspector collapsed, so the
     // inspector's slot exists before a story opens and its width can spring out from 0.
@@ -108,18 +114,24 @@ pub(super) fn view(s: &App, cx: &mut Cx<App>) -> El {
             ).transition(handoff)).trailing(brand(t)),
             story_view::inspector_pane(story, &k, t, accent, &mut overlays, reduced,
                 window.map_or(360.0, |rect| (rect[3] - 310.0).clamp(230.0, 440.0)),
-                [s.scroll_observer(Some(0)), s.scroll_observer(None), s.scroll_observer(Some(1))]),
+                [s.scroll_observer(Some(0)), s.scroll_observer(None), s.scroll_observer(Some(1))])
+                .transition(reading_handoff),
         ),
-        None => (feed_body(s, &k, t, accent, feed_cols, reduced, contrast).transition(handoff), toolbar, col()),
+        None => {
+            let body = feed_body(s, &k, t, accent, feed_cols, reduced, contrast).transition(feed_handoff);
+            let body = if returning || reduced { body.instant_changes() } else { body };
+            (body, toolbar, col().transition(Transition::none()))
+        }
     };
     let shell = SplitView::new(main)
         .toolbar(toolbar)
         .inspector(&s.inspector.get(), |s: &mut App| s.inspector.get_mut(), inspector)
         .titlebar_inset(cx.titlebar_inset())
-        .pane_motion(pane_motion())
+        .pane_motion(if returning { rune_kit::shell::PaneMotion::new().spring(Spring::NONE) } else { pane_motion() })
         .reduced_motion(reduced)
         .build(&k);
 
+    let shell = if returning { shell.motion(Spring::NONE) } else { shell };
     let mut base = col().key("window").w_full().h_full().fill(t.bg)
         .on_key(|s: &mut App, ev: &KeyEvent, tx: &mut Tx| {
             if ev.key != rune::Key::Tab || s.story.is_none() || s.settings.is_some() || s.help
@@ -134,7 +146,9 @@ pub(super) fn view(s: &App, cx: &mut Cx<App>) -> El {
         })
         .child(shell.grow(1.0).min_h(0.0));
     if let Some(story) = &s.story {
-        base = base.child(el().w_full().h(1.0).fill(t.separator)).child(story_view::reading_chrome::story_footer(story, &k, t, &s.hints, reduced, contrast));
+        base = base.child(el().w_full().h(1.0).fill(t.separator).transition(reading_handoff))
+            .child(story_view::reading_chrome::story_footer(story, &k, t, &s.hints, reduced, contrast)
+                .transition(reading_handoff));
     }
     if let Some(notice) = &s.toast {
         let footer = if s.story.is_some() { "story-footer" } else { "feed-footer" };
