@@ -10,9 +10,9 @@
 //! - [`StoryRequest`] — article and discussion start independently; the discussion capture
 //!   starts the summary when it lands.
 //!
-//! Headless runs and tests use [`Bridge::fill_now`] and [`Bridge::story_now`], which run the
-//! same requests on the same runtime but block, so a scene is deterministic and needs no frame
-//! budget.
+//! Headless runs and tests use [`Bridge::fill_now`] for a blocking feed fill. Story opens use
+//! [`Bridge::request_story`] and [`Bridge::take_story`], with headless runs draining the phases
+//! before rendering so a scene is deterministic and needs no frame budget.
 
 use std::collections::HashMap;
 use std::future::Future;
@@ -27,7 +27,7 @@ use tokio::task::JoinHandle;
 
 use crate::feed::Filled;
 use crate::service::Source;
-use crate::story_io::{CapturedComments, CommentsRefreshed, Provenance, ReplyFilled, ReplyRequest, StoryFilled, StoryRequest, StoryUpdate, SummaryError};
+use crate::story_io::{CapturedComments, CommentsRefreshed, Provenance, ReplyFilled, ReplyRequest, StoryRequest, StoryUpdate, SummaryError};
 
 pub mod feed;
 
@@ -172,12 +172,6 @@ impl Bridge {
 
     pub fn take_refresh(&self) -> Option<CommentsRefreshed> { self.refresh.take() }
 
-    /// The story open, run to completion on this thread.
-    pub fn story_now(&mut self, source: &Source, request: StoryRequest) -> StoryFilled {
-        self.cancel_story();
-        self.runtime.block_on(run_story(source, request))
-    }
-
     pub fn request_replies(&self, source: Arc<Source>, request: ReplyRequest) {
         let handle = self.handle.clone();
         self.replies.request(request, move |request| handle.block_on(run_replies(source.as_ref(), request)));
@@ -262,43 +256,6 @@ impl Bridge {
         self.latest.cancel();
         self.cancel_story();
         self.parked.clear();
-    }
-}
-
-/// The synchronous story-open shape, for deterministic headless scenes.
-///
-/// Summary capture requires the discussion, but neither it nor the discussion depends on the
-/// article extractor. A failed article does not stop the discussion.
-///
-/// The discussion is fetched as a tree, because the inspector draws one; the summary is written
-/// from the top-level comments only; the capture stays paired with its summary citations.
-async fn run_story(source: &Source, request: StoryRequest) -> StoryFilled {
-    let story_id = request.story.id;
-    let ((article, article_summary), (comments, summary)) = tokio::join!(async {
-        let article = source.article(&request.story).await;
-        let summary = match &article {
-            Ok(_) if !request.config.automatic => Err(SummaryError::new("Automatic summaries are off", false)),
-            Ok(captured) => source.article_summary(&request.config, &request.story, captured).await,
-            Err(message) => Err(SummaryError::new(message.clone(), false)),
-        };
-        (article, summary)
-    }, async {
-        let comments = source.thread(story_id).await.map_err(|e| e.to_string());
-        let summary = match &comments {
-            Ok(_) if !request.config.automatic => Err(SummaryError::new("Automatic summaries are off", false)),
-            Ok(captured) => source.summary(&request.config, &request.story, &captured.sources).await
-                .map(|summary| (summary, captured.sources.clone())),
-            Err(message) => Err(SummaryError::new(format!("Discussion unavailable: {message}"), false)),
-        };
-        (comments, summary)
-    });
-    StoryFilled {
-        story_id,
-        provenance: Provenance::from(&request.config),
-        article,
-        article_summary,
-        comments,
-        summary,
     }
 }
 
@@ -570,25 +527,33 @@ mod tests {
     #[test]
     fn a_story_open_fills_the_article_the_discussion_and_the_summary() {
         let mut bridge = Bridge::new().unwrap();
-        let source = Source::fake();
-        let filled = bridge.story_now(
-            &source,
+        bridge.request_story(
+            Arc::new(Source::fake()),
             story_request(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID),
         );
-        assert_eq!(filled.story_id, crate::fixtures::STORY_ID);
+        let updates = wait_for_story(&mut bridge);
+        assert!(updates.iter().all(|update| update_id(update) == crate::fixtures::STORY_ID));
+        let article = updates.iter().find_map(|update| match update {
+            StoryUpdate::Article { article, .. } => Some(article), _ => None,
+        }).expect("the article landed");
+        let comments = updates.iter().find_map(|update| match update {
+            StoryUpdate::Discussion { comments, .. } => Some(comments), _ => None,
+        }).expect("the discussion landed");
+        let summary = updates.iter().find_map(|update| match update {
+            StoryUpdate::Summary { summary, .. } => Some(summary), _ => None,
+        }).expect("the summary landed");
         assert_eq!(
-            filled.article.as_ref().map(|(text, partial)| (text.as_str(), *partial)),
+            article.as_ref().map(|(text, partial)| (text.as_str(), *partial)),
             Ok((crate::fixtures::ARTICLE, false)),
             "the article comes from the reader's own extractor"
         );
         assert_eq!(
-            filled.comments.as_ref().unwrap().comments.len(),
+            comments.as_ref().unwrap().comments.len(),
             5,
             "initial discussion contains every root, without fetching replies"
         );
         assert_eq!(
-            filled
-                .comments.as_ref().unwrap().comments
+            comments.as_ref().unwrap().comments
                 .iter()
                 .filter(|comment| comment.depth == 0)
                 .count(),
@@ -596,11 +561,11 @@ mod tests {
             "five top-level threads"
         );
         assert_eq!(
-            filled.comments.as_ref().unwrap().sources.len(),
+            comments.as_ref().unwrap().sources.len(),
             5,
             "one captured source per top-level comment, which is what the card counts"
         );
-        let (summary, sources) = filled.summary.expect("the fake provider always answers");
+        let (summary, sources) = summary.as_ref().expect("the fake provider always answers");
         assert_eq!(summary.points.len(), 3);
         assert_eq!(sources.len(), 5);
     }

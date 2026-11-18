@@ -224,10 +224,7 @@ impl App {
 }
 
 fn init() -> App {
-    init_with_headless(rune::is_headless())
-}
-
-fn init_with_headless(headless: bool) -> App {
+    let headless = rune::is_headless();
     let source = if headless {
         Source::fake()
     } else {

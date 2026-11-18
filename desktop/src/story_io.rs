@@ -39,19 +39,6 @@ pub struct CapturedComments {
     pub sources: Vec<CapturedSource>,
 }
 
-/// The aggregate answer used for synchronous, deterministic story opens.
-///
-/// A failed article is a `String`; the card uses [`SummaryError`] to classify a failed summary.
-pub struct StoryFilled {
-    pub story_id: i32,
-    pub provenance: Provenance,
-    pub article: Result<(String, bool), String>,
-    pub article_summary: Result<Article, SummaryError>,
-    /// The discussion as a tree: the top-level comments and their replies, level by level.
-    pub comments: Result<CapturedComments, String>,
-    pub summary: Result<(Discussion, Vec<CapturedSource>), SummaryError>,
-}
-
 /// A result that can be shown without waiting for the other story work.
 pub enum StoryUpdate {
     Article { story_id: i32, article: Result<(String, bool), String>, summary_skipped: bool },

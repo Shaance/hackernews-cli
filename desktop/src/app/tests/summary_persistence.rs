@@ -328,6 +328,8 @@ fn headless_construction_does_not_touch_state_directory() {
         let _ = std::fs::remove_dir_all(&dir);
         let output = std::process::Command::new(std::env::current_exe().unwrap())
             .args(["--exact", "app::tests::summary_persistence::headless_construction_does_not_touch_state_directory", "--nocapture"])
+            // Libtest consumes the skip value; Rune sees the same argument as its headless flag.
+            .args(["--skip", "--list-scenes"])
             .env(CHILD, "1")
             .env("XDG_STATE_HOME", &dir)
             .env("XDG_CONFIG_HOME", &dir)
@@ -338,7 +340,8 @@ fn headless_construction_does_not_touch_state_directory() {
         assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
         assert!(!dir.exists(), "headless construction must not access the state directory");
     } else {
-        let app = init_with_headless(true);
+        assert!(rune::is_headless());
+        let app = init();
         assert!(app.summary_store.is_none());
     }
 }

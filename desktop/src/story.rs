@@ -16,7 +16,7 @@ use std::rc::Rc;
 use hn_lib::reader::{Article, Discussion, Source as CapturedSource};
 use hn_lib::HNCLIItem;
 
-use crate::story_io::{CommentsRefreshed, StoryFilled, StoryUpdate, SummaryError};
+use crate::story_io::{CommentsRefreshed, StoryUpdate, SummaryError};
 use crate::comments::{Navigation, Thread};
 
 /// One summary bullet and the captured citations it can actually show.
@@ -342,20 +342,6 @@ impl Story {
 
     pub fn id(&self) -> i32 {
         self.story.id
-    }
-
-    /// Take the synchronous aggregate answer through the same updates as a live story open.
-    pub fn land(&mut self, filled: StoryFilled) -> bool {
-        if filled.story_id != self.story.id {
-            return false;
-        }
-        let story_id = filled.story_id;
-        let empty_capture = filled.article.as_ref().is_ok_and(|(text, _)| text.trim().is_empty());
-        self.land_update(StoryUpdate::Article { story_id, article: filled.article, summary_skipped: false });
-        self.land_update(StoryUpdate::ArticleSummary { story_id, summary: filled.article_summary, provenance: filled.provenance.clone(), empty_capture });
-        self.land_update(StoryUpdate::Discussion { story_id, comments: filled.comments, summary_skipped: false });
-        self.land_update(StoryUpdate::Summary { story_id, summary: filled.summary, provenance: filled.provenance });
-        true
     }
 
     /// Each phase changes only its own surface. A late summary must not replace the article,
@@ -748,15 +734,19 @@ mod tests {
         }
     }
 
-    fn filled(summary: Result<Discussion, SummaryError>) -> StoryFilled {
-        StoryFilled {
-            story_id: 2,
-            provenance: crate::story_io::Provenance::from(&hn_lib::reader::Config::default()),
-            article: Ok(("# Libghostty 1.0\n\nBody.".to_string(), false)),
-            article_summary: Ok(Article { text: "Article overview.".to_string() }),
-            comments: Ok(CapturedComments { comments: fixtures::thread(), sources: fixtures::sources() }),
-            summary: summary.map(|discussion| (discussion, fixtures::sources())),
-        }
+    fn land(story: &mut Story, summary: Result<Discussion, SummaryError>,
+        adjust: impl FnOnce(&mut i32, &mut Result<(String, bool), String>, &mut Vec<hn_lib::reader::Source>)) -> bool {
+        let mut story_id = 2;
+        let mut article = Ok(("# Libghostty 1.0\n\nBody.".to_string(), false));
+        let mut sources = fixtures::sources();
+        adjust(&mut story_id, &mut article, &mut sources);
+        let provenance = crate::story_io::Provenance::from(&hn_lib::reader::Config::default());
+        let empty_capture = article.as_ref().is_ok_and(|(text, _)| text.trim().is_empty());
+        let landed = story.land_update(StoryUpdate::Article { story_id, article, summary_skipped: false });
+        story.land_update(StoryUpdate::ArticleSummary { story_id, summary: Ok(Article { text: "Article overview.".to_string() }), provenance: provenance.clone(), empty_capture });
+        story.land_update(StoryUpdate::Discussion { story_id, comments: Ok(CapturedComments { comments: fixtures::thread(), sources: sources.clone() }), summary_skipped: false });
+        story.land_update(StoryUpdate::Summary { story_id, summary: summary.map(|discussion| (discussion, sources)), provenance });
+        landed
     }
 
     fn discussion() -> Discussion {
@@ -795,7 +785,7 @@ mod tests {
     #[test]
     fn a_landing_fills_the_article_the_discussion_and_the_summary() {
         let mut story = story();
-        assert!(story.land(filled(Ok(discussion()))));
+        assert!(land(&mut story, Ok(discussion()), |_, _, _| {}));
         assert!(matches!(story.article, ArticleState::Ready { .. }));
         assert_eq!(story.thread.len(), fixtures::thread().len());
         assert_eq!(story.thread.node(901).unwrap().author, "tptacek");
@@ -810,9 +800,7 @@ mod tests {
     #[test]
     fn a_landing_for_another_story_is_dropped() {
         let mut story = story();
-        let mut other = filled(Ok(discussion()));
-        other.story_id = 99;
-        assert!(!story.land(other));
+        assert!(!land(&mut story, Ok(discussion()), |story_id, _, _| *story_id = 99));
         assert_eq!(story.article, ArticleState::Loading);
         assert!(story.thread.is_empty());
     }
@@ -820,14 +808,14 @@ mod tests {
     #[test]
     fn a_failed_summary_keeps_the_old_one_readable() {
         let mut failed = story();
-        failed.land(filled(Ok(discussion())));
+        land(&mut failed, Ok(discussion()), |_, _, _| {});
         failed.retry(true);
         assert!(failed.summary.is_generating());
         assert!(failed.summary.readable().is_some(), "a retry keeps the card readable");
-        failed.land(filled(Err(SummaryError::new(
+        land(&mut failed, Err(SummaryError::new(
             "OpenRouter is rate limited.",
             false,
-        ))));
+        )), |_, _, _| {});
         let SummaryState::Failed {
             message,
             auth,
@@ -841,7 +829,7 @@ mod tests {
         assert!(previous.is_some(), "the failed replacement keeps the earlier summary");
         // The failure card still renders the bullets it had, when it had them.
         let mut kept = story();
-        kept.land(filled(Ok(discussion())));
+        land(&mut kept, Ok(discussion()), |_, _, _| {});
         let previous = kept.summary.displayed().cloned();
         kept.summary = SummaryState::Failed {
             message: "boom".to_string(),
@@ -855,7 +843,7 @@ mod tests {
     #[test]
     fn replacement_waits_until_the_open_citation_is_closed() {
         let mut story = story();
-        story.land(filled(Ok(discussion())));
+        land(&mut story, Ok(discussion()), |_, _, _| {});
         story.next_citation();
         assert!(story.open_source());
         let original = story.source().unwrap().captured().text.clone();
@@ -878,7 +866,7 @@ mod tests {
     fn replacement_keeps_the_source_selected_when_citations_reorder_or_disappear() {
         for replacement_kind in 0..3 {
             let mut story = story();
-            story.land(filled(Ok(discussion())));
+            land(&mut story, Ok(discussion()), |_, _, _| {});
             story.next_citation();
             assert!(story.open_source());
             story.retry(true);
@@ -902,7 +890,7 @@ mod tests {
     #[test]
     fn direct_replacement_without_citations_drops_citation_focus() {
         let mut story = story();
-        story.land(filled(Ok(discussion())));
+        land(&mut story, Ok(discussion()), |_, _, _| {});
         story.next_citation();
         story.retry(true);
         let mut replacement = discussion();
@@ -916,7 +904,7 @@ mod tests {
     #[test]
     fn failed_article_replacement_keeps_its_previous_synopsis() {
         let mut story = story();
-        story.land(filled(Ok(discussion())));
+        land(&mut story, Ok(discussion()), |_, _, _| {});
         story.retry(true);
         assert_eq!(story.article_summary.readable(), Some("Article overview."));
         story.land_update(StoryUpdate::ArticleSummary {
@@ -931,9 +919,9 @@ mod tests {
     #[test]
     fn a_failed_article_is_a_state_not_an_empty_pane() {
         let mut story = story();
-        let mut landing = filled(Ok(discussion()));
-        landing.article = Err("Could not fetch this article.".to_string());
-        story.land(landing);
+        land(&mut story, Ok(discussion()), |_, article, _| {
+            *article = Err("Could not fetch this article.".to_string());
+        });
         assert_eq!(
             story.article,
             ArticleState::Failed("Could not fetch this article.".to_string())
@@ -943,7 +931,7 @@ mod tests {
     #[test]
     fn tab_selects_the_first_citation_and_enter_reads_it() {
         let mut story = story();
-        story.land(filled(Ok(discussion())));
+        land(&mut story, Ok(discussion()), |_, _, _| {});
         assert!(!story.focused_citation().is_some());
         assert!(!story.open_source(), "Enter does nothing before Tab");
         story.next_citation();
@@ -967,10 +955,7 @@ mod tests {
     #[test]
     fn a_citation_the_capture_does_not_hold_is_not_a_chip() {
         let mut story = story();
-        let mut landing = filled(Ok(discussion()));
-        landing.comments.as_mut().unwrap().sources.retain(|source| source.id != 903);
-        landing.summary.as_mut().unwrap().1.retain(|source| source.id != 903);
-        story.land(landing);
+        land(&mut story, Ok(discussion()), |_, _, sources| sources.retain(|source| source.id != 903));
         assert_eq!(
             story.citations().map(|citation| citation.source.id).collect::<Vec<_>>(),
             vec![901, 902],
@@ -981,7 +966,7 @@ mod tests {
     #[test]
     fn folding_the_summary_drops_the_citation_selection() {
         let mut story = story();
-        story.land(filled(Ok(discussion())));
+        land(&mut story, Ok(discussion()), |_, _, _| {});
         story.next_citation();
         assert!(story.focused_citation().is_some());
         story.toggle_summary();
@@ -994,7 +979,7 @@ mod tests {
     #[test]
     fn the_link_chooser_offers_the_post_and_the_focused_comment() {
         let mut story = story();
-        story.land(filled(Ok(discussion())));
+        land(&mut story, Ok(discussion()), |_, _, _| {});
         // The fixture post is a link post, so its own links are empty; the focused comment
         // (901) carries none either, so there is nothing to choose from.
         assert!(!story.open_links());
@@ -1021,7 +1006,7 @@ mod tests {
     #[test]
     fn the_chooser_wraps_and_esc_closes_it() {
         let mut story = story();
-        story.land(filled(Ok(discussion())));
+        land(&mut story, Ok(discussion()), |_, _, _| {});
         // 90100000 is behind the depth cap, so the tree has to be re-rooted at its parent.
         story.thread.reroot(901000);
         story.thread.select(90100000);
