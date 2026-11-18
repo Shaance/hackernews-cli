@@ -23,7 +23,6 @@ use rune_kit::ToastRegion;
 use rune_kit::Toolbar;
 use crate::keys::WindowKey;
 use crate::story::Story;
-use crate::webview;
 use super::chrome::{brand, pane_motion, saved_dot};
 use super::feed_view::{feed_body, feed_tabs};
 use super::input::{on_key, on_story_key};
@@ -32,7 +31,7 @@ use super::scenes::*;
 use crate::{help, story_view};
 
 pub(super) fn view(s: &App, cx: &mut Cx<App>) -> El {
-    cx.zoom(s.zoom);
+    cx.zoom(s.zoom.scale());
     let dark = cx.system_dark();
     if s.reduced {
         cx.reduced_motion(true);
@@ -50,7 +49,7 @@ pub(super) fn view(s: &App, cx: &mut Cx<App>) -> El {
     // The breakpoint is in view points; persist the same rect in window points.
     let window = cx.layout_with("window", |rect| rect);
     if let Some(rect) = window {
-        s.window_size.set(Some((rect[2] * s.zoom, rect[3] * s.zoom)));
+        s.window_size.set(Some((rect[2] * s.zoom.scale(), rect[3] * s.zoom.scale())));
     }
     // Tx has no keyed visibility query; scroll observers supply offsets without view commits.
     let visible = s.story.as_ref().and_then(|story| {
@@ -226,13 +225,11 @@ pub fn run() {
     }
     let handle = app.handle();
     app.on_window(move |window| {
-        webview::close();
         let window = window.clone();
         handle.update(move |s: &mut App, _| {
             s.native_window = Some(window);
             s.live = Live::Idle;
             s.live_bounds = None;
-            s.live_shown = false;
         });
     })
     .on_close(close)
@@ -253,7 +250,7 @@ pub(super) fn close(s: &mut App, _tx: &mut Tx) {
             s.write_layout(snapshot, rune::scene_clock().now);
         }
     }
-    webview::close();
+    s.live = Live::Idle;
 }
 
 pub fn spec() -> AppSpec<App> {

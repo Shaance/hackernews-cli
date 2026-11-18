@@ -91,7 +91,7 @@ fn save_dot_pops_and_toast_fades_above_footer() {
     let mut s = app(true, SavedView::in_memory());
     s.request(DEFAULT_GRID, Ranking::Fresh);
     scene_story(&mut s);
-    s.zoom = 1.5;
+    s.zoom = ZoomStep::Z150;
     let mut rt = rune::Runtime::new(s, view, (800.0, 640.0), rune::Env::new(true, 1.0));
     rt.on_key = Some(on_key);
     rt.frame(0.0);

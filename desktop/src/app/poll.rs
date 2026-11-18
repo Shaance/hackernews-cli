@@ -1,6 +1,6 @@
 //! Window setup and asynchronous result polling.
 
-use super::{App, Notice, Ranking, RequestLifecycle, Arrival, ScrollPacing, DEFAULT_GRID, TOAST_SECONDS, LOAD_TIMEOUT, LAYOUT_SECONDS, SCROLL_PACING_SECONDS};
+use super::{App, Live, Notice, Ranking, RequestLifecycle, Arrival, ScrollPacing, DEFAULT_GRID, TOAST_SECONDS, LOAD_TIMEOUT, LAYOUT_SECONDS, SCROLL_PACING_SECONDS};
 use std::time::Duration;
 use hn_lib::app::StoryType;
 use rune::Tx;
@@ -23,7 +23,7 @@ pub(super) fn setup(s: &mut App, waker: Waker) {
 pub(super) fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
     let mut changed = false;
     let mut toast_expired = false;
-    if webview::take_back() { changed |= s.story_back(tx); }
+    if matches!(&s.live, Live::Created { child, .. } if child.take_back()) { changed |= s.story_back(tx); }
     let mut feed_arrived = false;
     let mut summary_arrived = false;
     let mut replies_arrived = false;

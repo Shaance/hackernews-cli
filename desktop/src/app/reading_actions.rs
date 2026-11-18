@@ -6,17 +6,15 @@ use hn_lib::HNCLIItem;
 use rune::Tx;
 use crate::story_io::StoryRequest;
 use crate::story::Story;
-use crate::webview;
 use super::input::reveal_citation;
 
 impl App {
     /// Open `story`: the split springs open and its independent captures start.
     pub(super) fn open_story(&mut self, story: HNCLIItem) {
         self.hide_live();
-        if !matches!(self.live,
-            Live::Ready { story_id } | Live::Failed { story_id, .. } if story_id == story.id)
+        if !matches!(&self.live,
+            Live::Created { story_id, .. } | Live::Failed { story_id, .. } if *story_id == story.id)
         {
-            webview::close();
             self.live = Live::Idle;
         }
         // A newly mounted story-keyed region must report current bounds before showing.

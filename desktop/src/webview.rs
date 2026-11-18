@@ -9,20 +9,19 @@
 //! to the window points wry's `Rect` uses, with the origin at the top-left, y down.
 //!
 //! Everything here runs on the UI thread. `WKWebView` must be created, resized and dropped on
-//! the thread that owns the window, so the view lives in a thread-local and every entry point is
-//! called from a Rune handler (`poll`, `on_layout`, `on_window`, `on_close`) — all of which run
-//! there.
+//! the thread that owns the window. The owned child is not `Send`, and Rune's handlers run on
+//! that thread.
 //!
-//! Off macOS there is no child host: the functions are no-ops that report the absence, and the
-//! article pane takes its fallback branch. `wry` is a macOS-only dependency for the same reason
+//! Off macOS there is no child host: creation reports the absence, and the article pane takes
+//! its fallback branch. `wry` is a macOS-only dependency for the same reason
 //! (see `Cargo.toml`), so nothing here pulls webkit2gtk or WebView2 into a Linux or Windows
 //! build.
 
 #[cfg(target_os = "macos")]
-pub use macos::{close, create, ready, set_bounds, set_visible, set_waker, set_zoom, take_back};
+pub use macos::{Child, create, set_waker};
 
 #[cfg(not(target_os = "macos"))]
-pub use stub::{close, create, ready, set_bounds, set_visible, set_waker, set_zoom, take_back};
+pub use stub::{Child, create, set_waker};
 
 #[cfg(target_os = "macos")]
 mod macos {
@@ -131,15 +130,16 @@ mod macos {
         }
     }
 
-    struct Child {
+    enum Visibility { Hidden, Shown([f32; 4]) }
+
+    pub struct Child {
         monitor: BackMonitor,
         view: WebView,
-        ready: Rc<Cell<bool>>,
+        committed: Rc<Cell<bool>>,
+        visibility: Visibility,
     }
 
     thread_local! {
-        /// The single child view. `None` before creation and after `close`.
-        static CHILD: RefCell<Option<Child>> = const { RefCell::new(None) };
         static WAKER: RefCell<Option<Waker>> = const { RefCell::new(None) };
     }
 
@@ -162,9 +162,9 @@ mod macos {
     ///
     /// Each hidden child navigates directly to its story. Its own commit callback cannot
     /// mark a replacement ready, even when an older navigation finishes late.
-    pub fn create(window: &WindowHandle, bounds: [f32; 4], url: &str) -> Result<(), String> {
-        let ready = Rc::new(Cell::new(false));
-        let committed = Rc::clone(&ready);
+    pub fn create(window: &WindowHandle, bounds: [f32; 4], url: &str) -> Result<Child, String> {
+        let committed = Rc::new(Cell::new(false));
+        let on_commit = Rc::clone(&committed);
         let waker = WAKER.with(|slot| slot.borrow().clone());
         let mouse_waker = waker.clone();
         window.with_raw_handle(|raw| {
@@ -177,67 +177,62 @@ mod macos {
                     if matches!(event, PageLoadEvent::Started)
                         && !url.is_empty() && url != "about:blank"
                     {
-                        committed.set(true);
+                        on_commit.set(true);
                         if let Some(waker) = &waker { waker(); }
                     }
                 })
                 .build_as_child(&raw)
                 .map_err(|error| error.to_string())?;
             let monitor = BackMonitor::new(&webview, mouse_waker)?;
-            let old = CHILD.with(|slot| slot.borrow_mut().replace(Child { monitor, view: webview, ready }));
-            drop(old);
-            Ok(())
+            Ok(Child { monitor, view: webview, committed, visibility: Visibility::Hidden })
         })?
     }
 
-    /// Follow the Rune element. Called from `on_layout`, which fires after the first layout and
-    /// again whenever the element moves or resizes by more than half a point — so a window
-    /// resize, or the inspector opening, reaches the child on the same frame the Rune layout
-    /// settles.
-    pub fn set_bounds(bounds: [f32; 4]) {
-        CHILD.with(|slot| {
-            if let Some(webview) = slot.borrow().as_ref() {
-                let _ = webview.view.set_bounds(rect(bounds));
+    impl Child {
+        /// Follow the Rune element while the child is shown.
+        pub fn set_bounds(&mut self, bounds: [f32; 4]) {
+            if let Visibility::Shown(current) = &mut self.visibility {
+                *current = bounds;
+                let _ = self.view.set_bounds(rect(bounds));
             }
-        });
-    }
+        }
 
-    /// Match the page content to the surrounding Rune UI.
-    pub fn set_zoom(zoom: f32) {
-        CHILD.with(|slot| {
-            if let Some(webview) = slot.borrow().as_ref() {
-                let _ = webview.view.zoom(f64::from(zoom));
-            }
-        });
-    }
+        /// Match the page content to the surrounding Rune UI.
+        pub fn set_zoom(&self, zoom: f32) {
+            let _ = self.view.zoom(f64::from(zoom));
+        }
 
-    /// Hide or show without dropping the page: `WKWebView.setHidden`, so scroll position, form
-    /// state and cookies survive a toggle.
-    pub fn set_visible(visible: bool) {
-        CHILD.with(|slot| {
-            if let Some(webview) = slot.borrow().as_ref() {
-                if !visible { webview.monitor.hide(); }
-                let _ = webview.view.set_visible(visible);
+        /// Show at the latest layout, or leave the already shown child alone.
+        pub fn show(&mut self, bounds: [f32; 4]) -> bool {
+            if matches!(self.visibility, Visibility::Hidden) {
+                let _ = self.view.set_bounds(rect(bounds));
+                let _ = self.view.set_visible(true);
+                self.visibility = Visibility::Shown(bounds);
+                true
+            } else {
+                false
             }
-        });
+        }
+
+        /// Hide without dropping the page, retaining its scroll and session.
+        pub fn hide(&mut self) -> bool {
+            if matches!(self.visibility, Visibility::Shown(_)) {
+                self.monitor.hide();
+                let _ = self.view.set_visible(false);
+                self.visibility = Visibility::Hidden;
+                true
+            } else {
+                false
+            }
+        }
+
+        pub fn committed(&self) -> bool { self.committed.get() }
+
+        pub fn take_back(&self) -> bool { self.monitor.pending.replace(false) }
     }
 
     pub fn set_waker(waker: Waker) {
         WAKER.with(|slot| *slot.borrow_mut() = Some(waker));
-    }
-
-    pub fn ready() -> bool {
-        CHILD.with(|slot| slot.borrow().as_ref().is_some_and(|child| child.ready.get()))
-    }
-
-    pub fn take_back() -> bool {
-        CHILD.with(|slot| slot.borrow().as_ref().is_some_and(|child| child.monitor.pending.replace(false)))
-    }
-
-    /// Drop the child. `WKWebView` deallocates on this thread, which is the one that made it.
-    pub fn close() {
-        let child = CHILD.with(|slot| slot.borrow_mut().take());
-        drop(child);
     }
 }
 
@@ -246,21 +241,20 @@ mod stub {
     use rune::{Waker, WindowHandle};
 
     /// No child-view host on this platform: the article pane falls back to the extracted text.
-    pub fn create(_window: &WindowHandle, _bounds: [f32; 4], _url: &str) -> Result<(), String> {
+    pub enum Child {}
+
+    pub fn create(_window: &WindowHandle, _bounds: [f32; 4], _url: &str) -> Result<Child, String> {
         Err("no child-view host on this platform".to_owned())
     }
 
-    pub fn set_bounds(_bounds: [f32; 4]) {}
-
-    pub fn set_zoom(_zoom: f32) {}
-
-    pub fn set_visible(_visible: bool) {}
+    impl Child {
+        pub fn set_bounds(&mut self, _bounds: [f32; 4]) { match *self {} }
+        pub fn set_zoom(&self, _zoom: f32) { match *self {} }
+        pub fn show(&mut self, _bounds: [f32; 4]) -> bool { match *self {} }
+        pub fn hide(&mut self) -> bool { match *self {} }
+        pub fn committed(&self) -> bool { match *self {} }
+        pub fn take_back(&self) -> bool { match *self {} }
+    }
 
     pub fn set_waker(_waker: Waker) {}
-
-    pub fn ready() -> bool { false }
-
-    pub fn take_back() -> bool { false }
-
-    pub fn close() {}
 }

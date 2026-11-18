@@ -1,6 +1,6 @@
 //! Window and reading input routing.
 
-use super::{App, Notice, DEFAULT_GRID, INSPECTOR_MIN, INSPECTOR_MAX};
+use super::{App, Live, Notice, DEFAULT_GRID, INSPECTOR_MIN, INSPECTOR_MAX};
 use hn_lib::event::StoryAction;
 use hn_lib::feed_state;
 use rune::KeyEvent;
@@ -9,9 +9,8 @@ use rune_kit::PaneState;
 use crate::keys;
 use crate::keys::StoryKey;
 use crate::keys::WindowKey;
-use crate::layout::ZOOM_STEPS;
+use crate::layout::ZoomStep;
 use crate::story::Story;
-use crate::webview;
 
 impl App {
     pub(super) fn window_action(&mut self, action: WindowKey, tx: &mut Tx) -> bool {
@@ -22,30 +21,31 @@ impl App {
                 self.inspector.set_open(!self.inspector.is_open());
             },
             WindowKey::ZoomIn | WindowKey::ZoomOut | WindowKey::ActualSize => {
+                let inspector_width = self.inspector_window_width();
                 let old_zoom = self.zoom;
-                let index = ZOOM_STEPS.iter().position(|&step| step == self.zoom)
-                    .expect("zoom is always a supported step");
                 self.zoom = match action {
-                    WindowKey::ZoomIn => ZOOM_STEPS[(index + 1).min(ZOOM_STEPS.len() - 1)],
-                    WindowKey::ZoomOut => ZOOM_STEPS[index.saturating_sub(1)],
-                    WindowKey::ActualSize => 1.0,
+                    WindowKey::ZoomIn => self.zoom.increase(),
+                    WindowKey::ZoomOut => self.zoom.decrease(),
+                    WindowKey::ActualSize => ZoomStep::Z100,
                     _ => unreachable!(),
                 };
                 if self.zoom != old_zoom {
                     let pane = self.inspector;
-                    self.inspector = PaneState::new(pane.default_width() * old_zoom / self.zoom)
-                        .range(INSPECTOR_MIN / self.zoom, INSPECTOR_MAX / self.zoom)
-                        .with_width(pane.width() * old_zoom / self.zoom);
+                    self.inspector = PaneState::new(self.inspector_default_width / self.zoom.scale())
+                        .range(INSPECTOR_MIN / self.zoom.scale(), INSPECTOR_MAX / self.zoom.scale())
+                        .with_width(inspector_width / self.zoom.scale());
                     self.inspector.set_open(pane.is_open());
                 }
-                webview::set_zoom(self.zoom);
+                if let Live::Created { child, .. } = &mut self.live {
+                    child.set_zoom(self.zoom.scale());
+                }
                 // An unchanged view-point rect does not trigger on_layout when zoom changes.
                 if let Some(rect) = &mut self.live_bounds {
-                    *rect = rect.map(|value| value * self.zoom / old_zoom);
-                    if self.live_shown { webview::set_bounds(*rect); }
+                    *rect = rect.map(|value| value * self.zoom.scale() / old_zoom.scale());
+                    if let Live::Created { child, .. } = &mut self.live { child.set_bounds(*rect); }
                 }
                 if self.zoom != old_zoom || action == WindowKey::ActualSize {
-                    self.toast = Some(Notice { message: format!("{:.0}%", self.zoom * 100.0),
+                    self.toast = Some(Notice { message: format!("{:.0}%", self.zoom.scale() * 100.0),
                         until: f64::INFINITY, show_dot: false });
                 }
                 tx.instant();

@@ -225,34 +225,30 @@ fn story_phases_show_comments_while_work_is_pending_and_reject_stale_results() {
 }
 
 #[test]
-fn native_story_ownership_resets_changed_ids_and_retains_same_story() {
+fn native_story_failure_and_layout_follow_story_identity() {
     let mut s = app(true, SavedView::in_memory());
     let a = crate::fixtures::item(0, 1);
     s.open_story(a.clone());
-    s.live = Live::Ready { story_id: 1 };
+    s.live = Live::Failed { story_id: 1, error: "No host".into() };
     s.live_bounds = Some([10.0, 20.0, 400.0, 500.0]);
-    s.live_shown = true;
     s.close_story();
-    assert!(!s.live_shown, "leaving hides the child synchronously");
-    assert_eq!(s.live, Live::Ready { story_id: 1 });
+    assert!(matches!(s.live, Live::Failed { story_id: 1, .. }));
     s.open_story(a.clone());
-    assert_eq!(s.live, Live::Ready { story_id: 1 });
+    assert!(matches!(s.live, Live::Failed { story_id: 1, .. }));
     assert_eq!(s.live_bounds, None, "remounted region must supply fresh bounds");
     s.live_rect([30.0, 40.0, 500.0, 600.0]);
     assert_eq!(s.live_bounds, Some([30.0, 40.0, 500.0, 600.0]));
     s.open_story(a.clone());
     assert!(s.live_bounds.is_some(), "same mounted identity retains valid layout");
     let mut b = a; b.id = 2;
-    s.live_shown = true;
     s.open_story(b.clone());
-    assert_eq!(s.live, Live::Idle, "different IDs reset even with the same URL");
-    assert!(!s.live_shown);
+    assert!(matches!(s.live, Live::Idle), "different IDs reset even with the same URL");
     assert_eq!(s.live_bounds, None);
     s.live = Live::Failed { story_id: 2, error: "No host".into() };
     s.open_story(b);
     assert!(matches!(s.live, Live::Failed { story_id: 2, .. }));
     s.open_story(crate::fixtures::item(2, 3));
-    assert_eq!(s.live, Live::Idle, "a new story can retry child construction");
+    assert!(matches!(s.live, Live::Idle), "a new story can retry child construction");
 }
 
 #[test]

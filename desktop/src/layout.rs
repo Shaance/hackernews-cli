@@ -15,7 +15,44 @@ use std::path::PathBuf;
 use hn_lib::app::StoryType;
 use serde::{Deserialize, Serialize};
 
-pub(crate) const ZOOM_STEPS: [f32; 7] = [0.75, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5];
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ZoomStep { Z75, Z80, Z90, Z100, Z110, Z125, Z150 }
+
+impl ZoomStep {
+    const ALL: [Self; 7] = [Self::Z75, Self::Z80, Self::Z90, Self::Z100, Self::Z110, Self::Z125, Self::Z150];
+
+    pub(crate) fn scale(self) -> f32 {
+        match self {
+            Self::Z75 => 0.75, Self::Z80 => 0.8, Self::Z90 => 0.9, Self::Z100 => 1.0,
+            Self::Z110 => 1.1, Self::Z125 => 1.25, Self::Z150 => 1.5,
+        }
+    }
+
+    pub(crate) fn increase(self) -> Self {
+        match self {
+            Self::Z75 => Self::Z80, Self::Z80 => Self::Z90, Self::Z90 => Self::Z100,
+            Self::Z100 => Self::Z110, Self::Z110 => Self::Z125, Self::Z125 | Self::Z150 => Self::Z150,
+        }
+    }
+
+    pub(crate) fn decrease(self) -> Self {
+        match self {
+            Self::Z75 | Self::Z80 => Self::Z75, Self::Z90 => Self::Z80, Self::Z100 => Self::Z90,
+            Self::Z110 => Self::Z100, Self::Z125 => Self::Z110, Self::Z150 => Self::Z125,
+        }
+    }
+
+    fn from_persisted(value: Option<f32>) -> Self {
+        let value = value.unwrap_or(1.0).clamp(Self::Z75.scale(), Self::Z150.scale());
+        Self::ALL.into_iter().skip(1).fold(Self::Z75, |nearest, candidate| {
+            if (value - candidate.scale()).abs().total_cmp(&(value - nearest.scale()).abs()).is_lt() {
+                candidate
+            } else {
+                nearest
+            }
+        })
+    }
+}
 
 /// The persisted window state. Every field is optional so an older file still loads.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -38,10 +75,8 @@ pub struct Layout {
 
 impl Layout {
     /// Restore the nearest supported zoom, defaulting to actual size.
-    pub(crate) fn zoom_level(&self) -> f32 {
-        let value = self.zoom.unwrap_or(1.0).clamp(ZOOM_STEPS[0], ZOOM_STEPS[ZOOM_STEPS.len() - 1]);
-        *ZOOM_STEPS.iter().min_by(|a, b| (value - **a).abs().total_cmp(&(value - **b).abs()))
-            .expect("zoom steps are not empty")
+    pub(crate) fn zoom_level(&self) -> ZoomStep {
+        ZoomStep::from_persisted(self.zoom)
     }
 
     /// The file's path, or `None` when neither `XDG_STATE_HOME` nor `HOME` is set.
@@ -144,6 +179,7 @@ mod tests {
             selected: Some(42),
         };
         layout.save(&path).expect("the temp directory is writable");
+        assert!(std::fs::read_to_string(&path).unwrap().contains("\"zoom\": 1.25"));
         assert_eq!(Layout::load(&path), layout);
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -152,8 +188,9 @@ mod tests {
     fn zoom_defaults_and_snaps_to_the_nearest_step() {
         let missing: Layout = serde_json::from_str(r#"{"window":[1100,760]}"#).unwrap();
         assert_eq!(missing.zoom, None);
-        assert_eq!(missing.zoom_level(), 1.0);
-        for (value, expected) in [(0.3, 0.75), (0.87, 0.9), (1.18, 1.25), (2.0, 1.5)] {
+        assert_eq!(missing.zoom_level(), ZoomStep::Z100);
+        for (value, expected) in [(0.3, ZoomStep::Z75), (0.87, ZoomStep::Z90),
+            (1.18, ZoomStep::Z125), (1.375, ZoomStep::Z125), (2.0, ZoomStep::Z150)] {
             let layout: Layout = serde_json::from_str(&format!(r#"{{"zoom":{value}}}"#)).unwrap();
             assert_eq!(layout.zoom_level(), expected);
         }

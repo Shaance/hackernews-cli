@@ -22,7 +22,7 @@ impl App {
     /// What the article pane draws: the live page, or the extracted text and why it is there.
     pub(super) fn pane(&self) -> Pane<'_> {
         if self.live_mode() {
-            Pane::Live { loading: !webview::ready() }
+            Pane::Live { loading: !matches!(&self.live, Live::Created { child, .. } if child.committed()) }
         } else {
             Pane::Extracted {
                 reason: match &self.live {
@@ -38,10 +38,10 @@ impl App {
     /// Called from `on_layout`, which runs on the UI thread — the only thread a `WKWebView` may
     /// be resized on.
     pub(crate) fn live_rect(&mut self, rect: [f32; 4]) {
-        let rect = rect.map(|value| value * self.zoom);
+        let rect = rect.map(|value| value * self.zoom.scale());
         self.live_bounds = Some(rect);
-        if self.live_shown {
-            webview::set_bounds(rect);
+        if let Live::Created { child, .. } = &mut self.live {
+            child.set_bounds(rect);
         }
     }
 
@@ -69,23 +69,22 @@ impl App {
                 // The window or the pane's rect has not landed yet; the next frame has both.
                 return false;
             };
-            if let Err(error) = webview::create(window, bounds, &url) {
-                self.live = Live::Failed { story_id, error };
-                return true;
-            }
-            webview::set_zoom(self.zoom);
-            self.live = Live::Ready { story_id };
+            let child = match webview::create(window, bounds, &url) {
+                Ok(child) => child,
+                Err(error) => {
+                    self.live = Live::Failed { story_id, error };
+                    return true;
+                }
+            };
+            child.set_zoom(self.zoom.scale());
+            self.live = Live::Created { story_id, child };
             changed = true;
         }
-        let want = webview::ready() && self.live_bounds.is_some()
-            && self.settings.is_none() && !self.help;
-        if self.live_shown != want {
-            if want {
-                webview::set_bounds(self.live_bounds.unwrap());
+        if let Live::Created { child, .. } = &mut self.live {
+            match self.live_bounds.filter(|_| child.committed() && self.settings.is_none() && !self.help) {
+                Some(bounds) => changed |= child.show(bounds),
+                None => changed |= child.hide(),
             }
-            webview::set_visible(want);
-            self.live_shown = want;
-            changed = true;
         }
         changed
     }
@@ -93,11 +92,9 @@ impl App {
     /// Take the child off screen, keeping the page: `set_visible` is `WKWebView.setHidden`, so
     /// scroll position and session survive the feed coming back.
     pub(super) fn hide_live(&mut self) -> bool {
-        if !self.live_shown {
-            return false;
+        match &mut self.live {
+            Live::Created { child, .. } => child.hide(),
+            _ => false,
         }
-        webview::set_visible(false);
-        self.live_shown = false;
-        true
     }
 }

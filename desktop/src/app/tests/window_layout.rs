@@ -22,15 +22,32 @@ fn zoom_shortcuts_step_clamp_and_reset_in_feed_and_story() {
         ('=', 0.8), ('+', 0.9), ('=', 1.0), ('+', 1.1), ('=', 1.25), ('+', 1.5), ('=', 1.5), ('0', 1.0)] {
         rt.key(KeyEvent { key: rune::Key::Command(key), mods: rune::Mods { cmd: true, ..Default::default() } });
         rt.frame(0.0);
-        assert_eq!((rt.state.zoom, rt.zoom()), (expected, expected), "{key}");
+        assert_eq!((rt.state.zoom.scale(), rt.zoom()), (expected, expected), "{key}");
     }
     rt.update(|s, _| scene_story(s));
     rt.frame(0.0);
     for (key, expected) in [('+', 1.1), ('-', 1.0), ('-', 0.9), ('0', 1.0)] {
         rt.key(KeyEvent { key: rune::Key::Command(key), mods: rune::Mods { cmd: true, ..Default::default() } });
         rt.frame(0.0);
-        assert_eq!((rt.state.zoom, rt.zoom()), (expected, expected), "story {key}");
+        assert_eq!((rt.state.zoom.scale(), rt.zoom()), (expected, expected), "story {key}");
     }
+}
+
+#[test]
+fn inspector_width_returns_exactly_after_a_zoom_round_trip() {
+    let mut s = app(true, SavedView::in_memory());
+    scene_story(&mut s);
+    let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+    rt.on_key = Some(on_key);
+    rt.frame(0.0);
+    assert_eq!(rt.state.snapshot().inspector, Some(543.0));
+    for key in ['=', '=', '=', '0'] {
+        rt.key(KeyEvent { key: rune::Key::Command(key), mods: rune::Mods { cmd: true, ..Default::default() } });
+        rt.frame(0.0);
+        assert_eq!(rt.state.snapshot().inspector, Some(543.0));
+    }
+    assert_eq!(rt.state.snapshot().inspector, Some(543.0));
+    assert_eq!(rt.state.inspector.width(), 543.0);
 }
 
 #[test]
@@ -66,12 +83,12 @@ fn inspector_window_width_survives_zoom_drag_and_relaunch() {
     assert_eq!(rt.zoom(), 1.5);
     let (zoomed_article, zoomed_inspector) = widths(&rt);
     assert!((article / inspector - zoomed_article / zoomed_inspector).abs() < 0.03);
-    assert!((rt.state.snapshot().inspector.unwrap() - initial).abs() < 2.0);
+    assert_eq!(rt.state.snapshot().inspector, Some(initial));
     drag(&mut rt, 60.0);
     let dragged = rt.state.snapshot().inspector.unwrap();
     assert!((initial - dragged - 60.0).abs() < 2.0);
     for key in ['0', '=', '=', '='] { zoom(&mut rt, key); }
-    assert!((rt.state.snapshot().inspector.unwrap() - dragged).abs() < 2.0);
+    assert_eq!(rt.state.snapshot().inspector, Some(dragged));
     let dir = temp_dir("inspector-zoom");
     let path = dir.join("desktop.json");
     let snapshot = rt.state.snapshot();
@@ -80,8 +97,8 @@ fn inspector_window_width_survives_zoom_drag_and_relaunch() {
     next.layout = Layout::load(&path);
     next.zoom = next.layout.zoom_level();
     next.restore();
-    assert_eq!(next.zoom, 1.5);
-    assert!((next.snapshot().inspector.unwrap() - snapshot.inspector.unwrap()).abs() < 1.0);
+    assert_eq!(next.zoom, ZoomStep::Z150);
+    assert_eq!(next.snapshot().inspector, snapshot.inspector);
     let _ = std::fs::remove_dir_all(dir);
     for (i, key) in ['-', '-', '-', '-', '-', '-', '+', '+', '+', '+', '+', '+'].into_iter().enumerate() {
         zoom(&mut rt, key);
@@ -89,8 +106,21 @@ fn inspector_window_width_survives_zoom_drag_and_relaunch() {
         assert!((rt.state.inspector.max_width() * rt.zoom() - INSPECTOR_MAX).abs() < 0.01);
         drag(&mut rt, if i % 2 == 0 { 15.0 } else { -15.0 });
     }
-    rt.state.inspector.reset_width();
-    assert!((rt.state.inspector.width() * rt.zoom() - INSPECTOR_WIDTH).abs() < 2.0);
+    for _ in 0..2 { zoom(&mut rt, '-'); }
+    assert_eq!(rt.zoom(), 1.1);
+    let reset_width = rt.state.inspector.default_width() * rt.zoom();
+    assert_ne!(rt.state.snapshot().inspector, Some(reset_width));
+    rt.frame(0.6);
+    let grip = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("inspector-grip")).unwrap().rect;
+    let (x, y) = (grip[0] + grip[2] / 2.0, grip[1] + 40.0);
+    rt.pointer_move(x, y);
+    for _ in 0..2 {
+        rt.pointer_down(x, y); rt.frame(0.01);
+        rt.pointer_up(x, y); rt.frame(0.01);
+    }
+    assert_eq!(rt.state.snapshot().inspector, Some(reset_width));
+    for key in ['0', '='] { zoom(&mut rt, key); }
+    assert_eq!(rt.state.snapshot().inspector, Some(reset_width));
 }
 
 #[cfg(target_os = "macos")]
@@ -105,7 +135,7 @@ fn command_equal_menu_action_steps_once_headlessly() {
     let mut rt = rune::Runtime::new(app(true, SavedView::in_memory()), view, (1100.0, 760.0), rune::Env::new(true, 2.0));
     rt.update(|s, tx| action(s, tx));
     rt.frame(0.0);
-    assert_eq!((rt.state.zoom, rt.zoom()), (1.1, 1.1));
+    assert_eq!((rt.state.zoom, rt.zoom()), (ZoomStep::Z110, 1.1));
 }
 
 #[cfg(target_os = "macos")]
@@ -125,9 +155,9 @@ fn menu_actions_operate_on_the_same_window_state() {
     run("Show/Hide Inspector", &mut s);
     assert_ne!(s.inspector.is_open(), open);
     run("Zoom Out", &mut s);
-    assert_eq!(s.zoom, 0.9);
+    assert_eq!(s.zoom, ZoomStep::Z90);
     run("Actual Size", &mut s);
-    assert_eq!((s.zoom, s.toast.as_ref().unwrap().message.as_str()), (1.0, "100%"));
+    assert_eq!((s.zoom, s.toast.as_ref().unwrap().message.as_str()), (ZoomStep::Z100, "100%"));
 }
 
 #[test]
@@ -136,7 +166,7 @@ fn zoom_toast_shows_percentage_and_expires() {
     rt.on_key = Some(on_key);
     rt.key(KeyEvent { key: rune::Key::Command('='), mods: rune::Mods { cmd: true, ..Default::default() } });
     rt.frame(0.0);
-    assert_eq!(rt.state.zoom, 1.1);
+    assert_eq!(rt.state.zoom, ZoomStep::Z110);
     let notice = rt.state.toast.as_ref().unwrap();
     assert_eq!(notice.message, "110%");
     assert!(!notice.show_dot);
@@ -169,7 +199,7 @@ fn zoom_changes_feed_columns_and_persists_window_points() {
     rt.state.headless = false;
     close(&mut rt.state, &mut Tx::default());
     let saved = Layout::load(&path);
-    assert_eq!(saved.zoom_level(), 0.9);
+    assert_eq!(saved.zoom_level(), ZoomStep::Z90);
     let saved_size = saved.window.unwrap();
     assert!((saved_size.0 - 1100.0).abs() < 0.01 && (saved_size.1 - 760.0).abs() < 0.01);
     rt.state.headless = true;
@@ -227,7 +257,7 @@ fn zoom_breakpoint_keeps_the_selected_story_visible_in_every_frame() {
     let narrow_rows = rt.state.measured.get().unwrap().0;
     rt.key(KeyEvent { key: rune::Key::Command('-'), mods: rune::Mods { cmd: true, ..Default::default() } });
     let widening = reflow_frames(&mut rt, 1);
-    assert_eq!((rt.state.zoom, rt.state.measured.get().unwrap().1), (0.9, 2));
+    assert_eq!((rt.state.zoom, rt.state.measured.get().unwrap().1), (ZoomStep::Z90, 2));
     route(&mut rt, rune::Key::Down);
     route(&mut rt, rune::Key::Right);
     let selected = rt.state.feed.selected_id().unwrap();
@@ -235,7 +265,7 @@ fn zoom_breakpoint_keeps_the_selected_story_visible_in_every_frame() {
 
     rt.key(KeyEvent { key: rune::Key::Command('0'), mods: rune::Mods { cmd: true, ..Default::default() } });
     let narrowing = reflow_frames(&mut rt, selected);
-    assert_eq!((rt.state.zoom, rt.state.measured.get().unwrap().1), (1.0, 1));
+    assert_eq!((rt.state.zoom, rt.state.measured.get().unwrap().1), (ZoomStep::Z100, 1));
     assert_eq!(rt.state.feed.selected_id(), Some(selected));
     assert_eq!(rt.state.feed.display_cursor, narrow_rows);
     assert!(widening.iter().chain(&narrowing).all(|(rows, lines, visible)| lines <= rows && *visible),
@@ -363,9 +393,8 @@ fn the_layout_file_round_trips_the_window_and_the_feed() {
     s.request((11, 1), Ranking::Fresh);
     s.layout_path = Some(path.clone());
     s.window_size.set(Some((1280.0, 820.0)));
-    s.inspector = PaneState::new(512.0)
-        .range(INSPECTOR_MIN, INSPECTOR_MAX)
-        .collapsed();
+    s.layout.inspector = Some(512.0);
+    s.restore();
     s.feed.tab = StoryType::Best;
     s.feed.selected = 4;
 

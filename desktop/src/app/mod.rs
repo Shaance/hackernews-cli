@@ -40,7 +40,7 @@ use rune_kit::PaneState;
 use crate::bookmarks::SavedView;
 use crate::bridge::Bridge;
 use crate::feed::{FeedModel, Ranking, RequestLifecycle};
-use crate::layout::Layout;
+use crate::layout::{Layout, ZoomStep};
 use crate::service::Source;
 use crate::settings::Settings;
 use crate::story::Story;
@@ -97,12 +97,11 @@ enum ScrollPacing {
 /// The pane is the story's real page by default. This is the one thing that can take it away:
 /// a child view that could not be built. Everything else — headless, non-macOS — is decided by
 /// [`App::live_capable`] before a child is ever asked for.
-#[derive(Debug, Clone, PartialEq, Eq)]
 enum Live {
     /// No child view yet: nothing has asked for one.
     Idle,
-    /// A child belongs to this story; its native commit callback owns readiness.
-    Ready { story_id: i32 },
+    /// A child exists for this story; its own callback records page commit.
+    Created { story_id: i32, child: crate::webview::Child },
     /// Creation failed. The pane falls back to the extracted text and says why.
     Failed { story_id: i32, error: String },
 }
@@ -142,6 +141,9 @@ pub struct App {
     scroll_waker: Option<Waker>,
     /// The inspector's width and open state. Opening a story opens it; `Esc` closes it.
     inspector: PaneState,
+    /// The chosen and reset widths in window points, independent of Rune's view-point rounding.
+    inspector_width: Cell<f32>,
+    inspector_default_width: f32,
     /// The reader's summary settings, loaded once at launch and never logged.
     config: Config,
     /// The summary settings dialog, when it is open. `None` is closed.
@@ -149,7 +151,7 @@ pub struct App {
     /// The keyboard sheet, when it is open.
     pub help: bool,
     /// The supported zoom applied to the Rune view and live page.
-    zoom: f32,
+    zoom: ZoomStep,
     /// What the window remembers between runs, and where it writes it. A headless run has
     /// neither: a golden must not depend on the machine's window size.
     layout: Layout,
@@ -179,8 +181,6 @@ pub struct App {
     live: Live,
     /// The live region's last reported rect, converted to window points for the child.
     live_bounds: Option<[f32; 4]>,
-    /// Whether the child is currently shown, so `poll` only calls `set_visible` on a change.
-    live_shown: bool,
     /// `--open-story <id>`, until the feed holds that story and it opens.
     open_story: Option<i32>,
 }
@@ -280,9 +280,11 @@ fn init() -> App {
         readings: HashMap::new(),
         scroll_pacing: Rc::new(Cell::new(ScrollPacing::Idle)),
         scroll_waker: None,
-        inspector: PaneState::new(INSPECTOR_WIDTH / zoom)
-            .range(INSPECTOR_MIN / zoom, INSPECTOR_MAX / zoom)
+        inspector: PaneState::new(INSPECTOR_WIDTH / zoom.scale())
+            .range(INSPECTOR_MIN / zoom.scale(), INSPECTOR_MAX / zoom.scale())
             .collapsed(),
+        inspector_width: Cell::new(INSPECTOR_WIDTH),
+        inspector_default_width: INSPECTOR_WIDTH,
         config,
         settings: None,
         help: false,
@@ -297,7 +299,6 @@ fn init() -> App {
         native_window: None,
         live: Live::Idle,
         live_bounds: None,
-        live_shown: false,
         open_story: OPEN_STORY.get().copied().flatten(),
         toast: None,
         reduced: std::env::var("HN_REDUCED_MOTION").is_ok_and(|value| value == "1"),
