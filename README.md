@@ -6,7 +6,7 @@
 
 | | Mac app | Terminal app |
 |---|---|---|
-| **Get it** | [Download HN for macOS](https://github.com/Shaance/hn/releases/download/desktop-v1.0.0/HN-desktop-v1.0.0-macos-arm64.zip): Apple Silicon, macOS 13+, signed and notarized | `cargo install --path . --locked`, then `hn` |
+| **Get it** | [Download HN for macOS](https://github.com/Shaance/hn/releases/download/desktop-v1.1.0/HN-desktop-v1.1.0-macos-arm64.zip): Apple Silicon, macOS 13+, signed and notarized | `cargo install --path . --locked`, then `hn` |
 | **The article** | The story's live page, beside the discussion | Opens in a Ghostty pane beside the discussion, or your browser |
 | **More** | [desktop/README.md](desktop/README.md) | [Terminal app](#terminal-app), below |
 
