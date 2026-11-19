@@ -133,7 +133,9 @@ fn spawn_close_mock(
     let log = requests.clone();
     let task = tokio::spawn(async move {
         loop {
-            let Ok((stream, _)) = listener.accept().await else { break };
+            let Ok((stream, _)) = listener.accept().await else {
+                break;
+            };
             let tabs = tabs.clone();
             let log = log.clone();
             tokio::spawn(async move {
@@ -151,7 +153,9 @@ fn spawn_close_mock(
                     "close-tab" => {
                         json!({"id":request["id"],"ok":false,"error":format!("no tab {}", request["tab"])})
                     }
-                    other => json!({"id":request["id"],"ok":false,"error":format!("unknown command {other}")}),
+                    other => {
+                        json!({"id":request["id"],"ok":false,"error":format!("unknown command {other}")})
+                    }
                 };
                 reader
                     .get_mut()
@@ -169,12 +173,7 @@ fn logged(requests: &Arc<Mutex<Vec<Value>>>) -> Vec<(String, Option<i64>)> {
         .lock()
         .unwrap()
         .iter()
-        .map(|r| {
-            (
-                r["cmd"].as_str().unwrap().to_owned(),
-                r["tab"].as_i64(),
-            )
-        })
+        .map(|r| (r["cmd"].as_str().unwrap().to_owned(), r["tab"].as_i64()))
         .collect()
 }
 
@@ -192,7 +191,10 @@ async fn close_closes_only_the_owned_tab_when_other_tabs_remain() {
     // and the pane is never driven towards shutdown.
     assert_eq!(
         logged(&requests),
-        vec![("targets".to_owned(), None), ("close-tab".to_owned(), Some(10))]
+        vec![
+            ("targets".to_owned(), None),
+            ("close-tab".to_owned(), Some(10))
+        ]
     );
     task.abort();
     std::fs::remove_file(path).unwrap();
