@@ -42,7 +42,8 @@ See the status table at the end (updated last).
 
 | Item | State |
 |---|---|
-| #63 feed | open, CI running |
-| #64 release setup | open, CI running |
-| #62 README media | open, needs re-render after #63 |
-| Dry run / tag / tap / README install | not started |
+| #63 feed | merged (desktop Linux CI job failed on an Ubuntu mirror outage, not required) |
+| #64 release setup | merged |
+| #62 README media | merged (re-rendered; one render got a bad model summary "placeholder [1]", re-rendered) |
+| Dry run | running: https://github.com/Shaance/hn/actions/runs/44524383795 |
+| Tag / tap / README install | not started (steps 5–7) |
