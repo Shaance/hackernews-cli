@@ -269,7 +269,7 @@ Use the [security policy](SECURITY.md) to report a vulnerability privately.
 
 | Feed | Reader with summary |
 |---|---|
-| ![Best feed with the third story selected](docs/screenshots/feed.png) | ![Reader with the article and discussion summary above the comments](docs/screenshots/reader.png) |
+| ![Best feed in two columns, first story selected](docs/screenshots/feed.png) | ![Reader with the article and discussion summary above the comments](docs/screenshots/reader.png) |
 | **Citation focus** | **Key reference** |
 | ![A summary point focused, with its first citation highlighted](docs/screenshots/citation.png) | ![The help modal over the dimmed reader](docs/screenshots/help.png) |
 

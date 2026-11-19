@@ -5,7 +5,7 @@ Output docs/screenshots/dark.gif
 Set Shell "bash"
 Set FontFamily "JetBrains Mono"
 Set FontSize 15
-Set Width 1280
+Set Columns 172
 Set Height 780
 Set Padding 20
 Set Framerate 24
