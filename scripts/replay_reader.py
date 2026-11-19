@@ -86,24 +86,76 @@ def run(binary, output, width, height):
             app.key("\t")
             assert focus() == f"[{n}]", "The exact citation token must be highlighted"
         anchor = comments(app.text())
-        app.key("\r")
-        source = app.wait(lambda t: "source 3 of 8 · delta_p_delta_x · Fast" in t and "#50162345" in t)
-        assert "The overall shape of the glyphs" in source, "Source 3 lost the cited comment text"
-        app.key("\t")
-        app.wait(lambda t: "source 4 of 8 · kqr · Fast" in t and "#50162865" in t)
-        app.key("\t")
-        source = app.wait(lambda t: "source 5 of 8 · chirayuk · Fast" in t and "#50164113" in t)
-        assert "The hyphen is as wide as the em dash" in source, "Source 5 lost the cited reply text"
-        assert "PARENT CONTEXT  kqr · #50162865" in source and "I have been going back and forth between Luxi Mono" in source, "Source 5 lost its parent context"
+        before_source = app.text().splitlines()
+        # At this point every discussion row is top-level, so only the summary has a rail.
+        first_comment_row = max(i for i, row in enumerate(before_source) if row.startswith(("  │ ", "  ┃ "))) + 2
+        passage_rows = slice(first_comment_row, first_comment_row + 3)
+        source_anchor = before_source[passage_rows]
+        assert any(line.strip() for line in source_anchor), "Expected discussion text under the summary"
+        capture("04a-before-source")
+        records = fixture.data["input"]["comments"]
+        records.extend([
+            {"id": 90000004, "parent": 50162980, "author": "source_nested_control",
+             "text": "Nested reply loaded from the source view."},
+            {"id": 90000005, "parent": 50164113, "author": "detached_reply_control",
+             "text": "Reply to a citation in an unopened branch."},
+        ])
+        absent_path = "/v0/item/50164113.json"
+        detached_reply_path = "/v0/item/90000005.json"
+        start = len(fixture.gets)
+        fixture.fail_item = 50164113
+        app.key("\t\t\r")
+        source = app.wait(lambda t: "source 5 of 8 · chirayuk · Fast" in t and "Cited comment unavailable · Enter retry" in t)
+        assert "The hyphen is as wide as the em dash" in source
+        assert "PARENT CONTEXT  kqr · #50162865" in source and "I have been going back and forth between Luxi Mono" in source
         capture("05a-source-parent")
+        fixture.fail_item = None
+        app.key("\r")
+        app.wait(lambda t: "detached_reply_control" in t and "Enter retry" not in t)
+        assert Counter(fixture.gets[start:]) == Counter({absent_path: 2, detached_reply_path: 1})
+        capture("05b-source-retried")
+        app.key("h\x1b[Z\x1b[Z")
+        assert focus() == "[3]" and comments(app.text()) == anchor
+
+        direct_path = "/v0/item/50162980.json"
+        nested_source_path = "/v0/item/90000004.json"
+        fixture.get_gates[direct_path] = Event()
+        start = len(fixture.gets)
+        app.key("\r")
+        source = app.wait(lambda t: "source 3 of 8 · delta_p_delta_x · Fast" in t and
+                          direct_path in fixture.gets[start:] and "loading replies" in t)
+        assert "#50162345" in source and "The overall shape of the glyphs" in source
+        assert "▎ Replies to cited comment" in source and "JdeBP  " not in source
+        capture("05c-source-loading")
+        fixture.get_gates.pop(direct_path).set()
+        app.wait(lambda t: "JdeBP  " in t)
+        app.key("j")
+        selected("JdeBP", 1)
+        app.key("k")
+        assert "▎ Replies to cited comment" in app.text()
+        app.key("jo")
+        app.wait(lambda t: "source_nested_control" in t)
+        app.key("j")
+        selected("source_nested_control", 2)
+        capture("05d-source-nested")
+        app.key("c")
+        assert "source_nested_control  " not in app.text()
+        app.key("\t")
+        app.wait(lambda t: "source 4 of 8 · kqr · Fast" in t and "detached_reply_control" in t)
         app.key("\x1b[Z")
-        app.wait(lambda t: "source 4 of 8 · kqr · Fast" in t and "#50162865" in t)
-        app.key("\x1b[Z")
-        app.wait(lambda t: "source 3 of 8 · delta_p_delta_x · Fast" in t and "#50162345" in t)
+        source = app.wait(lambda t: "source 3 of 8 · delta_p_delta_x · Fast" in t and "source_nested_control" in t)
+        assert "▎ Replies to cited comment" in source and "#50162345" in source
+        source_requests = Counter(fixture.gets[start:])
+        assert source_requests == Counter({direct_path: 1, nested_source_path: 1})
+        app.key("?")
+        app.wait(lambda t: "CITATION SOURCE" in t and "Backspace" in t)
+        app.key("?")
         capture("05-source")
         app.key("h")
         app.wait(lambda t: "✓ summary · Fast" in t)
-        assert comments(app.text()) == anchor, "Returning from source moved comments"
+        # A new branch can push lower rows down while the passage at the top stays put.
+        assert app.text().splitlines()[passage_rows] == source_anchor, "Returning from source moved the reading passage"
+        capture("05e-source-return")
         assert focus() == "[3]" and len(fixture.calls) == 2
         app.key("M")
         app.wait(lambda t: "Summary settings" in t)
@@ -140,6 +192,14 @@ def run(binary, output, width, height):
         reply_paths = [f"/v0/item/{ident}.json" for ident in (50166096, 50163340)]
         nested_path = "/v0/item/90000003.json"
         app.key("Sg")
+        start = len(fixture.gets)
+        app.key("]" * 11)
+        selected("delta_p_delta_x", 0)
+        app.key("jj")
+        selected("source_nested_control", 2)
+        assert not fixture.gets[start:], "The discussion requested replies already loaded from a source"
+        capture("09a-source-replies-shared")
+        app.key("g")
         selected("tywr", 0)
         initial = count()
         fixture.get_gates[reply_paths[0]] = Event()
@@ -205,11 +265,11 @@ def run(binary, output, width, height):
                       "text": "\n".join(f"Synthetic passage {i:03} · revision 1" for i in range(260))}
         records.insert(0, long_reply)
         app.key("rg")
-        app.wait(lambda t: count() == 43)
+        app.wait(lambda t: count() == initial + 3)
         app.key("c")
         app.wait(lambda t: "+ 4 replies" in t and count() == initial)
         app.key("\r")
-        app.wait(lambda t: count() == 43)
+        app.wait(lambda t: count() == initial + 3)
         app.key("j\x1b[6~")
         before = passage()
         assert before and before[0][1] > 0, "Page Down must enter the long reply"
@@ -259,7 +319,7 @@ def run(binary, output, width, height):
         ] + [{"id": base + 20, "parent": base + 1, "author": "chain_side",
               "text": "Synthetic sibling outside the selected chain."}]
         app.key("rg")
-        app.wait(lambda t: count() == 45)
+        app.wait(lambda t: count() == initial + 5)
         app.key("g\r")
         app.wait(lambda t: "chain_side" in t)
         app.key("j")
@@ -338,12 +398,12 @@ def run(binary, output, width, height):
         receipt = {"size": [width, height], "provider_calls": fixture.calls,
                    "visible_thread_levels": cap,
                    "reply_counts": [initial, expanded, collapsed], "captures": captured,
-                   "reply_get_counts": {"reopen": dict(reopen), "late_after_collapse": dict(late)},
+                   "reply_get_counts": {"reopen": dict(reopen), "late_after_collapse": dict(late), "citation": dict(source_requests)},
                    "passage_anchors": {"before_refresh": before[0], "during_and_after_refresh": continued[0]},
                    "hn_get_counts": {path: fixture.gets.count(path) for path in sorted(set(fixture.gets))},
                    "exit": "clean", "network": "Loopback fixtures; external HTTP blocked"}
         (output / "result.json").write_text(json.dumps(receipt, indent=2) + "\n")
-        print(f"PASS {width}×{height}: recorded summaries, comment refresh, {cap}-level cap, trail, focus, feed/Saved continuity, clean exit", flush=True)
+        print(f"PASS {width}×{height}: recorded summaries, citation replies and retry, comment refresh, {cap}-level cap, trail, focus, feed/Saved continuity, clean exit", flush=True)
     except BaseException:
         (output / "requests.json").write_text(json.dumps(fixture.calls, indent=2))
         capture("failure")

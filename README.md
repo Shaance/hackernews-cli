@@ -106,7 +106,7 @@ Both profiles also generate a compact article summary. Thorough works independen
 
 The summary stays pinned above the comments. `S` hides or shows it without moving your comment position. When it is too long to fit, `J/K` scrolls the summary while `j/k` continues to navigate comments.
 
-Discussion points include numbered citations. Press Tab or Shift-Tab to select one, then Enter to read the cited comment and parent context. The source viewer identifies the excerpt sent to the model and labels additional captured text below it. Esc returns to your discussion position.
+Discussion points include numbered citations. Press Tab or Shift-Tab to select one, then Enter to read the cited comment and parent context. The source viewer identifies the excerpt sent to the model and labels additional captured text below it. Browse replies below the captured text with `j` and `k`. Enter or `o` expands, folds, continues a deep thread, or retries an unavailable comment. Use `c` to fold, Backspace to move up the source trail, `f` to toggle focus, and Page Up or Page Down to scroll. Tab and Shift-Tab switch citations. Press `h` or Esc to return to the focused citation and resume at the same discussion position.
 
 Summaries show their capture time and source coverage. Article extraction can be partial, and discussion summaries use a sample of comments that includes replies. A citation links to captured evidence; it does not guarantee that the model interpreted it correctly.
 

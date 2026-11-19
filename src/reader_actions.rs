@@ -50,7 +50,8 @@ pub async fn handle(
         return Ok(true);
     }
     if reader.is_open() {
-        if key == KeyCode::Char('o') && (!app.can_continue_thread() || reader.viewing_source()) {
+        let source = reader.source_id();
+        if key == KeyCode::Char('o') && source.is_none() && !app.can_continue_thread() {
             if let Some(story) = reader.current_story() {
                 reader.read_original(story, true);
             }
@@ -71,6 +72,10 @@ pub async fn handle(
             }
             return Ok(true);
         }
+        let request = reader.source_key(app, key);
+        if let Some(request) = request {
+            crate::tui::spawn_comment_request(app, request, &tx, &service);
+        }
         if matches!(key, KeyCode::Char('s' | 'O' | '?')) || !reader.key(key) {
             // Paging is applied by App during the next render, after completions are polled.
             if matches!(key, KeyCode::PageDown | KeyCode::PageUp) {
@@ -79,13 +84,18 @@ pub async fn handle(
             handle_comment_action(
                 app,
                 handle_comments_key(key),
-                tx,
-                service,
+                tx.clone(),
+                service.clone(),
                 bookmark_path.as_deref(),
             )
             .await?;
         } else if !reader.is_open() {
             app.view_stories();
+        }
+        if let Some(id) = reader.source_id().filter(|id| Some(*id) != source) {
+            if let Some(request) = app.request_citation(id, false) {
+                crate::tui::spawn_comment_request(app, request, &tx, &service);
+            }
         }
         if position != (app.thread.cursor(), app.comment_scroll) {
             reader.comments_moved();

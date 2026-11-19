@@ -30,6 +30,7 @@ mod sampling_tests;
 pub mod saved;
 mod settings;
 pub mod snapshot;
+mod source_view;
 pub mod sources;
 mod summary_prompts;
 #[cfg(test)]
@@ -42,6 +43,7 @@ pub use config::{Config, Profile, Profile as SummaryProfile, Provider};
 pub use network::Network;
 use saved::{DiscussionContext, SummaryStore};
 use serde::{Deserialize, Serialize};
+use source_view::SourceView;
 use std::{
     collections::HashMap,
     path::PathBuf,
@@ -227,8 +229,7 @@ pub struct Reading {
     citation: usize,
     reveal_citation: bool,
     citation_focus: bool,
-    source: Option<i32>,
-    source_scroll: usize,
+    source: Option<SourceView>,
 }
 impl Reading {
     fn new(story: HNCLIItem) -> Self {
@@ -249,7 +250,6 @@ impl Reading {
             reveal_citation: false,
             citation_focus: false,
             source: None,
-            source_scroll: 0,
         }
     }
     fn restore(&mut self, store: &SummaryStore) {

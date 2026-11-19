@@ -1,4 +1,4 @@
-use super::{browser, Duration, Instant, Reader, Reading, Request};
+use super::{browser, Duration, Instant, Reader, Reading, Request, SourceView};
 use crate::HNCLIItem;
 use crossterm::event::KeyCode;
 
@@ -96,16 +96,19 @@ impl Reader {
                     reading.citation_focus = true;
                     reading.reveal_citation = true;
                     if reading.source.is_some()
-                        && reading.source != Some(citations[reading.citation])
+                        && reading.source.as_ref().map(|source| source.id)
+                            != Some(citations[reading.citation])
                     {
-                        reading.source = Some(citations[reading.citation]);
-                        reading.source_scroll = 0;
+                        reading.source = Some(SourceView::new(citations[reading.citation]));
                     }
                 }
             }
             KeyCode::Enter if reading.source.is_none() && reading.citation_focus => {
-                reading.source = reading.citations().get(reading.citation).copied();
-                reading.source_scroll = 0;
+                reading.source = reading
+                    .citations()
+                    .get(reading.citation)
+                    .copied()
+                    .map(SourceView::new);
             }
             KeyCode::Char('J') | KeyCode::Char('K')
                 if reading.source.is_none() && reading.shown =>
@@ -124,17 +127,8 @@ impl Reader {
                     reading.citation_focus = false;
                     return false;
                 }
-                let scroll = &mut reading.source_scroll;
-                let page_step = reading.page_rows.saturating_sub(1).max(1);
-                match key {
-                    KeyCode::Char('j') | KeyCode::Down => *scroll = scroll.saturating_add(1),
-                    KeyCode::Char('k') | KeyCode::Up => *scroll = scroll.saturating_sub(1),
-                    KeyCode::PageDown => *scroll = scroll.saturating_add(page_step),
-                    KeyCode::PageUp => *scroll = scroll.saturating_sub(page_step),
-                    KeyCode::Char('g') => *scroll = 0,
-                    KeyCode::Char('G') => *scroll = usize::MAX,
-                    _ => {}
-                }
+                let source = reading.source.as_mut().unwrap();
+                source.scroll_key(key);
             }
         }
         true
@@ -150,10 +144,10 @@ impl Reader {
     pub fn is_open(&self) -> bool {
         self.active.is_some()
     }
-    pub(crate) fn viewing_source(&self) -> bool {
+    pub(crate) fn source_id(&self) -> Option<i32> {
         self.active
             .and_then(|id| self.readings.get(&id))
-            .is_some_and(|reading| reading.source.is_some())
+            .and_then(|reading| reading.source.as_ref().map(|source| source.id))
     }
     pub fn settings_open(&self) -> bool {
         self.settings.is_some()

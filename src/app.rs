@@ -1,7 +1,7 @@
 //! Application state management for HackerNews TUI
 
 use crate::{
-    comments::{ReplyBatch, Thread},
+    comments::Thread,
     feed_state::{self, FeedAction, FeedState, FeedStatus},
     theme::Theme,
     HNCLIItem,
@@ -119,7 +119,8 @@ pub struct App {
     /// Current page number
     pub current_page: u32,
     pub(crate) thread: Thread,
-    pending_replies: HashMap<i32, (u64, ReplyBatch)>,
+    pending_replies: HashMap<i32, comment_view_state::PendingReplies>,
+    citation_lookups: HashMap<i32, comment_view_state::CitationLookup>,
     /// Scroll offset for comments view
     pub comment_scroll: usize,
     pub discussion_story: Option<HNCLIItem>,
@@ -191,6 +192,7 @@ impl App {
             current_page: 1,
             thread: Self::empty_comment_thread(),
             pending_replies: HashMap::new(),
+            citation_lookups: HashMap::new(),
             comment_scroll: 0,
             discussion_story: None,
             show_links: false,
@@ -446,6 +448,7 @@ impl App {
     fn reset_comment_view_state(&mut self) {
         self.thread = Self::empty_comment_thread();
         self.pending_replies.clear();
+        self.citation_lookups.clear();
         self.comment_line_ranges.clear();
         self.comment_layout_width = 0;
         self.comment_anchor = None;

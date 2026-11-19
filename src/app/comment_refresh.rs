@@ -51,7 +51,9 @@ impl App {
         self.thread.replace_comments(&fresh);
         let rows = self.thread.rows();
         let visible: HashSet<_> = rows.iter().map(|row| row.id).collect();
-        self.pending_replies.retain(|id, _| visible.contains(id));
+        self.pending_replies.retain(|id, request| {
+            visible.contains(id) || request.for_source && self.thread.node(*id).is_some()
+        });
         if !selected.is_some_and(|id| visible.contains(&id)) {
             if let Some(row) = rows.get(old_index.unwrap_or(0).min(rows.len().saturating_sub(1))) {
                 self.thread.select(row.id);
@@ -63,13 +65,13 @@ impl App {
             .map(|id| (id, anchor.filter(|a| a.0 == id).map_or(0, |a| a.1)));
         self.refreshing_comments = false;
         self.clear_comment_status();
-        self.recompute_comment_loading(!self.pending_replies.is_empty());
+        self.update_reply_loading();
     }
 
     /// A refresh failure keeps the previous tree, selection, and passage readable.
     pub fn apply_comment_error(&mut self, error: String) {
         self.refreshing_comments = false;
         self.set_comment_error(error);
-        self.recompute_comment_loading(!self.pending_replies.is_empty());
+        self.update_reply_loading();
     }
 }

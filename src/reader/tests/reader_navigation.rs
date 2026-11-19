@@ -215,9 +215,9 @@ fn focused_citation_token_is_visible_after_wrapping_and_source_comparison() {
         p.key(KeyCode::Enter);
         assert!(screen(&mut p, &mut app, w, h).contains("source 3 of 3 · third · Fast"));
         p.key(KeyCode::PageDown);
-        assert!(p.readings[&1].source_scroll > 0);
+        assert!(p.readings[&1].source.as_ref().unwrap().scroll > 0);
         p.key(KeyCode::Tab);
-        assert_eq!(p.readings[&1].source_scroll, 0);
+        assert_eq!(p.readings[&1].source.as_ref().unwrap().scroll, 0);
         assert!(screen(&mut p, &mut app, w, h).contains("source 1 of 3 · reply · Fast"));
         p.key(KeyCode::BackTab);
         assert!(screen(&mut p, &mut app, w, h).contains("Third evidence."));
@@ -349,7 +349,7 @@ fn reader_chip_table_and_chrome_use_theme_roles() {
                     ..attempt
                 })
             }
-            "source" => r.source = Some(11),
+            "source" => r.source = Some(SourceView::new(11)),
             _ => {}
         }
         let mut app = comments_app();
@@ -597,7 +597,7 @@ fn citation_focus_suppresses_comment_selection_until_comment_navigation() {
     let mut terminal = Terminal::new(TestBackend::new(100, 40)).unwrap();
     for (key, selected, source) in [
         (KeyCode::Tab, false, false),
-        (KeyCode::Enter, false, true),
+        (KeyCode::Enter, true, true),
         (KeyCode::Esc, false, false),
         (KeyCode::Char('j'), true, false),
     ] {
@@ -1177,7 +1177,7 @@ fn esc_in_source_view_keeps_the_pane_open() {
     });
     {
         let reading = p.readings.get_mut(&1).unwrap();
-        reading.source = Some(11);
+        reading.source = Some(SourceView::new(11));
     }
     assert!(p.key(KeyCode::Esc));
     assert!(

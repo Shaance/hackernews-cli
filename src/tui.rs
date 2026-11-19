@@ -4,7 +4,7 @@
 //! This is the terminal front end, not part of the reader boundary. A non-terminal
 //! front end binds to [`crate::reader`] and [`crate::feed_state`] instead of this module.
 use crate::{
-    app::{App, StoryType, View},
+    app::{comment_view_state::CommentRequest, App, StoryType, View},
     event::{handle_comments_key, handle_stories_key, CommentAction, StoryAction},
     reader, reader_actions,
     url_open::open_story_url,
@@ -34,6 +34,7 @@ pub enum AppMessage {
         view_generation: u64,
         result: Result<Vec<crate::app::Comment>>,
     },
+    // The same item-fetch response also carries an individual citation lookup.
     CommentChildren {
         story_id: i32,
         view_generation: u64,
@@ -71,11 +72,27 @@ pub async fn run_app(
     let mut events = EventStream::new();
     let started = Instant::now();
     const FRAME_MS: u64 = 80;
+    let apply = |app: &mut App, reader: &reader::Reader, message| {
+        let comments_arrived = matches!(&message, AppMessage::Comments { story_id, view_generation, .. }
+            if is_current_comments_view(app, *story_id, *view_generation));
+        let request = handle_app_message(app, message).or_else(|| {
+            if comments_arrived {
+                app.request_citation(reader.source_id()?, false)
+            } else {
+                None
+            }
+        });
+        if let Some(request) = request {
+            spawn_comment_request(app, request, &tx, &service);
+        }
+    };
 
     loop {
         // Render UI
         summaries.poll();
-        drain_app_messages(app, rx);
+        while let Ok(message) = rx.try_recv() {
+            apply(app, summaries, message);
+        }
         let frame = (started.elapsed().as_millis() / u128::from(FRAME_MS)) as u64;
         terminal.draw(|f| {
             if summaries.is_open() {
@@ -119,7 +136,7 @@ pub async fn run_app(
                 event?
             }
             Some(message) = rx.recv() => {
-                handle_app_message(app, message);
+                apply(app, summaries, message);
                 continue;
             }
             _ = sleep_until(deadline.unwrap_or(now).into()), if deadline.is_some() => {
@@ -359,24 +376,8 @@ pub(crate) async fn handle_comment_action(
             }
         }
         CommentAction::ToggleExpand => {
-            let active_story_id = match &app.view {
-                View::Comments { story_id, .. } => *story_id,
-                View::Stories => return Ok(()),
-            };
-            let view_generation = app.comment_view_generation();
-            if let Some((comment_id, child_load_generation, ids)) = app.toggle_comment_replies() {
-                let depth =
-                    app.thread.tree_depth(comment_id).expect("selected comment") as usize + 1;
-                tokio::spawn(async move {
-                    let result = service.fetch_comment_children(&ids, depth).await;
-                    let _ = tx.send(AppMessage::CommentChildren {
-                        story_id: active_story_id,
-                        view_generation,
-                        comment_id,
-                        child_load_generation,
-                        result,
-                    });
-                });
+            if let Some(request) = app.toggle_comment_replies() {
+                spawn_comment_request(app, request, &tx, &service);
             }
         }
         CommentAction::CollapseThread => {
@@ -402,8 +403,35 @@ pub(crate) async fn handle_comment_action(
     Ok(())
 }
 
-/// Handle messages from async tasks
-pub(crate) fn handle_app_message(app: &mut App, msg: AppMessage) {
+pub(crate) fn spawn_comment_request(
+    app: &App,
+    (comment_id, child_load_generation, ids): CommentRequest,
+    tx: &mpsc::UnboundedSender<AppMessage>,
+    service: &HackerNewsCliServiceImpl,
+) {
+    let View::Comments { story_id, .. } = app.view else {
+        return;
+    };
+    let view_generation = app.comment_view_generation();
+    let depth = app
+        .thread
+        .tree_depth(comment_id)
+        .map_or(0, |depth| depth as usize + 1);
+    let (tx, service) = (tx.clone(), service.clone());
+    tokio::spawn(async move {
+        let result = service.fetch_comment_children(&ids, depth).await;
+        let _ = tx.send(AppMessage::CommentChildren {
+            story_id,
+            view_generation,
+            comment_id,
+            child_load_generation,
+            result,
+        });
+    });
+}
+
+/// Apply a current response and return any reply request discovered by a citation lookup.
+pub(crate) fn handle_app_message(app: &mut App, msg: AppMessage) -> Option<CommentRequest> {
     match msg {
         AppMessage::Stories {
             story_type,
@@ -412,7 +440,7 @@ pub(crate) fn handle_app_message(app: &mut App, msg: AppMessage) {
             result,
         } => {
             if !app.is_current_story_request(story_type, page, request_generation) {
-                return;
+                return None;
             }
 
             match result {
@@ -430,7 +458,7 @@ pub(crate) fn handle_app_message(app: &mut App, msg: AppMessage) {
             result,
         } => {
             if !is_current_comments_view(app, story_id, view_generation) {
-                return;
+                return None;
             }
 
             match result {
@@ -446,18 +474,13 @@ pub(crate) fn handle_app_message(app: &mut App, msg: AppMessage) {
             result,
         } => {
             if !is_current_comments_view(app, story_id, view_generation) {
-                return;
+                return None;
             }
 
-            app.apply_comment_replies(comment_id, child_load_generation, result);
+            return app.apply_comment_replies(comment_id, child_load_generation, result);
         }
     }
-}
-
-fn drain_app_messages(app: &mut App, rx: &mut mpsc::UnboundedReceiver<AppMessage>) {
-    while let Ok(msg) = rx.try_recv() {
-        handle_app_message(app, msg);
-    }
+    None
 }
 
 pub(crate) fn toggle_bookmark(app: &mut App, path: Option<&Path>) {

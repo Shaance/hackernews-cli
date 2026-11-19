@@ -39,6 +39,7 @@ pub enum BranchStatus {
 /// One comment in the thread.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Node {
+    detached: bool,
     /// Unreadable parents remain as reply controls; unreadable leaves have no visible row.
     pub readable: bool,
     pub author: String,
@@ -174,6 +175,7 @@ impl Thread {
                 (
                     comment.id,
                     Node {
+                        detached: false,
                         readable,
                         author: if readable {
                             comment.author.clone()
@@ -252,11 +254,28 @@ impl Thread {
         self.node(id).is_some_and(|node| node.replies_loaded)
     }
 
-    /// Every branch whose replies are in memory, open or folded.
+    /// Cache a citation whose branch the discussion has yet to open.
+    pub(crate) fn cache_citation(&mut self, comment: &Comment) {
+        self.nodes.entry(comment.id).or_insert_with(|| {
+            let mut node = Thread::from_comments(
+                std::slice::from_ref(comment),
+                self.visible_levels,
+                self.reply_batch_size,
+            )
+            .nodes
+            .remove(&comment.id)
+            .unwrap();
+            node.detached = true;
+            node
+        });
+    }
+
+    /// Every discussion branch whose replies are in memory, open or folded. A detached citation
+    /// belongs to the source view until the discussion attaches it, so refresh leaves it out.
     pub(crate) fn loaded_branches(&self) -> std::collections::HashSet<i32> {
         self.nodes
             .iter()
-            .filter(|(_, node)| node.replies_loaded)
+            .filter(|(_, node)| node.replies_loaded && !node.detached)
             .map(|(id, _)| *id)
             .collect()
     }
@@ -359,7 +378,7 @@ impl Thread {
             .known_children
             .iter()
             .filter(|id| {
-                !self.nodes.contains_key(id)
+                self.nodes.get(id).is_none_or(|child| child.detached)
                     && if retry {
                         failed.contains(id)
                     } else {
@@ -397,6 +416,13 @@ impl Thread {
             if let std::collections::hash_map::Entry::Vacant(entry) = self.nodes.entry(id) {
                 node.parent = Some(parent);
                 entry.insert(node);
+            }
+        }
+        for id in requested {
+            if let Some(child) = self.nodes.get_mut(id).filter(|child| child.detached) {
+                // A cited comment can already be cached as a detached node.
+                child.parent = Some(parent);
+                child.detached = false;
             }
         }
         // The parent is temporarily owned here but still counts as a loaded ID.
@@ -529,6 +555,18 @@ impl Thread {
         std::mem::swap(&mut self.root, &mut nav.root);
         std::mem::swap(&mut self.folded, &mut nav.folded);
         std::mem::swap(&mut self.focus, &mut nav.focus);
+        result
+    }
+
+    pub(crate) fn with_source_navigation<T>(
+        &mut self,
+        nav: &mut Navigation,
+        levels: u32,
+        f: impl FnOnce(&mut Self) -> T,
+    ) -> T {
+        let previous = self.visible_levels.replace(levels);
+        let result = self.with_navigation(nav, f);
+        self.visible_levels = previous;
         result
     }
 
@@ -956,6 +994,19 @@ mod tests {
 
     fn thread() -> Thread {
         from_comments(&deep_comments())
+    }
+
+    #[test]
+    fn a_detached_citation_stays_out_of_the_refresh_set_until_attached() {
+        let mut thread = from_comments(&[comment(1, &[2, 3]), comment(2, &[])]);
+        thread.cache_citation(&comment(3, &[4]));
+        let batch = thread.reply_batch(3, false).unwrap();
+        thread.merge_replies(&batch, Ok(vec![comment(4, &[])]));
+        assert!(thread.replies_loaded(3));
+        assert!(!thread.loaded_branches().contains(&3));
+        let batch = thread.reply_batch(1, false).unwrap();
+        thread.merge_replies(&batch, Ok(vec![comment(3, &[4])]));
+        assert!(thread.loaded_branches().contains(&3));
     }
 
     fn ids(rows: &[Row]) -> Vec<i32> {
