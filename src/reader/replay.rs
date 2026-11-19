@@ -19,7 +19,12 @@ async fn terminal() {
             ..Default::default()
         },
     ));
+    let theme = Theme {
+        motion: false,
+        ..Theme::TRUE_DARK
+    };
     let mut reader = Reader {
+        theme,
         config: Config {
             api_key: "replay-only".into(),
             ..Default::default()
@@ -33,7 +38,7 @@ async fn terminal() {
         },
         ..Reader::default()
     };
-    let mut app = App::new();
+    let mut app = App::with_theme(theme);
     let mut bookmark_path = crate::bookmarks::reload(&mut app);
     let (tx, mut rx) = mpsc::unbounded_channel();
     crate::tui::request_stories(&mut app, tx.clone(), service.clone(), false);

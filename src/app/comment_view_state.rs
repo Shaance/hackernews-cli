@@ -1,4 +1,7 @@
-use super::App;
+use super::{App, Thread};
+
+pub(crate) const COMMENT_PREFIX: u16 = 2;
+pub(crate) const COMMENT_INDENT: u16 = 2;
 
 /// A normalized Hacker News comment, with reply IDs in HN order.
 #[derive(Debug, Clone)]
@@ -13,6 +16,12 @@ pub struct Comment {
 }
 
 impl App {
+    pub(super) fn empty_comment_thread() -> Thread {
+        let mut thread = Thread::empty(None, usize::MAX);
+        thread.toggle_focus();
+        thread
+    }
+
     pub fn next_comment(&mut self) {
         self.follow_comment_selection = true;
         self.thread.next();
@@ -25,12 +34,16 @@ impl App {
 
     pub fn next_comment_sibling(&mut self) {
         self.follow_comment_selection = true;
-        self.thread.next_sibling();
+        if self.thread.root().is_none() || self.thread.cursor() != self.thread.root() {
+            self.thread.next_sibling();
+        }
     }
 
     pub fn prev_comment_sibling(&mut self) {
         self.follow_comment_selection = true;
-        self.thread.prev_sibling();
+        if self.thread.root().is_none() || self.thread.cursor() != self.thread.root() {
+            self.thread.prev_sibling();
+        }
     }
 
     pub fn parent_comment(&mut self) {
@@ -65,7 +78,31 @@ impl App {
         if self.comment_layout_width != width {
             self.comment_anchor = self.comment_anchor.or_else(|| self.comment_scroll_anchor());
             self.comment_layout_width = width;
+            let selected = self.thread.cursor();
+            self.thread
+                .set_visible_levels(self.comment_visible_levels());
+            self.follow_comment_selection |= self.thread.cursor() != selected;
         }
+    }
+
+    pub(super) fn comment_visible_levels(&self) -> u32 {
+        if self.comment_layout_width == 0 {
+            return 6;
+        }
+        let text_width = self.comment_layout_width.saturating_sub(COMMENT_PREFIX);
+        u32::from((text_width.saturating_sub(60) / COMMENT_INDENT + 1).clamp(2, 6))
+    }
+
+    pub(crate) fn pop_comment_trail(&mut self) {
+        if self.thread.root().is_some() && self.thread.pop_trail() {
+            self.follow_comment_selection = true;
+        }
+    }
+
+    pub(crate) fn can_continue_thread(&self) -> bool {
+        self.thread
+            .cursor()
+            .is_some_and(|id| self.thread.capped(id))
     }
 
     /// Update scroll offset (in lines) based on selected comment and viewport height
@@ -115,10 +152,15 @@ impl App {
         self.follow_comment_selection = true;
         let mut current = self.thread.cursor();
         while let Some(id) = current {
-            if self.comment_replies_pending(id) || self.comment_replies_open(id) {
-                self.thread.select(id);
+            if !self.thread.capped(id)
+                && (self.comment_replies_pending(id) || self.comment_replies_open(id))
+                && self.thread.select(id)
+            {
                 self.fold_comment(id);
                 return;
+            }
+            if Some(id) == self.thread.root() {
+                break;
             }
             current = self.thread.parent_of(id);
         }
@@ -144,11 +186,18 @@ impl App {
     /// Toggle cached replies, or return the IDs and token for a new request.
     pub(crate) fn toggle_comment_replies(&mut self) -> Option<(i32, u64, Vec<i32>)> {
         let id = self.thread.cursor()?;
+        let continuing = self.thread.capped(id);
+        if continuing {
+            self.thread.activate();
+            self.follow_comment_selection = true;
+        }
         if self.comment_replies_pending(id) {
             return None;
         }
         if self.comment_replies_open(id) {
-            self.fold_comment(id);
+            if !continuing {
+                self.fold_comment(id);
+            }
             return None;
         }
         if self.thread.is_folded(id) {

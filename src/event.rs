@@ -48,6 +48,7 @@ pub fn handle_comments_key(key: KeyCode) -> CommentAction {
         KeyCode::Char(']') => CommentAction::NextSibling,
         KeyCode::Char('[') => CommentAction::PrevSibling,
         KeyCode::Char('u') => CommentAction::Parent,
+        KeyCode::Backspace => CommentAction::PopTrail,
         KeyCode::Char('g') => CommentAction::FirstComment,
         KeyCode::Char('G') => CommentAction::LastComment,
         KeyCode::PageDown | KeyCode::Char(' ') => CommentAction::PageDown,
@@ -58,13 +59,15 @@ pub fn handle_comments_key(key: KeyCode) -> CommentAction {
         KeyCode::Char('c') => CommentAction::CollapseThread,
 
         // Actions
-        KeyCode::Char('o') => CommentAction::OpenUrl,
+        KeyCode::Char('o') => CommentAction::ContinueOrOpen,
+        KeyCode::Char('O') => CommentAction::OpenUrl,
         KeyCode::Char('L') => CommentAction::ShowLinks,
         KeyCode::Char('s') => CommentAction::ToggleBookmark,
         KeyCode::Char('r') => CommentAction::Refresh,
 
         // UI
         KeyCode::Char('?') => CommentAction::ToggleHelp,
+        KeyCode::Char('f') => CommentAction::ToggleFocus,
         KeyCode::Char('q') | KeyCode::Esc | KeyCode::Char('h') | KeyCode::Left => {
             CommentAction::Back
         }
@@ -104,13 +107,16 @@ pub enum CommentAction {
     NextSibling,
     PrevSibling,
     Parent,
+    PopTrail,
     ToggleExpand,
     CollapseThread,
+    ContinueOrOpen,
     OpenUrl,
     ShowLinks,
     ToggleBookmark,
     Refresh,
     ToggleHelp,
+    ToggleFocus,
     Back,
     None,
 }

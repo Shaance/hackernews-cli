@@ -649,6 +649,8 @@ fn reader_help_keys_match_handlers_and_use_accent() {
         ("c", &[Char('c')]),
         ("[/]", &[Char('['), Char(']')]),
         ("u", &[Char('u')]),
+        ("Backspace", &[Backspace]),
+        ("f", &[Char('f')]),
         ("g/G", &[Char('g'), Char('G')]),
         ("S", &[Char('S')]),
         ("J/K", &[Char('J'), Char('K')]),
@@ -682,16 +684,10 @@ fn reader_help_keys_match_handlers_and_use_accent() {
                 .unwrap_or_else(|| panic!("missing {label}"));
             assert_eq!(cells.fg, theme.accent.fg.unwrap(), "{label}");
             for key in *keys {
-                if *key == Char('O') {
-                    assert!(include_str!("../../reader_actions.rs")
-                        .contains("if key == KeyCode::Char('O')"));
-                } else {
-                    assert!(
-                        !matches!(handle_comments_key(*key), CommentAction::None)
-                            || ready().key(*key),
-                        "unhandled {key:?}"
-                    );
-                }
+                assert!(
+                    !matches!(handle_comments_key(*key), CommentAction::None) || ready().key(*key),
+                    "unhandled {key:?}"
+                );
             }
         }
     }

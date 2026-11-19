@@ -42,7 +42,7 @@ def run(binary, output, width, height):
         return int(match[1]) if match else 0
     def focus():
         return "".join(cell.data for row in app.screen.buffer.values() for cell in row.values()
-                       if cell.fg in ("brown", "cdcd00") and cell.underscore and cell.bold and not cell.reverse)
+                       if cell.fg == "f3b77b" and cell.underscore and cell.bold and not cell.reverse)
     def passage():
         return [(row, int(m[1])) for row, line in enumerate(app.screen.display)
                 if (m := re.search(r"Synthetic passage (\d+)", line))]
@@ -207,7 +207,7 @@ def run(binary, output, width, height):
         app.key("rg")
         app.wait(lambda t: count() == 43)
         app.key("c")
-        app.wait(lambda t: "+ 3 replies" in t and count() == initial)
+        app.wait(lambda t: "+ 4 replies" in t and count() == initial)
         app.key("\r")
         app.wait(lambda t: count() == 43)
         app.key("j\x1b[6~")
@@ -245,6 +245,66 @@ def run(binary, output, width, height):
         app.wait(lambda t: "revision 3" in t and "Failed to load comments" not in t)
         assert passage() == continued and len(fixture.calls) == 5
         capture("15-refresh-recovered")
+
+        # Load one branch past the cap without changing the recorded summary inputs.
+        base = 90000100
+        cap = max(2, min(6, (width - 2 - 60) // 2 + 1))
+        def chain_author(level):
+            return f"chain_author_{level:02}"
+
+        records[0:0] = [
+            {"id": base + level, "parent": base + level - 1 if level > 1 else None,
+             "author": chain_author(level), "text": f"Synthetic chain level {level}."}
+            for level in range(1, 13)
+        ] + [{"id": base + 20, "parent": base + 1, "author": "chain_side",
+              "text": "Synthetic sibling outside the selected chain."}]
+        app.key("rg")
+        app.wait(lambda t: count() == 45)
+        app.key("g\r")
+        app.wait(lambda t: "chain_side" in t)
+        app.key("j")
+        selected(chain_author(2), 1)
+        side_row = next(i for i, line in enumerate(app.screen.display) if "│ chain_side  " in line)
+        assert app.screen.buffer[side_row][4].fg == "e1e5e5"
+        app.key("f")
+        assert app.screen.buffer[side_row][4].fg == "a1acb0", "Focus did not dim the sibling"
+        selected_row = next(i for i, line in enumerate(app.screen.display)
+                            if line.startswith(f"▎ │ {chain_author(2)}  "))
+        assert app.screen.buffer[selected_row][4].fg == "e1e5e5", "Focus dimmed the selected chain"
+        capture("15a-thread-focus")
+        app.key("f")
+        assert app.screen.buffer[side_row][4].fg == "e1e5e5"
+        for level in range(3, cap + 1):
+            app.key("\r")
+            app.wait(lambda t: f"{chain_author(level)}  " in t)
+            app.key("j")
+        selected(chain_author(cap), cap - 1)
+        assert "continue thread → 1 reply" in app.text()
+        assert f"{chain_author(cap + 1)}  " not in app.text()
+        capture("15b-thread-cap")
+        app.key("\r")
+        app.wait(lambda t: f"{chain_author(cap + 1)}  " in t and f"› {chain_author(cap)}" in t)
+        selected(chain_author(cap), 0)
+        expected_trail = " › ".join(chain_author(level) for level in range(1, cap + 1))
+        if len(expected_trail) > width:
+            expected_trail = "…" + expected_trail[-(width - 1):]
+        assert any(line.rstrip() == expected_trail for line in app.screen.display)
+        capture("15c-thread-trail")
+        app.key("\x7f")
+        selected(chain_author(cap - 1), 0)
+        assert any(line.rstrip().endswith(chain_author(cap - 1)) for line in app.screen.display)
+        capture("15d-thread-backspace")
+        app.key("jj")
+        for level in range(cap + 2, 2 * cap - 1):
+            app.key("\r")
+            app.wait(lambda t: f"{chain_author(level)}  " in t)
+            app.key("j")
+        selected(chain_author(2 * cap - 2), cap - 1)
+        app.key("o")
+        app.wait(lambda t: f"{chain_author(2 * cap - 1)}  " in t)
+        selected(chain_author(2 * cap - 2), 0)
+        capture("15e-thread-o")
+
         app.key("\x1b")
         app.wait(lambda t: "4 Saved" in t)
         app.key("1")
@@ -276,13 +336,14 @@ def run(binary, output, width, height):
         app.quit()
         assert not fixture.errors, fixture.errors
         receipt = {"size": [width, height], "provider_calls": fixture.calls,
+                   "visible_thread_levels": cap,
                    "reply_counts": [initial, expanded, collapsed], "captures": captured,
                    "reply_get_counts": {"reopen": dict(reopen), "late_after_collapse": dict(late)},
                    "passage_anchors": {"before_refresh": before[0], "during_and_after_refresh": continued[0]},
                    "hn_get_counts": {path: fixture.gets.count(path) for path in sorted(set(fixture.gets))},
                    "exit": "clean", "network": "Loopback fixtures; external HTTP blocked"}
         (output / "result.json").write_text(json.dumps(receipt, indent=2) + "\n")
-        print(f"PASS {width}×{height}: recorded Fast, partial failure, independent Thorough, source cycling, explicit retry, refreshed passage, feed/Saved continuity, clean exit", flush=True)
+        print(f"PASS {width}×{height}: recorded summaries, comment refresh, {cap}-level cap, trail, focus, feed/Saved continuity, clean exit", flush=True)
     except BaseException:
         (output / "requests.json").write_text(json.dumps(fixture.calls, indent=2))
         capture("failure")

@@ -150,6 +150,11 @@ impl Reader {
     pub fn is_open(&self) -> bool {
         self.active.is_some()
     }
+    pub(crate) fn viewing_source(&self) -> bool {
+        self.active
+            .and_then(|id| self.readings.get(&id))
+            .is_some_and(|reading| reading.source.is_some())
+    }
     pub fn settings_open(&self) -> bool {
         self.settings.is_some()
     }
