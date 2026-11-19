@@ -188,29 +188,45 @@ pub fn render_help(f: &mut Frame, theme: Theme, in_comments: bool, opened: Optio
             ),
         ]
     } else {
-        &[
-            (
-                "STORIES",
-                &[
-                    ("j/k/↑/↓", "Select story"),
-                    ("g/G", "First/last story"),
-                    ("n/p/→/←", "Page"),
-                    ("Space/PgDn", "Next page"),
-                    ("1", "Top"),
-                    ("2", "New"),
-                    ("3", "Best"),
-                    ("4", "Saved"),
-                    ("Enter/o", "Read"),
-                    ("O", "Browser"),
-                    ("c", "Comments"),
-                    ("s", "Save/unsave"),
-                    ("r", "Refresh/retry"),
-                ],
-            ),
-            ("ANYWHERE", &[("q", "Quit"), ("?", "Close")]),
-        ]
+        render_feed_help(f, theme, opened, None);
+        return;
     };
     render_key_groups(f, theme, opened, groups);
+}
+
+pub(crate) fn render_feed_help(
+    f: &mut Frame,
+    theme: Theme,
+    opened: Option<Instant>,
+    arrows: Option<&'static str>,
+) {
+    let mut stories = vec![("j/k/↑/↓", "Select story"), ("g/G", "First/last story")];
+    if let Some(label) = arrows {
+        stories.extend([("←/→", label), ("n/p", "Page"), ("PgUp", "Previous page")]);
+    } else {
+        stories.push(("n/p/→/←", "Page"));
+    }
+    stories.extend([
+        ("Space/PgDn", "Next page"),
+        ("1", "Top"),
+        ("2", "New"),
+        ("3", "Best"),
+        ("4", "Saved"),
+        ("Enter/o", "Read"),
+        ("O", "Browser"),
+        ("c", "Comments"),
+        ("s", "Save/unsave"),
+        ("r", "Refresh/retry"),
+    ]);
+    render_key_groups(
+        f,
+        theme,
+        opened,
+        &[
+            ("STORIES", &stories),
+            ("ANYWHERE", &[("q", "Quit"), ("?", "Close")]),
+        ],
+    );
 }
 
 pub(crate) fn render_source_help(f: &mut Frame, theme: Theme, opened: Option<Instant>) {
@@ -337,6 +353,17 @@ pub fn hint_line(
     line
 }
 
+pub(crate) fn feed_arrow_hint(width: u16, app: &App) -> Option<&'static str> {
+    (super::stories::feed_columns(width) == 2).then(|| {
+        if app.snapshot.is_some() || app.displayed_story_context().0 == crate::app::StoryType::Saved
+        {
+            "column"
+        } else {
+            "column / page"
+        }
+    })
+}
+
 /// Render status bar for stories view
 pub fn render_stories_status(area: Rect, app: &App, _tick: usize) -> Paragraph<'static> {
     let theme = app.theme();
@@ -351,6 +378,9 @@ pub fn render_stories_status(area: Rect, app: &App, _tick: usize) -> Paragraph<'
         ("s", "save"),
         ("?", "keys"),
     ];
+    if let Some(label) = feed_arrow_hint(area.width, app) {
+        hints.push(("←/→", label));
+    }
     if app.snapshot.is_none() && app.displayed_story_context().0 != crate::app::StoryType::Saved {
         hints.push(("n/p", "page"));
         if app.selected_index == 0 && app.current_page > 1 {

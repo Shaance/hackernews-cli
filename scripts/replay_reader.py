@@ -1,13 +1,16 @@
 """Drive the real terminal loop against recorded HN and model responses."""
 import argparse
 from collections import Counter
+import fcntl
 import html
 import json
 import os
 from pathlib import Path
 import re
+import struct
 import subprocess
 import tempfile
+import termios
 from threading import Event
 from reader_fixture import ReaderFixture
 from terminal_capture import ROOT, TUI
@@ -49,7 +52,7 @@ def run(binary, output, width, height):
 
     def selected(author, depth):
         header = f"▎ {'│ ' * depth}{author}  "
-        assert any(line.startswith(header) for line in app.screen.display), f"Expected selected comment {author} at depth {depth}"
+        app.wait(lambda text: any(line.startswith(header) for line in text.splitlines()))
 
     try:
         app.wait(lambda t: "Nordwand Mono" in t and "123 points" in t)
@@ -374,7 +377,7 @@ def run(binary, output, width, height):
             app.wait(lambda t: re.search(rf"Page {page}  $", t, re.M) and f"Synthetic feed control {(page - 1) * 20 + 1:02}" in t)
         app.key("j" * 19 + "s")
         app.wait(lambda t: "▎  60  Synthetic feed control 60 ★" in t)
-        feed = app.text().splitlines()[2:-2]
+        feed = app.text().splitlines()[3:-2]
         fixture.get_gates["/v0/newstories.json"] = Event()
         app.key("2")
         app.wait(lambda t: "1 Top" in t and re.search(r"Page 3  $", t, re.M) and re.search(r"fetching New p1  Page 3  $", t, re.M))
@@ -386,13 +389,92 @@ def run(binary, output, width, height):
         assert re.search(r"▎   2  .*Nordwand Mono", app.text()), "Saved insertion lost its selected story"
         app.key("k1")
         app.wait(lambda t: "1 Top" in t and re.search(r"Page 3  $", t, re.M) and "▎  60  Synthetic feed control 60 ★" in t)
-        assert app.text().splitlines()[2:-2] == feed, "Feed return lost its scroll position"
+        assert app.text().splitlines()[3:-2] == feed, "Feed return lost its scroll position"
         assert fixture.gets.count("/v0/topstories.json") == 3, "Feed return fetched again"
         capture("17-feed-restored")
         app.key("s4")
         app.wait(lambda t: "4 Saved" in t and "Synthetic feed control 60" not in t)
         assert re.search(r"▎   1  .*Nordwand Mono", app.text()), "Saved removal did not select the remaining story"
         capture("18-saved-current")
+
+        left, right = "\x1b[D", "\x1b[C"
+
+        def selected_story(rank, column):
+            marker = f"▎ {rank:>3}  "
+            app.wait(lambda text: any(marker in row and (row.index(marker) > 0) == column
+                                      for row in text.splitlines()))
+
+        def resize(columns):
+            app.screen.resize(lines=height, columns=columns)
+            fcntl.ioctl(app.fd, termios.TIOCSWINSZ, struct.pack("HHHH", height, columns, 0, 0))
+            app.wait(lambda text: ("←/→ column / page" in text) == (columns >= 160))
+
+        app.key("1")
+        selected_story(60, width >= 160)
+        if width < 160:
+            app.key(left)
+            selected_story(21, False)
+            app.key(right)
+            selected_story(41, False)
+            resize(160)
+        app.key("g" + right)
+        selected_story(51, True)
+        assert re.search(r"Page 3  $", app.text(), re.M)
+        capture("19-feed-right-column")
+        app.key(left + left)
+        selected_story(40, True)
+        assert re.search(r"Page 2  $", app.text(), re.M)
+        capture("20-feed-previous-edge")
+        app.key(right)
+        selected_story(41, False)
+        assert re.search(r"Page 3  $", app.text(), re.M)
+        capture("21-feed-next-edge")
+        app.key(right)
+        selected_story(51, True)
+        resize(159)
+        selected_story(51, False)
+        capture("22-feed-resize-narrow")
+        resize(160)
+        selected_story(51, True)
+        capture("23-feed-resize-wide")
+        assert fixture.gets.count("/v0/topstories.json") == 3, "Arrow paging or resize fetched a cached page"
+
+        app.key("ppg")
+        selected_story(1, False)
+        app.key("sj" * 19 + "sn")
+        selected_story(21, False)
+        app.key("s4")
+        app.wait(lambda t: "Nordwand Mono" in t and "←/→ column " in t)
+        selected_story(22, True)
+        app.key("g" + right)
+        selected_story(12, True)
+        assert "▎  12  Synthetic feed control 10" in app.text()
+        capture("24-saved-two-columns")
+        app.key(right)
+        selected_story(12, True)
+        app.key("s")
+        selected_story(12, True)
+        assert "▎  12  Synthetic feed control 09" in app.text()
+        assert "Synthetic feed control 10" not in app.text()
+        capture("25-saved-after-removal")
+        assert fixture.gets.count("/v0/topstories.json") == 3, "Saved unexpectedly fetched a page"
+
+        app.key("1pgc")
+        app.wait(lambda t: count() == 2 and "ordinary_sibling  " in t)
+        app.key("g\r")
+        app.wait(lambda t: count() == 3)
+        selected("ordinary_parent", 0)
+        parent_row = next(i for i, line in enumerate(app.screen.display) if "ordinary_parent  " in line)
+        app.key("j")
+        selected("ordinary_reply", 1)
+        assert any(line.rstrip() == "ordinary_parent › ordinary_reply" for line in app.screen.display)
+        assert "ordinary_parent  " in app.screen.display[parent_row], "Trail changed the position of the discussion"
+        capture("26-discussion-ordinary-trail")
+        app.key("\x7f")
+        selected("ordinary_parent", 0)
+        app.wait(lambda t: count() == 2 and "ordinary_sibling  " not in t)
+        assert "ordinary_parent › ordinary_reply" not in app.text()
+        capture("27-discussion-ordinary-backspace")
         app.quit()
         assert not fixture.errors, fixture.errors
         receipt = {"size": [width, height], "provider_calls": fixture.calls,

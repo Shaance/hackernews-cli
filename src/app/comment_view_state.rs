@@ -113,7 +113,7 @@ impl App {
     }
 
     pub(crate) fn pop_comment_trail(&mut self) {
-        if self.thread.root().is_some() && self.thread.pop_trail() {
+        if self.thread.pop_trail() {
             self.follow_comment_selection = true;
         }
     }

@@ -151,12 +151,14 @@ fn render_comments_list(
     prefix: Option<Vec<Line<'static>>>,
     show_selection: bool,
 ) {
-    if app.thread.root().is_some() && !area.is_empty() {
-        let trail = trail_line(&app.thread, &app.thread.trail(), area.width);
-        f.render_widget(
-            Paragraph::new(trail).style(app.theme().dim),
-            Rect { height: 1, ..area },
-        );
+    if !area.is_empty() {
+        let trail = app.thread.trail();
+        if trail.len() > 1 {
+            f.render_widget(
+                Paragraph::new(trail_line(&app.thread, &trail, area.width)).style(app.theme().dim),
+                Rect { height: 1, ..area },
+            );
+        }
         area.y += 1;
         area.height -= 1;
     }

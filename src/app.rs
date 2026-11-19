@@ -114,7 +114,7 @@ pub struct App {
     /// Outgoing list (stories, selection, scroll) retained during the dip's
     /// out-phase so the old list fades away instead of the new one popping in
     pub outgoing_feed: Option<(Vec<HNCLIItem>, usize, usize)>,
-    /// Landing target for a j/k-triggered page switch, consumed by set_stories_for
+    /// Landing target for a selection-triggered page switch, consumed by set_stories_for
     pub page_landing: Option<PageLanding>,
     /// Current page number
     pub current_page: u32,
@@ -300,6 +300,46 @@ impl App {
         } else if self.selected_index >= self.story_scroll + visible_items {
             self.story_scroll = self.selected_index.saturating_sub(visible_items - 1);
         }
+    }
+
+    /// Move across the wide feed or turn at its outer edge.
+    pub(crate) fn move_across_feed(&mut self, right: bool) -> bool {
+        let count = self.stories.len();
+        if count == 0 || self.is_loading() || self.showing_stale_stories() {
+            return false;
+        }
+
+        let split = count.div_ceil(2);
+        match (right, self.selected_index < split) {
+            (true, true) if split < count => {
+                self.jump_selection(self.selected_index + split);
+                return false;
+            }
+            (false, false) => {
+                self.jump_selection(self.selected_index - split);
+                return false;
+            }
+            _ => {}
+        }
+        if self.story_type == StoryType::Saved {
+            return false;
+        }
+
+        let page = self.current_page;
+        if right {
+            self.next_page();
+        } else {
+            self.prev_page();
+        }
+        if self.current_page == page {
+            return false;
+        }
+        self.page_landing = Some(if right {
+            PageLanding::Start
+        } else {
+            PageLanding::End
+        });
+        true
     }
 
     /// Go to next page
@@ -559,6 +599,7 @@ impl App {
                     })
                     .map(|(index, _)| index)
             });
+        let outgoing_selection = (self.selected_index, self.story_scroll);
         self.remember_feed_position();
         let position = self
             .feed_positions
@@ -574,9 +615,9 @@ impl App {
         if let Some((prev_type, prev_page)) = self.stories_for {
             if prev_type != story_type || prev_page != page {
                 self.feed_switched = Some((Instant::now(), prev_type));
-                self.outgoing_feed =
-                    Some((self.stories.clone(), self.selected_index, self.story_scroll));
-                // A j/k-triggered page switch lands on the page edge instead
+                let (index, scroll) = outgoing_selection;
+                self.outgoing_feed = Some((self.stories.clone(), index, scroll));
+                // A selection-triggered page switch lands on the page edge instead
                 // of restoring a remembered position.
                 match self.page_landing.take() {
                     Some(PageLanding::Start) => {

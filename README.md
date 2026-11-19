@@ -141,8 +141,9 @@ Keys are case-sensitive: `s` saves a story, `S` controls its summary; `o` opens 
 | `j` / `↓` | Next story; at the last story, continues on the next page's first story |
 | `k` / `↑` | Previous story; at the first story, goes back to the previous page |
 | `g` / `G` | First / last story on the page |
-| `n` / `→` / `Space` / `PgDn` | Next page |
-| `p` / `←` / `PgUp` | Previous page |
+| `n` / `Space` / `PgDn` | Next page |
+| `p` / `PgUp` | Previous page |
+| `←` / `→` | Column / page on wide terminals, column in wide Saved, previous / next page on narrow terminals |
 | `1` / `2` / `3` | Top / New / Best stories |
 | `4` | Saved stories |
 | `s` | Save or unsave selected story |
@@ -153,6 +154,8 @@ Keys are case-sensitive: `s` saves a story, `S` controls its summary; `o` opens 
 | `?` | Toggle help |
 | `q` | Quit |
 
+At 160 columns and above, stories fill the left column first, then the right. Both columns scroll together. At the outside edge of a paged feed, `→` opens the first story of the next page and `←` opens the last story of the previous page.
+
 ### Discussion and summary
 
 | Key | Action |
@@ -160,6 +163,7 @@ Keys are case-sensitive: `s` saves a story, `S` controls its summary; `o` opens 
 | `j` / `↓`, `k` / `↑` | Next / previous comment |
 | `]` / `[` | Next / previous sibling thread |
 | `u` | Parent comment |
+| `Backspace` | Re-root a reply thread at its parent |
 | `g` / `G` | Top / bottom |
 | `Page Up` / `Page Down` | Previous / next screen of text |
 | `Enter` / `l` / `→` | Expand or collapse replies |
@@ -177,7 +181,7 @@ Keys are case-sensitive: `s` saves a story, `S` controls its summary; `o` opens 
 | `Esc` / `q` / `h` / `←` | Back from a source to the discussion, or from the discussion to the feed |
 | `?` | Toggle help |
 
-At the discussion depth limit, Enter or `o` continues the selected thread, Backspace goes up one step in the thread trail, and `f` toggles dimming of unrelated comments.
+Selecting a reply shows its ancestor trail above the discussion. Backspace moves to the parent and shows its thread. At the discussion depth limit, Enter or `o` continues the selected thread. Press `f` to toggle dimming of unrelated comments.
 While viewing a cited source, `j/k`, Page Up/Down, and `g/G` scroll its text. In the link picker, use `j/k` to select, Enter to open, and Esc to close.
 
 ## Local files
