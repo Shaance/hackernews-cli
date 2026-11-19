@@ -671,6 +671,8 @@ fn keyboard_return_to_root_then_pointer_selection_keeps_the_visible_row() {
         assert!(root.visible[3] > 0.0, "the returned parent is revealed");
         let reply = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("comment-9010")).unwrap();
         let [x, y, w, h] = reply.visible;
+        rt.pointer_move(x + w / 2.0 - 40.0, y + h / 2.0);
+        rt.frame(0.0);
         rt.pointer_move(x + w / 2.0, y + h / 2.0);
         rt.frame(0.05);
         rt.frame(0.1);
@@ -989,6 +991,43 @@ fn discussion_failure_is_explicit_retryable_and_does_not_generate_an_empty_summa
 }
 
 #[test]
+fn enter_and_o_toggle_discussion_comments_after_replies_land() {
+    for key in [rune::Key::Enter, rune::Key::Text("o".into())] {
+        let mut s = app(true, SavedView::in_memory());
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        s.headless = false;
+        assert!(s.story().unwrap().thread.children_of(901).is_empty());
+        press(&mut s, key.clone());
+        poll_until(&mut s, |s| s.story().unwrap().thread.children_of(901) == [9010, 9011]);
+        press(&mut s, key.clone());
+        assert!(s.story().unwrap().thread.is_folded(901), "{key:?} must fold after lazy replies land");
+
+        s.headless = true;
+        scene_comments(&mut s);
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.frame(0.0);
+        let [x, y, w, h] = rt.elements().iter().find(|e| e.key.as_deref() == Some("comment-text-901")).unwrap().visible;
+        rt.pointer_down(x + w / 2.0, y + h / 2.0);
+        rt.pointer_up(x + w / 2.0, y + h / 2.0);
+        rt.frame(0.0);
+
+        route(&mut rt, rune::Key::Text("h".into()));
+        assert!(rt.state.story().unwrap().thread.is_folded(901));
+        route(&mut rt, key.clone());
+        assert!(!rt.state.story().unwrap().thread.is_folded(901), "{key:?} must unfold with preloaded replies");
+        route(&mut rt, key.clone());
+        assert!(rt.state.story().unwrap().thread.is_folded(901), "{key:?} must fold with preloaded replies");
+        assert!(!rt.elements().iter().any(|e| e.key.as_deref() == Some("comment-9010") && !e.exiting));
+        route(&mut rt, rune::Key::Text("l".into()));
+        for _ in 0..3 { route(&mut rt, rune::Key::Down); }
+        assert_eq!(rt.state.story().unwrap().thread.cursor(), Some(901000));
+        route(&mut rt, key);
+        assert_eq!(rt.state.story().unwrap().thread.root(), Some(901000), "continue thread re-roots");
+    }
+}
+
+#[test]
 fn pending_replies_stay_folded_and_a_replaced_story_cannot_accept_them() {
     let mut s = app(true, SavedView::in_memory());
     s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
@@ -1025,3 +1064,62 @@ fn pending_replies_stay_folded_and_a_replaced_story_cannot_accept_them() {
     assert_eq!(s.story.as_ref().unwrap().thread.len(), 5);
 }
 
+
+/// The user's mixed sequence: the pointer rests over the discussion while Enter expands a
+/// comment, its replies draw under the pointer, the hand nudges the trackpad, and Enter again
+/// should fold the comment it expanded.
+#[test]
+fn a_resting_pointer_does_not_take_the_selection_from_enter() {
+    for (nudge, focus) in [(0.0, true), (1.0, true), (1.0, false)] {
+        let mut s = app(true, SavedView::in_memory());
+        scene_comments(&mut s);
+        let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+        rt.on_key = Some(on_key);
+        rt.frame(0.0);
+        if !focus { route(&mut rt, rune::Key::Text("f".into())); }
+        let reply = |rt: &rune::Runtime<App>| rt.elements().iter()
+            .find(|e| e.key.as_deref() == Some("comment-9010") && !e.exiting).map(|e| e.visible);
+        let [x, y, w, h] = reply(&rt).expect("9010 drawn while 901 is open");
+        let (px, py) = (x + w / 2.0, y + h / 2.0);
+        rt.state.story_mut().unwrap().with_thread(|t| { t.select(901); t.fold(); });
+        rt.frame(0.3);
+        rt.pointer_move(px, py);
+        rt.frame(0.3);
+        rt.state.story_mut().unwrap().with_thread(|t| { t.select(901); });
+        rt.frame(0.3);
+        route(&mut rt, rune::Key::Enter);
+        for _ in 0..10 { rt.frame(0.1); }
+        assert!(!rt.state.story().unwrap().thread.is_folded(901));
+        if nudge > 0.0 { rt.pointer_move(px, py + nudge); rt.frame(0.1); }
+        let cursor = rt.state.story().unwrap().thread.cursor();
+        route(&mut rt, rune::Key::Enter);
+        assert!(rt.state.story().unwrap().thread.is_folded(901),
+            "nudge {nudge} focus {focus}: second Enter must fold 901; cursor was {cursor:?}");
+    }
+}
+
+#[test]
+fn keyboard_selection_survives_pointer_jitter_in_discussion() {
+    let mut s = app(true, SavedView::in_memory());
+    scene_comments(&mut s);
+    let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
+    rt.on_key = Some(on_key);
+    rt.frame(0.0);
+    let cursor = |rt: &rune::Runtime<App>| rt.state.story().unwrap().thread.cursor();
+    let [x, y, w, h] = rt.elements().iter()
+        .find(|e| e.key.as_deref() == Some("comment-901")).unwrap().visible;
+    let (px, py) = (x + w / 2.0, y + h / 2.0);
+    rt.pointer_move(px, py);
+    rt.frame(0.0);
+
+    for (key, expected, nudge) in [("j", 9010, 1.0), ("j", 90100, 2.0), ("k", 9010, 3.0)] {
+        route(&mut rt, rune::Key::Text(key.into()));
+        assert_eq!(cursor(&rt), Some(expected));
+        rt.pointer_move(px + nudge, py);
+        rt.frame(0.1);
+        assert_eq!(cursor(&rt), Some(expected), "{key} keeps selection after a 1 pt nudge");
+    }
+    rt.pointer_move(px + 43.0, py);
+    rt.frame(0.1);
+    assert_eq!(cursor(&rt), Some(901));
+}

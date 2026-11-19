@@ -72,9 +72,17 @@ impl App {
                     | StoryKey::Unfold | StoryKey::FirstComment | StoryKey::LastComment | StoryKey::PopTrail
                     | StoryKey::Enter | StoryKey::Back | StoryKey::Focus) {
                 self.keyboard_selection = true;
+                self.keyboard_pointer_anchor = Some(self.pointer_position);
             }
             self.hints.snap(1.0);
         }
+    }
+
+    pub(crate) fn pointer_can_select(&mut self, ev: rune::PointerEvent) -> bool {
+        if !self.keyboard_selection { return true; }
+        let Some(anchor) = &mut self.keyboard_pointer_anchor else { return true; };
+        let (x, y) = *anchor.get_or_insert((ev.window_x, ev.window_y));
+        (ev.window_x - x).hypot(ev.window_y - y) > 6.0
     }
 
     pub(crate) fn pointer_wheel(s: &mut App, ev: rune::WheelEvent, _: &mut Tx) -> bool {

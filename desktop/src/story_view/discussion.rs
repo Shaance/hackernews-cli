@@ -228,7 +228,11 @@ pub(super) fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme
             let changed = story.with_thread(|thread| thread.cursor() != Some(id) && thread.select(id));
             if changed { s.keyboard_selection = tx.by_keys(); }
         }
-    }).on_pointer_move_local(move |s: &mut App, _, tx| {
+    }).on_pointer_move_local(move |s: &mut App, ev, tx| {
+        if !s.pointer_can_select(ev) {
+            tx.live_only();
+            return;
+        }
         if let Some(story) = s.story_mut() {
             let changed = story.with_thread(|thread| thread.focus() && thread.cursor() != Some(id) && thread.select(id));
             if changed && !context { story.clear_citation_focus(); }

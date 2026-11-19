@@ -9,6 +9,31 @@ use super::super::window::view;
 use super::support::*;
 
 #[test]
+fn enter_and_o_toggle_citation_source_and_reply() {
+    for key in [rune::Key::Enter, rune::Key::Text("o".into())] {
+        let mut s = app(true, SavedView::in_memory());
+        s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
+        s.headless = false;
+        press(&mut s, rune::Key::Tab);
+        press(&mut s, rune::Key::Enter);
+        assert_eq!(s.story().unwrap().source().unwrap().id(), 901);
+        poll_until(&mut s, |s| s.story().unwrap().thread.children_of(901) == [9010, 9011]);
+
+        press(&mut s, key.clone());
+        assert!(s.story().unwrap().source().unwrap().nav.folded.contains(&901), "{key:?} must fold the source comment");
+        press(&mut s, key.clone());
+        assert!(!s.story().unwrap().source().unwrap().nav.folded.contains(&901));
+
+        press(&mut s, rune::Key::Down);
+        assert_eq!(s.story().unwrap().source().unwrap().nav.cursor, Some(9010));
+        press(&mut s, key.clone());
+        poll_until(&mut s, |s| s.story().unwrap().thread.children_of(9010) == [90100, 90101]);
+        press(&mut s, key);
+        assert!(s.story().unwrap().source().unwrap().nav.folded.contains(&9010), "repeat must fold the loaded source reply");
+    }
+}
+
+#[test]
 fn source_keys_keep_discussion_state_and_load_reply_context() {
     let mut s = app(true, SavedView::in_memory());
     s.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
