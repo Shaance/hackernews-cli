@@ -51,3 +51,19 @@ All steps done on 2026-11-19:
 | Tap | `Shaance/homebrew-tap` `Formula/hn.rb`; `brew install shaance/tap/hn`, `brew test`, `brew audit --strict` pass |
 
 Next release: bump `Cargo.toml` + both lockfiles, write `docs/releases/tui-vX.Y.Z.md`, merge, push the tag, then check that the `homebrew` job pushed `Formula/hn.rb` to the tap (`brew update && brew upgrade hn`).
+
+## Terminal keys and the browser trial (added 2026-11-19, later session)
+
+| Item | State |
+|---|---|
+| #71 `h` folds the selected comment in the terminal discussion and citation views (Mac parity); `Esc`/`q`/`←` go back | merged |
+| #72 README media re-rendered with `h` as fold | merged |
+| #75 `.github/workflows/preview-ui.yml`: deploys the trial's static page (hn.hashcode.dev, Vercel `hn-preview`) when a page file changes on `main` | see PR; needs `VERCEL_TOKEN` in the GitHub `production` environment before merge |
+
+Decisions (owner-approved, don't relitigate):
+- Terminal `o` stays "open the article pane". The Mac app's `o` (same as Enter) differs on purpose: the terminal has no always-on article split.
+- Page deploys: GitHub Actions with a team-scoped Vercel token in the `production` environment (protected branches only), not Vercel's Git integration (the build writes its CSP `vercel.json` inside `dist/`). Reviewed by advisor and Astra medium.
+- Server side stays manual, never pushed from CI (no SSH keys in GitHub). Planned: one operator script on the server that installs a chosen commit, pins the visitor image digest, restarts the gateway, checks `/healthz` plus a real session, and keeps the previous version for rollback. Not written yet: it needs read access to the servers to match their real layout.
+- Release order: snapshot-format change → pause publisher, update readers (visitor image + host `hn`) on both hosts, test a session, resume publisher. Page↔gateway message change → release gateway first, then merge the page PR (it auto-deploys).
+
+Trial state on 2026-11-19: page last deployed 2026-11-05 (CLI); gateway/visitor image predate #63–#72; daily snapshot healthy (published 03:00 UTC). Current `main` was run with `--snapshot` on that live snapshot: two-column feed, four-level thread, trail, `h`, Esc and quit all worked. Docker sandbox tests (`npm run test:sandbox`, `test:lifecycle`) were not run because no Docker daemon was available.
