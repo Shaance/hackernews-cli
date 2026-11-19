@@ -28,7 +28,7 @@ jobs:
       run:
         working-directory: desktop
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # desktop/rust-toolchain.toml pins 1.99.1; rustup on the runner honours it.
       - name: Show toolchain
@@ -71,7 +71,7 @@ jobs:
       run:
         working-directory: desktop
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Show toolchain
         run: rustc --version && cargo --version
@@ -126,7 +126,7 @@ jobs:
       run:
         working-directory: desktop
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Show toolchain
         run: rustc --version; cargo --version

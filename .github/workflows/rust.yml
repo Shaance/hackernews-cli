@@ -15,7 +15,7 @@ jobs:
     # class) — resolution only, no full build.
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v7
     - name: Resolve all crates against frozen root manifest
       run: scripts/check-nested-crates.sh
 
@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v7
     - name: Build
       run: cargo build --locked --verbose
     - name: Run tests
