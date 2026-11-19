@@ -6,7 +6,7 @@
 
 | | Mac app | Terminal app |
 |---|---|---|
-| **Get it** | [Download HN for macOS](https://github.com/Shaance/hn/releases/download/desktop-v1.1.0/HN-desktop-v1.1.0-macos-arm64.zip): Apple Silicon, macOS 13+, signed and notarized | `brew install shaance/tap/hn`, or [download hn 0.2.0](https://github.com/Shaance/hn/releases/tag/tui-v0.2.0) for macOS or Linux |
+| **Get it** | [Download HN for macOS](https://github.com/Shaance/hn/releases/download/desktop-v1.1.0/HN-desktop-v1.1.0-macos-arm64.zip): Apple Silicon, macOS 13+, signed and notarized | `brew install shaance/tap/hn`, `cargo install hn-reader`, or [download hn 0.2.1](https://github.com/Shaance/hn/releases/tag/tui-v0.2.1) for macOS or Linux |
 | **The article** | The story's live page, beside the discussion | Opens in a Ghostty pane beside the discussion, or your browser |
 | **More** | [desktop/README.md](desktop/README.md) | [Terminal app](#terminal-app), below |
 
@@ -45,12 +45,12 @@ brew install shaance/tap/hn
 hn
 ```
 
-Or download the archive for your system from the [hn 0.2.0 release](https://github.com/Shaance/hn/releases/tag/tui-v0.2.0): macOS 13+ on Apple Silicon or Intel (signed and notarized; the first launch checks the notarization online), or Linux x86-64 and ARM64 (glibc 2.35+ and OpenSSL 3). Check it with `shasum -a 256 -c hn-*.sha256`, extract it, and put `hn` on your PATH.
+Or download the archive for your system from the [hn 0.2.1 release](https://github.com/Shaance/hn/releases/tag/tui-v0.2.1): macOS 13+ on Apple Silicon or Intel (signed and notarized; the first launch checks the notarization online), or Linux x86-64 and ARM64 (glibc 2.35+ and OpenSSL 3). Check it with `shasum -a 256 -c hn-*.sha256`, extract it, and put `hn` on your PATH.
 
-To build that release from source with Rust and Cargo:
+To build it from source with Rust and Cargo (the crate is `hn-reader`; the command is still `hn`):
 
 ```sh
-cargo install --git https://github.com/Shaance/hn --tag tui-v0.2.0 --locked hn
+cargo install hn-reader --locked
 ```
 
 From a checkout of this repository:
