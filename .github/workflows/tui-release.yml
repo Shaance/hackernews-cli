@@ -213,3 +213,32 @@ jobs:
           gh release create "$GITHUB_REF_NAME" dist/*.tar.gz dist/*.tar.gz.sha256 \
             --verify-tag --title "hn $VERSION" --notes-file "docs/releases/tui-v$VERSION.md" \
             --latest=false
+
+  homebrew:
+    needs: [check, publish]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: hn-*
+          path: dist
+          merge-multiple: true
+
+      - name: Update the Homebrew tap
+        shell: bash
+        env:
+          # Fine-grained token: Shaance/homebrew-tap only, Contents read and write.
+          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          git clone --depth 1 "https://x-access-token:$TAP_TOKEN@github.com/Shaance/homebrew-tap.git" tap
+          sh packaging/homebrew/render-formula.sh "$VERSION" dist > tap/Formula/hn.rb
+          git -C tap diff
+          git -C tap -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -am "hn $VERSION"
+          git -C tap push
