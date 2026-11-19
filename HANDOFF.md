@@ -42,8 +42,8 @@ See the status table at the end (updated last).
 
 | Item | State |
 |---|---|
-| #63 feed | merged (desktop Linux CI job failed on an Ubuntu mirror outage, not required) |
-| #64 release setup | merged |
-| #62 README media | merged (re-rendered; one render got a bad model summary "placeholder [1]", re-rendered) |
-| Dry run | running: https://github.com/Shaance/hn/actions/runs/44524383795 |
-| Tag / tap / README install | not started (steps 5–7) |
+| #63 feed, #64 release setup, #62 README media | merged |
+| #65 signing fix (keychain search list) | merged; dry run 44526364328 passed: both macOS notarizations Accepted, Gatekeeper "Notarized Developer ID", Linux glibc 2.35 + libssl.so.3, checksums OK |
+| Tag `tui-v0.2.0` | pushed; release run https://github.com/Shaance/hn/actions/runs/44528619449 |
+| Tap `Shaance/homebrew-tap` | created, empty: add `Formula/hn.rb` from `packaging/homebrew/hn.rb` with hashes from the release's `.sha256` assets (step 6) |
+| README install | drafted locally, not pushed: redo step 7 if lost |
