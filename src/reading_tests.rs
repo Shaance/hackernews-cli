@@ -203,8 +203,8 @@ fn bookmarks_toggle_in_both_views_and_survive_reload() {
     let saved_screen: String = buffer.content().iter().map(|cell| cell.symbol()).collect();
     assert!(saved_screen.contains("4 Saved"));
     for x in 33..38 {
-        assert_eq!(buffer[(x, 0)].fg, restarted.theme().accent.fg.unwrap());
-        assert!(buffer[(x, 0)]
+        assert_eq!(buffer[(x, 1)].fg, restarted.theme().accent.fg.unwrap());
+        assert!(buffer[(x, 1)]
             .modifier
             .contains(ratatui::style::Modifier::BOLD | ratatui::style::Modifier::UNDERLINED));
     }
@@ -266,7 +266,7 @@ fn feed_positions_follow_successful_pages_and_current_bookmarks() {
     app.current_page = 3;
     app.apply_stories_page(StoryType::Top, 3, stories.clone());
     app.selected_index = 25;
-    render(&mut app, 200, 60);
+    render(&mut app, 200, 30);
     let scroll = app.story_scroll;
     assert!(
         scroll > 0,

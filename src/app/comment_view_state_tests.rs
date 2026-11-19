@@ -185,18 +185,27 @@ fn movement_and_fold_stay_on_drawn_rows() {
 }
 
 #[test]
-fn backspace_pops_one_re_rooted_trail_segment() {
+fn backspace_re_roots_at_the_parent_of_an_ordinary_reply() {
     let mut app = deep_discussion();
+    assert_eq!(app.thread.root(), None);
     assert!(app.thread.select(6));
     app.pop_comment_trail();
-    assert_eq!(app.thread.root(), None);
-    assert_eq!(app.thread.cursor(), Some(6));
-
-    assert!(app.toggle_comment_replies().is_none());
-    assert_eq!(app.thread.trail(), [1, 2, 3, 4, 5, 6]);
-    app.pop_comment_trail();
     assert_eq!(app.thread.root(), Some(5));
+    assert_eq!(app.thread.cursor(), Some(5));
     assert_eq!(app.thread.trail(), [1, 2, 3, 4, 5]);
+
+    app.pop_comment_trail();
+    assert_eq!(app.thread.root(), Some(4));
+    assert_eq!(app.thread.cursor(), Some(4));
+}
+
+#[test]
+fn backspace_does_nothing_on_a_top_level_comment() {
+    let mut app = deep_discussion();
+    assert!(app.thread.select(1));
+    app.pop_comment_trail();
+    assert_eq!(app.thread.root(), None);
+    assert_eq!(app.thread.cursor(), Some(1));
 }
 
 #[test]

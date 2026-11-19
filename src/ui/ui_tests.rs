@@ -139,7 +139,7 @@ fn feed_selection_has_full_width_tint_and_preserves_roles() {
     let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
     // Terminal output omits continuation cells hidden by wide glyphs.
     let buffer = frame.buffer;
-    for y in 2..4 {
+    for y in 3..5 {
         for x in 0..80 {
             assert_eq!(
                 buffer[(x, y)].bg,
@@ -151,7 +151,7 @@ fn feed_selection_has_full_width_tint_and_preserves_roles() {
         assert_eq!(buffer[(0, y)].fg, theme.accent.fg.unwrap());
     }
     assert!(
-        (0..80).all(|x| buffer[(x, 4)].bg != theme.sel.bg.unwrap()),
+        (0..80).all(|x| buffer[(x, 5)].bg != theme.sel.bg.unwrap()),
         "spacer must remain unselected"
     );
     for (index, cell) in buffer.content().iter().enumerate() {
@@ -160,23 +160,23 @@ fn feed_selection_has_full_width_tint_and_preserves_roles() {
             "feed cell {index} must not use REVERSED"
         );
     }
-    assert_eq!(buffer[(4, 2)].fg, theme.dim.fg.unwrap());
-    assert_eq!(buffer[(7, 2)].fg, theme.fg.fg.unwrap());
-    assert!(buffer[(7, 2)].modifier.contains(Modifier::BOLD));
-    assert_eq!(buffer[(7, 3)].fg, theme.dim.fg.unwrap());
-    assert_eq!(buffer[(42, 3)].fg, theme.fg.fg.unwrap());
-    assert_eq!(buffer[(77, 2)].symbol(), "…");
-    assert_eq!(buffer[(79, 2)].symbol(), "★");
-    assert_eq!(buffer[(79, 2)].fg, theme.accent.fg.unwrap());
-    assert_eq!(buffer[(1, 0)].bg, theme.brand.bg.unwrap());
-    assert!((0..80).all(|x| buffer[(x, 1)].fg == theme.line.fg.unwrap()));
+    assert_eq!(buffer[(4, 3)].fg, theme.dim.fg.unwrap());
+    assert_eq!(buffer[(7, 3)].fg, theme.fg.fg.unwrap());
+    assert!(buffer[(7, 3)].modifier.contains(Modifier::BOLD));
+    assert_eq!(buffer[(7, 4)].fg, theme.dim.fg.unwrap());
+    assert_eq!(buffer[(42, 4)].fg, theme.fg.fg.unwrap());
+    assert_eq!(buffer[(77, 3)].symbol(), "…");
+    assert_eq!(buffer[(79, 3)].symbol(), "★");
+    assert_eq!(buffer[(79, 3)].fg, theme.accent.fg.unwrap());
+    assert_eq!(buffer[(1, 1)].bg, theme.brand.bg.unwrap());
+    assert!((0..80).all(|x| buffer[(x, 2)].fg == theme.line.fg.unwrap()));
     app.set_story_type(crate::app::StoryType::New);
     app.set_story_error("offline".into());
     terminal.draw(|f| render(f, &mut app, 0)).unwrap();
     let buffer = terminal.backend().buffer();
     assert!(buffer_text(buffer).contains("failed New p1  Page 1"));
     assert_eq!(
-        buffer[(24, 0)].fg,
+        buffer[(24, 1)].fg,
         theme.accent.fg.unwrap(),
         "displayed Best tab stays active after failed New fetch"
     );
@@ -184,13 +184,13 @@ fn feed_selection_has_full_width_tint_and_preserves_roles() {
 }
 
 #[test]
-fn feed_at_80_by_24_shows_ten_stories_and_whole_hints() {
+fn feed_at_80_by_24_shows_nine_stories_and_whole_hints() {
     let mut app = feed();
     let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
     terminal.draw(|f| render(f, &mut app, 0)).unwrap();
     let buffer = terminal.backend().buffer();
-    for rank in 1..=10 {
-        let y = 2 * rank;
+    for rank in 1..=9 {
+        let y = 1 + 2 * rank;
         let field: String = (2..5).map(|x| buffer[(x, y)].symbol()).collect();
         assert_eq!(
             field.trim(),
@@ -235,8 +235,8 @@ fn thread_selection_quotes_guides_and_replies_preserve_roles() {
         .draw(|f| super::comments::render_reader_content(f, f.area(), &mut app, 0, vec![], true))
         .unwrap();
     let buffer = terminal.backend().buffer();
-    let end = (6..24).find(|y| buffer[(2, *y)].symbol() == "u").unwrap();
-    for y in 6..end {
+    let end = (7..24).find(|y| buffer[(2, *y)].symbol() == "u").unwrap();
+    for y in 7..end {
         for x in 0..80 {
             assert_eq!(
                 buffer[(x, y)].bg,
@@ -253,13 +253,13 @@ fn thread_selection_quotes_guides_and_replies_preserve_roles() {
             }
         }
     }
-    assert_eq!(buffer[(6, 6)].fg, theme.fg.fg.unwrap());
-    assert_eq!(buffer[(6, 7)].symbol(), "▏");
-    assert_eq!(buffer[(6, 7)].fg, theme.line.fg.unwrap());
-    assert_eq!(buffer[(8, 7)].fg, theme.dim.fg.unwrap());
-    assert_eq!(buffer[(14, 7)].fg, theme.link.fg.unwrap());
+    assert_eq!(buffer[(6, 7)].fg, theme.fg.fg.unwrap());
+    assert_eq!(buffer[(6, 8)].symbol(), "▏");
+    assert_eq!(buffer[(6, 8)].fg, theme.line.fg.unwrap());
+    assert_eq!(buffer[(8, 8)].fg, theme.dim.fg.unwrap());
+    assert_eq!(buffer[(14, 8)].fg, theme.link.fg.unwrap());
     assert_eq!(
-        buffer[(8, 8)].fg,
+        buffer[(8, 9)].fg,
         theme.link.fg.unwrap(),
         "wrapped URL must stay link coloured"
     );
@@ -395,18 +395,21 @@ fn feed_states_are_centered_and_preserve_roles() {
         let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
         let (x, y) = position(frame.buffer, title);
         assert_eq!(x, 40 - title.chars().count() as u16 / 2);
-        assert_eq!(y, if state == 2 { 10 } else { 11 });
+        assert_eq!(y, if state == 3 { 12 } else { 11 });
         assert_eq!(frame.buffer[(x, y)].fg, style.fg.unwrap());
         if state == 2 {
-            assert_eq!(position(frame.buffer, "offline"), (37, 11));
-            assert_eq!(frame.buffer[(37, 11)].fg, theme.dim.fg.unwrap());
+            assert_eq!(position(frame.buffer, "offline"), (37, 12));
+            assert_eq!(frame.buffer[(37, 12)].fg, theme.dim.fg.unwrap());
             assert!(!buffer_text(frame.buffer).contains("! "));
             assert_eq!(buffer_text(frame.buffer).matches("offline").count(), 1);
             assert_eq!(position(frame.buffer, "j/k move").1, 23);
         }
         if !hint.is_empty() {
             let (x, y) = position(frame.buffer, hint);
-            assert_eq!((x, y), (40 - hint.len() as u16 / 2, 12));
+            assert_eq!(
+                (x, y),
+                (40 - hint.len() as u16 / 2, if state == 2 { 13 } else { 12 })
+            );
             assert_eq!(
                 frame.buffer[(x, y)].fg,
                 if state == 0 { theme.dim } else { theme.accent }
@@ -547,7 +550,7 @@ fn selection_highlight_glides_110ms_then_snaps() {
     let mut app = feed();
     let sel_bg = app.theme().sel.bg.unwrap();
     // Mid-glide: 50ms into a 0 -> 3 move, the eased position is ≈ 2.1 rows, so
-    // the highlight has left the start row (y=2). Assert a range, not an exact
+    // the highlight has left the start row (y=3). Assert a range, not an exact
     // row, so slow CI timing cannot flake the test.
     app.selected_index = 3;
     app.selection_glide = Some((Instant::now() - Duration::from_millis(50), 0.0, 3));
@@ -561,7 +564,7 @@ fn selection_highlight_glides_110ms_then_snaps() {
     assert!(highlighted.len() >= 2, "highlight covers two rows");
     let top = *highlighted.first().unwrap();
     assert!(
-        top > 2,
+        top > 3,
         "highlight must have left the start row, got y={top}"
     );
     assert_eq!(
@@ -574,8 +577,8 @@ fn selection_highlight_glides_110ms_then_snaps() {
     assert!(!app.has_active_motion(Instant::now()));
     let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
     let b = frame.buffer;
-    assert_eq!(b[(0, 8)].bg, sel_bg, "highlight lands on the selected row");
-    assert_eq!(b[(0, 8)].symbol(), "▎");
+    assert_eq!(b[(0, 9)].bg, sel_bg, "highlight lands on the selected row");
+    assert_eq!(b[(0, 9)].symbol(), "▎");
     assert!(app.selection_glide.is_none(), "a finished glide must clear");
 }
 
@@ -685,7 +688,7 @@ fn feed_switch_dips_the_list_and_eases_the_tab_color() {
         !text.contains("Story 20"),
         "new list must not pop in during the out-phase"
     );
-    let cell = frame.buffer[(2, 2)].fg;
+    let cell = frame.buffer[(2, 3)].fg;
     assert_ne!(cell, dim, "list must be mid-dip");
     assert!(
         between(cell, dim, scrim),
@@ -705,13 +708,13 @@ fn feed_switch_dips_the_list_and_eases_the_tab_color() {
     app.feed_switched = Some((Instant::now() - Duration::from_millis(40), prev));
     let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
     assert!(
-        frame.buffer[(24, 0)]
+        frame.buffer[(24, 1)]
             .modifier
             .contains(Modifier::UNDERLINED),
         "old tab keeps the underline before the midpoint"
     );
     assert!(
-        !frame.buffer[(16, 0)]
+        !frame.buffer[(16, 1)]
             .modifier
             .contains(Modifier::UNDERLINED),
         "new tab must not be underlined before the midpoint"
@@ -719,22 +722,22 @@ fn feed_switch_dips_the_list_and_eases_the_tab_color() {
     app.feed_switched = Some((Instant::now() - Duration::from_millis(120), prev));
     let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
     assert!(
-        frame.buffer[(16, 0)]
+        frame.buffer[(16, 1)]
             .modifier
             .contains(Modifier::UNDERLINED),
         "new tab takes the underline after the midpoint"
     );
     assert!(
-        !frame.buffer[(24, 0)]
+        !frame.buffer[(24, 1)]
             .modifier
             .contains(Modifier::UNDERLINED),
         "old tab drops the underline after the midpoint"
     );
-    // Tab ease at 80ms: the newly active tab sits between dim and accent on row 0.
+    // Tab ease at 80ms: the newly active tab sits between dim and accent on the tab row.
     app.feed_switched = Some((Instant::now() - Duration::from_millis(80), prev));
     let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
     let eased = (0..100).any(|x| {
-        let fg = frame.buffer[(x, 0)].fg;
+        let fg = frame.buffer[(x, 1)].fg;
         fg != dim && fg != accent && between(fg, dim, accent)
     });
     assert!(eased, "the active tab must be mid color-ease");
@@ -743,9 +746,9 @@ fn feed_switch_dips_the_list_and_eases_the_tab_color() {
     assert!(!app.has_active_motion(Instant::now()));
     let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
     assert!(app.feed_switched.is_none(), "a finished dip must clear");
-    assert_eq!(frame.buffer[(2, 2)].fg, dim, "list must be fully back");
+    assert_eq!(frame.buffer[(2, 3)].fg, dim, "list must be fully back");
     assert!(
-        (0..100).any(|x| frame.buffer[(x, 0)].fg == accent),
+        (0..100).any(|x| frame.buffer[(x, 1)].fg == accent),
         "active tab must land on accent"
     );
 }
@@ -921,4 +924,146 @@ fn status_bar_hints_page_flow_at_page_edges() {
     let mut app = feed();
     let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
     assert!(!buffer_text(frame.buffer).contains("next page"));
+}
+
+#[test]
+fn wide_feed_is_column_major_with_an_odd_story_count() {
+    let mut app = feed();
+    app.stories.truncate(5);
+    let mut terminal = Terminal::new(TestBackend::new(160, 30)).unwrap();
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    let (left, top) = position(frame.buffer, "Story 1");
+    let (right, right_top) = position(frame.buffer, "Story 4");
+    assert_eq!(right_top, top);
+    assert_eq!(position(frame.buffer, "Story 2"), (left, top + 3));
+    assert_eq!(position(frame.buffer, "Story 3"), (left, top + 6));
+    assert_eq!(position(frame.buffer, "Story 5"), (right, top + 3));
+    assert!(left < right);
+    assert_eq!(frame.buffer[(right - 8, top)].symbol(), "│");
+
+    app.jump_selection(2);
+    assert!(!app.next_story());
+    assert_eq!(app.selected_story().unwrap().id, 4);
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    assert!(
+        app.selection_glide.is_none(),
+        "cross-column selection snaps"
+    );
+    assert_eq!(frame.buffer[(right - 7, top)].symbol(), "▎");
+    assert_eq!(
+        frame.buffer[(right - 7, top)].bg,
+        app.theme().sel.bg.unwrap()
+    );
+    assert_ne!(frame.buffer[(0, top)].bg, app.theme().sel.bg.unwrap());
+    assert!(!app.prev_story());
+    assert_eq!(app.selected_story().unwrap().id, 3);
+}
+
+#[test]
+fn wide_feed_draws_the_save_flash_in_the_right_column() {
+    let mut app = feed();
+    app.jump_selection(6);
+    app.bookmarks.push(app.selected_story().unwrap().clone());
+    let mut terminal = Terminal::new(TestBackend::new(160, 30)).unwrap();
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    let star = position(frame.buffer, "★");
+    assert!(star.0 > 80);
+    assert_eq!(frame.buffer[star].fg, app.theme().accent.fg.unwrap());
+    app.save_flash = Some((7, std::time::Instant::now()));
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    assert_ne!(frame.buffer[star].fg, app.theme().accent.fg.unwrap());
+}
+
+#[test]
+fn short_wide_feed_scrolls_both_columns_by_the_same_offset() {
+    let mut app = feed();
+    app.set_stories((1..=20).map(story_item).collect());
+    app.jump_selection(19);
+    let mut terminal = Terminal::new(TestBackend::new(160, 30)).unwrap();
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    assert_eq!(app.story_scroll, 2);
+    let (left, top) = position(frame.buffer, "Story 3 ");
+    let (right, right_top) = position(frame.buffer, "Story 13");
+    assert!(left < right);
+    assert_eq!(top, right_top);
+    assert_eq!(position(frame.buffer, "▎  20  Story 20").1, top + 21);
+    let text = buffer_text(frame.buffer);
+    assert!(!text.contains("Story 1 ") && !text.contains("Story 11"));
+}
+
+#[test]
+fn threshold_resize_keeps_the_selected_id() {
+    let mut app = feed();
+    app.set_stories((1..=20).map(story_item).collect());
+    app.jump_selection(16);
+    let mut terminal = Terminal::new(TestBackend::new(160, 30)).unwrap();
+    for width in [160, 159, 160] {
+        terminal.backend_mut().resize(width, 30);
+        let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+        let (x, _) = position(frame.buffer, "▎  17  Story 17");
+        assert_eq!(x > 0, width == 160);
+        assert_eq!(app.selected_story().unwrap().id, 17);
+        assert_eq!(app.page_size, 20);
+        assert_eq!(app.current_page, 1);
+    }
+}
+
+#[test]
+fn feed_padding_yields_to_a_complete_story_on_tiny_terminals() {
+    let mut app = feed();
+    for (height, tab_row) in [(6, 0), (7, 1)] {
+        let mut terminal = Terminal::new(TestBackend::new(80, height)).unwrap();
+        let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+        assert_eq!(position(frame.buffer, "3 Best").1, tab_row);
+        assert_eq!(position(frame.buffer, "Story 1 ").1, tab_row + 2);
+        if tab_row == 1 {
+            assert!((0..80).all(|x| frame.buffer[(x, 0)].symbol() == " "));
+        }
+    }
+}
+
+#[test]
+fn reply_trail_uses_a_reserved_row_without_moving_the_discussion() {
+    let mut app = App::new();
+    app.view_comments(1, "Story".into(), "https://example.com".into());
+    let mut parent = test_comment(10, "parent");
+    parent.child_ids = vec![11];
+    app.set_comments(vec![parent, test_comment(11, "child")]);
+    let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    assert!((0..80).all(|x| frame.buffer[(x, 3)].symbol() == " "));
+    assert_eq!(position(frame.buffer, "user10").1, 4);
+    app.next_comment();
+    assert_eq!(app.thread.root(), None);
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    assert_eq!(position(frame.buffer, "user10 › user11").1, 3);
+    assert_eq!(position(frame.buffer, "▎ │ user11").1, 7);
+    app.prev_comment();
+    let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+    assert!((0..80).all(|x| frame.buffer[(x, 3)].symbol() == " "));
+    assert_eq!(position(frame.buffer, "user10").1, 4);
+}
+
+#[test]
+fn wide_feed_and_saved_show_contextual_arrow_hints() {
+    use crate::app::StoryType;
+    let mut app = feed();
+    let mut terminal = Terminal::new(TestBackend::new(160, 30)).unwrap();
+    for (feed, label) in [
+        (StoryType::Best, "column / page"),
+        (StoryType::Saved, "column"),
+    ] {
+        app.feed_switched = None;
+        app.set_story_type(feed);
+        app.set_stories_for(feed, 1, (1..=5).map(story_item).collect());
+        app.feed_switched = None;
+        app.show_help = false;
+        let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+        assert!(buffer_text(frame.buffer).contains(&format!("←/→ {label}")));
+        app.show_help = true;
+        let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
+        let text = buffer_text(frame.buffer);
+        assert!(text.contains(&format!("←/→  {label}")));
+        assert_eq!(text.contains("←/→  column / page"), feed == StoryType::Best);
+    }
 }

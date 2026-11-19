@@ -1049,9 +1049,11 @@ fn motion_panel_height_text_retarget_and_reduced_motion() {
     let heading = (0..22)
         .find(|&y| row(frame.buffer, y).contains("COMMENTS"))
         .unwrap();
-    assert!(22 - heading >= 10);
-    assert!(row(frame.buffer, heading - 1).trim().is_empty());
-    assert!(row(frame.buffer, heading - 2).contains("J/K scroll"));
+    let trail = heading - 1;
+    assert!(22 - trail >= 10);
+    assert!(row(frame.buffer, trail).trim().is_empty());
+    assert!(row(frame.buffer, trail - 1).trim().is_empty());
+    assert!(row(frame.buffer, trail - 2).contains("J/K scroll"));
 }
 
 #[tokio::test]
