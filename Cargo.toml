@@ -24,7 +24,7 @@ async-trait = "0.1.57"
 chrono = "0.4.22"
 crossterm = { version = "0.29", features = ["event-stream"] }
 futures = "0.3.23"
-html-escape = "0.2"
+html-escape = "0.3"
 html5ever = "0.26"
 icu_collections = { version = ">=2.0.0, <3.0.0", default-features = false }
 icu_locale_core = { version = ">=2.0.0, <3.0.0", default-features = false }
