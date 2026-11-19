@@ -61,7 +61,8 @@ soon as they arrive, while the summary continues from that discussion capture. A
 result preserves the comment tree, expanded replies, and article already on screen. During the
 session, leaving and reopening a story reuses its captures, summaries, citation snapshots and
 in-flight work. `r` refreshes comments without regenerating summaries; explicitly regenerating
-starts new paid summary requests. Closing the app clears this session cache.
+starts new paid summary requests. On restart, the app reuses saved summary halves and their
+citations from the same folder as the TUI. Regenerating a restored half captures fresh sources.
 
 Turn off Automatic summaries to keep loading articles and comments without starting new
 automatic summary requests. Submitted summaries can finish; Regenerate summary still works
@@ -148,7 +149,7 @@ Fully cached feed windows return immediately without source requests. This sessi
 | Summary settings (provider, key, profile) | `$XDG_CONFIG_HOME/hn/summary.json` | `hn_lib::reader::Config` — the same file the TUI writes |
 | Saved stories | `$XDG_DATA_HOME/hn/saved.json` | `hn_lib::bookmarks` |
 | Window size, zoom, inspector width, tab, page, selection | `$XDG_STATE_HOME/hn/desktop.json` | `src/layout.rs` |
-| Saved summaries, one file per story: the article and discussion summaries, the comment text their citations open, and which provider and model wrote them. Halves older than 30 days are deleted at launch. | `$XDG_STATE_HOME/hn/summaries/<id>.json` | `src/summary_store.rs` |
+| Saved article and discussion summaries, citation sources, and provider and model details. Halves older than 30 days are deleted at launch. | `$XDG_STATE_HOME/hn/summaries/<id>.{article,discussion}.json` | `hn_lib::reader::saved`, shared with the TUI |
 
 Each falls back to `~/.config`, `~/.local/share` and `~/.local/state` when the XDG variable is
 unset. The layout file is written at most every two seconds while the window moves, and once on

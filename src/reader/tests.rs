@@ -49,24 +49,28 @@ pub(super) fn ready() -> Reader {
         Profile::Fast,
         discussion_capture(),
     ));
-    reading.article.capture = reading.article.result.as_ref().map(|r| r.capture.clone());
+    reading.article.capture = reading
+        .article
+        .result
+        .as_ref()
+        .and_then(|r| r.capture().cloned());
     reading.discussion.capture = reading
         .discussion
         .result
         .as_ref()
-        .map(|r| r.capture.clone());
+        .and_then(|r| r.capture().cloned());
     p.readings.insert(1, reading);
     p.active = Some(1);
     p
 }
-fn done<T, C>(value: T, profile: Profile, input: C) -> Completed<T, C> {
+fn done<T, C, S>(value: T, profile: Profile, input: C) -> Completed<T, C, S> {
     Completed {
         value,
         profile,
-        capture: Arc::new(Capture {
+        basis: Basis::Captured(Arc::new(Capture {
             input,
             captured: "12:00".into(),
-        }),
+        })),
     }
 }
 pub(super) fn discussion(text: &str) -> Discussion {
@@ -101,12 +105,7 @@ pub(super) fn discussion_capture() -> DiscussionCapture {
         coverage: "2 comments".into(),
     }
 }
-pub(super) fn screen(
-    p: &mut Reader,
-    app: &mut crate::app::App,
-    width: u16,
-    height: u16,
-) -> String {
+pub(super) fn screen(p: &mut Reader, app: &mut crate::app::App, width: u16, height: u16) -> String {
     let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
     terminal.draw(|f| p.render(f, app, 0)).unwrap();
     terminal
@@ -143,4 +142,5 @@ pub(super) fn comments_app() -> crate::app::App {
 
 mod reader_navigation;
 mod summary_lifecycle;
+mod summary_persistence;
 mod summary_settings;

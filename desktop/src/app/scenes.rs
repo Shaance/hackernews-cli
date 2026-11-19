@@ -82,28 +82,26 @@ pub(super) fn scene_summary_generating(s: &mut App) {
 /// A restored reading with a fixed clock and a newer discussion count.
 pub(super) fn scene_summary_saved(s: &mut App) {
     use hn_lib::reader::Article;
-    use crate::story_io::Provenance;
-    use crate::summary_store::{SavedArticle, SavedDiscussion, SavedSummary, SummaryStore};
+    use hn_lib::reader::saved::{ArticleData, DiscussionContext, DiscussionData, Header, Record, SummaryStore};
 
     let mut store = SummaryStore::memory(1_700_000_000);
-    let provenance = Provenance::from(&Config::default());
-    let saved = SavedSummary {
-        version: 1,
-        story_id: crate::fixtures::STORY_ID,
-        article: Some(SavedArticle {
-            saved_at: 1_700_000_000 - 5 * 3600,
-            provenance: provenance.clone(),
-            article: Article { text: "The article describes Libghostty and its design.".into() },
-        }),
-        discussion: Some(SavedDiscussion {
-            saved_at: 1_700_000_000 - 5 * 3600,
-            comments_at_save: 110,
-            provenance,
+    let mut header = Header::new(crate::fixtures::STORY_ID, Default::default(), Default::default());
+    header.saved_at = 1_700_000_000 - 5 * 3600;
+    store.save_article(Record {
+        header: header.clone(),
+        data: ArticleData { article: Article { text: "The article describes Libghostty and its design.".into() }, partial: false },
+    }, false).expect("the in-memory article summary fixture serializes");
+    store.save_discussion(Record {
+        header,
+        data: DiscussionData {
             discussion: crate::fixtures::summary(),
-            sources: crate::fixtures::sources(),
-        }),
-    };
-    store.write(&saved).expect("the in-memory summary fixture serializes");
+            context: DiscussionContext {
+                comments_at_save: 110,
+                coverage: "Top-level comment excerpts".into(),
+                sources: crate::fixtures::sources(),
+            },
+        },
+    }).expect("the in-memory discussion summary fixture serializes");
     s.summary_store = Some(store);
     scene_story(s);
 }

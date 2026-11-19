@@ -62,7 +62,7 @@ async fn sampling_reserves_replies_redistributes_budget_and_keeps_unavailable_pa
             .result
             .as_mut()
             .unwrap()
-            .capture = Arc::new(capture);
+            .basis = Basis::Captured(Arc::new(capture));
         if !replies.is_empty() {
             let text = p.readings[&1]
                 .source_lines(101, 120)

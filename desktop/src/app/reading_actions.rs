@@ -6,7 +6,6 @@ use hn_lib::HNCLIItem;
 use rune::Tx;
 use crate::story_io::{StoryRequest, StoryUpdate};
 use crate::story::{ArticleSummaryState, RestoredSummary, Story, SummaryState};
-use crate::summary_store::SummaryStore;
 use super::input::reveal_citation;
 
 impl App {
@@ -41,25 +40,24 @@ impl App {
     }
 
     fn restore_summary(&mut self, open: &mut Story) {
-        let Some(store) = &mut self.summary_store else { return; };
-        let Some(saved) = store.load(open.id()) else { return; };
+        let Some(store) = &self.summary_store else { return; };
         let mut article_age = None;
         let mut discussion = None;
-        if let Some(article) = saved.article {
-            article_age = Some(store.age(article.saved_at));
+        if let Some(article) = store.load_article(open.id()) {
+            article_age = Some(store.age(article.header.saved_at));
             open.article_summary = ArticleSummaryState::Generating { previous: None };
             open.land_update(StoryUpdate::ArticleSummary {
-                story_id: open.id(), summary: Ok(article.article),
-                provenance: article.provenance, empty_capture: false,
-            });
+                story_id: open.id(), summary: Ok(article.data.article),
+                header: article.header, empty_capture: false, partial: article.data.partial,
+            }, None);
         }
-        if let Some(saved_discussion) = saved.discussion {
-            discussion = Some((store.age(saved_discussion.saved_at), saved_discussion.comments_at_save));
+        if let Some(saved) = store.load_discussion(open.id()) {
+            discussion = Some((store.age(saved.header.saved_at), saved.data.context.comments_at_save));
             open.summary = SummaryState::Generating { previous: None };
             open.land_update(StoryUpdate::Summary {
-                story_id: open.id(), summary: Ok((saved_discussion.discussion, saved_discussion.sources)),
-                provenance: saved_discussion.provenance,
-            });
+                story_id: open.id(), summary: Ok((saved.data.discussion, saved.data.context.sources)),
+                header: saved.header, coverage: saved.data.context.coverage,
+            }, None);
         }
         open.restored_summary = (article_age.is_some() || discussion.is_some()).then(|| RestoredSummary {
             article_age, discussion, observed: std::time::Instant::now(),
@@ -137,19 +135,18 @@ impl App {
     pub(super) fn land_story_update(&mut self, update: StoryUpdate) -> bool {
         let fresh_article = matches!(&update, StoryUpdate::ArticleSummary { summary: Ok(_), .. });
         let fresh_discussion = matches!(&update, StoryUpdate::Summary { summary: Ok(_), .. });
-        let comments = self.story.as_ref().and_then(|story| story.story.comments)
-            .and_then(|count| u32::try_from(count).ok()).unwrap_or(0);
-        let save = self.summary_store.as_ref().and_then(|_| SummaryStore::prepare(&update, comments));
-        let landed = self.story.as_mut().is_some_and(|story| story.land_update(update));
+        let landed = self.story.as_mut().is_some_and(|story| story.land_update(update, self.summary_store.as_mut()));
         if landed {
-            if let Some(story) = &mut self.story && let Some(restored) = &mut story.restored_summary {
-                if fresh_article { restored.article_age = None; }
-                if fresh_discussion { restored.discussion = None; }
-                if restored.article_age.is_none() && restored.discussion.is_none() {
-                    story.restored_summary = None;
+            if let Some(story) = &mut self.story {
+                let discussion_displayed = story.source().is_none();
+                if let Some(restored) = &mut story.restored_summary {
+                    if fresh_article { restored.article_age = None; }
+                    if fresh_discussion && discussion_displayed { restored.discussion = None; }
+                    if restored.article_age.is_none() && restored.discussion.is_none() {
+                        story.restored_summary = None;
+                    }
                 }
             }
-            if let (Some(store), Some(save)) = (&mut self.summary_store, save) { store.save(save); }
         }
         landed
     }
@@ -269,10 +266,14 @@ impl App {
             if !configured { story.stop_summaries(); return; }
             let request = StoryRequest { story: story.story.clone(), config: self.config.clone() };
             let article = match &story.article {
-                crate::story::ArticleState::Ready { text, partial } => Some((text.clone(), *partial)),
+                crate::story::ArticleState::Ready { text, partial }
+                    if story.restored_summary.as_ref().is_none_or(|saved| saved.article_age.is_none()) =>
+                    Some((text.clone(), *partial)),
                 _ => None,
             };
-            let sources = matches!(story.discussion, Some(Ok(()))).then(|| story.current_sources.clone());
+            let sources = (matches!(story.discussion, Some(Ok(())))
+                && story.restored_summary.as_ref().is_none_or(|saved| saved.discussion.is_none()))
+                .then(|| story.current_sources.clone());
             story.retry(configured);
             self.bridge.request_summaries(self.source.clone(), request, article, sources);
             if self.headless {

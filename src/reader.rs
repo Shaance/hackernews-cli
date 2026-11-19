@@ -27,6 +27,7 @@ mod preparation;
 mod replay;
 #[cfg(test)]
 mod sampling_tests;
+pub mod saved;
 mod settings;
 pub mod snapshot;
 pub mod sources;
@@ -36,9 +37,10 @@ mod tests;
 mod text;
 mod view;
 
+use crate::{theme::Theme, HNCLIItem};
 pub use config::{Config, Profile, Profile as SummaryProfile, Provider};
 pub use network::Network;
-use crate::{theme::Theme, HNCLIItem};
+use saved::{DiscussionContext, SummaryStore};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -148,18 +150,39 @@ enum Progress {
     Failed(Attempt, Failure),
 }
 #[derive(Debug)]
-struct Completed<T, C> {
+struct Completed<T, C, S> {
     value: T,
     profile: Profile,
-    capture: Arc<Capture<C>>,
+    basis: Basis<C, S>,
 }
 #[derive(Debug)]
-struct Section<T, C> {
-    result: Option<Completed<T, C>>,
+enum Basis<C, S> {
+    Captured(Arc<Capture<C>>),
+    Saved { saved_at: u64, context: S },
+}
+impl<T, C, S> Completed<T, C, S> {
+    fn capture(&self) -> Option<&Arc<Capture<C>>> {
+        match &self.basis {
+            Basis::Captured(capture) => Some(capture),
+            Basis::Saved { .. } => None,
+        }
+    }
+}
+impl Completed<Discussion, DiscussionCapture, DiscussionContext> {
+    fn sources(&self) -> &[Source] {
+        match &self.basis {
+            Basis::Captured(capture) => &capture.input.sources,
+            Basis::Saved { context, .. } => &context.sources,
+        }
+    }
+}
+#[derive(Debug)]
+struct Section<T, C, S> {
+    result: Option<Completed<T, C, S>>,
     capture: Option<Arc<Capture<C>>>,
     progress: Progress,
 }
-impl<T, C> Default for Section<T, C> {
+impl<T, C, S> Default for Section<T, C, S> {
     fn default() -> Self {
         Self {
             result: None,
@@ -168,7 +191,7 @@ impl<T, C> Default for Section<T, C> {
         }
     }
 }
-impl<T, C> Section<T, C> {
+impl<T, C, S> Section<T, C, S> {
     fn requested(&self) -> bool {
         self.result.is_some() || !matches!(self.progress, Progress::Idle)
     }
@@ -185,9 +208,13 @@ impl<T, C> Section<T, C> {
 pub struct Reading {
     theme: Theme,
     story: HNCLIItem,
-    article: Section<Article, ArticleCapture>,
-    discussion: Section<Discussion, DiscussionCapture>,
-    staged: Option<Completed<Discussion, DiscussionCapture>>,
+    article: Section<Article, ArticleCapture, bool>,
+    discussion: Section<Discussion, DiscussionCapture, DiscussionContext>,
+    staged: Option<(
+        Completed<Discussion, DiscussionCapture, DiscussionContext>,
+        Provider,
+        u32,
+    )>,
     shown: bool,
     moved: bool,
     // Track the panel height until movement freezes it; explicit opens resume tracking.
@@ -225,20 +252,52 @@ impl Reading {
             source_scroll: 0,
         }
     }
-    fn leave_source(&mut self) {
+    fn restore(&mut self, store: &SummaryStore) {
+        if let Some(record) = store.load_article(self.story.id) {
+            self.article.result = Some(Completed {
+                value: record.data.article,
+                profile: record.header.profile,
+                basis: Basis::Saved {
+                    saved_at: record.header.saved_at,
+                    context: record.data.partial,
+                },
+            });
+        }
+        if let Some(record) = store.load_discussion(self.story.id) {
+            self.discussion.result = Some(Completed {
+                value: record.data.discussion,
+                profile: record.header.profile,
+                basis: Basis::Saved {
+                    saved_at: record.header.saved_at,
+                    context: record.data.context,
+                },
+            });
+        }
+    }
+    fn leave_source(&mut self, store: Option<&mut SummaryStore>) -> std::io::Result<()> {
         self.reveal_citation = self.source.take().is_some() && self.citation_focus;
-        if let Some(result) = self.staged.take() {
+        if let Some((result, provider, comments)) = self.staged.take() {
             self.discussion.result = Some(result);
             self.citation = 0;
             self.citation_focus = false;
             self.reveal_citation = false;
+            if let Some(store) = store {
+                return jobs::save_discussion(
+                    store,
+                    self.story.id,
+                    self.discussion.result.as_ref().unwrap(),
+                    provider,
+                    comments,
+                );
+            }
         }
+        Ok(())
     }
     fn citations(&self) -> Vec<i32> {
         let mut ids = vec![];
         if let Some(result) = &self.discussion.result {
             for id in result.value.points.iter().flat_map(|p| &p.sources) {
-                if !ids.contains(id) && result.capture.input.sources.iter().any(|s| s.id == *id) {
+                if !ids.contains(id) && result.sources().iter().any(|s| s.id == *id) {
                     ids.push(*id);
                 }
             }
@@ -257,6 +316,7 @@ pub struct Reader {
     settings_error: String,
     auth_failed: bool,
     network: network::Network,
+    store: Option<SummaryStore>,
     jobs: JoinSet<jobs::Completion>,
     next_attempt: u64,
     browser: Option<browser::Target>,
@@ -270,11 +330,11 @@ pub struct Reader {
 }
 impl Default for Reader {
     fn default() -> Self {
-        Self::new(Theme::default())
+        Self::new(Theme::default(), None)
     }
 }
 impl Reader {
-    pub fn new(theme: Theme) -> Self {
+    pub fn new(theme: Theme, summary_root: Option<PathBuf>) -> Self {
         let (tx, rx) = mpsc::unbounded_channel();
         let path = Config::path();
         let loaded = path
@@ -285,6 +345,10 @@ impl Reader {
             Ok(c) => (c, String::new()),
             Err(e) => (Config::default(), e),
         };
+        let store = summary_root.map(SummaryStore::disk);
+        if let Some(store) = &store {
+            store.prune();
+        }
         Self {
             snapshot: None,
             theme,
@@ -296,6 +360,7 @@ impl Reader {
             settings_error,
             auth_failed: false,
             network: network::Network::default(),
+            store,
             jobs: JoinSet::new(),
             next_attempt: 0,
             browser: None,

@@ -132,11 +132,15 @@ async fn failed_refresh_does_not_publish_staged_result_or_reuse_old_capture() {
     p.key(KeyCode::Tab);
     p.key(KeyCode::Enter);
     let reading = p.readings.get_mut(&1).unwrap();
-    reading.staged = Some(Completed {
-        value: tests::discussion("Obsolete"),
-        profile: Profile::Thorough,
-        capture: reading.discussion.capture.clone().unwrap(),
-    });
+    reading.staged = Some((
+        Completed {
+            value: tests::discussion("Obsolete"),
+            profile: Profile::Thorough,
+            basis: Basis::Captured(reading.discussion.capture.clone().unwrap()),
+        },
+        Provider::OpenRouter,
+        2,
+    ));
     p.request(Request::Refresh);
     let attempt = match p.readings[&1].discussion.progress {
         Progress::Preparing(a, _, _) => a,

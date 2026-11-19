@@ -180,6 +180,7 @@ impl Source {
         config: &Config,
         story: &HNCLIItem,
         sources: &[CapturedSource],
+        coverage: &str,
     ) -> std::result::Result<Discussion, SummaryError> {
         match self {
             Source::Live { network, .. } => {
@@ -190,7 +191,7 @@ impl Source {
                     title: reader::sources::clean(&story.title),
                     post: reader::sources::clean(&story.text).chars().take(6000).collect(),
                     sources: sources.to_vec(),
-                    coverage: format!("{} top-level comment excerpts", sources.len()),
+                    coverage: coverage.into(),
                 };
                 network
                     .discussion(config.provider, config.key(), config.profile, &captured)
@@ -280,7 +281,7 @@ mod tests {
         assert_eq!(sources[0].parent, None, "a top-level capture has no parents");
         // The fake provider answers without a key, so a headless scene never needs one.
         let summary = source
-            .summary(&Config::default(), &story, &sources)
+            .summary(&Config::default(), &story, &sources, "fixture coverage")
             .await
             .unwrap();
         assert_eq!(summary.points.len(), 3);
@@ -297,7 +298,7 @@ mod tests {
         config.environment_key.clear();
         assert!(config.key().is_empty());
         let error = source
-            .summary(&config, &story, &[])
+            .summary(&config, &story, &[], "")
             .await
             .expect_err("an empty key is a failure, not a call");
         assert!(error.message.contains("No summary API key"));

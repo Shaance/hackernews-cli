@@ -3,25 +3,7 @@
 use hn_lib::app::Comment;
 use hn_lib::reader::{Article, Config, Discussion, Source as CapturedSource};
 use hn_lib::HNCLIItem;
-use serde::{Deserialize, Serialize};
-
-/// The non-secret settings used for a particular provider request.
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub struct Provenance {
-    pub provider: String,
-    pub model: String,
-    pub profile: String,
-}
-
-impl From<&Config> for Provenance {
-    fn from(config: &Config) -> Self {
-        Self {
-            provider: config.provider.label().into(),
-            model: config.profile.model(config.provider).into(),
-            profile: config.profile.label().into(),
-        }
-    }
-}
+use hn_lib::reader::saved::Header;
 
 /// One story open: the item to read, and the summary settings to read it with.
 ///
@@ -43,8 +25,8 @@ pub struct CapturedComments {
 pub enum StoryUpdate {
     Article { story_id: i32, article: Result<(String, bool), String>, summary_skipped: bool },
     Discussion { story_id: i32, comments: Result<CapturedComments, String>, summary_skipped: bool },
-    ArticleSummary { story_id: i32, summary: Result<Article, SummaryError>, provenance: Provenance, empty_capture: bool },
-    Summary { story_id: i32, summary: Result<(Discussion, Vec<CapturedSource>), SummaryError>, provenance: Provenance },
+    ArticleSummary { story_id: i32, summary: Result<Article, SummaryError>, header: Header, empty_capture: bool, partial: bool },
+    Summary { story_id: i32, summary: Result<(Discussion, Vec<CapturedSource>), SummaryError>, header: Header, coverage: String },
 }
 
 pub struct CommentsRefreshed {

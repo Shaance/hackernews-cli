@@ -73,7 +73,12 @@ async fn main() -> Result<()> {
     // Load initial stories
     request_stories(&mut app, tx.clone(), service.clone(), false);
 
-    let mut summaries = reader::Reader::new(theme);
+    let summary_root = if snapshot.is_none() {
+        reader::saved::state_root().map(|root| root.join("summaries"))
+    } else {
+        None
+    };
+    let mut summaries = reader::Reader::new(theme, summary_root);
     if let Some(snapshot) = snapshot {
         summaries.load_snapshot(snapshot);
     }

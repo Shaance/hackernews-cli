@@ -2,6 +2,7 @@
 
 use super::super::*;
 use super::support::*;
+use hn_lib::reader::saved::Header;
 
 fn disk_app(dir: &std::path::Path) -> App {
     let mut app = app(true, SavedView::in_memory());
@@ -56,9 +57,8 @@ fn restart_requests_only_the_missing_half() {
     first.source = Arc::new(Source::Fake(fake));
     first.open_story(item.clone());
     assert_eq!(request_counts(&first), (1, 1));
-    let file: serde_json::Value = serde_json::from_slice(&std::fs::read(dir.join(format!("{}.json", item.id))).unwrap()).unwrap();
-    assert!(file["article"].is_null());
-    assert!(file["discussion"].is_object());
+    assert!(!dir.join(format!("{}.article.json", item.id)).exists());
+    assert!(first.summary_store.as_ref().unwrap().load_discussion(item.id).is_some());
     drop(first);
 
     let mut restarted = disk_app(&dir);
@@ -97,44 +97,43 @@ fn unreadable_discussion_is_shown_but_not_persisted() {
         app.open_story(crate::fixtures::item(0, 1));
         assert_eq!(app.story.as_ref().unwrap().summary.readable().unwrap().overview,
             "No readable comments to summarize yet.");
-        let file: serde_json::Value = serde_json::from_slice(&std::fs::read(dir.join("1.json")).unwrap()).unwrap();
-        assert_eq!(file["discussion"].is_object(), case == "readable", "{case}");
+        assert_eq!(dir.join("1.discussion.json").exists(), case == "readable", "{case}");
         std::fs::remove_dir_all(dir).unwrap();
     }
 }
 
 #[test]
 fn saved_line_tracks_the_half_still_displayed_after_a_partial_regeneration() {
-    use crate::story_io::{Provenance, StoryUpdate, SummaryError};
+    use crate::story_io::{StoryUpdate, SummaryError};
     use hn_lib::reader::Article;
 
     for article_first in [true, false] {
         let mut seed = app(true, SavedView::in_memory());
         super::super::scenes::scene_summary_saved(&mut seed);
         let mut store = seed.summary_store.take().unwrap();
-        let mut saved = store.load(crate::fixtures::STORY_ID).unwrap();
-        saved.discussion.as_mut().unwrap().saved_at = 1_700_000_000 - 2 * 3600;
-        store.write(&saved).unwrap();
+        let mut saved = store.load_discussion(crate::fixtures::STORY_ID).unwrap();
+        saved.header.saved_at = 1_700_000_000 - 2 * 3600;
+        store.save_discussion(saved).unwrap();
 
         let mut app = app(true, SavedView::in_memory());
         app.summary_store = Some(store);
         app.open_story(crate::fixtures::item(crate::fixtures::STORY_INDEX, crate::fixtures::STORY_ID));
         app.story.as_mut().unwrap().retry(true);
         let update = |article: bool, success: bool| {
-            let provenance = Provenance::from(&Config::default());
+            let header = Header::new(crate::fixtures::STORY_ID, Default::default(), Default::default());
             if article {
                 StoryUpdate::ArticleSummary {
                     story_id: crate::fixtures::STORY_ID,
                     summary: if success { Ok(Article { text: "Fresh article".into() }) }
                         else { Err(SummaryError::new("offline", false)) },
-                    provenance, empty_capture: false,
+                    header, empty_capture: false, partial: false,
                 }
             } else {
                 StoryUpdate::Summary {
                     story_id: crate::fixtures::STORY_ID,
                     summary: if success { Ok((crate::fixtures::summary(), crate::fixtures::sources())) }
                         else { Err(SummaryError::new("offline", false)) },
-                    provenance,
+                    header, coverage: String::new(),
                 }
             }
         };
@@ -161,7 +160,7 @@ fn saved_line_tracks_the_half_still_displayed_after_a_partial_regeneration() {
 
 #[test]
 fn failures_cancelled_results_and_empty_article_are_not_saved() {
-    use crate::story_io::{Provenance, StoryUpdate, SummaryError};
+    use crate::story_io::{StoryUpdate, SummaryError};
     use hn_lib::reader::Article;
 
     for empty in [false, true] {
@@ -180,12 +179,12 @@ fn failures_cancelled_results_and_empty_article_are_not_saved() {
         let mut app = disk_app(&dir);
         app.source = Arc::new(Source::Fake(fake));
         app.open_story(crate::fixtures::item(0, 1));
-        assert!(!dir.join("1.json").exists());
+        assert!(!dir.join("1.article.json").exists() && !dir.join("1.discussion.json").exists());
         assert!(!app.land_story_update(StoryUpdate::ArticleSummary {
             story_id: 99, summary: Ok(Article { text: "stale".into() }),
-            provenance: Provenance::from(&Config::default()), empty_capture: false,
+            header: Header::new(99, Default::default(), Default::default()), empty_capture: false, partial: false,
         }));
-        assert!(!dir.join("99.json").exists());
+        assert!(!dir.join("99.article.json").exists());
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -218,7 +217,7 @@ fn failures_cancelled_results_and_empty_article_are_not_saved() {
     app.story.as_mut().unwrap().stop_summaries();
     gate.add_permits(2);
     poll_until(&mut app, |app| !app.bridge.is_story_pending());
-    assert!(!dir.join("1.json").exists());
+    assert!(!dir.join("1.article.json").exists() && !dir.join("1.discussion.json").exists());
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -231,8 +230,9 @@ fn regeneration_replaces_successful_halves_and_keeps_failed_ones() {
     let _ = std::fs::remove_dir_all(&dir);
     let mut app = disk_app(&dir);
     app.open_story(crate::fixtures::item(0, 1));
-    let path = dir.join("1.json");
-    let original: serde_json::Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+    let path = dir.join("1.article.json");
+    let discussion_path = dir.join("1.discussion.json");
+    let original_discussion = std::fs::read(&discussion_path).unwrap();
 
     let mut fake = crate::service::fake::FakeService::fixture();
     fake.article_summary = Arc::new(|_| Box::pin(async { Ok(Article { text: "Fresh article".into() }) }));
@@ -243,9 +243,9 @@ fn regeneration_replaces_successful_halves_and_keeps_failed_ones() {
     app.retry_summary();
     let updated: serde_json::Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
     assert_eq!(updated["article"]["text"], "Fresh article");
-    assert_eq!(updated["article"]["provider"], "Anthropic");
-    assert_eq!(updated["article"]["model"], Profile::Thorough.model(Provider::Anthropic));
-    assert_eq!(updated["discussion"], original["discussion"]);
+    assert_eq!(updated["provider"], "anthropic");
+    assert_eq!(updated["model"], Profile::Thorough.model(Provider::Anthropic));
+    assert_eq!(std::fs::read(&discussion_path).unwrap(), original_discussion);
     assert!(matches!(app.story.as_ref().unwrap().summary, crate::story::SummaryState::Failed { .. }));
     assert!(app.story.as_ref().unwrap().summary.readable().is_some());
 
@@ -256,23 +256,26 @@ fn regeneration_replaces_successful_halves_and_keeps_failed_ones() {
     app.retry_summary();
     let after_failure: serde_json::Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
     assert_eq!(after_failure, updated);
+    assert_eq!(std::fs::read(discussion_path).unwrap(), original_discussion);
     assert_eq!(app.story.as_ref().unwrap().article_summary.readable(), Some("Fresh article"));
     std::fs::remove_dir_all(dir).unwrap();
 }
 
 #[test]
 fn bad_and_unknown_files_are_ignored_then_overwritten() {
-    for (name, bytes) in [("corrupt", b"{".as_slice()), ("version", br#"{"version":99,"story_id":1,"article":null,"discussion":null}"#.as_slice())] {
+    for (name, bytes) in [("corrupt", b"{".as_slice()), ("version", br#"{"version":99,"story_id":1,"saved_at":1,"provider":"open_router","model":"fixture","profile":"fast","article":{"text":"obsolete"},"partial":false}"#.as_slice())] {
         let dir = temp_dir(&format!("summary-{name}"));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
-        std::fs::write(dir.join("1.json"), bytes).unwrap();
+        std::fs::write(dir.join("1.article.json"), bytes).unwrap();
         let mut app = disk_app(&dir);
         app.open_story(crate::fixtures::item(0, 1));
         assert_eq!(request_counts(&app), (1, 1));
-        let saved: serde_json::Value = serde_json::from_slice(&std::fs::read(dir.join("1.json")).unwrap()).unwrap();
-        assert_eq!(saved["version"], 1);
-        assert!(saved["article"].is_object() && saved["discussion"].is_object());
+        for part in ["article", "discussion"] {
+            let saved: serde_json::Value = serde_json::from_slice(&std::fs::read(dir.join(format!("1.{part}.json"))).unwrap()).unwrap();
+            assert_eq!(saved["version"], 1);
+            assert!(saved[part].is_object());
+        }
         std::fs::remove_dir_all(dir).unwrap();
     }
 }
@@ -310,13 +313,13 @@ fn provenance_is_captured_when_each_request_starts() {
     app.config.profile = Profile::Thorough;
     gate.add_permits(2);
     poll_until(&mut app, |app| !app.bridge.is_story_pending());
-    let saved: serde_json::Value = serde_json::from_slice(&std::fs::read(dir.join("1.json")).unwrap()).unwrap();
     for part in ["article", "discussion"] {
-        assert_eq!(saved[part]["provider"], "OpenRouter");
-        assert_eq!(saved[part]["profile"], "Fast");
-        assert_eq!(saved[part]["model"], Profile::Fast.model(Provider::OpenRouter));
+        let saved: serde_json::Value = serde_json::from_slice(&std::fs::read(dir.join(format!("1.{part}.json"))).unwrap()).unwrap();
+        assert_eq!(saved["provider"], "open_router");
+        assert_eq!(saved["profile"], "fast");
+        assert_eq!(saved["model"], Profile::Fast.model(Provider::OpenRouter));
+        assert!(!saved.to_string().contains("fixture"), "credentials never enter the store");
     }
-    assert!(!saved.to_string().contains("fixture"), "credentials never enter the store");
     std::fs::remove_dir_all(dir).unwrap();
 }
 
@@ -362,7 +365,7 @@ fn regenerate_link_is_a_button_that_requests_fresh_summaries() {
 
 #[test]
 fn regenerate_link_is_withheld_while_generating_and_opens_settings_without_a_key() {
-    use crate::story_io::{Provenance, StoryUpdate};
+    use crate::story_io::StoryUpdate;
     use hn_lib::reader::Article;
 
     for case in ["no-key", "article-generating", "discussion-generating", "both-generating"] {
@@ -370,16 +373,16 @@ fn regenerate_link_is_withheld_while_generating_and_opens_settings_without_a_key
         super::super::scenes::scene_summary_saved(&mut app);
         if case != "no-key" {
             app.story.as_mut().unwrap().retry(true);
-            let provenance = Provenance::from(&Config::default());
+            let header = Header::new(crate::fixtures::STORY_ID, Default::default(), Default::default());
             if case == "article-generating" {
                 assert!(app.land_story_update(StoryUpdate::Summary {
                     story_id: crate::fixtures::STORY_ID,
-                    summary: Ok((crate::fixtures::summary(), crate::fixtures::sources())), provenance,
+                    summary: Ok((crate::fixtures::summary(), crate::fixtures::sources())), header, coverage: String::new(),
                 }));
             } else if case == "discussion-generating" {
                 assert!(app.land_story_update(StoryUpdate::ArticleSummary {
                     story_id: crate::fixtures::STORY_ID,
-                    summary: Ok(Article { text: "Fresh article".into() }), provenance, empty_capture: false,
+                    summary: Ok(Article { text: "Fresh article".into() }), header, empty_capture: false, partial: false,
                 }));
             }
         }
@@ -434,5 +437,49 @@ fn restored_halves_survive_automatic_off_and_failed_fetches() {
             _ => assert!(!restarted.config.automatic),
         }
         std::fs::remove_dir_all(dir).unwrap();
+    }
+}
+
+#[test]
+fn saved_marker_tracks_the_displayed_discussion_while_replacement_is_staged() {
+    use crate::story_io::StoryUpdate;
+    use hn_lib::reader::Article;
+
+    for replace_article in [false, true] {
+        let mut s = app(true, SavedView::in_memory());
+        super::super::scenes::scene_summary_saved(&mut s);
+        s.open_citation(0);
+        assert!(s.story.as_ref().unwrap().source().is_some());
+        let old = s.story.as_ref().unwrap().summary.readable().unwrap().overview.clone();
+        s.story.as_mut().unwrap().retry(true);
+        let story_id = crate::fixtures::STORY_ID;
+        if replace_article {
+            assert!(s.land_story_update(StoryUpdate::ArticleSummary {
+                story_id, summary: Ok(Article { text: "Fresh article".into() }),
+                header: Header::new(story_id, Default::default(), Default::default()),
+                empty_capture: false, partial: false,
+            }));
+        }
+        let mut discussion = crate::fixtures::summary();
+        discussion.overview = "Fresh discussion".into();
+        assert!(s.land_story_update(StoryUpdate::Summary {
+            story_id, summary: Ok((discussion, crate::fixtures::sources())),
+            header: Header::new(story_id, Default::default(), Default::default()),
+            coverage: "fixture".into(),
+        }));
+        let story = s.story.as_ref().unwrap();
+        assert_eq!(story.summary.readable().unwrap().overview, old);
+        assert!(story.restored_summary.as_ref().unwrap().discussion.is_some());
+
+        press(&mut s, rune::Key::Escape);
+        let story = s.story.as_ref().unwrap();
+        assert!(story.source().is_none());
+        assert_eq!(story.summary.readable().unwrap().overview, "Fresh discussion");
+        if replace_article {
+            assert!(story.restored_summary.is_none());
+        } else {
+            let restored = story.restored_summary.as_ref().unwrap();
+            assert!(restored.discussion.is_none() && restored.article_age.is_some());
+        }
     }
 }

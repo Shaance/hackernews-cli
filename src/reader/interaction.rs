@@ -1,6 +1,6 @@
 use super::{browser, Duration, Instant, Reader, Reading, Request};
-use crossterm::event::KeyCode;
 use crate::HNCLIItem;
+use crossterm::event::KeyCode;
 
 impl Reader {
     // False delegates to the existing discussion tree controls.
@@ -49,9 +49,10 @@ impl Reader {
             if generate {
                 self.request(Request::Missing);
             }
+            let mut saved = Ok(());
             if let Some(r) = self.active.and_then(|id| self.readings.get_mut(&id)) {
                 r.shown = if r.source.is_some() {
-                    r.leave_source();
+                    saved = r.leave_source(self.store.as_mut());
                     false
                 } else {
                     generate || !r.shown || (r.moved && r.growth_cap == 0)
@@ -62,6 +63,7 @@ impl Reader {
                 r.citation_focus = false;
                 r.reveal_citation = false;
             }
+            self.report_save(saved);
             return true;
         }
         let Some(reading) = self.active.and_then(|id| self.readings.get_mut(&id)) else {
@@ -70,13 +72,14 @@ impl Reader {
         match key {
             KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('h') | KeyCode::Left => {
                 let was_source = reading.source.is_some();
-                reading.leave_source();
+                let saved = reading.leave_source(self.store.as_mut());
                 if !was_source {
                     reading.article.cancel_preparation();
                     reading.discussion.cancel_preparation();
                     self.active = None;
                     self.close_browser();
                 }
+                self.report_save(saved);
             }
             KeyCode::Tab | KeyCode::BackTab => {
                 let citations = reading.citations();
@@ -158,16 +161,23 @@ impl Reader {
             }
         }
         self.active = Some(story.id);
-        let reading = self.readings.entry(story.id).or_insert_with(|| Reading {
-            theme: self.theme,
-            ..Reading::new(story.clone())
+        let reading = self.readings.entry(story.id).or_insert_with(|| {
+            let mut reading = Reading {
+                theme: self.theme,
+                ..Reading::new(story.clone())
+            };
+            if let Some(store) = &self.store {
+                reading.restore(store);
+            }
+            reading
         });
         reading.story = story;
         reading.moved = false;
         reading.panel_motion = None;
         reading.growth_cap = 0;
-        reading.leave_source();
+        let saved = reading.leave_source(self.store.as_mut());
         reading.citation_focus = false;
+        self.report_save(saved);
         self.load_captured_summary();
         if self.config.automatic {
             self.request(Request::Automatic);

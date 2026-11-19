@@ -133,21 +133,11 @@ fn expanded_summary(s: &Story, k: &Kit, t: tok::Theme, accent: Color, reduced: b
 
 fn saved_label(saved: &RestoredSummary, current_comments: Option<i32>) -> String {
     let age = saved.article_age.into_iter().chain(saved.discussion.map(|(age, _)| age)).max().unwrap_or_default();
-    let seconds = age.saturating_add(saved.observed.elapsed().as_secs());
-    let age = match seconds {
-        0..=59 => "just now".to_string(),
-        60..=3599 => format!("{}m ago", seconds / 60),
-        3600..=86399 => format!("{}h ago", seconds / 3600),
-        _ => format!("{}d ago", seconds / 86400),
-    };
-    let mut label = format!("Saved {age}");
-    if let (Some((_, saved)), Some(current)) = (saved.discussion, current_comments.and_then(|n| u32::try_from(n).ok())) {
-        let new = current.saturating_sub(saved);
-        if new > 0 {
-            label.push_str(&format!(" · {new} new comment{}", if new == 1 { "" } else { "s" }));
-        }
-    }
-    label
+    hn_lib::reader::saved::saved_label(
+        age.saturating_add(saved.observed.elapsed().as_secs()),
+        saved.discussion.map(|(_, comments)| comments),
+        current_comments,
+    )
 }
 
 #[cfg(test)]
