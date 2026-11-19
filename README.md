@@ -34,7 +34,7 @@ Read stories and comment threads in your terminal. Save stories for later, keep 
 
 On macOS with Ghostty, you can open the original article in a companion browser pane beside the discussion. Other setups open it in your default browser.
 
-![Opening a story with its summary, focusing a citation, reading the cited comment, then opening the article in a Ghostty browser pane beside it](docs/screenshots/demo.gif)
+![Opening a story with its summary, focusing a citation, browsing the cited comment's replies, then expanding, folding and instantly reopening a thread](docs/screenshots/demo.gif)
 
 ## Run it
 
@@ -269,7 +269,7 @@ Use the [security policy](SECURITY.md) to report a vulnerability privately.
 
 | Feed | Reader with summary |
 |---|---|
-| ![Best feed with the third story selected](docs/screenshots/feed.png) | ![Reader with the article and discussion summary above the comments](docs/screenshots/reader.png) |
+| ![Best feed in two columns, first story selected](docs/screenshots/feed.png) | ![Reader with the article and discussion summary above the comments](docs/screenshots/reader.png) |
 | **Citation focus** | **Key reference** |
 | ![A summary point focused, with its first citation highlighted](docs/screenshots/citation.png) | ![The help modal over the dimmed reader](docs/screenshots/help.png) |
 
@@ -277,7 +277,7 @@ Use the [security policy](SECURITY.md) to report a vulnerability privately.
 
 ![The reader in the light palette](docs/screenshots/reader-light.png)
 
-The stills of a single terminal are captured from the real app with [vhs](https://github.com/charmbracelet/vhs). To regenerate them after a UI change, run `scripts/readme-screenshots.sh`; it uses live Hacker News and an OpenRouter key from the environment or `.env.local` (two summaries, a few cents). The demo GIF and the article pane still are recorded in a real Ghostty window, because vhs cannot open Ghostty splits.
+The stills of a single terminal are captured from the real app with [vhs](https://github.com/charmbracelet/vhs). To regenerate them after a UI change, run `scripts/readme-screenshots.sh`; it also renders the demo GIF from `scripts/readme/demo.tape`. It uses live Hacker News and an OpenRouter key from the environment or `.env.local` (one summary, which the later recordings reuse once saved; a few cents). The article pane still is recorded in a real Ghostty window, because vhs cannot open Ghostty splits.
 
 ## About
 
