@@ -40,7 +40,7 @@ pub(super) fn scene_story(s: &mut App) {
         crate::fixtures::STORY_ID,
     ));
     if let Some(story) = s.story.as_mut() {
-        story.thread = crate::comments::Thread::from_comments(&crate::fixtures::thread());
+        story.thread = hn_lib::comments::Thread::from_comments(&crate::fixtures::thread());
     }
 }
 

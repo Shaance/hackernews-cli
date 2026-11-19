@@ -155,7 +155,7 @@ impl Source {
     pub fn capture(&self, comments: &[Comment]) -> Vec<CapturedSource> {
         comments
             .iter()
-            .filter(|comment| crate::comments::readable(comment))
+            .filter(|comment| hn_lib::comments::readable(comment))
             .map(|comment| {
                 let text = reader::sources::clean(&comment.text);
                 CapturedSource {

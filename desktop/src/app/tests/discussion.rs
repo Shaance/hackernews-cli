@@ -265,7 +265,7 @@ fn hovering_between_equal_depths_with_different_ancestors_keeps_geometry() {
     scene_comments(&mut s);
     let comments: Vec<_> = crate::fixtures::thread().into_iter()
         .filter(|c| [901, 9010, 903, 9030].contains(&c.id)).collect();
-    s.story.as_mut().unwrap().thread = crate::comments::Thread::from_comments(&comments);
+    s.story.as_mut().unwrap().thread = hn_lib::comments::Thread::from_comments(&comments);
     let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
     rt.frame(0.0);
     let row = |rt: &rune::Runtime<App>, key: &str| rt.elements().into_iter()
@@ -392,7 +392,7 @@ fn keyboard_fold_holds_a_partly_visible_parent() {
             comments.iter_mut().find(|comment| comment.id == 901).unwrap().child_ids.push(id);
             comments.push(comment);
         }
-        s.story.as_mut().unwrap().thread = crate::comments::Thread::from_comments(&comments);
+        s.story.as_mut().unwrap().thread = hn_lib::comments::Thread::from_comments(&comments);
         if source { s.open_citation(0); }
         s.story.as_mut().unwrap().with_thread(|thread| { assert!(thread.select(9010)); });
         let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));

@@ -13,6 +13,7 @@ class ReaderFixture:
         self.calls = []
         self.gets = []
         self.get_gates = {}
+        self.gated_responses = []
         self.fail_item = None
         self.errors = []
         self.gates = {("fast", "discussion"): threading.Event(),
@@ -26,7 +27,10 @@ class ReaderFixture:
                 pass
 
             def do_GET(self):
+                gated = self.path in fixture.get_gates
                 self.respond(*fixture.get(self.path))
+                if gated:
+                    fixture.gated_responses.append(self.path)
 
             def do_POST(self):
                 body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))

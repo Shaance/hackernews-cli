@@ -13,6 +13,7 @@
 //! outside the crate can reach it.
 pub mod app;
 pub mod bookmarks;
+pub mod comments;
 pub mod event;
 pub mod feed_state;
 mod hn_cli_service;

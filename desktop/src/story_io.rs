@@ -39,7 +39,7 @@ pub struct CommentsRefreshed {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReplyRequest {
     pub story_id: i32,
-    pub batch: crate::comments::ReplyBatch,
+    pub batch: hn_lib::comments::ReplyBatch,
 }
 
 pub struct ReplyFilled {

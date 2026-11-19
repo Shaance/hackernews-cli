@@ -7,7 +7,6 @@
 pub mod app;
 pub mod bookmarks;
 pub mod bridge;
-pub mod comments;
 pub mod feed;
 pub mod fixtures;
 pub mod help;
