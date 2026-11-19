@@ -8,6 +8,12 @@ description = "Read Hacker News stories and comment threads in your terminal"
 repository = "https://github.com/Shaance/hn"
 readme = "README.md"
 
+# `cargo binstall` downloads the tui-release workflow's archive instead of compiling.
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/tui-v{ version }/{ name }-{ version }-{ target }.tar.gz"
+pkg-fmt = "tgz"
+bin-dir = "{ bin }{ binary-ext }"
+
 [[bin]]
 name = "hn"
 path = "src/main.rs"
