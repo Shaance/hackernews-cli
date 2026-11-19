@@ -14,9 +14,8 @@ Set Theme { "name": "hn-light", "background": "#faf9f5", "foreground": "#24292c"
 Hide
 Type "clear && HN_THEME=light ./target/release/hn" Enter
 Wait+Screen@20s /points/
-Type "jj"
 Type "c"
-Wait+Screen@60s /✓ summary/
+Wait+Screen@90s /✓ summary/
 Sleep 1s
 Show
 Sleep 1.5s

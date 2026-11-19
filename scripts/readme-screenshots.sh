@@ -1,7 +1,7 @@
 #!/bin/sh
-# Regenerate the README stills with vhs (brew install vhs). The demo GIF is recorded in Ghostty instead.
+# Regenerate the README demo GIF and stills with vhs (brew install vhs). The Ghostty article-pane still is recorded by hand.
 # Uses live Hacker News and an OpenRouter key from the environment or .env.local
-# (two summaries, a few cents). Settings and saved stories live in a throwaway directory.
+# (one summary, which the later recordings reuse once saved; a few cents). Settings and saved stories live in a throwaway directory.
 set -eu
 cd "$(dirname "$0")/.."
 command -v vhs >/dev/null || { echo "vhs is required: brew install vhs" >&2; exit 1; }
@@ -16,7 +16,7 @@ state=$(mktemp -d "${TMPDIR:-/tmp}/hn-readme.XXXXXX")
 trap 'rm -rf "$state"' EXIT HUP INT TERM
 export XDG_CONFIG_HOME="$state/config" XDG_DATA_HOME="$state/data" XDG_STATE_HOME="$state/state"
 cargo build --release
-for tape in scripts/readme/dark.tape scripts/readme/light.tape; do
+for tape in scripts/readme/demo.tape scripts/readme/dark.tape scripts/readme/light.tape; do
     vhs "$tape"
 done
 # Cut stills from the recordings; times follow the visible Sleeps in each tape.
