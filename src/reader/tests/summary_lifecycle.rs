@@ -52,7 +52,7 @@ async fn refresh_survives_revisit_and_profile_switch_ignores_old_completion() {
         .article
         .result
         .as_ref()
-        .map(|r| r.capture.clone());
+        .and_then(|r| r.capture().cloned());
     p.readings.get_mut(&1).unwrap().article.progress = Progress::Running(old);
     p.key(KeyCode::Esc);
     p.open(story(1));
@@ -67,9 +67,12 @@ async fn refresh_survives_revisit_and_profile_switch_ignores_old_completion() {
     p.complete(jobs::Completion {
         story: 1,
         attempt: old,
-        output: jobs::Output::Article(Ok(Article {
-            text: "stale".into(),
-        })),
+        output: jobs::Output::Article(
+            Provider::OpenRouter,
+            Ok(Article {
+                text: "stale".into(),
+            }),
+        ),
     });
     assert_eq!(
         p.readings[&1].article.result.as_ref().unwrap().value.text,
@@ -78,7 +81,7 @@ async fn refresh_survives_revisit_and_profile_switch_ignores_old_completion() {
     p.complete(jobs::Completion {
         story: 1,
         attempt: new,
-        output: jobs::Output::Article(Err(Failure::new("Unavailable"))),
+        output: jobs::Output::Article(Provider::OpenRouter, Err(Failure::new("Unavailable"))),
     });
     assert!(p.readings[&1].article.failed());
     assert_eq!(
@@ -100,7 +103,8 @@ fn source_snapshot_and_parent_publish_together_on_return() {
     original.sources[1].text = "Reply evidence.\n".repeat(60);
     original.sources[1].excerpt = original.sources[1].text.clone();
     let reading = p.readings.get_mut(&1).unwrap();
-    reading.discussion.result.as_mut().unwrap().capture = Arc::new(Capture::new(original));
+    reading.discussion.result.as_mut().unwrap().basis =
+        Basis::Captured(Arc::new(Capture::new(original)));
     p.key(KeyCode::Tab);
     p.key(KeyCode::Enter);
     let attempt = Attempt {
@@ -118,7 +122,7 @@ fn source_snapshot_and_parent_publish_together_on_return() {
     p.complete(jobs::Completion {
         story: 1,
         attempt,
-        output: jobs::Output::Discussion(Ok(next)),
+        output: jobs::Output::Discussion(Provider::OpenRouter, Ok(next)),
     });
     assert!(p.readings[&1]
         .source_lines(11, 80)
@@ -148,7 +152,8 @@ fn source_snapshot_and_parent_publish_together_on_return() {
             .result
             .as_ref()
             .unwrap()
-            .capture
+            .capture()
+            .unwrap()
             .input
             .sources[1]
             .text,

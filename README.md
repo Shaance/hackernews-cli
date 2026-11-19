@@ -112,13 +112,13 @@ Summaries show their capture time and source coverage. Article extraction can be
 
 ### Revisit, change model, or refresh
 
-Completed summaries and their captured inputs stay in memory for the current run. Returning to a story reuses its results without another model request, even if you changed the default profile elsewhere.
+Returning to a story reuses its results without another model request, even if you changed the default profile elsewhere. Successful article and discussion summaries are saved separately and shared with Hacker News Desktop. A restored summary shows its age and keeps its citations. The discussion header also shows how many comments have been added since it was saved.
 
-Applying a model choice in `M` uses that story's retained input and sets the default for future summaries. Only the latest result is retained, so explicitly switching back to a previous model can require another paid request. Saving unrelated settings does not replace an existing summary.
+Applying a model choice in `M` sets the default for future summaries. If it replaces a restored summary, hn captures fresh sources. Results generated during this run can reuse the retained input. Only the latest result is retained, so explicitly switching back to a previous model can require another paid request. Saving unrelated settings does not replace an existing summary.
 
-Choose **Refresh sources & summary** in `M` to fetch newer article and discussion content and generate new results. Press `r` to refresh visible comments without making summary requests. After a summary failure, press `M`, then Enter on **Retry failed summary** to retry only failed sections using any successful capture already available. Existing summaries stay readable during replacement or failure, and a citation you are viewing keeps its captured text until you leave it.
+Choose **Refresh sources & summary** in `M` to fetch newer article and discussion content and generate new results. Press `r` to refresh visible comments without making summary requests. After a summary failure, press `M`, then Enter on **Retry failed summary** to retry only failed sections. Retries reuse available in-session input and capture fresh sources when replacing a restored summary. Existing summaries stay readable during replacement or failure, and a citation you are viewing keeps its captured text until you leave it.
 
-Restarting hn begins a new reading session. Saved stories and summary settings persist; captured sources, summaries, and comment positions do not reload from disk.
+On startup, hn deletes saved summary halves older than 30 days. Reading positions and in-progress requests start fresh after a restart.
 
 ## Optional Ghostty article pane
 
@@ -187,9 +187,10 @@ While viewing a cited source, `j/k`, Page Up/Down, and `g/G` scroll its text. In
 | Summary settings and any key entered in the form | `~/.config/hn/summary.json` | Across restarts |
 | Summary response diagnostics (both providers) | `~/.local/state/hn/summary-responses/` | Until manually deleted |
 | Optional article browser | `~/.local/share/hn/terminal-browser-v0.13.4/` | Across hn reinstalls |
-| Captured inputs, summaries, replies, and reading positions | Memory only | Current run |
+| Saved summaries and citation sources | `~/.local/state/hn/summaries/<id>.{article,discussion}.json` | 30 days, pruned on startup |
+| Captured inputs for regeneration, replies, and reading positions | Memory only | Current run |
 
-`XDG_DATA_HOME`, `XDG_CONFIG_HOME`, and `XDG_STATE_HOME` override the corresponding directory roots. Settings and diagnostic files use owner-only permissions on Unix. A key entered through the form is stored in the settings file; it is not an OS keychain entry.
+`XDG_DATA_HOME`, `XDG_CONFIG_HOME`, and `XDG_STATE_HOME` override the corresponding directory roots. Settings, saved summaries, and diagnostic files use owner-only permissions on Unix. A key entered through the form is stored in the settings file; it is not an OS keychain entry.
 
 Each JSON file records the timestamp, provider, model, story title, HTTP status, generation ID, request ID when supplied, and raw response body. It can contain summary or error text. Request headers and full prompts/article/comment inputs are not logged, and an echoed active key is redacted. Logging failures do not interrupt reading or trigger another request.
 

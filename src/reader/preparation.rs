@@ -24,6 +24,7 @@ impl Reader {
                             story: story.id,
                             attempt,
                             output: Output::Article(
+                                provider,
                                 network
                                     .article(provider, &key, attempt.profile, &capture.input)
                                     .await,
@@ -57,6 +58,7 @@ impl Reader {
                             story: story.id,
                             attempt,
                             output: Output::Discussion(
+                                provider,
                                 network
                                     .discussion(provider, &key, attempt.profile, &capture.input)
                                     .await,

@@ -8,6 +8,7 @@ impl Reader {
             ..Config::default()
         };
         self.config_path = None;
+        self.store = None;
         self.snapshot = Some(snapshot);
     }
 
@@ -41,7 +42,7 @@ impl Reader {
                 text: summary.clone(),
             },
             profile: Profile::Fast,
-            capture,
+            basis: Basis::Captured(capture),
         });
     }
 }

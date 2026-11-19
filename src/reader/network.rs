@@ -31,11 +31,7 @@ impl Default for Network {
                 .expect("HTTP client"),
             endpoint: "https://openrouter.ai/api/v1/chat/completions".into(),
             anthropic_endpoint: "https://api.anthropic.com/v1/messages".into(),
-            response_log_dir: std::env::var_os("XDG_STATE_HOME")
-                .filter(|v| !v.is_empty())
-                .map(PathBuf::from)
-                .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/state")))
-                .map(|root| root.join("hn/summary-responses")),
+            response_log_dir: super::saved::state_root().map(|root| root.join("summary-responses")),
         }
     }
 }

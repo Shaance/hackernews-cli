@@ -432,8 +432,8 @@ fn returning_to_a_replacement_without_citations_restores_summary_focus() {
     for point in &mut replacement.points { point.sources.clear(); }
     story.land_update(StoryUpdate::Summary {
         story_id: story.id(), summary: Ok((replacement, crate::fixtures::sources())),
-        provenance: crate::story_io::Provenance::from(&hn_lib::reader::Config::default()),
-    });
+        header: hn_lib::reader::saved::Header::new(story.id(), Default::default(), Default::default()), coverage: String::new(),
+    }, None);
     let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
     rt.on_key = Some(on_key);
     rt.frame(0.0);

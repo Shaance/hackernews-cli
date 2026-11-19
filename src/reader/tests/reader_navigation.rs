@@ -77,11 +77,11 @@ fn short_summary_returns_space_and_long_summary_scrolls_independently() {
         .result
         .as_mut()
         .unwrap()
-        .capture = Arc::new(Capture::new(ArticleCapture {
+        .basis = Basis::Captured(Arc::new(Capture::new(ArticleCapture {
         title: "An example story".into(),
         text: "Opening portion of the article".into(),
         partial: true,
-    }));
+    })));
     assert!(screen(&mut p, &mut app, 120, 40).contains("Partial source · opening portion only"));
 }
 
@@ -157,7 +157,8 @@ async fn coordinator_reopens_fresh_metadata_without_moving_comments_or_evidence(
             .result
             .as_ref()
             .unwrap()
-            .capture
+            .capture()
+            .unwrap()
             .input
             .title,
         "An example story"
@@ -182,7 +183,7 @@ fn focused_citation_token_is_visible_after_wrapping_and_source_comparison() {
             text: "Third evidence.\n".repeat(60),
             excerpt: "Third evidence.\n".repeat(60),
         });
-        result.capture = Arc::new(Capture::new(capture));
+        result.basis = Basis::Captured(Arc::new(Capture::new(capture)));
         let mut app = comments_app();
         screen(&mut p, &mut app, w, h);
         app.set_comment_position(1, p.readings[&1].prefix_height + 37);
@@ -273,9 +274,9 @@ fn complete_section(p: &mut Reader, article: bool, text: &str) {
         story: 1,
         attempt: *attempt,
         output: if article {
-            jobs::Output::Article(Ok(Article { text: text.into() }))
+            jobs::Output::Article(Provider::OpenRouter, Ok(Article { text: text.into() }))
         } else {
-            jobs::Output::Discussion(Ok(discussion(text)))
+            jobs::Output::Discussion(Provider::OpenRouter, Ok(discussion(text)))
         },
     });
 }
@@ -638,8 +639,8 @@ fn citation_focus_suppresses_comment_selection_until_comment_navigation() {
 
 #[test]
 fn reader_help_keys_match_handlers_and_use_accent() {
-    use crossterm::event::KeyCode::{self, *};
     use crate::event::{handle_comments_key, CommentAction};
+    use crossterm::event::KeyCode::{self, *};
     let theme = Theme::TRUE_DARK;
     let entries: &[(&str, &[KeyCode])] = &[
         ("j/k/↑/↓", &[Char('j'), Char('k'), Up, Down]),
@@ -736,11 +737,11 @@ fn motion_effects_stay_on_rgb_line_at_mid_duration() {
                         let r = p.readings.get_mut(&1).unwrap();
                         r.theme = theme;
                         let result = r.article.result.as_mut().unwrap();
-                        result.capture = Arc::new(Capture::new(ArticleCapture {
+                        result.basis = Basis::Captured(Arc::new(Capture::new(ArticleCapture {
                             partial: true,
                             title: "Title".into(),
                             text: "Source".into(),
-                        }));
+                        })));
                         let height = (r.summary_lines(120).0.len() + 1).min(26) as u16;
                         r.panel_motion =
                             Some((Instant::now() - Duration::from_millis(125), 0, height));
@@ -857,8 +858,14 @@ fn motion_browser_notice_timing_and_persistent_errors() {
         app.set_comment_error("Comments failed".into());
         assert!(row(&buffer(&mut p, &mut app), 39).contains("Comments failed"));
         app.set_comments(vec![]);
-        p.readings.get_mut(&1).unwrap().staged =
-            p.readings.get_mut(&1).unwrap().discussion.result.take();
+        p.readings.get_mut(&1).unwrap().staged = p
+            .readings
+            .get_mut(&1)
+            .unwrap()
+            .discussion
+            .result
+            .take()
+            .map(|result| (result, Provider::OpenRouter, 2));
         assert!(row(&buffer(&mut p, &mut app), 39).contains("Summary updated"));
     }
 }
@@ -1156,7 +1163,10 @@ async fn esc_back_to_feed_closes_the_owned_article_pane() {
     });
     assert!(p.key(KeyCode::Esc));
     assert!(p.active.is_none());
-    assert!(p.browser.is_none(), "Esc must drop the owned browser target");
+    assert!(
+        p.browser.is_none(),
+        "Esc must drop the owned browser target"
+    );
     assert_eq!(p.browser_notice, "Closing article pane…");
 }
 
@@ -1174,8 +1184,14 @@ fn esc_in_source_view_keeps_the_pane_open() {
         reading.source = Some(11);
     }
     assert!(p.key(KeyCode::Esc));
-    assert!(p.active.is_some(), "Esc from the source view stays in the reader");
-    assert!(p.browser.is_some(), "the pane is only closed when leaving for the feed");
+    assert!(
+        p.active.is_some(),
+        "Esc from the source view stays in the reader"
+    );
+    assert!(
+        p.browser.is_some(),
+        "the pane is only closed when leaving for the feed"
+    );
 }
 
 #[test]

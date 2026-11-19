@@ -222,6 +222,10 @@ impl Reader {
             .or(app.bookmark_notice.as_deref())
             .map(|s| (s, theme.error))
             .or_else(|| {
+                (!self.browser_notice.is_empty() && self.notice_started.is_none())
+                    .then_some((self.browser_notice.as_str(), theme.error))
+            })
+            .or_else(|| {
                 reading
                     .staged
                     .as_ref()
@@ -436,14 +440,7 @@ impl Reading {
         let loading = self.article.pending() || self.discussion.pending();
         if let Some(id) = self.source {
             let result = self.discussion.result.as_ref().unwrap();
-            let author = &result
-                .capture
-                .input
-                .sources
-                .iter()
-                .find(|s| s.id == id)
-                .unwrap()
-                .author;
+            let author = &result.sources().iter().find(|s| s.id == id).unwrap().author;
             return Line::styled(
                 format!(
                     "source {} of {} · {author} · {}",

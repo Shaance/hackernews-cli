@@ -29,10 +29,13 @@ async fn setup_cancel_save_and_rejected_key_repair_resume_same_story() {
         p.complete(jobs::Completion {
             story: 1,
             attempt,
-            output: jobs::Output::Article(Err(Failure {
-                message: "bad key".into(),
-                auth: true,
-            })),
+            output: jobs::Output::Article(
+                Provider::OpenRouter,
+                Err(Failure {
+                    message: "bad key".into(),
+                    auth: true,
+                }),
+            ),
         });
         p.key(KeyCode::Char('M'));
         p.key(KeyCode::Tab);
@@ -265,10 +268,13 @@ async fn switching_provider_reuses_captures_and_ignores_old_pending_completion()
     p.complete(jobs::Completion {
         story: 1,
         attempt: old,
-        output: jobs::Output::Article(Err(Failure {
-            message: "old key".into(),
-            auth: true,
-        })),
+        output: jobs::Output::Article(
+            Provider::OpenRouter,
+            Err(Failure {
+                message: "old key".into(),
+                auth: true,
+            }),
+        ),
     });
     assert!(
         !p.auth_failed,

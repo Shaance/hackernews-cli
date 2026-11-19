@@ -10,6 +10,9 @@
 //! re-root and focus mode. This module owns the story around it — the article, the card, the
 //! citation selection and the link chooser — and hands the thread's transitions straight through.
 
+use hn_lib::reader::saved::{ArticleData, DiscussionContext, DiscussionData, Record, SummaryStore};
+#[cfg(test)]
+use hn_lib::reader::saved::Header;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
@@ -346,7 +349,7 @@ impl Story {
 
     /// Each phase changes only its own surface. A late summary must not replace the article,
     /// the comment tree, or a reply the reader has opened since the discussion arrived.
-    pub fn land_update(&mut self, update: StoryUpdate) -> bool {
+    pub fn land_update(&mut self, update: StoryUpdate, store: Option<&mut SummaryStore>) -> bool {
         match update {
             StoryUpdate::Article { story_id, article, summary_skipped } if story_id == self.id() => {
                 if summary_skipped { self.stop_summary(true); }
@@ -360,8 +363,14 @@ impl Story {
                     },
                 };
             }
-            StoryUpdate::ArticleSummary { story_id, summary, .. } if story_id == self.id() => {
+            StoryUpdate::ArticleSummary { story_id, summary, header, empty_capture, partial } if story_id == self.id() => {
                 if !matches!(self.article_summary, ArticleSummaryState::Generating { .. }) { return false; }
+                if let (Some(store), Ok(article)) = (store, &summary) {
+                    let data = ArticleData { article: article.clone(), partial };
+                    if let Err(error) = store.save_article(Record { header, data }, empty_capture) {
+                        eprintln!("summary {story_id}: write failed: {error}");
+                    }
+                }
                 self.land_article_summary(summary);
             }
             StoryUpdate::Discussion { story_id, comments, summary_skipped } if story_id == self.id() => {
@@ -389,8 +398,16 @@ impl Story {
                     }
                 });
             }
-            StoryUpdate::Summary { story_id, summary, .. } if story_id == self.id() => {
+            StoryUpdate::Summary { story_id, summary, header, coverage } if story_id == self.id() => {
                 if !self.summary.is_generating() { return false; }
+                if let (Some(store), Ok((discussion, sources))) = (store, &summary) {
+                    let comments_at_save = self.story.comments.and_then(|n| u32::try_from(n).ok()).unwrap_or_default();
+                    let context = DiscussionContext { comments_at_save, coverage, sources: sources.clone() };
+                    let data = DiscussionData { discussion: discussion.clone(), context };
+                    if let Err(error) = store.save_discussion(Record { header, data }) {
+                        eprintln!("summary {story_id}: write failed: {error}");
+                    }
+                }
                 self.land_summary(summary);
             }
             _ => return false,
@@ -559,6 +576,7 @@ impl Story {
             state => { display.0 = state; return false; }
         };
         let id = source.id();
+        let accepted = source.staged.is_some();
         let (summary, mut cursor) = source.staged.unwrap_or((source.summary, Some(source.cursor)));
         if let Some(cursor) = &mut cursor {
             let index = cursor.iter().position(|citation| citation.source.id == id).unwrap_or(0);
@@ -566,6 +584,10 @@ impl Story {
             cursor.focused = true;
         }
         display.0 = DisplayState::Summary { summary, cursor };
+        if accepted && let Some(restored) = &mut self.restored_summary {
+            restored.discussion = None;
+            if restored.article_age.is_none() { self.restored_summary = None; }
+        }
         true
     }
 
@@ -726,7 +748,7 @@ mod tests {
                 story_id: story.id(),
                 comments: if fails { Err("initial capture failed".into()) } else { Ok(CapturedComments { comments: older, sources: old_capture }) },
                 summary_skipped: false,
-            });
+            }, None);
             assert_eq!(story.discussion, Some(Ok(())));
             assert_eq!(story.thread.node(newer[0].id).unwrap().text, "newer comment");
             assert_eq!(story.current_sources.iter().find(|item| item.id == newer[0].id).unwrap().text, "newer comment");
@@ -740,12 +762,12 @@ mod tests {
         let mut article = Ok(("# Libghostty 1.0\n\nBody.".to_string(), false));
         let mut sources = fixtures::sources();
         adjust(&mut story_id, &mut article, &mut sources);
-        let provenance = crate::story_io::Provenance::from(&hn_lib::reader::Config::default());
+        let header = Header::new(story_id, Default::default(), Default::default());
         let empty_capture = article.as_ref().is_ok_and(|(text, _)| text.trim().is_empty());
-        let landed = story.land_update(StoryUpdate::Article { story_id, article, summary_skipped: false });
-        story.land_update(StoryUpdate::ArticleSummary { story_id, summary: Ok(Article { text: "Article overview.".to_string() }), provenance: provenance.clone(), empty_capture });
-        story.land_update(StoryUpdate::Discussion { story_id, comments: Ok(CapturedComments { comments: fixtures::thread(), sources: sources.clone() }), summary_skipped: false });
-        story.land_update(StoryUpdate::Summary { story_id, summary: summary.map(|discussion| (discussion, sources)), provenance });
+        let landed = story.land_update(StoryUpdate::Article { story_id, article, summary_skipped: false }, None);
+        story.land_update(StoryUpdate::ArticleSummary { story_id, summary: Ok(Article { text: "Article overview.".to_string() }), header: header.clone(), empty_capture, partial: false }, None);
+        story.land_update(StoryUpdate::Discussion { story_id, comments: Ok(CapturedComments { comments: fixtures::thread(), sources: sources.clone() }), summary_skipped: false }, None);
+        story.land_update(StoryUpdate::Summary { story_id, summary: summary.map(|discussion| (discussion, sources)), header, coverage: String::new() }, None);
         landed
     }
 
@@ -852,7 +874,7 @@ mod tests {
         sources.iter_mut().find(|source| source.id == 901).unwrap().text = "replacement capture".into();
         let mut replacement = discussion();
         replacement.overview = "A new discussion summary".into();
-        assert!(story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok((replacement, sources)), provenance: crate::story_io::Provenance::from(&hn_lib::reader::Config::default()) }));
+        assert!(story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok((replacement, sources)), header: Header::new(2, Default::default(), Default::default()), coverage: String::new() }, None));
         assert_eq!(story.source().unwrap().captured().text, original);
         assert_eq!(story.summary.readable().unwrap().overview, "Commenters split on the ABI.");
         assert!(story.close_source());
@@ -876,7 +898,7 @@ mod tests {
                 1 => for point in &mut replacement.points { point.sources.retain(|id| *id != 901); },
                 _ => for point in &mut replacement.points { point.sources.clear(); },
             }
-            story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok((replacement, fixtures::sources())), provenance: crate::story_io::Provenance::from(&hn_lib::reader::Config::default()) });
+            story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok((replacement, fixtures::sources())), header: Header::new(2, Default::default(), Default::default()), coverage: String::new() }, None);
             assert!(story.close_source());
             assert_eq!(story.focused_citation().is_some(), replacement_kind != 2);
             match replacement_kind {
@@ -895,7 +917,7 @@ mod tests {
         story.retry(true);
         let mut replacement = discussion();
         for point in &mut replacement.points { point.sources.clear(); }
-        assert!(story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok((replacement, fixtures::sources())), provenance: crate::story_io::Provenance::from(&hn_lib::reader::Config::default()) }));
+        assert!(story.land_update(StoryUpdate::Summary { story_id: 2, summary: Ok((replacement, fixtures::sources())), header: Header::new(2, Default::default(), Default::default()), coverage: String::new() }, None));
         assert!(story.focused_citation().is_none());
         assert!(story.citations().next().is_none());
         assert!(!story.open_source());
@@ -909,8 +931,8 @@ mod tests {
         assert_eq!(story.article_summary.readable(), Some("Article overview."));
         story.land_update(StoryUpdate::ArticleSummary {
             story_id: 2, summary: Err(SummaryError::new("Provider unavailable", false)),
-            provenance: crate::story_io::Provenance::from(&hn_lib::reader::Config::default()), empty_capture: false,
-        });
+            header: Header::new(2, Default::default(), Default::default()), empty_capture: false, partial: false,
+        }, None);
         assert!(matches!(story.article_summary, ArticleSummaryState::Failed { .. }));
         assert_eq!(story.article_summary.readable(), Some("Article overview."));
         assert_eq!(story.summary.readable().unwrap().bullets.len(), 2);

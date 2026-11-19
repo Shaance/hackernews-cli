@@ -81,13 +81,7 @@ impl Layout {
 
     /// The file's path, or `None` when neither `XDG_STATE_HOME` nor `HOME` is set.
     pub fn path() -> Option<PathBuf> {
-        let root = std::env::var_os("XDG_STATE_HOME")
-            .filter(|value| !value.is_empty())
-            .map(PathBuf::from)
-            .or_else(|| {
-                std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/state"))
-            })?;
-        Some(root.join("hn/desktop.json"))
+        hn_lib::reader::saved::state_root().map(|root| root.join("desktop.json"))
     }
 
     /// Read the file at `path`. A missing, unreadable or malformed file is the defaults.

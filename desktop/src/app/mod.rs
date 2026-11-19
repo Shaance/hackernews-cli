@@ -44,7 +44,7 @@ use crate::layout::{Layout, ZoomStep};
 use crate::service::Source;
 use crate::settings::Settings;
 use crate::story::Story;
-use crate::summary_store::SummaryStore;
+use hn_lib::reader::saved::{state_root, SummaryStore};
 
 /// One feed row, in points. The measured row count is the viewport height over this.
 const ROW_HEIGHT: f32 = 56.0;
@@ -264,10 +264,10 @@ fn init() -> App {
         .map(Layout::load)
         .unwrap_or_default();
     let zoom = layout.zoom_level();
-    let mut summary_store = if headless { None } else {
-        Layout::path().and_then(|path| path.parent().map(|parent| SummaryStore::disk(parent.join("summaries"))))
+    let summary_store = if headless { None } else {
+        state_root().map(|root| SummaryStore::disk(root.join("summaries")))
     };
-    if let Some(store) = &mut summary_store { store.prune(); }
+    if let Some(store) = &summary_store { store.prune(); }
     App {
         feed: FeedModel::new(),
         saved,

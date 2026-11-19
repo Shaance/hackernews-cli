@@ -1,4 +1,4 @@
-use super::{Progress, Reading, Section};
+use super::{saved, Basis, Progress, Reading, Section};
 use crate::theme::Theme;
 use ratatui::{
     style::{Modifier, Style},
@@ -31,14 +31,24 @@ impl Reading {
                 self.article
                     .result
                     .as_ref()
-                    .map(|r| format!(" · captured {}", r.capture.captured))
+                    .map(|r| match &r.basis {
+                        Basis::Captured(c) => format!(" · captured {}", c.captured),
+                        Basis::Saved { saved_at, .. } => format!(
+                            " · {}",
+                            saved::saved_label(saved::now().saturating_sub(*saved_at), None, None,)
+                        ),
+                    })
                     .unwrap_or_default()
             ),
             theme.dim,
         ));
         if let Some(result) = &self.article.result {
             let article = &result.value;
-            if result.capture.input.partial {
+            let partial = match &result.basis {
+                Basis::Captured(c) => c.input.partial,
+                Basis::Saved { context, .. } => *context,
+            };
+            if partial {
                 append(
                     &mut lines,
                     "Partial source · opening portion only",
@@ -56,7 +66,18 @@ impl Reading {
                 self.discussion
                     .result
                     .as_ref()
-                    .map(|r| format!(" · {} · {}", r.capture.input.coverage, r.capture.captured))
+                    .map(|r| match &r.basis {
+                        Basis::Captured(c) => format!(" · {} · {}", c.input.coverage, c.captured),
+                        Basis::Saved { saved_at, context } => format!(
+                            " · {} · {}",
+                            context.coverage,
+                            saved::saved_label(
+                                saved::now().saturating_sub(*saved_at),
+                                Some(context.comments_at_save),
+                                self.story.comments
+                            )
+                        ),
+                    })
                     .unwrap_or_default()
             ),
             theme.dim,
@@ -157,7 +178,7 @@ impl Reading {
             self.discussion
                 .result
                 .as_ref()
-                .and_then(|r| r.capture.input.sources.iter().find(|s| s.id == id))
+                .and_then(|r| r.sources().iter().find(|s| s.id == id))
         }) {
             let label = if source.id == id {
                 "CITED COMMENT"
@@ -203,7 +224,7 @@ impl Reading {
     }
 }
 
-impl<T, C> Section<T, C> {
+impl<T, C, S> Section<T, C, S> {
     pub(super) fn label(&self) -> String {
         let actual = self.result.as_ref().map(|r| r.profile.label());
         match &self.progress {
