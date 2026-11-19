@@ -1,7 +1,6 @@
 class Hn < Formula
   desc "Read Hacker News stories and comment threads in your terminal"
   homepage "https://github.com/Shaance/hn"
-  version "0.2.0"
   license "MIT"
 
   # Replace each placeholder with the hash from the matching release asset's .sha256 file.

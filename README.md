@@ -6,7 +6,7 @@
 
 | | Mac app | Terminal app |
 |---|---|---|
-| **Get it** | [Download HN for macOS](https://github.com/Shaance/hn/releases/download/desktop-v1.1.0/HN-desktop-v1.1.0-macos-arm64.zip): Apple Silicon, macOS 13+, signed and notarized | `cargo install --path . --locked`, then `hn` |
+| **Get it** | [Download HN for macOS](https://github.com/Shaance/hn/releases/download/desktop-v1.1.0/HN-desktop-v1.1.0-macos-arm64.zip): Apple Silicon, macOS 13+, signed and notarized | `brew install shaance/tap/hn`, or [download hn 0.2.0](https://github.com/Shaance/hn/releases/tag/tui-v0.2.0) for macOS or Linux |
 | **The article** | The story's live page, beside the discussion | Opens in a Ghostty pane beside the discussion, or your browser |
 | **More** | [desktop/README.md](desktop/README.md) | [Terminal app](#terminal-app), below |
 
@@ -38,7 +38,22 @@ On macOS with Ghostty, you can open the original article in a companion browser 
 
 ## Run it
 
-Build from this checkout with Rust and Cargo:
+Install with Homebrew on macOS or Linux:
+
+```sh
+brew install shaance/tap/hn
+hn
+```
+
+Or download the archive for your system from the [hn 0.2.0 release](https://github.com/Shaance/hn/releases/tag/tui-v0.2.0): macOS 13+ on Apple Silicon or Intel (signed and notarized; the first launch checks the notarization online), or Linux x86-64 and ARM64 (glibc 2.35+ and OpenSSL 3). Check it with `shasum -a 256 -c hn-*.sha256`, extract it, and put `hn` on your PATH.
+
+To build that release from source with Rust and Cargo:
+
+```sh
+cargo install --git https://github.com/Shaance/hn --tag tui-v0.2.0 --locked hn
+```
+
+From a checkout of this repository:
 
 ```sh
 cargo install --path . --locked
@@ -53,7 +68,7 @@ cargo run --release
 
 Browsing and saving stories work without an API key. Summaries and the Ghostty article pane each have optional setup below.
 
-Cargo installs `hn` into `$CARGO_HOME/bin`, normally `~/.cargo/bin`. Keep that directory on your shell's PATH. Run the same install command after updating the checkout to update the binary. Installation leaves saved stories, summary settings, and API keys in place; you can run `hn` from any directory.
+Cargo installs `hn` into `$CARGO_HOME/bin`, normally `~/.cargo/bin`. Keep that directory on your shell's PATH. Update with `brew upgrade hn`, a newer download, or the same install command after updating the checkout. Installation leaves saved stories, summary settings, and API keys in place; you can run `hn` from any directory.
 
 ## Colours
 
