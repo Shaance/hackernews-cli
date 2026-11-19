@@ -63,7 +63,7 @@ fn short_narrow_terminal_shows_help_and_comment_count() {
     // 20 key rows cannot fit in 8; the cut is marked and the ways out stay visible.
     for shortcut in [
         "PgUp/PgDn",
-        "Esc/q/h/←  Back",
+        "Esc/q/←  Back",
         "?  Close",
         "… more at a larger size",
     ] {

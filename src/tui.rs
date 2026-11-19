@@ -400,6 +400,7 @@ pub(crate) async fn handle_comment_action(
                 spawn_comment_request(app, request, &tx, &service);
             }
         }
+        CommentAction::Fold => app.fold_current_comment(),
         CommentAction::CollapseThread => {
             app.collapse_current_thread();
         }

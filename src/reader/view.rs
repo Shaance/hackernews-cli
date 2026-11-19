@@ -178,10 +178,10 @@ impl Reader {
         }
         let hints = if reading.source.is_some() {
             vec![
-                ("h/Esc", "back"),
+                ("Esc", "back"),
                 ("j/k", "replies"),
                 ("Enter/o", "toggle"),
-                ("c", "fold"),
+                ("h", "fold"),
                 ("⌫", "trail"),
                 ("f", "focus"),
                 ("Tab/⇧Tab", "sources"),

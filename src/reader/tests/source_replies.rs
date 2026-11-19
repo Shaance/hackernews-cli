@@ -90,7 +90,7 @@ fn shared_replies_keep_source_folds_focus_and_cursor_separate() {
     assert_eq!((app.thread.cursor(), app.comment_scroll), (Some(20), 4));
     assert!(app.thread.rows().iter().any(|row| row.id == 12));
     assert!(app.request_citation(11, false).is_none());
-    reader.key(KeyCode::Char('h'));
+    reader.key(KeyCode::Esc);
     assert!(reader.readings[&1].citation_focus);
 }
 
@@ -114,7 +114,7 @@ fn completion_after_switch_or_close_populates_cache_without_moving_either_view()
     assert_eq!(source(&reader).nav.cursor, Some(10));
     assert_eq!(source(&reader).scroll, 0);
     assert_eq!((app.thread.cursor(), app.comment_scroll), (Some(10), 4));
-    reader.key(KeyCode::Char('h'));
+    reader.key(KeyCode::Esc);
     complete(
         &mut app,
         generation,

@@ -646,7 +646,7 @@ fn reader_help_keys_match_handlers_and_use_accent() {
         ("j/k/↑/↓", &[Char('j'), Char('k'), Up, Down]),
         ("PgUp/PgDn", &[PageUp, PageDown]),
         ("Enter/l/→", &[Enter, Char('l'), Right]),
-        ("c", &[Char('c')]),
+        ("h/c", &[Char('h'), Char('c')]),
         ("[/]", &[Char('['), Char(']')]),
         ("u", &[Char('u')]),
         ("Backspace", &[Backspace]),
@@ -663,7 +663,7 @@ fn reader_help_keys_match_handlers_and_use_accent() {
         ("L", &[Char('L')]),
         ("s", &[Char('s')]),
         ("r", &[Char('r')]),
-        ("Esc/q/h/←", &[Esc, Char('q'), Char('h'), Left]),
+        ("Esc/q/←", &[Esc, Char('q'), Left]),
         ("?", &[Char('?')]),
     ];
     for width in [60, 100] {

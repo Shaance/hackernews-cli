@@ -251,3 +251,28 @@ fn refresh_includes_loaded_branches_that_are_folded() {
     let (_, branches) = app.begin_comment_refresh();
     assert_eq!(branches, [1, 3].into_iter().collect());
 }
+
+#[test]
+fn h_folds_the_selected_comment_and_leaves_its_parent_open() {
+    use crate::event::{handle_comments_key, CommentAction};
+    use crossterm::event::KeyCode;
+    assert!(matches!(
+        handle_comments_key(KeyCode::Char('h')),
+        CommentAction::Fold
+    ));
+    let mut app = App::new();
+    app.set_comments(vec![
+        comment(1, "parent", &[2]),
+        comment(2, "child", &[]),
+        comment(3, "next", &[]),
+    ]);
+    assert_eq!(app.visible_comment_count(), 3);
+    // Unlike `c`, `h` on a reply without replies does not fold its parent.
+    assert!(app.thread.select(2));
+    app.fold_current_comment();
+    assert_eq!(app.visible_comment_count(), 3);
+    assert!(app.thread.select(1));
+    app.fold_current_comment();
+    assert_eq!(app.visible_comment_count(), 2);
+    assert_eq!(app.thread.cursor(), Some(1));
+}

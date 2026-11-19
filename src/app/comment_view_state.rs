@@ -167,6 +167,14 @@ impl App {
         self.comment_viewport_height = view_height;
     }
 
+    /// `h`: fold the selected comment's own replies, like the desktop app.
+    pub fn fold_current_comment(&mut self) {
+        if let Some(id) = self.thread.cursor() {
+            self.follow_comment_selection = true;
+            self.fold_comment(id);
+        }
+    }
+
     pub fn collapse_current_thread(&mut self) {
         self.follow_comment_selection = true;
         let mut current = self.thread.cursor();
