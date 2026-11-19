@@ -1,6 +1,6 @@
 //! Local experiment with terminal-browser v0.13.4; not a provider integration.
-use anyhow::{anyhow, bail, Context, Result};
 use crate::{url_open::safe_story_url, HNCLIItem};
+use anyhow::{anyhow, bail, Context, Result};
 use serde_json::{json, Value};
 use std::{process::Stdio, time::Duration};
 use tokio::{
@@ -152,7 +152,10 @@ fn external(url: &str) -> Result<(Option<Target>, String)> {
 pub async fn close(target: &Target) -> Result<()> {
     let tabs = control(&target.socket, json!({"cmd":"targets"})).await?;
     let tabs = tabs["tabs"].as_array().context("Missing browser tabs")?;
-    if !tabs.iter().any(|tab| tab["id"].as_i64() == Some(target.tab)) {
+    if !tabs
+        .iter()
+        .any(|tab| tab["id"].as_i64() == Some(target.tab))
+    {
         return Ok(());
     }
     if tabs.len() > 1 {

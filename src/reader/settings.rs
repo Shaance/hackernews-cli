@@ -2,8 +2,8 @@ use super::{
     config::{Profile, Provider},
     Progress, Reader, Request,
 };
-use crossterm::event::KeyCode;
 use crate::ui::widgets::render_modal;
+use crossterm::event::KeyCode;
 use ratatui::{
     style::Modifier,
     text::{Line, Span},

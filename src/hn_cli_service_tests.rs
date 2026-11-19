@@ -427,5 +427,8 @@ async fn fetch_pages_against_keeps_a_placeholder_for_a_failed_item() {
     assert_eq!(window[2].as_ref().map(|item| item.id), Some(9));
 
     // Ranks past the end of the snapshot are not requested at all.
-    assert!(service.fetch_pages_against(&snapshot, 6, 3).await.is_empty());
+    assert!(service
+        .fetch_pages_against(&snapshot, 6, 3)
+        .await
+        .is_empty());
 }
