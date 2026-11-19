@@ -43,7 +43,6 @@ pub enum AppMessage {
     },
 }
 
-
 pub(crate) fn next_deadline(
     now: Instant,
     started: Instant,
@@ -321,12 +320,21 @@ pub(crate) async fn handle_comment_action(
     service: HackerNewsCliServiceImpl,
     bookmark_path: Option<&Path>,
 ) -> Result<()> {
+    let action = match action {
+        CommentAction::ContinueOrOpen if app.can_continue_thread() => CommentAction::ToggleExpand,
+        CommentAction::ContinueOrOpen => CommentAction::OpenUrl,
+        action => action,
+    };
     match action {
         CommentAction::NextComment => app.next_comment(),
         CommentAction::PrevComment => app.prev_comment(),
         CommentAction::NextSibling => app.next_comment_sibling(),
         CommentAction::PrevSibling => app.prev_comment_sibling(),
         CommentAction::Parent => app.parent_comment(),
+        CommentAction::PopTrail => app.pop_comment_trail(),
+        CommentAction::ToggleFocus => {
+            app.thread.toggle_focus();
+        }
         CommentAction::FirstComment => app.first_comment(),
         CommentAction::LastComment => app.last_comment(),
         CommentAction::PageDown => app.scroll_comment_page(true),
@@ -388,7 +396,7 @@ pub(crate) async fn handle_comment_action(
         }
         CommentAction::ToggleHelp => app.toggle_help(),
         CommentAction::Back => app.view_stories(),
-        CommentAction::None => {}
+        CommentAction::ContinueOrOpen | CommentAction::None => {}
     }
 
     Ok(())
@@ -494,7 +502,6 @@ fn is_current_comments_view(app: &App, expected_story_id: i32, expected_generati
         View::Comments { story_id, .. } if *story_id == expected_story_id
     ) && app.comment_view_generation() == expected_generation
 }
-
 
 #[cfg(test)]
 #[path = "tui_tests.rs"]

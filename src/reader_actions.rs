@@ -50,7 +50,7 @@ pub async fn handle(
         return Ok(true);
     }
     if reader.is_open() {
-        if key == KeyCode::Char('o') {
+        if key == KeyCode::Char('o') && (!app.can_continue_thread() || reader.viewing_source()) {
             if let Some(story) = reader.current_story() {
                 reader.read_original(story, true);
             }
@@ -71,16 +71,7 @@ pub async fn handle(
             }
             return Ok(true);
         }
-        let key = if key == KeyCode::Char('O') {
-            KeyCode::Char('o')
-        } else {
-            key
-        };
-        if matches!(
-            key,
-            KeyCode::Char('s') | KeyCode::Char('o') | KeyCode::Char('?')
-        ) || !reader.key(key)
-        {
+        if matches!(key, KeyCode::Char('s' | 'O' | '?')) || !reader.key(key) {
             // Paging is applied by App during the next render, after completions are polled.
             if matches!(key, KeyCode::PageDown | KeyCode::PageUp) {
                 reader.comments_moved();

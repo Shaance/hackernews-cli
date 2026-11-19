@@ -31,7 +31,7 @@ pub enum PageLanding {
 #[cfg(test)]
 mod app_tests;
 mod comment_refresh;
-mod comment_view_state;
+pub(crate) mod comment_view_state;
 #[cfg(test)]
 mod comment_view_state_tests;
 mod reading_session;
@@ -189,7 +189,7 @@ impl App {
             outgoing_feed: None,
             page_landing: None,
             current_page: 1,
-            thread: Thread::empty(None, usize::MAX),
+            thread: Self::empty_comment_thread(),
             pending_replies: HashMap::new(),
             comment_scroll: 0,
             discussion_story: None,
@@ -281,7 +281,8 @@ impl App {
             let elapsed = now.saturating_duration_since(start);
             if self.theme.motion && to == self.selected_index && elapsed < SELECTION_GLIDE {
                 let progress = (elapsed.as_secs_f32() / SELECTION_GLIDE.as_secs_f32()).min(1.0);
-                return from + (to as f32 - from) * tachyonfx::Interpolation::QuadOut.alpha(progress);
+                return from
+                    + (to as f32 - from) * tachyonfx::Interpolation::QuadOut.alpha(progress);
             }
         }
         self.selected_index as f32
@@ -443,7 +444,7 @@ impl App {
     }
 
     fn reset_comment_view_state(&mut self) {
-        self.thread = Thread::empty(None, usize::MAX);
+        self.thread = Self::empty_comment_thread();
         self.pending_replies.clear();
         self.comment_line_ranges.clear();
         self.comment_layout_width = 0;
@@ -480,7 +481,8 @@ impl App {
                     now.saturating_duration_since(start) < Duration::from_millis(300)
                 })
                 || self.selection_glide.is_some_and(|(start, _, to)| {
-                    to == self.selected_index && now.saturating_duration_since(start) < SELECTION_GLIDE
+                    to == self.selected_index
+                        && now.saturating_duration_since(start) < SELECTION_GLIDE
                 })
                 || self.feed_switched.is_some_and(|(start, _)| {
                     now.saturating_duration_since(start) < Duration::from_millis(270)
@@ -569,11 +571,8 @@ impl App {
         if let Some((prev_type, prev_page)) = self.stories_for {
             if prev_type != story_type || prev_page != page {
                 self.feed_switched = Some((Instant::now(), prev_type));
-                self.outgoing_feed = Some((
-                    self.stories.clone(),
-                    self.selected_index,
-                    self.story_scroll,
-                ));
+                self.outgoing_feed =
+                    Some((self.stories.clone(), self.selected_index, self.story_scroll));
                 // A j/k-triggered page switch lands on the page edge instead
                 // of restoring a remembered position.
                 match self.page_landing.take() {
@@ -639,7 +638,12 @@ impl App {
             self.apply_comment_refresh(comments);
             return;
         }
-        self.thread = Thread::from_comments(&comments, None, usize::MAX);
+        let mut thread =
+            Thread::from_comments(&comments, Some(self.comment_visible_levels()), usize::MAX);
+        if !self.thread.focus() {
+            thread.toggle_focus();
+        }
+        self.thread = thread;
         self.pending_replies.clear();
         self.clear_comment_status();
     }

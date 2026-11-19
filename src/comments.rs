@@ -242,6 +242,7 @@ impl Thread {
         self.roots = fresh.roots;
         self.folded.retain(|id| self.nodes.contains_key(id));
         self.prune_unreadable();
+        self.root = self.root.filter(|&id| self.displayable(id));
         if self.is_empty() {
             self.cursor = None;
         }
@@ -471,6 +472,19 @@ impl Thread {
     /// neither folded nor behind the depth cap.
     pub fn rows(&self) -> Vec<Row> {
         self.rows_with(self.root, &self.folded)
+    }
+
+    pub(crate) fn set_visible_levels(&mut self, levels: u32) {
+        if self.visible_levels == Some(levels) {
+            return;
+        }
+        self.visible_levels = Some(levels);
+        let rows = self.rows();
+        let ancestors = std::iter::successors(self.cursor, |&id| self.parent_of(id));
+        self.cursor = ancestors
+            .into_iter()
+            .find(|id| rows.iter().any(|row| row.id == *id))
+            .or_else(|| rows.first().map(|row| row.id));
     }
 
     pub fn source_rows(&self, nav: &Navigation) -> Vec<Row> {

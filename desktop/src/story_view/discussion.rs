@@ -378,7 +378,7 @@ pub(super) fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme
     if capped && readable {
         let behind = thread.reply_count(id).max(replies);
         r = r.child(
-            quiet_button(format!("continue thread \u{2192} {behind} replies"))
+            quiet_button(format!("continue thread \u{2192} {behind} {}", if behind == 1 { "reply" } else { "replies" }))
                 .on_press(move |s: &mut App| {
                     s.activate_comment(id);
                 })

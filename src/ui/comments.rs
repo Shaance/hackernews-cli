@@ -1,7 +1,10 @@
 //! Comments view rendering
 
 use crate::{
-    app::{App, View},
+    app::{
+        comment_view_state::{COMMENT_INDENT, COMMENT_PREFIX},
+        App, View,
+    },
     comments::Row,
 };
 use ratatui::{
@@ -27,6 +30,7 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
         ])
         .split(f.area());
 
+    app.prepare_comment_layout(chunks[1].width);
     render_title(f, chunks[0], app, tick);
     let has_post = app
         .discussion_story
@@ -140,12 +144,44 @@ fn render_no_comments(f: &mut Frame, area: Rect) {
 /// Render the list of comments
 fn render_comments_list(
     f: &mut Frame,
-    area: Rect,
+    mut area: Rect,
     app: &mut App,
     tick: usize,
     prefix: Option<Vec<Line<'static>>>,
     show_selection: bool,
 ) {
+    if app.thread.root().is_some() && !area.is_empty() {
+        let trail = app
+            .thread
+            .trail()
+            .iter()
+            .filter_map(|id| app.thread.node(*id))
+            .map(|node| {
+                if node.readable {
+                    node.author.as_str()
+                } else {
+                    "Replies"
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(" › ");
+        let width = usize::from(area.width);
+        let mut start = 0;
+        while Span::raw(&trail[start..]).width() + usize::from(start > 0) > width {
+            start += trail[start..].chars().next().unwrap().len_utf8();
+        }
+        let line = Line::from(vec![
+            Span::raw(if start > 0 { "…" } else { "" }),
+            Span::raw(&trail[start..]),
+        ]);
+        f.render_widget(
+            Paragraph::new(line).style(app.theme().dim),
+            Rect { height: 1, ..area },
+        );
+        area.y += 1;
+        area.height -= 1;
+    }
+
     let list_style = if app.is_loading() {
         app.theme().dim.add_modifier(Modifier::DIM)
     } else {
@@ -175,7 +211,6 @@ fn render_comments_list(
     }
     let mut line_cursor = post_lines.len();
 
-    app.prepare_comment_layout(area.width);
     let selected = app.thread.cursor().filter(|_| show_selection);
     for row in rows {
         let prepared = render_comment(
@@ -244,7 +279,9 @@ fn render_comment(
     let theme = app.theme();
     let comment = app.thread.node(row.id).expect("visible comment");
     let depth = row.depth as usize;
-    let text_column = 2 + 2 * depth;
+    let text_column = usize::from(COMMENT_PREFIX) + usize::from(COMMENT_INDENT) * depth;
+    let dimmed = app.thread.focus() && !app.thread.in_chain_from(row.id, app.thread.cursor());
+    let ink = if dimmed { theme.dim } else { theme.fg };
     let prefix = vec![
         Span::styled(if is_selected { "▎ " } else { "  " }, theme.accent),
         Span::styled("│ ".repeat(depth), theme.line),
@@ -261,7 +298,7 @@ fn render_comment(
             if is_selected {
                 theme.fg.add_modifier(Modifier::BOLD)
             } else {
-                theme.fg
+                ink
             },
         ));
         header.push(Span::styled(format!("  {}", comment.time_ago), theme.dim));
@@ -294,12 +331,12 @@ fn render_comment(
                         || text[start..].starts_with("http://");
                     spans.push(Span::styled(
                         token.to_owned(),
-                        if is_link {
-                            theme.link
-                        } else if quote.is_some() {
+                        if dimmed || quote.is_some() && !is_link {
                             theme.dim
+                        } else if is_link {
+                            theme.link
                         } else {
-                            theme.fg
+                            ink
                         },
                     ));
                     consumed += token.len();
@@ -309,9 +346,16 @@ fn render_comment(
         }
     }
     let child_count = app.thread.child_count(row.id);
-    let child_info = if app.comment_replies_pending(row.id) {
+    let child_info = if app.thread.capped(row.id) {
+        let behind = app.thread.reply_count(row.id).max(child_count);
+        Some(format!(
+            "continue thread → {behind} {}",
+            if behind == 1 { "reply" } else { "replies" }
+        ))
+    } else if app.comment_replies_pending(row.id) {
         Some(format!("{} loading replies", widgets::spinner_frame(tick)))
     } else if child_count > 0 && !app.comment_replies_open(row.id) {
+        let child_count = app.thread.hidden_count(row.id).max(child_count);
         let label = if child_count == 1 { "reply" } else { "replies" };
         Some(format!("+ {child_count} {label}"))
     } else {

@@ -509,9 +509,9 @@ fn tiny_help_keeps_the_overflow_marker() {
 fn overflowing_help_compacts_then_ends_with_more_keys_in_dim() {
     let theme = crate::theme::Theme::TRUE_DARK;
     for (height, heading, overflow) in [
-        (29, true, false),
+        (31, true, false),
+        (28, false, false),
         (26, false, false),
-        (24, false, false),
         (12, false, true),
     ] {
         let mut terminal = Terminal::new(TestBackend::new(40, height)).unwrap();
@@ -555,11 +555,20 @@ fn selection_highlight_glides_110ms_then_snaps() {
     let mut terminal = Terminal::new(TestBackend::new(100, 24)).unwrap();
     let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
     let b = frame.buffer;
-    let highlighted = (0..24).filter(|&y| b[(0, y)].bg == sel_bg).collect::<Vec<_>>();
+    let highlighted = (0..24)
+        .filter(|&y| b[(0, y)].bg == sel_bg)
+        .collect::<Vec<_>>();
     assert!(highlighted.len() >= 2, "highlight covers two rows");
     let top = *highlighted.first().unwrap();
-    assert!(top > 2, "highlight must have left the start row, got y={top}");
-    assert_eq!(b[(0, top)].symbol(), "▎", "indicator bar rides the highlight");
+    assert!(
+        top > 2,
+        "highlight must have left the start row, got y={top}"
+    );
+    assert_eq!(
+        b[(0, top)].symbol(),
+        "▎",
+        "indicator bar rides the highlight"
+    );
     // Past 110ms the glide ends and the highlight snaps to the target row.
     app.selection_glide = Some((Instant::now() - Duration::from_millis(200), 0.0, 3));
     assert!(!app.has_active_motion(Instant::now()));
@@ -614,12 +623,10 @@ fn feed_switch_dips_the_list_and_eases_the_tab_color() {
     use ratatui::style::Color;
     use std::time::{Duration, Instant};
     let between = |c: Color, a: Color, b: Color| match (c, a, b) {
-        (Color::Rgb(r, g, bl), Color::Rgb(r1, g1, b1), Color::Rgb(r2, g2, b2)) => {
-            [r, g, bl]
-                .iter()
-                .zip([r1, g1, b1].iter().zip([r2, g2, b2].iter()))
-                .all(|(&c, (&a, &b))| (a.min(b)..=a.max(b)).contains(&c))
-        }
+        (Color::Rgb(r, g, bl), Color::Rgb(r1, g1, b1), Color::Rgb(r2, g2, b2)) => [r, g, bl]
+            .iter()
+            .zip([r1, g1, b1].iter().zip([r2, g2, b2].iter()))
+            .all(|(&c, (&a, &b))| (a.min(b)..=a.max(b)).contains(&c)),
         _ => false,
     };
     let item = |id: i32| crate::HNCLIItem {
@@ -670,15 +677,27 @@ fn feed_switch_dips_the_list_and_eases_the_tab_color() {
     ));
     let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
     let text = buffer_text(frame.buffer);
-    assert!(text.contains("Old 1"), "out-phase must render the outgoing list");
-    assert!(!text.contains("Story 20"), "new list must not pop in during the out-phase");
+    assert!(
+        text.contains("Old 1"),
+        "out-phase must render the outgoing list"
+    );
+    assert!(
+        !text.contains("Story 20"),
+        "new list must not pop in during the out-phase"
+    );
     let cell = frame.buffer[(2, 2)].fg;
     assert_ne!(cell, dim, "list must be mid-dip");
-    assert!(between(cell, dim, scrim), "dip must stay on the dim→scrim line");
+    assert!(
+        between(cell, dim, scrim),
+        "dip must stay on the dim→scrim line"
+    );
     // In-phase: 150ms in, the new list is fading back in.
     app.feed_switched = Some((Instant::now() - Duration::from_millis(150), prev));
     let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
-    assert!(buffer_text(frame.buffer).contains("Story 20"), "in-phase renders the new list");
+    assert!(
+        buffer_text(frame.buffer).contains("Story 20"),
+        "in-phase renders the new list"
+    );
     // Bold/underline hand over at the ease midpoint, not instantly: at 40ms
     // (alpha < 0.5) the old tab is still emphasized, at 120ms (alpha >= 0.5)
     // the new one is.
@@ -686,21 +705,29 @@ fn feed_switch_dips_the_list_and_eases_the_tab_color() {
     app.feed_switched = Some((Instant::now() - Duration::from_millis(40), prev));
     let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
     assert!(
-        frame.buffer[(24, 0)].modifier.contains(Modifier::UNDERLINED),
+        frame.buffer[(24, 0)]
+            .modifier
+            .contains(Modifier::UNDERLINED),
         "old tab keeps the underline before the midpoint"
     );
     assert!(
-        !frame.buffer[(16, 0)].modifier.contains(Modifier::UNDERLINED),
+        !frame.buffer[(16, 0)]
+            .modifier
+            .contains(Modifier::UNDERLINED),
         "new tab must not be underlined before the midpoint"
     );
     app.feed_switched = Some((Instant::now() - Duration::from_millis(120), prev));
     let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
     assert!(
-        frame.buffer[(16, 0)].modifier.contains(Modifier::UNDERLINED),
+        frame.buffer[(16, 0)]
+            .modifier
+            .contains(Modifier::UNDERLINED),
         "new tab takes the underline after the midpoint"
     );
     assert!(
-        !frame.buffer[(24, 0)].modifier.contains(Modifier::UNDERLINED),
+        !frame.buffer[(24, 0)]
+            .modifier
+            .contains(Modifier::UNDERLINED),
         "old tab drops the underline after the midpoint"
     );
     // Tab ease at 80ms: the newly active tab sits between dim and accent on row 0.
@@ -749,14 +776,13 @@ fn j_at_page_end_flows_to_next_page_first_story() {
     use crate::app::StoryType;
     let mut app = feed();
     app.selected_index = app.stories.len() - 1;
-    assert!(app.next_story(), "j at the last story must advance the page");
+    assert!(
+        app.next_story(),
+        "j at the last story must advance the page"
+    );
     assert_eq!(app.current_page, 2);
     // When page 2 loads, selection lands on its first story.
-    app.set_stories_for(
-        StoryType::Best,
-        2,
-        (20..=31).map(story_item).collect(),
-    );
+    app.set_stories_for(StoryType::Best, 2, (20..=31).map(story_item).collect());
     assert_eq!(app.selected_index, 0);
 }
 
@@ -766,19 +792,14 @@ fn k_at_page_top_returns_to_previous_page() {
     let mut app = feed();
     app.selected_index = app.stories.len() - 1;
     assert!(app.next_story(), "j at the end flows to the next page");
-    app.set_stories_for(
-        StoryType::Best,
-        2,
-        (20..=31).map(story_item).collect(),
+    app.set_stories_for(StoryType::Best, 2, (20..=31).map(story_item).collect());
+    assert_eq!(
+        app.selected_index, 0,
+        "fresh page starts at the first story"
     );
-    assert_eq!(app.selected_index, 0, "fresh page starts at the first story");
     assert!(app.prev_story(), "k at the first story must go back a page");
     assert_eq!(app.current_page, 1);
-    app.set_stories_for(
-        StoryType::Best,
-        1,
-        (1..=12).map(story_item).collect(),
-    );
+    app.set_stories_for(StoryType::Best, 1, (1..=12).map(story_item).collect());
     assert_eq!(
         app.selected_index,
         app.stories.len() - 1,
@@ -786,12 +807,11 @@ fn k_at_page_top_returns_to_previous_page() {
     );
     // And j at that bottom flows forward again, landing on the next page's first story.
     assert!(app.next_story());
-    app.set_stories_for(
-        StoryType::Best,
-        2,
-        (20..=31).map(story_item).collect(),
+    app.set_stories_for(StoryType::Best, 2, (20..=31).map(story_item).collect());
+    assert_eq!(
+        app.selected_index, 0,
+        "j lands on the first story of the next page"
     );
-    assert_eq!(app.selected_index, 0, "j lands on the first story of the next page");
 }
 
 #[test]
@@ -800,11 +820,7 @@ fn manual_page_keys_keep_position_restore_behavior() {
     let mut app = feed();
     app.selected_index = app.stories.len() - 1;
     app.next_page();
-    app.set_stories_for(
-        StoryType::Best,
-        2,
-        (20..=31).map(story_item).collect(),
-    );
+    app.set_stories_for(StoryType::Best, 2, (20..=31).map(story_item).collect());
     assert_eq!(app.selected_index, 0, "manual n starts at the first story");
     // No page_landing was set by n/p, so nothing overrides the restore rules.
     assert!(app.page_landing.is_none());
@@ -849,9 +865,15 @@ fn jk_do_not_stack_while_a_page_switch_is_in_flight() {
     // Page 2 has not loaded: the displayed list is still page 1 (stale), so
     // further j/k must be ignored instead of stacking another page advance.
     assert!(app.showing_stale_stories());
-    assert!(!app.next_story(), "j while fetching must not advance to page 3");
+    assert!(
+        !app.next_story(),
+        "j while fetching must not advance to page 3"
+    );
     assert_eq!(app.current_page, 2);
-    assert!(!app.prev_story(), "k while a switch is in flight must not move");
+    assert!(
+        !app.prev_story(),
+        "k while a switch is in flight must not move"
+    );
     assert_eq!(app.current_page, 2);
     assert_eq!(app.selected_index, app.stories.len() - 1);
 }
@@ -861,7 +883,10 @@ fn page_advance_blocked_during_same_page_refresh_but_selection_still_moves() {
     let mut app = feed();
     app.selected_index = app.stories.len() - 1;
     app.set_story_loading(true);
-    assert!(!app.next_story(), "j at the end during a refresh must not advance");
+    assert!(
+        !app.next_story(),
+        "j at the end during a refresh must not advance"
+    );
     assert_eq!(app.current_page, 1);
     let mut app = feed();
     app.set_story_loading(true);
@@ -888,7 +913,10 @@ fn status_bar_hints_page_flow_at_page_edges() {
     app.jump_selection(app.stories.len() - 1);
     let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();
     let status = buffer_text(frame.buffer);
-    assert!(status.contains("next page"), "last story must hint j → next page: {status}");
+    assert!(
+        status.contains("next page"),
+        "last story must hint j → next page: {status}"
+    );
     // Not at an edge: no page-flow hint.
     let mut app = feed();
     let frame = terminal.draw(|f| render(f, &mut app, 0)).unwrap();

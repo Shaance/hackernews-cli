@@ -177,6 +177,7 @@ Keys are case-sensitive: `s` saves a story, `S` controls its summary; `o` opens 
 | `Esc` / `q` / `h` / `←` | Back from a source to the discussion, or from the discussion to the feed |
 | `?` | Toggle help |
 
+At the discussion depth limit, Enter or `o` continues the selected thread, Backspace goes up one step in the thread trail, and `f` toggles dimming of unrelated comments.
 While viewing a cited source, `j/k`, Page Up/Down, and `g/G` scroll its text. In the link picker, use `j/k` to select, Enter to open, and Esc to close.
 
 ## Local files

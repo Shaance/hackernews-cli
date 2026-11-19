@@ -139,6 +139,7 @@ impl Reader {
             );
         } else {
             let comments_area = reading.render_summary(frame, areas[1]);
+            app.prepare_comment_layout(comments_area.width);
             let mut lines = vec![];
             if !reading.story.text.is_empty() {
                 append(&mut lines, "POST", width.saturating_sub(2), theme.dim);
@@ -202,10 +203,19 @@ impl Reader {
                 hints.push(("Tab", "sources"));
             }
             hints.extend([
+                ("Backspace", "trail"),
+                ("f", "focus"),
                 ("S", "summary"),
                 ("Esc", "feed"),
                 ("?", "keys"),
-                ("o", "article"),
+                (
+                    "o",
+                    if app.can_continue_thread() {
+                        "continue"
+                    } else {
+                        "article"
+                    },
+                ),
                 ("s", "save"),
                 ("M", "settings"),
                 ("L", "links"),

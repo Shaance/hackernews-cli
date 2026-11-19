@@ -21,7 +21,7 @@ impl App {
         self.reading_sessions.insert(
             story_id,
             ReadingSession {
-                thread: std::mem::replace(&mut self.thread, Thread::empty(None, usize::MAX)),
+                thread: std::mem::replace(&mut self.thread, Self::empty_comment_thread()),
                 anchor,
                 scroll: self.comment_scroll,
             },
