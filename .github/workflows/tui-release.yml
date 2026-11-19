@@ -246,13 +246,24 @@ jobs:
   crates-io:
     needs: publish
     runs-on: ubuntu-22.04
+    # crates.io trusts this repo, workflow, and environment; the environment
+    # only deploys from tui-v* tags.
+    environment: crates-io
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
+      # Install the pinned toolchain before a publish token exists.
+      - run: cargo --version
+
+      - uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
+        id: auth
+
       - name: Publish hn-reader to crates.io
         env:
-          # Scoped to the hn-reader crate: publish-new and publish-update.
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
         run: cargo publish --locked
