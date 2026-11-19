@@ -40,10 +40,12 @@ See the status table at the end (updated last).
 
 ## Status table
 
+All steps done on 2026-11-19:
+
 | Item | State |
 |---|---|
-| #63 feed, #64 release setup, #62 README media | merged |
-| #65 signing fix (keychain search list) | merged; dry run 44526364328 passed: both macOS notarizations Accepted, Gatekeeper "Notarized Developer ID", Linux glibc 2.35 + libssl.so.3, checksums OK |
-| Tag `tui-v0.2.0` | pushed; release run https://github.com/Shaance/hn/actions/runs/44528619449 |
-| Tap `Shaance/homebrew-tap` | created, empty: add `Formula/hn.rb` from `packaging/homebrew/hn.rb` with hashes from the release's `.sha256` assets (step 6) |
-| README install | drafted locally, not pushed: redo step 7 if lost |
+| #62 README media, #63 feed, #64 release setup, #65 signing fix, #66 README install | merged |
+| Release `tui-v0.2.0` | published, 8 assets, `--latest=false` (desktop-v1.1.0 stays Latest) |
+| Tap | `Shaance/homebrew-tap` `Formula/hn.rb`; `brew install shaance/tap/hn`, `brew test`, `brew audit --strict` pass |
+
+Next release: bump `Cargo.toml` + both lockfiles, write `docs/releases/tui-vX.Y.Z.md`, merge, push the tag, then update the tap formula's URLs and hashes from the release's `.sha256` assets (or automate it, see follow-ups).
