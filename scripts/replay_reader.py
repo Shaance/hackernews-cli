@@ -117,7 +117,7 @@ def run(binary, output, width, height):
         app.wait(lambda t: "detached_reply_control" in t and "Enter retry" not in t)
         assert Counter(fixture.gets[start:]) == Counter({absent_path: 2, detached_reply_path: 1})
         capture("05b-source-retried")
-        app.key("h\x1b[Z\x1b[Z")
+        app.key("\x1b[D\x1b[Z\x1b[Z")
         assert focus() == "[3]" and comments(app.text()) == anchor
 
         direct_path = "/v0/item/50162980.json"
@@ -154,7 +154,7 @@ def run(binary, output, width, height):
         app.wait(lambda t: "CITATION SOURCE" in t and "Backspace" in t)
         app.key("?")
         capture("05-source")
-        app.key("h")
+        app.key("\x1b[D")
         app.wait(lambda t: "✓ summary · Fast" in t)
         # A new branch can push lower rows down while the passage at the top stays put.
         assert app.text().splitlines()[passage_rows] == source_anchor, "Returning from source moved the reading passage"
