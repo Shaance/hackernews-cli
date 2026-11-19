@@ -33,7 +33,7 @@ icu_normalizer_data = { version = ">=2.0.0, <3.0.0", default-features = false }
 icu_properties = { version = ">=2.0.0, <3.0.0", default-features = false }
 icu_properties_data = { version = ">=2.0.0, <3.0.0", default-features = false }
 icu_provider = { version = ">=2.0.0, <3.0.0", default-features = false }
-markup5ever_rcdom = "0.2"
+markup5ever_rcdom = "0.39"
 open = "5"
 ratatui = "0.30"
 readability = { version = "0.3", default-features = false }
