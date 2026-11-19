@@ -16,7 +16,7 @@ pub fn time_ago(epoch_time: u64) -> String {
         60..=3599 => format!("{}m", diff / 60),
         3600..=86399 => format!("{}h", diff / 3600),
         86400..=604799 => format!("{}d", diff / 86400),
-        _ => format!("{} weeks ago", diff / 604800),
+        _ => format!("{}w", diff / 604800),
     }
 }
 
@@ -48,7 +48,8 @@ mod tests {
             (7200, "2h"),
             (86400, "1d"),
             (172800, "2d"),
-            (604800, "1 weeks ago"),
+            (604800, "1w"),
+            (1209600, "2w"),
         ] {
             assert_eq!(time_ago(now - seconds), expected, "age {seconds}s");
         }
