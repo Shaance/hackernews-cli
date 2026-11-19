@@ -1,0 +1,213 @@
+name: TUI release
+
+on:
+  push:
+    tags: ["tui-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check the release version
+        id: version
+        shell: bash
+        run: |
+          version=$(sed -n 's/^version = "\([0-9][0-9.]*\)"$/\1/p' Cargo.toml)
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Expected a stable version in Cargo.toml."
+            exit 1
+          fi
+          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" != "tui-v$version" ]]; then
+            echo "::error::Expected tag tui-v$version to match Cargo.toml."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Test
+        run: cargo test --locked
+
+  build:
+    name: Build ${{ matrix.target }}
+    needs: check
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            target: aarch64-apple-darwin
+          - runner: macos-15
+            target: x86_64-apple-darwin
+          - runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+          - runner: ubuntu-22.04-arm
+            target: aarch64-unknown-linux-gnu
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      TARGET: ${{ matrix.target }}
+      VERSION: ${{ needs.check.outputs.version }}
+      MACOSX_DEPLOYMENT_TARGET: "13.0"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          # GitHub's Ubuntu images ship these; only reach the archive when one is missing.
+          if ! dpkg -s pkg-config libssl-dev >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends pkg-config libssl-dev
+          fi
+
+      - name: Build
+        run: |
+          rustup target add "$TARGET"
+          cargo build --release --locked --target "$TARGET" --bin hn
+          mkdir -p dist/package
+          install -m 755 "target/$TARGET/release/hn" dist/package/hn
+
+      - name: Check macOS signing secrets
+        if: runner.os == 'macOS'
+        id: signing
+        env:
+          P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          P12_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          ISSUER: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          if [[ -n "$P12" && -n "$P12_PASSWORD" && -n "$IDENTITY" &&
+                -n "$P8" && -n "$KEY_ID" && -n "$ISSUER" ]]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
+            echo "::error::A release tag needs all six macOS signing and notarization secrets."
+            exit 1
+          else
+            echo "::notice::Signing secrets are incomplete. Uploading an unsigned dry-run build."
+          fi
+
+      - name: Sign
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          P12_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+        run: |
+          umask 077
+          signing_dir=$(mktemp -d)
+          keychain="$signing_dir/signing.keychain-db"
+          trap 'security delete-keychain "$keychain" 2>/dev/null || true; rm -rf "$signing_dir"' EXIT
+          keychain_password=$(uuidgen)
+          printf '%s' "$P12" | base64 --decode > "$signing_dir/cert.p12"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$signing_dir/cert.p12" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
+          security set-key-partition-list -S apple-tool:,apple: -k "$keychain_password" "$keychain" >/dev/null
+          codesign --force --keychain "$keychain" --options runtime --timestamp \
+            --sign "$IDENTITY" dist/package/hn
+          codesign --verify --strict --verbose=2 dist/package/hn
+
+      - name: Notarize
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          ISSUER: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          umask 077
+          notary_dir=$(mktemp -d)
+          trap 'rm -rf "$notary_dir"' EXIT
+          printf '%s' "$P8" | base64 --decode > "$notary_dir/notary.p8"
+          ditto -c -k --keepParent dist/package/hn "$notary_dir/hn.zip"
+          xcrun notarytool submit "$notary_dir/hn.zip" \
+            --key "$notary_dir/notary.p8" --key-id "$KEY_ID" --issuer "$ISSUER" \
+            --wait --output-format json > "$notary_dir/result.json"
+          jq '{id, status}' "$notary_dir/result.json"
+          if ! jq -e '.status == "Accepted"' "$notary_dir/result.json" >/dev/null; then
+            echo "::error::Apple did not accept the notarization submission."
+            exit 1
+          fi
+          # Apple does not support stapling a standalone executable.
+
+      - name: Smoke test
+        run: |
+          bin=dist/package/hn
+          if [[ "$RUNNER_OS" == Linux ]]; then
+            getconf GNU_LIBC_VERSION
+            ldd "$bin"
+          fi
+          if [[ "$TARGET" == x86_64-apple-darwin ]]; then
+            if ! arch -x86_64 /usr/bin/true 2>/dev/null; then
+              echo "::warning::Rosetta unavailable. Skipping the Intel macOS execution check."
+              exit 0
+            fi
+            actual=$(arch -x86_64 "$bin" --version)
+          else
+            actual=$("$bin" --version)
+          fi
+          printf '%s\n' "$actual"
+          [[ "$actual" == "hn $VERSION" ]]
+
+      - name: Package
+        id: package
+        run: |
+          archive="hn-$VERSION-$TARGET.tar.gz"
+          cp LICENSE README.md dist/package/
+          tar -czf "dist/$archive" -C dist/package hn LICENSE README.md
+          (cd dist && shasum -a 256 "$archive" > "$archive.sha256")
+          echo "archive=$archive" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: hn-${{ matrix.target }}
+          path: |
+            dist/${{ steps.package.outputs.archive }}
+            dist/${{ steps.package.outputs.archive }}.sha256
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    needs: [check, build]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: hn-*
+          path: dist
+          merge-multiple: true
+
+      - name: Publish GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          (cd dist && shasum -a 256 -c ./*.sha256)
+          gh release create "$GITHUB_REF_NAME" dist/*.tar.gz dist/*.tar.gz.sha256 \
+            --verify-tag --title "hn $VERSION" --notes-file "docs/releases/tui-v$VERSION.md" \
+            --latest=false
