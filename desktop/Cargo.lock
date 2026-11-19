@@ -2095,7 +2095,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
-name = "hn"
+name = "hn-desktop"
+version = "1.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "block2 0.6.2",
+ "crossterm",
+ "hn-reader",
+ "objc2 0.6.5",
+ "objc2-app-kit 0.3.2",
+ "objc2-foundation 0.3.2",
+ "rune",
+ "rune-kit",
+ "serde",
+ "serde_json",
+ "tokio",
+ "wry",
+]
+
+[[package]]
+name = "hn-reader"
 version = "0.2.0"
 dependencies = [
  "anyhow",
@@ -2126,26 +2146,6 @@ dependencies = [
  "tokio",
  "tui-popup",
  "writeable",
-]
-
-[[package]]
-name = "hn-desktop"
-version = "1.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "block2 0.6.2",
- "crossterm",
- "hn",
- "objc2 0.6.5",
- "objc2-app-kit 0.3.2",
- "objc2-foundation 0.3.2",
- "rune",
- "rune-kit",
- "serde",
- "serde_json",
- "tokio",
- "wry",
 ]
 
 [[package]]

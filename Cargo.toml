@@ -1,5 +1,5 @@
 [package]
-name = "hn"
+name = "hn-reader"
 version = "0.2.0"
 edition = "2021"
 rust-version = "1.88"
@@ -7,10 +7,14 @@ license = "MIT"
 description = "Read Hacker News stories and comment threads in your terminal"
 repository = "https://github.com/Shaance/hn"
 readme = "README.md"
+keywords = ["hacker-news", "tui", "terminal", "reader"]
+categories = ["command-line-utilities"]
+# Tests read fixtures outside src/, so the crate ships only what the binary needs.
+include = ["/src/**/*.rs", "/LICENSE", "/README.md"]
 
 # `cargo binstall` downloads the tui-release workflow's archive instead of compiling.
 [package.metadata.binstall]
-pkg-url = "{ repo }/releases/download/tui-v{ version }/{ name }-{ version }-{ target }.tar.gz"
+pkg-url = "{ repo }/releases/download/tui-v{ version }/hn-{ version }-{ target }.tar.gz"
 pkg-fmt = "tgz"
 bin-dir = "{ bin }{ binary-ext }"
 
