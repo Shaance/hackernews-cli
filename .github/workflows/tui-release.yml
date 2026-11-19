@@ -242,3 +242,17 @@ jobs:
             -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit -am "hn $VERSION"
           git -C tap push
+
+  crates-io:
+    needs: publish
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Publish hn-reader to crates.io
+        env:
+          # Scoped to the hn-reader crate: publish-new and publish-update.
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish --locked
