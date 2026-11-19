@@ -30,11 +30,12 @@ See the status table at the end (updated last).
 - Linux builds are glibc on native Ubuntu 22.04 runners (reqwest native-tls needs OpenSSL); no musl.
 - macOS CLI is signed + notarized, not stapled (Apple doesn't support stapling a bare binary).
 - TUI releases use `--latest=false`; desktop keeps Latest.
-- Homebrew formula was updated by hand for 0.2.0. From the next release the `homebrew` job in `tui-release.yml` (#70) renders `packaging/homebrew/hn.rb` with `packaging/homebrew/render-formula.sh` and pushes it to the tap with the `TAP_TOKEN` secret (fine-grained, `Shaance/homebrew-tap` only, Contents read/write, expires 2027-11-18). Its first real push is the next tag; if it fails, the release is already out and rerunning that job is enough.
+- Homebrew formula was updated by hand for 0.2.0. From the next release the `homebrew` job in `tui-release.yml` (#70) renders `packaging/homebrew/hn.rb` with `packaging/homebrew/render-formula.sh` and pushes it to the tap with the `TAP_TOKEN` secret (fine-grained, `Shaance/homebrew-tap` only, Contents read/write, expires 2027-11-18). It first ran for 0.2.1 and pushed `hn 0.2.1` to the tap as github-actions[bot].
 
 ## Known follow-ups (not started)
 
-- A crates.io name (crate `hn` is taken).
+- crates.io: the crate is `hn-reader` (#73; `hn` was taken), first published as 0.2.1 by the `crates-io` job. `CARGO_REGISTRY_TOKEN` is scoped to `hn-reader` (publish-new, publish-update) and expires 2026-12-19. Next step: configure crates.io trusted publishing for `Shaance/hn` / `tui-release.yml`, switch the job to `rust-lang/crates-io-auth-action`, then delete the token and secret.
+- `macos-15` runners often go unassigned: jobs are cancelled after 15 min with zero steps. Rerun only the failed jobs (`gh run rerun <id> --failed`); 0.2.1 needed three attempts.
 - cargo-binstall metadata is in `Cargo.toml` (#69); URLs and archive layout checked, but no real `cargo binstall` run yet, so the README doesn't mention it.
 - Intel macOS binary is only cross-built; first native execution check happens on an Intel Mac or Rosetta.
 - A discussion summary reading only "placeholder [1]" was seen twice (audit N8). #68 rejects single-word overviews/points with a retry prompt; the cause is unconfirmed. The README script now keeps its provider replies in `~/.local/state/hn/summary-responses/`.
@@ -48,9 +49,11 @@ All steps done on 2026-11-19:
 | #62 README media, #63 feed, #64 release setup, #65 signing fix, #66 README install | merged |
 | Release `tui-v0.2.0` | published, 8 assets, `--latest=false` (desktop-v1.1.0 stays Latest) |
 | #67 fmt drift, #68 stub summaries, #69 binstall metadata, #70 tap automation | merged |
+| #73 crate `hn-reader`, #74 replay uses ← after #71, #76 release 0.2.1 | merged |
+| Release `tui-v0.2.1` | published, 8 assets, desktop-v1.1.0 stays Latest; tap updated by the workflow; on crates.io as `hn-reader` 0.2.1; `brew install` (Notarized Developer ID) and `cargo install hn-reader --locked` both give `hn 0.2.1` |
 | Tap | `Shaance/homebrew-tap` `Formula/hn.rb`; `brew install shaance/tap/hn`, `brew test`, `brew audit --strict` pass |
 
-Next release: bump `Cargo.toml` + both lockfiles, write `docs/releases/tui-vX.Y.Z.md`, merge, push the tag, then check that the `homebrew` job pushed `Formula/hn.rb` to the tap (`brew update && brew upgrade hn`).
+Next release: bump `Cargo.toml` + both lockfiles, write `docs/releases/tui-vX.Y.Z.md`, merge, push the tag, then check the run: the `homebrew` job pushes `Formula/hn.rb` to the tap and the `crates-io` job publishes `hn-reader`. Rerun cancelled macOS builds with `gh run rerun <id> --failed`.
 
 ## Terminal keys and the browser trial (added 2026-11-19, later session)
 
