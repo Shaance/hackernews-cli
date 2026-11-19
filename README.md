@@ -254,6 +254,11 @@ The app uses ratatui and crossterm for terminal rendering and input, Tokio for a
 | `src/ui/` | Feed and comment rendering |
 | `src/reader/tests/` | Reader navigation, summary lifecycle, and settings tests |
 
+## Contributing
+
+See the [contributor guide](CONTRIBUTING.md) for setup, checks, and pull requests.
+Use the [security policy](SECURITY.md) to report a vulnerability privately.
+
 ## Screenshots
 
 | Feed | Reader with summary |
