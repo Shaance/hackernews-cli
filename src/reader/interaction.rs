@@ -70,7 +70,7 @@ impl Reader {
             return false;
         };
         match key {
-            KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('h') | KeyCode::Left => {
+            KeyCode::Esc | KeyCode::Char('q') | KeyCode::Left => {
                 let was_source = reading.source.is_some();
                 let saved = reading.leave_source(self.store.as_mut());
                 if !was_source {

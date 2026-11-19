@@ -56,6 +56,7 @@ pub fn handle_comments_key(key: KeyCode) -> CommentAction {
 
         // Expand/collapse
         KeyCode::Enter | KeyCode::Char('l') | KeyCode::Right => CommentAction::ToggleExpand,
+        KeyCode::Char('h') => CommentAction::Fold,
         KeyCode::Char('c') => CommentAction::CollapseThread,
 
         // Actions
@@ -68,9 +69,7 @@ pub fn handle_comments_key(key: KeyCode) -> CommentAction {
         // UI
         KeyCode::Char('?') => CommentAction::ToggleHelp,
         KeyCode::Char('f') => CommentAction::ToggleFocus,
-        KeyCode::Char('q') | KeyCode::Esc | KeyCode::Char('h') | KeyCode::Left => {
-            CommentAction::Back
-        }
+        KeyCode::Char('q') | KeyCode::Esc | KeyCode::Left => CommentAction::Back,
 
         _ => CommentAction::None,
     }
@@ -109,6 +108,7 @@ pub enum CommentAction {
     Parent,
     PopTrail,
     ToggleExpand,
+    Fold,
     CollapseThread,
     ContinueOrOpen,
     OpenUrl,

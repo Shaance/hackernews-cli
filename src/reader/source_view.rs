@@ -182,6 +182,7 @@ impl Reader {
                     false
                 }
                 KeyCode::Backspace => id != source.id && thread.pop_trail(),
+                KeyCode::Char('h') => thread.fold(),
                 KeyCode::Char('c') if pending => thread.fold(),
                 KeyCode::Char('c') => thread.collapse(),
                 KeyCode::Enter | KeyCode::Char('o') => {
