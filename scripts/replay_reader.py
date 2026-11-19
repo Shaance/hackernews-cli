@@ -1,5 +1,6 @@
 """Drive the real terminal loop against recorded HN and model responses."""
 import argparse
+from collections import Counter
 import html
 import json
 import os
@@ -13,11 +14,11 @@ from terminal_capture import ROOT, TUI
 
 
 def executable():
-    result = subprocess.run(["cargo", "test", "--bin", "hn", "--no-run", "--message-format=json"],
+    result = subprocess.run(["cargo", "test", "--locked", "--lib", "--no-run", "--message-format=json"],
                             cwd=ROOT, text=True, stdout=subprocess.PIPE, check=True)
     for line in result.stdout.splitlines():
         item = json.loads(line)
-        if item.get("reason") == "compiler-artifact" and item.get("executable") and item["target"]["name"] == "hn":
+        if item.get("reason") == "compiler-artifact" and item.get("executable") and item["target"]["name"] == "hn_lib":
             return item["executable"]
     raise AssertionError("Cargo did not return the test executable")
 
@@ -45,6 +46,11 @@ def run(binary, output, width, height):
     def passage():
         return [(row, int(m[1])) for row, line in enumerate(app.screen.display)
                 if (m := re.search(r"Synthetic passage (\d+)", line))]
+
+    def selected(author, depth):
+        header = f"▎ {'│ ' * depth}{author}  "
+        assert any(line.startswith(header) for line in app.screen.display), f"Expected selected comment {author} at depth {depth}"
+
     try:
         app.wait(lambda t: "Nordwand Mono" in t and "123 points" in t)
         capture("01-feed")
@@ -74,17 +80,28 @@ def run(binary, output, width, height):
         app.wait(lambda t: "ARTICLE  Fast" in t)
         assert comments(app.text()) == anchor, "Showing summary moved comments"
         assert len(fixture.calls) == 2, "Visibility must not generate"
+        app.key("\x1b[6~")
+        assert comments(app.text()) != anchor, "Page Down must move the discussion before opening a source"
         for n in range(1, 4):
             app.key("\t")
             assert focus() == f"[{n}]", "The exact citation token must be highlighted"
+        anchor = comments(app.text())
         app.key("\r")
-        app.wait(lambda t: "source 3 of 8 · delta_p_delta_x · Fast" in t and "#50162345" in t)
+        source = app.wait(lambda t: "source 3 of 8 · delta_p_delta_x · Fast" in t and "#50162345" in t)
+        assert "The overall shape of the glyphs" in source, "Source 3 lost the cited comment text"
         app.key("\t")
+        app.wait(lambda t: "source 4 of 8 · kqr · Fast" in t and "#50162865" in t)
+        app.key("\t")
+        source = app.wait(lambda t: "source 5 of 8 · chirayuk · Fast" in t and "#50164113" in t)
+        assert "The hyphen is as wide as the em dash" in source, "Source 5 lost the cited reply text"
+        assert "PARENT CONTEXT  kqr · #50162865" in source and "I have been going back and forth between Luxi Mono" in source, "Source 5 lost its parent context"
+        capture("05a-source-parent")
+        app.key("\x1b[Z")
         app.wait(lambda t: "source 4 of 8 · kqr · Fast" in t and "#50162865" in t)
         app.key("\x1b[Z")
         app.wait(lambda t: "source 3 of 8 · delta_p_delta_x · Fast" in t and "#50162345" in t)
         capture("05-source")
-        app.key("\x1b")
+        app.key("h")
         app.wait(lambda t: "✓ summary · Fast" in t)
         assert comments(app.text()) == anchor, "Returning from source moved comments"
         assert focus() == "[3]" and len(fixture.calls) == 2
@@ -116,17 +133,71 @@ def run(binary, output, width, height):
         app.key("c")
         app.wait(lambda t: "✓ summary · Thorough" in t)
         assert len(fixture.calls) == 5, "Revisit must reuse summary"
+        # A synthetic grandchild exercises a deeper branch without changing the summary inputs.
+        records = fixture.data["input"]["comments"]
+        records.append({"id": 90000003, "parent": 50166096, "author": "nested_replay_control",
+                        "text": "Synthetic grandchild for comment navigation."})
+        reply_paths = [f"/v0/item/{ident}.json" for ident in (50166096, 50163340)]
+        nested_path = "/v0/item/90000003.json"
         app.key("Sg")
+        selected("tywr", 0)
         initial = count()
+        fixture.get_gates[reply_paths[0]] = Event()
+        start = len(fixture.gets)
         app.key("\r")
-        app.wait(lambda t: count() > initial)
+        app.wait(lambda t: reply_paths[0] in fixture.gets[start:] and "loading replies" in t)
+        assert count() == initial and "katspaugh  " not in app.text(), "A gated branch must show loading before its replies"
+        capture("10a-replies-loading")
+        fixture.get_gates.pop(reply_paths[0]).set()
+        app.wait(lambda t: count() == initial + 2)
         expanded = count()
-        app.key("j]ucg")
+        rows = app.text().splitlines()
+        children = [line.split()[1] for line in rows if line.startswith(("  │ katspaugh  ", "  │ bayindirh  "))]
+        assert children == ["katspaugh", "bayindirh"], f"Expected both replies in HN order at depth 1, got {children}"
+        capture("10b-replies-expanded")
+        for key, author, depth in (("j", "katspaugh", 1), ("]", "bayindirh", 1),
+                                   ("[", "katspaugh", 1), ("u", "tywr", 0)):
+            app.key(key)
+            selected(author, depth)
+        app.key("j\r")
+        app.wait(lambda t: count() == expanded + 1)
+        app.key("j")
+        selected("nested_replay_control", 2)
+        capture("10c-deeper-reply")
+        app.key("c")
+        selected("katspaugh", 1)
+        assert count() == expanded and "nested_replay_control" not in app.text(), "Collapse from descendant must hide the grandchild"
+        capture("10d-deeper-folded")
+        app.key("uc")
         app.wait(lambda t: count() == initial)
+        selected("tywr", 0)
+        assert all(author not in app.text() for author in ("katspaugh  ", "bayindirh  ")), "Folding the root must hide both replies"
         collapsed = count()
         capture("10-comments")
+        start = len(fixture.gets)
+        app.key("\r")
+        app.wait(lambda t: count() == expanded)
+        reopen = Counter(fixture.gets[start:])
+        assert reopen == Counter(reply_paths), f"Reopening the folded root should refetch both children once, got {dict(reopen)}"
+        capture("10e-reopened")
+
+        fixture.get_gates[nested_path] = Event()
+        start = len(fixture.gets)
+        app.key("j\r")
+        app.wait(lambda t: nested_path in fixture.gets[start:] and "loading replies" in t)
+        capture("10f-late-loading")
+        app.key("c")
+        selected("katspaugh", 1)
+        folded = app.wait(lambda t: "loading replies" not in t and count() == expanded)
+        fixture.get_gates[nested_path].set()
+        app.wait(lambda _: nested_path in fixture.gated_responses)
+        assert app.pump(0.4) == folded, "Late reply changed the folded view after the server sent it"
+        late = Counter(fixture.gets[start:])
+        assert late == Counter({nested_path: 1}), f"Expected one request for the collapsed load, got {dict(late)}"
+        capture("10g-late-ignored")
+        app.key("uc")
+        app.wait(lambda t: count() == initial)
         # Synthetic controls are added only after all recorded summaries have completed.
-        records = fixture.data["input"]["comments"]
         long_reply = {"id": 90000001, "parent": 50163214, "author": "synthetic_replay_control",
                       "text": "\n".join(f"Synthetic passage {i:03} · revision 1" for i in range(260))}
         records.insert(0, long_reply)
@@ -201,6 +272,7 @@ def run(binary, output, width, height):
         assert not fixture.errors, fixture.errors
         receipt = {"size": [width, height], "provider_calls": fixture.calls,
                    "reply_counts": [initial, expanded, collapsed], "captures": captured,
+                   "reply_get_counts": {"reopen": dict(reopen), "late_after_collapse": dict(late)},
                    "passage_anchors": {"before_refresh": before[0], "during_and_after_refresh": continued[0]},
                    "hn_get_counts": {path: fixture.gets.count(path) for path in sorted(set(fixture.gets))},
                    "exit": "clean", "network": "Loopback fixtures; external HTTP blocked"}

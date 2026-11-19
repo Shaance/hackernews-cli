@@ -3,14 +3,24 @@
 use std::f32::consts::FRAC_PI_2;
 use std::rc::Rc;
 
+use hn_lib::comments::{BranchStatus, MAX_DEPTH};
 use rune::tok::{self, radius, type_};
 use rune::{Color, El, GrowthSpec, ScrollSpec, Spring, SpringPair, Transition, Tx, col, el, icon, row, text};
 use rune_kit::{Keybind, Kit, Placement, Popover};
 
 use crate::app::App;
 use crate::app::chrome::quiet_button;
-use crate::comments::{INDENT, MAX_DEPTH};
 use crate::story::{SourceView, Story};
+
+/// Points each indent level steps in (DESIGN.md: "every indent level costs 13pt").
+const INDENT: f32 = 13.0;
+
+/// How much of a comment the tree draws.
+///
+/// HN caps a comment at 10,000 characters, which is 2,000 points of text in a 500-point pane.
+/// The tree keeps the first 2,000 and says it stopped; the citation viewer still shows the whole
+/// captured comment, so nothing is lost, only shortened where it is drawn.
+const MAX_TEXT: usize = 2000;
 
 #[derive(Clone, Copy)]
 pub(super) enum RenderContext<'a> {
@@ -173,6 +183,17 @@ fn trail_strip(s: &Story, trail: &[i32], k: &Kit, t: tok::Theme) -> El {
         }
     }
     strip
+}
+
+/// A comment's text as the tree draws it: trimmed, and bounded at [`MAX_TEXT`] with an ellipsis
+/// so a row cannot run to thousands of points.
+fn drawn_text(text: &str) -> String {
+    let text = text.trim();
+    if text.chars().count() <= MAX_TEXT {
+        return text.to_string();
+    }
+    let kept: String = text.chars().take(MAX_TEXT).collect();
+    format!("{kept}\u{2026}")
 }
 
 /// One comment: its indent guides, its header, its text, and what it is hiding.
@@ -343,7 +364,7 @@ pub(super) fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme
         }
         r = r.child(who.child(el().grow(1.0)))
             .child(
-                text(body.to_string())
+                text(if captured.is_some() { body.to_string() } else { drawn_text(body) })
                     .key(if captured.is_some() { "source-comment-text".to_string() } else { format!("comment-text-{id}") })
                     .ml(26.0)
                     .font(type_::BODY)
@@ -381,7 +402,7 @@ pub(super) fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme
                     .on_press(move |s: &mut App| s.load_replies(id, retry))
                     .build(k).key(format!("comment-load-{id}-{retry}")).cursor(rune::Cursor::Pointer).ml(indent).self_start());
             }
-            if let Some(crate::comments::BranchStatus::Failed { message, .. }) = node.map(|node| &node.branch) {
+            if let Some(BranchStatus::Failed { message, .. }) = node.map(|node| &node.branch) {
                 r = r.child(text(message.clone()).ml(indent).role("status").font(type_::LABEL).color(t.text_secondary));
             }
         }
@@ -506,3 +527,16 @@ pub(super) fn source_viewer(
         .on_scroll_offset(on_scroll).child(content)
 }
 
+#[cfg(test)]
+mod tests {
+    use super::{drawn_text, MAX_TEXT};
+
+    #[test]
+    fn discussion_text_is_trimmed_and_capped_at_a_character_boundary() {
+        let long = "é".repeat(MAX_TEXT + 10);
+        let text = drawn_text(&long);
+        assert_eq!(text.chars().count(), MAX_TEXT + 1);
+        assert!(text.ends_with('…'));
+        assert_eq!(drawn_text("  A narrow ABI.  "), "A narrow ABI.");
+    }
+}

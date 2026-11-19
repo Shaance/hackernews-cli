@@ -6,7 +6,7 @@
 //! `Reader::request`/`poll_jobs`) is `pub(super)`, so the window drives the public
 //! `hn_lib::reader::Network` boundary itself and models the card's four states here.
 //!
-//! The discussion is [`crate::comments::Thread`]: the tree, its fold set, the cursor, the
+//! The discussion is [`hn_lib::comments::Thread`]: the tree, its fold set, the cursor, the
 //! re-root and focus mode. This module owns the story around it — the article, the card, the
 //! citation selection and the link chooser — and hands the thread's transitions straight through.
 
@@ -16,11 +16,11 @@ use hn_lib::reader::saved::Header;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
+use hn_lib::comments::{Navigation, Thread};
 use hn_lib::reader::{Article, Discussion, Source as CapturedSource};
 use hn_lib::HNCLIItem;
 
 use crate::story_io::{CommentsRefreshed, StoryUpdate, SummaryError};
-use crate::comments::{Navigation, Thread};
 
 /// One summary bullet and the captured citations it can actually show.
 #[derive(Debug, Clone)]
