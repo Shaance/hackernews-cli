@@ -14,7 +14,7 @@
 
 | Dark | Light |
 |---|---|
-| ![The Berlin story: its live page on the left, the article and discussion summary with numbered citations above the comments on the right](docs/screenshots/desktop/story-dark.png) | ![The same story in the light appearance](docs/screenshots/desktop/story-light.png) |
+| ![The Nginx story: its live page on the left, the article and discussion summary with numbered citations above the comments on the right](docs/screenshots/desktop/story-dark.png) | ![The same story in the light appearance](docs/screenshots/desktop/story-light.png) |
 
 - **The real page, next to the thread.** Opening a story puts its page on the left and the discussion on the right. Drag the divider, or hide the discussion with `⌘\`.
 - **Summaries you can check.** The article and discussion summaries stay pinned above the comments. `Tab` selects a citation and `Enter` opens the comment behind it, with its replies.
@@ -24,7 +24,7 @@
 
 | Read the cited comment | Two-column feed |
 |---|---|
-| ![Citation 1 opened: the article's author replying in the thread](docs/screenshots/desktop/citation.png) | ![The Top feed in two columns, with one story selected](docs/screenshots/desktop/feed.png) |
+| ![Citation 1 opened: the comment it came from, with its replies](docs/screenshots/desktop/citation.png) | ![The Top feed in two columns, with one story selected](docs/screenshots/desktop/feed.png) |
 
 **Install:** download the zip above, unzip it, and drag **HN** to Applications. Summaries are optional: open Settings with `⌘,` and add an OpenRouter or Anthropic key. To build it yourself, run `cd desktop && cargo run --release`; rustup fetches the pinned toolchain. The [desktop README](desktop/README.md) covers the details.
 
