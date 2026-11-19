@@ -2104,7 +2104,7 @@ dependencies = [
  "crossterm",
  "futures",
  "html-escape",
- "html5ever 0.26.0",
+ "html5ever 0.39.0",
  "icu_collections",
  "icu_locale_core",
  "icu_normalizer",
