@@ -4,6 +4,8 @@ version = "1.1.0"
 edition = "2024"
 publish = false
 description = "Native desktop frontend for hn, built on Rune"
+license = "MIT"
+repository = "https://github.com/Shaance/hn"
 
 # Its own workspace root, so this crate never joins the `hn` package at the repo root and
 # never touches the root Cargo.toml or Cargo.lock. The root pins rustc 1.88; Rune needs 1.99.1.

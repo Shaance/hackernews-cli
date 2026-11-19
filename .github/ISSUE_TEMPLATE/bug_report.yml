@@ -1,0 +1,47 @@
+name: Bug report
+description: Report a problem with the terminal or macOS app.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never paste API keys, `summary.json`, or unredacted logs. Report vulnerabilities privately using [SECURITY.md](https://github.com/Shaance/hn/blob/main/SECURITY.md).
+  - type: dropdown
+    id: app
+    attributes:
+      label: App
+      options:
+        - Terminal
+        - macOS
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Use `hn --version` for the terminal app, Finder’s Get Info for HN.app, or the commit for a source build.
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system and version
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
