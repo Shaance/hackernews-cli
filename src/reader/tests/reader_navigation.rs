@@ -22,13 +22,13 @@ fn pinned_summary_keeps_comment_anchor_and_source_back_at_all_sizes() {
         // Even the smallest size keeps the summary reachable above the comments.
         assert!(initial.find("ARTICLE").unwrap() < comments);
         app.set_comment_position(1, p.readings[&1].prefix_height + 37);
-        let anchor = (app.comment_cursor, app.comment_scroll);
+        let anchor = (app.thread.cursor(), app.comment_scroll);
         let text = screen(&mut p, &mut app, w, h);
         assert!(text.contains("ARTICLE"));
         assert!(text.contains("│ "));
         p.key(KeyCode::Char('S'));
         screen(&mut p, &mut app, w, h);
-        assert_eq!((app.comment_cursor, app.comment_scroll), anchor);
+        assert_eq!((app.thread.cursor(), app.comment_scroll), anchor);
         p.key(KeyCode::Char('S'));
         p.key(KeyCode::Tab);
         p.key(KeyCode::Enter);
@@ -38,10 +38,10 @@ fn pinned_summary_keeps_comment_anchor_and_source_back_at_all_sizes() {
         screen(&mut p, &mut app, w, h);
         p.key(KeyCode::Char('S'));
         assert!(p.readings[&1].shown);
-        assert_eq!((app.comment_cursor, app.comment_scroll), anchor);
+        assert_eq!((app.thread.cursor(), app.comment_scroll), anchor);
         assert!(!p.key(KeyCode::Char('j')));
         app.next_comment();
-        assert_eq!(app.comment_cursor, 2);
+        assert_eq!(app.thread.cursor(), Some(2));
     }
 }
 
@@ -64,10 +64,10 @@ fn short_summary_returns_space_and_long_summary_scrolls_independently() {
     let full = screen(&mut p, &mut app, 120, 40);
     assert!(full.find("COMMENTS  3").unwrap() > short_end);
     assert!(full.contains("J/K scroll"));
-    let anchor = (app.comment_cursor, app.comment_scroll);
+    let anchor = (app.thread.cursor(), app.comment_scroll);
     p.key(KeyCode::Char('J'));
     assert_ne!(screen(&mut p, &mut app, 120, 40), full);
-    assert_eq!((app.comment_cursor, app.comment_scroll), anchor);
+    assert_eq!((app.thread.cursor(), app.comment_scroll), anchor);
 
     p = ready();
     p.readings
@@ -108,7 +108,7 @@ async fn coordinator_reopens_fresh_metadata_without_moving_comments_or_evidence(
             screen(&mut p, &mut app, 120, 40);
         }
     }
-    let anchor = (app.comment_cursor, app.comment_scroll);
+    let anchor = (app.thread.cursor(), app.comment_scroll);
     assert!(anchor.1 > 0);
     crate::reader_actions::handle(
         &mut p,
@@ -150,7 +150,7 @@ async fn coordinator_reopens_fresh_metadata_without_moving_comments_or_evidence(
             assert!(rendered.contains("Reply evidence."));
         }
     }
-    assert_eq!((app.comment_cursor, app.comment_scroll), anchor);
+    assert_eq!((app.thread.cursor(), app.comment_scroll), anchor);
     assert_eq!(
         p.readings[&1]
             .article
@@ -187,7 +187,7 @@ fn focused_citation_token_is_visible_after_wrapping_and_source_comparison() {
         let mut app = comments_app();
         screen(&mut p, &mut app, w, h);
         app.set_comment_position(1, p.readings[&1].prefix_height + 37);
-        let anchor = (app.comment_cursor, app.comment_scroll);
+        let anchor = (app.thread.cursor(), app.comment_scroll);
         for n in 1..=3 {
             p.key(KeyCode::Tab);
             let mut terminal = Terminal::new(TestBackend::new(w, h)).unwrap();
@@ -224,7 +224,7 @@ fn focused_citation_token_is_visible_after_wrapping_and_source_comparison() {
         p.key(KeyCode::Esc);
         assert!(screen(&mut p, &mut app, w, h).contains("[3]"));
         assert_eq!(p.readings[&1].citation, 2);
-        assert_eq!((app.comment_cursor, app.comment_scroll), anchor);
+        assert_eq!((app.thread.cursor(), app.comment_scroll), anchor);
         assert!(p.jobs.is_empty());
     }
 }

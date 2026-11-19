@@ -1,17 +1,6 @@
 use super::App;
 
-/// State of a comment's children
-#[derive(Debug, Clone)]
-pub enum CommentState {
-    /// Children not yet fetched
-    Collapsed,
-    /// Currently fetching children
-    Loading { generation: u64 },
-    /// Children fetched and available
-    Expanded { children: Vec<Comment> },
-}
-
-/// A HackerNews comment
+/// A normalized Hacker News comment, with reply IDs in HN order.
 #[derive(Debug, Clone)]
 pub struct Comment {
     pub id: i32,
@@ -19,143 +8,63 @@ pub struct Comment {
     pub text: String,
     pub links: Vec<String>,
     pub time_ago: String,
-    pub state: CommentState,
-    pub depth: usize,
     pub deleted: bool,
-    /// Child comment IDs (preserved across expand/collapse)
     pub child_ids: Vec<i32>,
 }
 
-impl Comment {
-    /// Check if comment has children
-    pub fn has_children(&self) -> bool {
-        !self.child_ids.is_empty()
-    }
-
-    /// Get child count
-    pub fn child_count(&self) -> usize {
-        self.child_ids.len()
-    }
-
-    /// Check if expanded
-    pub fn is_expanded(&self) -> bool {
-        matches!(self.state, CommentState::Expanded { .. })
-    }
-
-    /// Check if loading
-    pub fn is_loading(&self) -> bool {
-        matches!(self.state, CommentState::Loading { .. })
-    }
-}
-
 impl App {
-    /// Move to next comment
     pub fn next_comment(&mut self) {
         self.follow_comment_selection = true;
-        if !self.visible_comment_paths.is_empty()
-            && self.comment_cursor < self.visible_comment_paths.len() - 1
-        {
-            self.comment_cursor += 1;
-        }
+        self.thread.next();
     }
 
-    /// Move to previous comment
     pub fn prev_comment(&mut self) {
         self.follow_comment_selection = true;
-        if self.comment_cursor > 0 {
-            self.comment_cursor -= 1;
-        }
+        self.thread.prev();
     }
 
-    /// Jump to the next sibling comment (skips over the current thread)
     pub fn next_comment_sibling(&mut self) {
         self.follow_comment_selection = true;
-        let Some(path) = self.visible_comment_paths.get(self.comment_cursor) else {
-            return;
-        };
-
-        let Some((_, parent_path)) = path.split_last() else {
-            return;
-        };
-
-        for (idx, candidate_path) in self
-            .visible_comment_paths
-            .iter()
-            .enumerate()
-            .skip(self.comment_cursor + 1)
-        {
-            if candidate_path.len() != path.len() {
-                continue;
-            }
-
-            if candidate_path.starts_with(parent_path) {
-                self.comment_cursor = idx;
-                return;
-            }
-        }
+        self.thread.next_sibling();
     }
 
-    /// Jump to the previous sibling comment
     pub fn prev_comment_sibling(&mut self) {
         self.follow_comment_selection = true;
-        let Some(path) = self.visible_comment_paths.get(self.comment_cursor) else {
-            return;
-        };
-
-        let Some((_, parent_path)) = path.split_last() else {
-            return;
-        };
-
-        let mut idx = self.comment_cursor;
-        while idx > 0 {
-            idx -= 1;
-            let candidate_path = &self.visible_comment_paths[idx];
-            if candidate_path.len() != path.len() {
-                continue;
-            }
-
-            if candidate_path.starts_with(parent_path) {
-                self.comment_cursor = idx;
-                return;
-            }
-        }
+        self.thread.prev_sibling();
     }
 
-    /// Jump to the parent comment of the current selection
     pub fn parent_comment(&mut self) {
         self.follow_comment_selection = true;
-        let Some(path) = self.visible_comment_paths.get(self.comment_cursor) else {
-            return;
-        };
-
-        if path.len() < 2 {
-            return; // Already at top level
-        }
-
-        let parent_path = &path[..path.len() - 1];
-
-        if let Some((idx, _)) = self
-            .visible_comment_paths
-            .iter()
-            .enumerate()
-            .find(|(_, candidate_path)| candidate_path.as_slice() == parent_path)
-        {
-            self.comment_cursor = idx;
-        }
+        self.thread.to_parent();
     }
 
-    /// Go to top comment
     pub fn first_comment(&mut self) {
-        self.comment_cursor = 0;
+        self.thread.first();
         self.comment_scroll = 0;
+        self.comment_anchor = None;
         self.follow_comment_selection = false;
     }
 
-    /// Go to bottom comment
     pub fn last_comment(&mut self) {
         self.follow_comment_selection = true;
-        if !self.visible_comment_paths.is_empty() {
-            self.comment_cursor = self.visible_comment_paths.len() - 1;
+        self.thread.last();
+    }
+
+    pub fn visible_comment_count(&self) -> usize {
+        self.thread.rows().len()
+    }
+
+    pub(crate) fn comment_scroll_anchor(&self) -> Option<(i32, usize)> {
+        self.comment_line_ranges
+            .iter()
+            .find(|r| r.1 <= self.comment_scroll && self.comment_scroll < r.2)
+            .map(|r| (r.0, self.comment_scroll - r.1))
+    }
+
+    pub(crate) fn prepare_comment_layout(&mut self, width: u16) {
+        if self.comment_layout_width != width {
+            self.comment_anchor = self.comment_anchor.or_else(|| self.comment_scroll_anchor());
+            self.comment_layout_width = width;
         }
     }
 
@@ -173,9 +82,7 @@ impl App {
         }
         let mut new_scroll = self.comment_scroll;
         if self.follow_comment_selection {
-            let selected = self
-                .visible_comment_at(self.comment_cursor)
-                .map(|(_, c)| c.id);
+            let selected = self.thread.cursor();
             if let Some(&(_, start, end)) = line_ranges.iter().find(|r| Some(r.0) == selected) {
                 if start < new_scroll || end - start > view_height {
                     new_scroll = start;
@@ -204,188 +111,82 @@ impl App {
         self.comment_viewport_height = view_height;
     }
 
-    /// Get currently selected comment (mutable)
-    pub fn selected_comment_mut(&mut self) -> Option<&mut Comment> {
-        // Clone the path to avoid borrow conflicts
-        let path = self
-            .visible_comment_paths
-            .get(self.comment_cursor)
-            .cloned()?;
-
-        self.get_comment_mut_by_path(&path)
-    }
-
-    /// Get a visible comment and its path by flattened index
-    pub fn visible_comment_at(&self, index: usize) -> Option<(&[usize], &Comment)> {
-        let path = self.visible_comment_paths.get(index)?;
-        let comment = self.get_comment_by_path(path)?;
-        Some((path.as_slice(), comment))
-    }
-
-    /// Count comments visible in the flattened render/navigation order
-    pub fn visible_comment_count(&self) -> usize {
-        self.visible_comment_paths.len()
-    }
-
-    /// Get an immutable reference to a comment by path
-    fn get_comment_by_path(&self, path: &[usize]) -> Option<&Comment> {
-        if path.is_empty() {
-            return None;
-        }
-
-        let mut current = self.comments.get(path[0])?;
-
-        for &child_idx in &path[1..] {
-            if let CommentState::Expanded { children } = &current.state {
-                current = children.get(child_idx)?;
-            } else {
-                return None;
-            }
-        }
-
-        Some(current)
-    }
-
-    /// Get a mutable reference to a comment by path
-    fn get_comment_mut_by_path(&mut self, path: &[usize]) -> Option<&mut Comment> {
-        if path.is_empty() {
-            return None;
-        }
-
-        // Start with the top-level comment
-        let mut current = self.comments.get_mut(path[0])?;
-
-        // Navigate down the path
-        for &child_idx in &path[1..] {
-            if let CommentState::Expanded { children } = &mut current.state {
-                current = children.get_mut(child_idx)?;
-            } else {
-                return None;
-            }
-        }
-
-        Some(current)
-    }
-
-    /// Collapse the nearest expanded ancestor (or current comment) in the thread
     pub fn collapse_current_thread(&mut self) {
         self.follow_comment_selection = true;
-        let Some(path) = self.visible_comment_paths.get(self.comment_cursor).cloned() else {
-            return;
-        };
-
-        for depth in (0..path.len()).rev() {
-            if let Some(comment) = self.get_comment_mut_by_path(&path[..=depth]) {
-                match comment.state {
-                    CommentState::Expanded { .. } | CommentState::Loading { .. } => {
-                        comment.state = CommentState::Collapsed;
-                        self.rebuild_visible_comments();
-                        self.comment_cursor = self
-                            .visible_comment_paths
-                            .iter()
-                            .position(|visible| visible == &path[..=depth])
-                            .expect("Collapsing ancestor remains visible");
-                        self.recompute_comment_loading(self.has_loading_comments());
-                        return;
-                    }
-                    _ => {}
-                }
+        let mut current = self.thread.cursor();
+        while let Some(id) = current {
+            if self.comment_replies_pending(id) || self.comment_replies_open(id) {
+                self.thread.select(id);
+                self.fold_comment(id);
+                return;
             }
+            current = self.thread.parent_of(id);
         }
     }
 
-    pub fn replace_loading_comment_state(
-        &mut self,
-        comment_id: i32,
-        expected_generation: u64,
-        new_state: CommentState,
-    ) -> bool {
-        let mut new_state = Some(new_state);
-        Self::replace_loading_comment_state_recursive(
-            &mut self.comments,
-            comment_id,
-            expected_generation,
-            &mut new_state,
-        )
-    }
-
-    fn replace_loading_comment_state_recursive(
-        comments: &mut [Comment],
-        comment_id: i32,
-        expected_generation: u64,
-        new_state: &mut Option<CommentState>,
-    ) -> bool {
-        for comment in comments {
-            if comment.id == comment_id {
-                match comment.state {
-                    CommentState::Loading { generation } if generation == expected_generation => {
-                        comment.state = new_state
-                            .take()
-                            .expect("replacement state should be available");
-                        return true;
-                    }
-                    _ => return false,
-                }
-            }
-
-            if let CommentState::Expanded { ref mut children } = comment.state {
-                if Self::replace_loading_comment_state_recursive(
-                    children,
-                    comment_id,
-                    expected_generation,
-                    new_state,
-                ) {
-                    return true;
-                }
-            }
+    fn fold_comment(&mut self, id: i32) {
+        if self.comment_replies_open(id) {
+            self.thread.fold();
         }
-
-        false
+        self.pending_replies
+            .retain(|parent, _| *parent != id && !self.thread.is_descendant(*parent, id));
+        self.recompute_comment_loading(!self.pending_replies.is_empty());
     }
 
-    pub fn has_loading_comments(&self) -> bool {
-        self.comments.iter().any(Self::comment_has_loading)
+    pub(crate) fn comment_replies_pending(&self, id: i32) -> bool {
+        self.pending_replies.contains_key(&id)
     }
 
-    fn comment_has_loading(comment: &Comment) -> bool {
-        match &comment.state {
-            CommentState::Loading { .. } => true,
-            CommentState::Expanded { children } => children.iter().any(Self::comment_has_loading),
-            CommentState::Collapsed => false,
+    pub(crate) fn comment_replies_open(&self, id: i32) -> bool {
+        self.thread.replies_loaded(id) && !self.thread.is_folded(id)
+    }
+
+    /// Toggle cached replies, or return the IDs and token for a new request.
+    pub(crate) fn toggle_comment_replies(&mut self) -> Option<(i32, u64, Vec<i32>)> {
+        let id = self.thread.cursor()?;
+        if self.comment_replies_pending(id) {
+            return None;
         }
-    }
-
-    /// Rebuild the flattened visible comments list
-    pub fn rebuild_visible_comments(&mut self) {
-        self.visible_comment_paths.clear();
-        for (idx, comment) in self.comments.iter().enumerate() {
-            let mut path = vec![idx];
-            Self::add_visible_comment_path_recursive(
-                &mut self.visible_comment_paths,
-                &mut path,
-                comment,
-            );
+        if self.comment_replies_open(id) {
+            self.fold_comment(id);
+            return None;
         }
-    }
-
-    fn add_visible_comment_path_recursive(
-        visible_comment_paths: &mut Vec<Vec<usize>>,
-        path: &mut Vec<usize>,
-        comment: &Comment,
-    ) {
-        visible_comment_paths.push(path.clone());
-
-        if let CommentState::Expanded { children } = &comment.state {
-            for (child_idx, child) in children.iter().enumerate() {
-                path.push(child_idx);
-                Self::add_visible_comment_path_recursive(visible_comment_paths, path, child);
-                path.pop();
-            }
+        if self.thread.is_folded(id) {
+            self.thread.unfold();
+            return None;
         }
-    }
-
-    pub fn next_comment_child_load_generation(&mut self) -> u64 {
+        let batch = self
+            .thread
+            .reply_batch(id, false)
+            .or_else(|| self.thread.reply_batch(id, true))?;
         self.comment_child_load_generation = self.comment_child_load_generation.wrapping_add(1);
-        self.comment_child_load_generation
+        let generation = self.comment_child_load_generation;
+        let ids = batch.ids().to_vec();
+        self.pending_replies.insert(id, (generation, batch));
+        self.set_comment_loading(true);
+        Some((id, generation, ids))
+    }
+
+    pub(crate) fn apply_comment_replies(
+        &mut self,
+        id: i32,
+        generation: u64,
+        result: anyhow::Result<Vec<Comment>>,
+    ) {
+        if !self
+            .pending_replies
+            .get(&id)
+            .is_some_and(|(pending, _)| *pending == generation)
+        {
+            return;
+        }
+        let (_, batch) = self.pending_replies.remove(&id).unwrap();
+        let result = result.map_err(|error| {
+            let message = format!("Failed to load comment children: {error}");
+            self.set_comment_error(message.clone());
+            message
+        });
+        self.thread.merge_replies(&batch, result);
+        self.recompute_comment_loading(!self.pending_replies.is_empty());
     }
 }

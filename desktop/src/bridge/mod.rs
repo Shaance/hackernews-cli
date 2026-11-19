@@ -178,13 +178,13 @@ impl Bridge {
 
     pub fn take_refresh(&self) -> Option<CommentsRefreshed> { self.refresh.take() }
 
-    pub fn request_replies(&self, source: Arc<Source>, request: ReplyRequest) {
+    pub fn request_replies(&self, source: Arc<Source>, request: ReplyRequest, depth: usize) {
         let handle = self.handle.clone();
-        self.replies.request(request, move |request| handle.block_on(run_replies(source.as_ref(), request)));
+        self.replies.request(request, move |request| handle.block_on(run_replies(source.as_ref(), request, depth)));
     }
 
-    pub fn replies_now(&self, source: &Source, request: ReplyRequest) -> ReplyFilled {
-        self.runtime.block_on(run_replies(source, request))
+    pub fn replies_now(&self, source: &Source, request: ReplyRequest, depth: usize) -> ReplyFilled {
+        self.runtime.block_on(run_replies(source, request, depth))
     }
 
     pub fn take_replies(&self) -> Option<ReplyFilled> { self.replies.take() }
@@ -260,8 +260,8 @@ impl Bridge {
     }
 }
 
-async fn run_replies(source: &Source, request: ReplyRequest) -> ReplyFilled {
-    let comments = source.children(request.batch.ids(), request.batch.depth()).await.map_err(|e| e.to_string());
+async fn run_replies(source: &Source, request: ReplyRequest, depth: usize) -> ReplyFilled {
+    let comments = source.children(request.batch.ids(), depth).await.map_err(|e| e.to_string());
     ReplyFilled { request, comments }
 }
 
@@ -554,12 +554,9 @@ mod tests {
             "initial discussion contains every root, without fetching replies"
         );
         assert_eq!(
-            comments.as_ref().unwrap().comments
-                .iter()
-                .filter(|comment| comment.depth == 0)
-                .count(),
-            5,
-            "five top-level threads"
+            comments.as_ref().unwrap().comments.iter().map(|comment| comment.id).collect::<Vec<_>>(),
+            crate::fixtures::comments().iter().map(|comment| comment.id).collect::<Vec<_>>(),
+            "only top-level IDs, in fixture order"
         );
         assert_eq!(
             comments.as_ref().unwrap().sources.len(),

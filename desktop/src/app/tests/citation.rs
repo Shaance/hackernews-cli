@@ -176,7 +176,7 @@ fn captured_source_remains_selected_when_the_live_comment_changes_or_is_gone() {
             comments[0].text = "new text".into();
             story.thread.merge_comments(&comments, &[]);
         } else {
-            story.thread = hn_lib::comments::Thread::empty();
+            story.thread = hn_lib::comments::Thread::empty(Some(crate::story::VISIBLE_COMMENT_LEVELS), crate::story::REPLY_BATCH_SIZE);
         }
         let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));
         rt.on_key = Some(on_key);

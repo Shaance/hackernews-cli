@@ -4,26 +4,16 @@ mod child_responses;
 mod story_responses;
 mod view_scope;
 
-pub(super) fn test_comment(id: i32, state: CommentState) -> crate::app::Comment {
+pub(super) fn test_comment(id: i32) -> crate::app::Comment {
     crate::app::Comment {
         id,
         author: format!("user{id}"),
         text: format!("comment {id}"),
         links: vec![],
         time_ago: "now".to_string(),
-        state,
-        depth: 0,
         deleted: false,
         child_ids: vec![id + 100],
     }
-}
-
-pub(super) fn loading(generation: u64) -> CommentState {
-    CommentState::Loading { generation }
-}
-
-pub(super) fn expanded(children: Vec<crate::app::Comment>) -> CommentState {
-    CommentState::Expanded { children }
 }
 
 pub(super) fn ready_app() -> App {
@@ -36,7 +26,7 @@ pub(super) fn ready_app() -> App {
 async fn reader_keys_page_text_and_link_picker_can_be_closed() {
     let mut app = ready_app();
     app.view_comments(1, "story".into(), "https://example.com".into());
-    let mut comment = test_comment(10, CommentState::Collapsed);
+    let mut comment = test_comment(10);
     comment.links = vec![
         "https://example.com/first".into(),
         "https://example.com/second".into(),

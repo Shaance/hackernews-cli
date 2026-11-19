@@ -35,7 +35,7 @@ fn retry_controls_share_quiet_style_except_primary_summary_retry() {
     story.discussion = Some(Err("offline".into()));
     let mut comments = crate::fixtures::thread();
     comments.iter_mut().find(|c| c.id == 901).unwrap().child_ids.push(987655);
-    story.thread = hn_lib::comments::Thread::from_comments(&comments);
+    story.thread = hn_lib::comments::Thread::from_comments(&comments, Some(crate::story::VISIBLE_COMMENT_LEVELS), crate::story::REPLY_BATCH_SIZE);
     let batch = story.thread.reply_batch(901, false).unwrap();
     story.thread.merge_replies(&batch, Err("offline".into()));
     let mut rt = rune::Runtime::new(s, view, (1180.0, 760.0), rune::Env::new(true, 1.0));

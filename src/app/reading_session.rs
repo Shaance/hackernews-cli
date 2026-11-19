@@ -1,10 +1,10 @@
-use super::{App, Comment, CommentState, StoryType, View};
+use super::{App, StoryType, Thread, View};
 use crate::HNCLIItem;
 
 /// Owns the loaded discussion while its reader is closed.
 pub(super) struct ReadingSession {
-    comments: Vec<Comment>,
-    cursor: usize,
+    thread: Thread,
+    anchor: Option<(i32, usize)>,
     scroll: usize,
 }
 
@@ -14,16 +14,15 @@ impl App {
             return;
         };
         // An interrupted initial fetch must be retried on re-entry.
-        if self.comments.is_empty() && (self.is_loading() || self.error().is_some()) {
+        if self.thread.is_empty() && (self.is_loading() || self.error().is_some()) {
             return;
         }
-        let mut comments = std::mem::take(&mut self.comments);
-        reset_pending_replies(&mut comments);
+        let anchor = self.comment_anchor.or_else(|| self.comment_scroll_anchor());
         self.reading_sessions.insert(
             story_id,
             ReadingSession {
-                comments,
-                cursor: self.comment_cursor,
+                thread: std::mem::replace(&mut self.thread, Thread::empty(None, usize::MAX)),
+                anchor,
                 scroll: self.comment_scroll,
             },
         );
@@ -33,17 +32,17 @@ impl App {
         let Some(session) = self.reading_sessions.remove(&story_id) else {
             return false;
         };
-        self.comments = session.comments;
-        self.comment_cursor = session.cursor;
+        self.thread = session.thread;
+        self.comment_anchor = session.anchor;
         self.comment_scroll = session.scroll;
-        self.rebuild_visible_comments();
         self.clear_comment_status();
         true
     }
 
     /// Restore a reader position without following the selected comment on redraw.
-    pub fn set_comment_position(&mut self, cursor: usize, scroll: usize) {
-        self.comment_cursor = cursor;
+    #[cfg(test)]
+    pub(crate) fn set_comment_position(&mut self, id: i32, scroll: usize) {
+        assert!(self.thread.select(id));
         self.comment_scroll = scroll;
         self.follow_comment_selection = false;
         self.pending_comment_pages = 0;
@@ -54,12 +53,13 @@ impl App {
         self.pending_comment_pages += if down { 1 } else { -1 };
     }
 
-    pub fn begin_comment_refresh(&mut self) -> u64 {
-        reset_pending_replies(&mut self.comments);
+    pub(crate) fn begin_comment_refresh(&mut self) -> (u64, std::collections::HashSet<i32>) {
+        self.pending_replies.clear();
         self.comment_view_generation = self.comment_view_generation.wrapping_add(1);
         self.refreshing_comments = true;
         self.set_comment_loading(true);
-        self.comment_view_generation
+        // Folded branches keep their replies, so they refresh too; reopening must not show stale ones.
+        (self.comment_view_generation, self.thread.loaded_branches())
     }
 
     pub fn current_links(&self) -> Vec<&str> {
@@ -67,7 +67,7 @@ impl App {
         if let Some(story) = &self.discussion_story {
             links.extend(story.links.iter().map(String::as_str));
         }
-        if let Some((_, comment)) = self.visible_comment_at(self.comment_cursor) {
+        if let Some(comment) = self.thread.cursor().and_then(|id| self.thread.node(id)) {
             links.extend(comment.links.iter().map(String::as_str));
         }
         links
@@ -87,15 +87,5 @@ impl App {
     pub fn show_saved_stories(&mut self) {
         self.next_story_request_generation();
         self.set_stories_for(StoryType::Saved, 1, self.bookmarks.clone());
-    }
-}
-
-fn reset_pending_replies(comments: &mut [Comment]) {
-    for comment in comments {
-        match &mut comment.state {
-            CommentState::Loading { .. } => comment.state = CommentState::Collapsed,
-            CommentState::Expanded { children } => reset_pending_replies(children),
-            CommentState::Collapsed => {}
-        }
     }
 }

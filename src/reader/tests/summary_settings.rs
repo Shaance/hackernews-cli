@@ -388,7 +388,7 @@ async fn comment_refresh_is_free_and_explicit_summary_retry_only_retries_failure
                     .unwrap()
                     .unwrap();
                 crate::tui::handle_app_message(&mut app, msg);
-                assert_eq!(app.comments[0].text, "Fresh readable comment");
+                assert_eq!(app.thread.node(10).unwrap().text, "Fresh readable comment");
                 assert!(p.jobs.is_empty());
                 let mut count = 0;
                 while let Ok((path, _)) = requests.try_recv() {
@@ -451,7 +451,6 @@ async fn comment_refresh_is_free_and_explicit_summary_retry_only_retries_failure
 
 #[tokio::test]
 async fn refresh_fetches_expanded_branches_and_keeps_the_whole_tree_on_item_failure() {
-    use crate::app::CommentState;
     for fail_id in [0, 10, 11] {
         let (network, mut requests, server) = network::tests::serve(move |path, _, _| {
             let id: i32 = path
@@ -481,18 +480,22 @@ async fn refresh_fetches_expanded_branches_and_keeps_the_whole_tree_on_item_fail
         p.network = network;
         let service = p.network.service.clone();
         let mut app = comments_app();
-        let mut root = app.comments[0].clone();
-        root.id = 10;
-        root.child_ids = vec![11];
-        root.text = "old parent".into();
-        let mut child = root.clone();
-        child.id = 11;
-        child.child_ids.clear();
-        child.text = "old readable reply".into();
-        root.state = CommentState::Expanded {
-            children: vec![child],
+        let root = crate::app::Comment {
+            id: 10,
+            author: "reader".into(),
+            text: "old parent".into(),
+            links: vec![],
+            time_ago: "now".into(),
+            child_ids: vec![11],
+            deleted: false,
         };
-        app.set_comments(vec![root]);
+        let child = crate::app::Comment {
+            id: 11,
+            text: "old readable reply".into(),
+            child_ids: vec![],
+            ..root.clone()
+        };
+        app.set_comments(vec![root, child]);
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
         crate::reader_actions::handle(&mut p, &mut app, KeyCode::Char('r'), tx, service, &mut None)
             .await
@@ -506,14 +509,11 @@ async fn refresh_fetches_expanded_branches_and_keeps_the_whole_tree_on_item_fail
         assert!(!app.is_loading());
         if fail_id == 0 {
             assert_eq!(app.visible_comment_count(), 4);
-            assert_eq!(app.visible_comment_at(2).unwrap().1.text, "fresh 12");
-            assert!(matches!(app.comments[1].state, CommentState::Collapsed));
+            assert_eq!(app.thread.node(12).unwrap().text, "fresh 12");
+            assert!(!app.comment_replies_open(20));
         } else {
             assert_eq!(app.visible_comment_count(), 2);
-            assert_eq!(
-                app.visible_comment_at(1).unwrap().1.text,
-                "old readable reply"
-            );
+            assert_eq!(app.thread.node(11).unwrap().text, "old readable reply");
             assert!(app.error().is_some());
         }
         while let Ok((path, _)) = requests.try_recv() {

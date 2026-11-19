@@ -255,8 +255,6 @@ async fn fetch_top_level_comments_converts_comment_fields() {
     assert_eq!(comments[0].author, "commenter");
     assert_eq!(comments[0].text, "Hello &\n\nworld");
     assert_eq!(comments[0].child_ids, vec![100, 101]);
-    assert_eq!(comments[0].depth, 0);
-    assert!(matches!(comments[0].state, app::CommentState::Collapsed));
     assert!(!comments[0].deleted);
     assert_eq!(comments[1].id, 11);
     assert!(comments[1].deleted);
@@ -264,7 +262,7 @@ async fn fetch_top_level_comments_converts_comment_fields() {
 }
 
 #[tokio::test]
-async fn fetch_comment_children_skips_failed_items_and_sets_depth() {
+async fn fetch_comment_children_skips_failed_items() {
     let mut hn_client = MockHackerNewsClient::new();
 
     hn_client
@@ -296,9 +294,7 @@ async fn fetch_comment_children_skips_failed_items_and_sets_depth() {
     assert_eq!(comments[0].id, 21);
     assert_eq!(comments[0].author, "child_author");
     assert_eq!(comments[0].text, "Child > parent");
-    assert_eq!(comments[0].depth, 2);
     assert!(comments[0].child_ids.is_empty());
-    assert!(matches!(comments[0].state, app::CommentState::Collapsed));
     assert!(comments[0].deleted);
 }
 

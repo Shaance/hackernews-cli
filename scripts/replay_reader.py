@@ -159,28 +159,7 @@ def run(binary, output, width, height):
                                    ("[", "katspaugh", 1), ("u", "tywr", 0)):
             app.key(key)
             selected(author, depth)
-        app.key("j\r")
-        app.wait(lambda t: count() == expanded + 1)
-        app.key("j")
-        selected("nested_replay_control", 2)
-        capture("10c-deeper-reply")
-        app.key("c")
-        selected("katspaugh", 1)
-        assert count() == expanded and "nested_replay_control" not in app.text(), "Collapse from descendant must hide the grandchild"
-        capture("10d-deeper-folded")
-        app.key("uc")
-        app.wait(lambda t: count() == initial)
-        selected("tywr", 0)
-        assert all(author not in app.text() for author in ("katspaugh  ", "bayindirh  ")), "Folding the root must hide both replies"
-        collapsed = count()
-        capture("10-comments")
-        start = len(fixture.gets)
-        app.key("\r")
-        app.wait(lambda t: count() == expanded)
-        reopen = Counter(fixture.gets[start:])
-        assert reopen == Counter(reply_paths), f"Reopening the folded root should refetch both children once, got {dict(reopen)}"
-        capture("10e-reopened")
-
+        # Exercise a late response before the first successful load of this branch.
         fixture.get_gates[nested_path] = Event()
         start = len(fixture.gets)
         app.key("j\r")
@@ -195,14 +174,40 @@ def run(binary, output, width, height):
         late = Counter(fixture.gets[start:])
         assert late == Counter({nested_path: 1}), f"Expected one request for the collapsed load, got {dict(late)}"
         capture("10g-late-ignored")
+        app.key("\r")
+        app.wait(lambda t: count() == expanded + 1)
+        app.key("j")
+        selected("nested_replay_control", 2)
+        capture("10c-deeper-reply")
+        app.key("c")
+        selected("katspaugh", 1)
+        assert count() == expanded and "nested_replay_control" not in app.text(), "Collapse from descendant must hide the grandchild"
+        capture("10d-deeper-folded")
+        app.key("\r")
+        app.wait(lambda t: count() == expanded + 1)
         app.key("uc")
         app.wait(lambda t: count() == initial)
+        selected("tywr", 0)
+        assert all(author not in app.text() for author in ("katspaugh  ", "bayindirh  ")), "Folding the root must hide both replies"
+        collapsed = count()
+        capture("10-comments")
+        start = len(fixture.gets)
+        app.key("\r")
+        app.wait(lambda t: count() == expanded + 1 and "nested_replay_control" in t)
+        app.pump(0.4)
+        reopen = Counter(fixture.gets[start:])
+        assert not reopen, f"Reopening the folded root and its nested expansion made requests: {dict(reopen)}"
+        capture("10e-reopened")
+        app.key("jcu")
+        app.wait(lambda t: count() == expanded)
         # Synthetic controls are added only after all recorded summaries have completed.
         long_reply = {"id": 90000001, "parent": 50163214, "author": "synthetic_replay_control",
                       "text": "\n".join(f"Synthetic passage {i:03} · revision 1" for i in range(260))}
         records.insert(0, long_reply)
         app.key("rg")
-        app.wait(lambda t: "3 replies" in t)
+        app.wait(lambda t: count() == 43)
+        app.key("c")
+        app.wait(lambda t: "+ 3 replies" in t and count() == initial)
         app.key("\r")
         app.wait(lambda t: count() == 43)
         app.key("j\x1b[6~")

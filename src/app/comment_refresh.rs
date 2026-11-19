@@ -1,83 +1,75 @@
-use super::{App, Comment, CommentState};
+use super::{App, Comment};
+use crate::HackerNewsCliServiceImpl;
+use std::collections::HashSet;
 
 impl App {
+    /// Fetch the story's new root order and the replies of every branch loaded at refresh start.
+    pub(crate) async fn fetch_comment_refresh(
+        service: &HackerNewsCliServiceImpl,
+        story_id: i32,
+        open: &HashSet<i32>,
+    ) -> anyhow::Result<Vec<Comment>> {
+        let roots = service.top_level_comment_ids(story_id).await?;
+        let mut stack = service.fetch_comments_strict(&roots).await?;
+        stack.reverse();
+        let mut fresh = Vec::new();
+        while let Some(comment) = stack.pop() {
+            if open.contains(&comment.id) {
+                let children = service.fetch_comments_strict(&comment.child_ids).await?;
+                stack.extend(children.into_iter().rev());
+            }
+            fresh.push(comment);
+        }
+        Ok(fresh)
+    }
+
     /// Apply the complete refresh against choices made while it was in flight.
-    pub(super) fn apply_comment_refresh(&mut self, mut fresh: Vec<Comment>) {
+    pub(super) fn apply_comment_refresh(&mut self, fresh: Vec<Comment>) {
         let ranges = self.comment_line_ranges.clone();
         self.update_comment_scroll(&ranges, self.comment_viewport_height);
-        let anchor = ranges
-            .iter()
-            .find(|r| r.1 <= self.comment_scroll && self.comment_scroll < r.2)
-            .map(|r| (r.0, self.comment_scroll - r.1));
-        let selected = self
-            .visible_comment_at(self.comment_cursor)
-            .map(|(_, c)| c.id);
-        let old_ids: Vec<_> = (0..self.visible_comment_count())
-            .filter_map(|i| self.visible_comment_at(i).map(|(_, c)| c.id))
-            .collect();
+        let anchor = self.comment_scroll_anchor();
+        let selected = self.thread.cursor();
+        let old_rows = self.thread.rows();
+        let old_index = old_rows.iter().position(|row| Some(row.id) == selected);
         let mut candidates = Vec::new();
         if let Some((id, _)) = anchor {
-            candidates.push(id);
-            if let Some(index) = old_ids.iter().position(|old| *old == id) {
-                let path = self.visible_comment_at(index).unwrap().0;
-                for i in (0..index).rev() {
-                    let (parent_path, parent) = self.visible_comment_at(i).unwrap();
-                    if path.starts_with(parent_path) {
-                        candidates.push(parent.id);
-                    }
-                }
-                for distance in 1..old_ids.len() {
+            candidates.extend(std::iter::successors(Some(id), |id| {
+                self.thread.parent_of(*id)
+            }));
+            if let Some(index) = old_rows.iter().position(|row| row.id == id) {
+                for distance in 1..old_rows.len() {
                     if let Some(i) = index.checked_sub(distance) {
-                        candidates.push(old_ids[i]);
+                        candidates.push(old_rows[i].id);
                     }
-                    if let Some(id) = old_ids.get(index + distance) {
-                        candidates.push(*id);
+                    if let Some(row) = old_rows.get(index + distance) {
+                        candidates.push(row.id);
                     }
                 }
             }
         }
-        merge_expansion(&mut fresh, &mut self.comments);
-        self.comments = fresh;
-        self.rebuild_visible_comments();
-        self.comment_cursor = (0..self.visible_comment_count())
-            .find(|&i| self.visible_comment_at(i).map(|(_, c)| c.id) == selected)
-            .unwrap_or(
-                self.comment_cursor
-                    .min(self.visible_comment_count().saturating_sub(1)),
-            );
+
+        self.thread.replace_comments(&fresh);
+        let rows = self.thread.rows();
+        let visible: HashSet<_> = rows.iter().map(|row| row.id).collect();
+        self.pending_replies.retain(|id, _| visible.contains(id));
+        if !selected.is_some_and(|id| visible.contains(&id)) {
+            if let Some(row) = rows.get(old_index.unwrap_or(0).min(rows.len().saturating_sub(1))) {
+                self.thread.select(row.id);
+            }
+        }
         self.comment_anchor = candidates
             .into_iter()
-            .find(|id| {
-                (0..self.visible_comment_count())
-                    .any(|i| self.visible_comment_at(i).unwrap().1.id == *id)
-            })
+            .find(|id| visible.contains(id))
             .map(|id| (id, anchor.filter(|a| a.0 == id).map_or(0, |a| a.1)));
         self.refreshing_comments = false;
         self.clear_comment_status();
-        self.recompute_comment_loading(self.has_loading_comments());
+        self.recompute_comment_loading(!self.pending_replies.is_empty());
     }
 
     /// A refresh failure keeps the previous tree, selection, and passage readable.
     pub fn apply_comment_error(&mut self, error: String) {
         self.refreshing_comments = false;
         self.set_comment_error(error);
-        self.recompute_comment_loading(self.has_loading_comments());
-    }
-}
-
-fn merge_expansion(fresh: &mut [Comment], current: &mut [Comment]) {
-    for comment in fresh {
-        let Some(old) = current.iter_mut().find(|c| c.id == comment.id) else {
-            continue;
-        };
-        match std::mem::replace(&mut old.state, CommentState::Collapsed) {
-            CommentState::Expanded { mut children } => match &mut comment.state {
-                CommentState::Expanded { children: fetched } => {
-                    merge_expansion(fetched, &mut children)
-                }
-                _ => comment.state = CommentState::Expanded { children },
-            },
-            state => comment.state = state,
-        }
+        self.recompute_comment_loading(!self.pending_replies.is_empty());
     }
 }

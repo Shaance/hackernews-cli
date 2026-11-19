@@ -208,12 +208,14 @@ impl App {
             if story.source().is_none() { story.clear_citation_focus(); }
             story.with_thread(|thread| { thread.select(parent); });
         }
-        let Some(request) = self.story.as_mut().and_then(|s| s.request_replies(parent, retry)) else { return; };
+        let Some(story) = self.story.as_mut() else { return; };
+        let Some(request) = story.request_replies(parent, retry) else { return; };
+        let depth = story.thread.tree_depth(parent).expect("reply parent exists") as usize + 1;
         if self.headless {
-            let filled = self.bridge.replies_now(&self.source, request);
+            let filled = self.bridge.replies_now(&self.source, request, depth);
             if let Some(story) = self.story.as_mut() { story.land_replies(filled); }
         } else {
-            self.bridge.request_replies(Arc::clone(&self.source), request);
+            self.bridge.request_replies(Arc::clone(&self.source), request, depth);
         }
     }
 

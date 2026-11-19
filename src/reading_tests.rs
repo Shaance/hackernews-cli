@@ -1,5 +1,5 @@
 use crate::{
-    app::{App, Comment, CommentState, StoryType},
+    app::{App, Comment, StoryType},
     bookmarks, ui, HNCLIItem,
 };
 use ratatui::{backend::TestBackend, Terminal};
@@ -24,17 +24,15 @@ fn story() -> HNCLIItem {
     }
 }
 
-fn comment(id: i32, text: String, state: CommentState) -> Comment {
+fn comment(id: i32, text: String, child_ids: &[i32]) -> Comment {
     Comment {
         id,
         author: "reader".into(),
         text,
         links: vec!["https://example.com/comment-link".into()],
         time_ago: "now".into(),
-        state,
-        depth: 0,
         deleted: false,
-        child_ids: vec![id + 1],
+        child_ids: child_ids.to_vec(),
     }
 }
 
@@ -64,7 +62,7 @@ fn reader_pages_through_every_line_and_restores_the_same_screen() {
         .map(|n| format!("reading-line-{n:02}"))
         .collect::<Vec<_>>()
         .join("\n");
-    let mut app = reader(vec![comment(10, body, CommentState::Collapsed)]);
+    let mut app = reader(vec![comment(10, body, &[])]);
     let first = render(&mut app, 80, 24);
     assert!(first.contains("Original question"));
     assert!(first.contains("    code block"));
@@ -94,37 +92,28 @@ fn reader_pages_through_every_line_and_restores_the_same_screen() {
 
 #[test]
 fn reopened_discussion_restores_expanded_branch_and_selection() {
-    let child = comment(11, "child".into(), CommentState::Collapsed);
-    let mut app = reader(vec![comment(
-        10,
-        "parent".into(),
-        CommentState::Expanded {
-            children: vec![child],
-        },
-    )]);
+    let mut app = reader(vec![
+        comment(10, "parent".into(), &[11]),
+        comment(11, "child".into(), &[]),
+    ]);
     app.next_comment();
     render(&mut app, 80, 24);
     app.view_stories();
     app.view_comments(1, "Ask HN: Reading".into(), "https://example.com".into());
     assert!(!app.is_loading());
     assert_eq!(app.visible_comment_count(), 2);
-    assert_eq!(app.visible_comment_at(app.comment_cursor).unwrap().1.id, 11);
+    assert_eq!(app.thread.cursor().unwrap(), 11);
     assert!(render(&mut app, 80, 24).contains("child"));
 }
 
 #[test]
 fn interrupted_reply_load_can_be_expanded_again_after_return() {
-    let mut app = reader(vec![comment(
-        10,
-        "parent".into(),
-        CommentState::Loading { generation: 1 },
-    )]);
+    let mut app = reader(vec![comment(10, "parent".into(), &[11])]);
+    let (_, generation, _) = app.toggle_comment_replies().unwrap();
+    let view_generation = app.comment_view_generation();
     app.view_stories();
     app.view_comments(1, "Ask HN: Reading".into(), "https://example.com".into());
-    assert!(matches!(
-        app.selected_comment_mut().unwrap().state,
-        CommentState::Collapsed
-    ));
+    assert!(!app.comment_replies_pending(10));
     assert!(!app.is_loading());
     let mut fresh = App::new();
     fresh.view_comments(1, "story".into(), "https://example.com".into());
@@ -132,14 +121,28 @@ fn interrupted_reply_load_can_be_expanded_again_after_return() {
     fresh.view_comments(1, "story".into(), "https://example.com".into());
     assert!(fresh.is_loading(), "interrupted initial fetch must retry");
 
-    app.selected_comment_mut().unwrap().state = CommentState::Loading { generation: 2 };
+    let (_, retry, _) = app.toggle_comment_replies().unwrap();
+    assert_ne!(retry, generation);
+    crate::tui::handle_app_message(
+        &mut app,
+        crate::tui::AppMessage::CommentChildren {
+            story_id: 1,
+            view_generation,
+            comment_id: 10,
+            child_load_generation: generation,
+            result: Ok(vec![comment(11, "stale reply".into(), &[])]),
+        },
+    );
+    assert!(app.comment_replies_pending(10));
+    assert_eq!(app.visible_comment_count(), 1);
+
     app.begin_comment_refresh();
     app.apply_comment_error("Refresh failed".into());
-    assert!(matches!(
-        app.selected_comment_mut().unwrap().state,
-        CommentState::Collapsed
-    ));
-    assert!(!app.replace_loading_comment_state(10, 2, CommentState::Expanded { children: vec![] }));
+    assert!(!app.comment_replies_pending(10));
+    app.apply_comment_replies(10, retry, Ok(vec![comment(11, "stale reply".into(), &[])]));
+    assert_eq!(app.visible_comment_count(), 1);
+    assert_eq!(app.error(), Some("Refresh failed"));
+    assert!(!app.is_loading());
 }
 
 #[test]
@@ -149,11 +152,7 @@ fn post_without_replies_is_readable_and_links_are_available() {
     app.show_links = true;
     assert!(render(&mut app, 80, 24).contains("https://example.com/post-link"));
     app.show_links = false;
-    app.set_comments(vec![comment(
-        10,
-        "named link".into(),
-        CommentState::Collapsed,
-    )]);
+    app.set_comments(vec![comment(10, "named link".into(), &[])]);
     assert_eq!(
         app.current_links(),
         vec![
@@ -309,15 +308,8 @@ fn refresh_keeps_the_current_visible_reply_separate_from_selection() {
         let body = (0..400)
             .map(|n| format!("passage-{n:03}\n"))
             .collect::<String>();
-        let reply = comment(11, body, CommentState::Collapsed);
-        let parent = comment(
-            10,
-            "parent".into(),
-            CommentState::Expanded {
-                children: vec![reply.clone()],
-            },
-        );
-        let mut app = reader(vec![parent]);
+        let reply = comment(11, body, &[]);
+        let mut app = reader(vec![comment(10, "parent".into(), &[11]), reply.clone()]);
         render(&mut app, width, height);
         app.scroll_comment_page(true);
         render(&mut app, width, height);
@@ -328,38 +320,28 @@ fn refresh_keeps_the_current_visible_reply_separate_from_selection() {
         app.scroll_comment_page(true);
         let expected = render(&mut app, width, height);
         let marker = |s: &str| s.split("passage-").nth(1).unwrap()[..3].to_owned();
-        app.set_comment_position(0, scroll);
+        app.set_comment_position(10, scroll);
         app.scroll_comment_page(true); // input immediately before completion, without a redraw
         let fresh = vec![
-            comment(99, "inserted root".repeat(80), CommentState::Collapsed),
-            comment(
-                10,
-                "parent".into(),
-                CommentState::Expanded {
-                    children: vec![
-                        comment(12, "inserted reply".repeat(80), CommentState::Collapsed),
-                        reply,
-                    ],
-                },
-            ),
+            comment(99, "inserted root".repeat(80), &[]),
+            comment(10, "parent".into(), &[12, 11]),
+            comment(12, "inserted reply".repeat(80), &[]),
+            reply,
         ];
         app.set_comments(fresh);
         let refreshed = render(&mut app, width, height);
         assert_eq!(marker(&refreshed), marker(&expected));
-        assert_eq!(app.visible_comment_at(app.comment_cursor).unwrap().1.id, 10);
+        assert_eq!(app.thread.cursor().unwrap(), 10);
         app.scroll_comment_page(true);
         assert_ne!(marker(&render(&mut app, width, height)), marker(&refreshed));
         app.begin_comment_refresh();
-        let mut shortened = app.comments.clone();
-        if let CommentState::Expanded { children } = &mut shortened[1].state {
-            children[1].text = "shortened reply".into();
-            children.push(comment(
-                13,
-                "following-reply".into(),
-                CommentState::Collapsed,
-            ));
-        }
-        app.set_comments(shortened);
+        app.set_comments(vec![
+            comment(99, "inserted root".repeat(80), &[]),
+            comment(10, "parent".into(), &[12, 11, 13]),
+            comment(12, "inserted reply".repeat(80), &[]),
+            comment(11, "shortened reply".into(), &[]),
+            comment(13, "following-reply".into(), &[]),
+        ]);
         assert!(
             render(&mut app, width, height).contains("following-reply"),
             "clamp the offset inside a shortened comment"
@@ -369,13 +351,9 @@ fn refresh_keeps_the_current_visible_reply_separate_from_selection() {
             comment(
                 99,
                 format!("neighbor-start\n{}", "neighbor tail\n".repeat(200)),
-                CommentState::Collapsed,
+                &[],
             ),
-            comment(
-                10,
-                "parent".into(),
-                CommentState::Expanded { children: vec![] },
-            ),
+            comment(10, "parent".into(), &[]),
         ];
         if width == 240 {
             fallback.pop();
@@ -395,14 +373,11 @@ fn refresh_keeps_the_current_visible_reply_separate_from_selection() {
 #[test]
 fn refresh_merges_expansion_choices_made_during_loading() {
     for mode in 0..3 {
-        let child = comment(11, "current reply".into(), CommentState::Collapsed);
-        let mut app = reader(vec![comment(
-            10,
-            "parent".into(),
-            CommentState::Expanded {
-                children: vec![child.clone()],
-            },
-        )]);
+        let mut app = reader(vec![
+            comment(10, "parent".into(), &[11]),
+            comment(11, "current reply".into(), &[]),
+            comment(20, "unopened parent".into(), &[21]),
+        ]);
         render(&mut app, 200, 60);
         app.begin_comment_refresh();
         app.collapse_current_thread();
@@ -410,45 +385,80 @@ fn refresh_merges_expansion_choices_made_during_loading() {
             app.is_loading(),
             "collapsing a branch cannot finish the whole refresh"
         );
-        if mode == 1 {
-            app.comments[0].state = CommentState::Loading { generation: 42 };
-        }
-        if mode == 2 {
-            app.comments[0].state = CommentState::Expanded {
-                children: vec![child],
-            };
-        }
-        app.rebuild_visible_comments();
-        let fresh_state = if mode == 2 {
-            CommentState::Collapsed
-        } else {
-            CommentState::Expanded {
-                children: vec![comment(12, "fresh reply".into(), CommentState::Collapsed)],
+        assert!(app.thread.select(20));
+        let pending = if mode != 0 {
+            let (_, generation, _) = app.toggle_comment_replies().unwrap();
+            if mode == 2 {
+                app.apply_comment_replies(
+                    20,
+                    generation,
+                    Ok(vec![comment(21, "current reply".into(), &[])]),
+                );
             }
+            Some(generation)
+        } else {
+            None
         };
-        app.set_comments(vec![comment(10, "updated parent".into(), fresh_state)]);
+        app.set_comments(vec![
+            comment(10, "updated parent".into(), &[12]),
+            comment(12, "fresh reply".into(), &[]),
+            comment(20, "updated unopened parent".into(), &[21]),
+        ]);
+        assert!(app.thread.is_folded(10));
+        assert!(app.thread.rows().iter().all(|row| row.id != 12));
         match mode {
-            0 => assert!(matches!(app.comments[0].state, CommentState::Collapsed)),
+            0 => {
+                assert!(!app.is_loading());
+                assert!(app.thread.select(10));
+                assert!(app.toggle_comment_replies().is_none());
+                assert!(app.thread.rows().iter().any(|row| row.id == 12));
+            }
             1 => {
-                assert!(matches!(
-                    app.comments[0].state,
-                    CommentState::Loading { generation: 42 }
-                ));
+                assert!(app.comment_replies_pending(20));
                 assert!(app.is_loading());
                 app.begin_comment_refresh();
-                app.comments[0].state = CommentState::Loading { generation: 43 };
+                let (_, generation, _) = app.toggle_comment_replies().unwrap();
+                assert_ne!(generation, pending.unwrap());
                 app.apply_comment_error("refresh failed".into());
                 assert!(app.is_loading());
-                assert!(app.replace_loading_comment_state(
-                    10,
-                    43,
-                    CommentState::Expanded { children: vec![] }
-                ));
-                app.recompute_comment_loading(app.has_loading_comments());
+                app.apply_comment_replies(
+                    20,
+                    generation,
+                    Ok(vec![comment(21, "late reply".into(), &[])]),
+                );
                 assert!(!app.is_loading());
                 assert_eq!(app.error(), Some("refresh failed"));
             }
-            _ => assert_eq!(app.visible_comment_at(1).unwrap().1.text, "current reply"),
+            _ => {
+                assert!(app.thread.rows().iter().any(|row| row.id == 21));
+                assert_eq!(app.thread.node(21).unwrap().text, "current reply");
+            }
         }
     }
+}
+
+#[test]
+fn resize_and_reentry_keep_selected_id_and_passage_offset() {
+    let lead =
+        "line that wraps at eighty columns but stays on one line at a wider terminal ".repeat(20);
+    let body = (0..180)
+        .map(|n| {
+            format!(
+                "passage-{n:03}
+"
+            )
+        })
+        .collect::<String>();
+    let mut app = reader(vec![comment(10, lead, &[]), comment(20, body, &[])]);
+    render(&mut app, 80, 24);
+    app.next_comment();
+    render(&mut app, 80, 24);
+    app.scroll_comment_page(true);
+    let initial = render(&mut app, 80, 24);
+    let passage = |screen: &str| screen.split("passage-").nth(1).unwrap()[..3].to_string();
+    assert_eq!(passage(&render(&mut app, 120, 24)), passage(&initial));
+    app.view_stories();
+    app.view_comments(1, "Reading".into(), String::new());
+    assert_eq!(passage(&render(&mut app, 100, 24)), passage(&initial));
+    assert_eq!(app.thread.cursor(), Some(20));
 }

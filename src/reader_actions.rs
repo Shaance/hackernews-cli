@@ -56,7 +56,7 @@ pub async fn handle(
             }
             return Ok(true);
         }
-        let position = (app.comment_cursor, app.comment_scroll);
+        let position = (app.thread.cursor(), app.comment_scroll);
         if key == KeyCode::Char('r') {
             handle_comment_action(
                 app,
@@ -66,7 +66,7 @@ pub async fn handle(
                 bookmark_path.as_deref(),
             )
             .await?;
-            if position != (app.comment_cursor, app.comment_scroll) {
+            if position != (app.thread.cursor(), app.comment_scroll) {
                 reader.comments_moved();
             }
             return Ok(true);
@@ -96,7 +96,7 @@ pub async fn handle(
         } else if !reader.is_open() {
             app.view_stories();
         }
-        if position != (app.comment_cursor, app.comment_scroll) {
+        if position != (app.thread.cursor(), app.comment_scroll) {
             reader.comments_moved();
         }
         return Ok(true);
