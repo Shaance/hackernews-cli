@@ -30,13 +30,14 @@ See the status table at the end (updated last).
 - Linux builds are glibc on native Ubuntu 22.04 runners (reqwest native-tls needs OpenSSL); no musl.
 - macOS CLI is signed + notarized, not stapled (Apple doesn't support stapling a bare binary).
 - TUI releases use `--latest=false`; desktop keeps Latest.
-- Homebrew formula is updated by hand for 0.2.0; tap automation is a later idea.
+- Homebrew formula was updated by hand for 0.2.0. From the next release the `homebrew` job in `tui-release.yml` (#70) renders `packaging/homebrew/hn.rb` with `packaging/homebrew/render-formula.sh` and pushes it to the tap with the `TAP_TOKEN` secret (fine-grained, `Shaance/homebrew-tap` only, Contents read/write, expires 2027-11-18). Its first real push is the next tag; if it fails, the release is already out and rerunning that job is enough.
 
 ## Known follow-ups (not started)
 
-- Tap automation (fine-grained token scoped to the tap), cargo-binstall metadata, a crates.io name (crate `hn` is taken).
+- A crates.io name (crate `hn` is taken).
+- cargo-binstall metadata is in `Cargo.toml` (#69); URLs and archive layout checked, but no real `cargo binstall` run yet, so the README doesn't mention it.
 - Intel macOS binary is only cross-built; first native execution check happens on an Intel Mac or Rosetta.
-- `scripts/verify-reader.sh` fails at `cargo fmt --check` on pre-existing drift.
+- A discussion summary reading only "placeholder [1]" was seen twice (audit N8). #68 rejects single-word overviews/points with a retry prompt; the cause is unconfirmed. The README script now keeps its provider replies in `~/.local/state/hn/summary-responses/`.
 
 ## Status table
 
@@ -46,6 +47,7 @@ All steps done on 2026-11-19:
 |---|---|
 | #62 README media, #63 feed, #64 release setup, #65 signing fix, #66 README install | merged |
 | Release `tui-v0.2.0` | published, 8 assets, `--latest=false` (desktop-v1.1.0 stays Latest) |
+| #67 fmt drift, #68 stub summaries, #69 binstall metadata, #70 tap automation | merged |
 | Tap | `Shaance/homebrew-tap` `Formula/hn.rb`; `brew install shaance/tap/hn`, `brew test`, `brew audit --strict` pass |
 
-Next release: bump `Cargo.toml` + both lockfiles, write `docs/releases/tui-vX.Y.Z.md`, merge, push the tag, then update the tap formula's URLs and hashes from the release's `.sha256` assets (or automate it, see follow-ups).
+Next release: bump `Cargo.toml` + both lockfiles, write `docs/releases/tui-vX.Y.Z.md`, merge, push the tag, then check that the `homebrew` job pushed `Formula/hn.rb` to the tap (`brew update && brew upgrade hn`).
