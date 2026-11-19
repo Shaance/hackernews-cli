@@ -1,0 +1,56 @@
+name: Preview UI
+
+# Deploys the static page of the browser trial (hn.hashcode.dev) when a merged
+# change touches it. The session gateway and visitor image on the server are
+# released by hand; see preview/deploy/README.md.
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "preview/index.html"
+      - "preview/app.js"
+      - "preview/style.css"
+      - "preview/favicon.svg"
+      - "preview/build-ui.mjs"
+      - "preview/package.json"
+      - "preview/package-lock.json"
+      - ".github/workflows/preview-ui.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One production deploy at a time; a newer push waits instead of racing.
+concurrency:
+  group: preview-ui-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://hn.hashcode.dev
+    env:
+      VERCEL_ORG_ID: team_xEd6VxtU4arZ2AOgFiNTT8Mg
+      VERCEL_PROJECT_ID: prj_TA4es9PAZDYE8vF8jf65LtVifQD4
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - name: Install preview dependencies
+        run: npm ci --prefix preview
+      - name: Build the static page
+        run: npm run build --prefix preview
+      - name: Deploy to production
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: npx --yes vercel@65.11.0 deploy preview/dist --prod --yes --token "$VERCEL_TOKEN"
+      - name: Check the live page
+        run: |
+          headers=$(curl -fsSI https://hn.hashcode.dev/)
+          grep -qi '^content-security-policy:.*hn-session\.hashcode\.dev' <<<"$headers" \
+            || { echo "Live page is missing its Content-Security-Policy"; exit 1; }
+          curl -fsS https://hn.hashcode.dev/ | grep -q 'content="https://hn-session.hashcode.dev"' \
+            || { echo "Live page does not point at the session gateway"; exit 1; }
