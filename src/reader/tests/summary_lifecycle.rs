@@ -135,12 +135,12 @@ fn source_snapshot_and_parent_publish_together_on_return() {
     assert!(source.contains("Summary updated"));
     p.key(KeyCode::PageDown);
     screen(&mut p, &mut app, 120, 40);
-    let scroll = p.readings[&1].source_scroll;
+    let scroll = p.readings[&1].source.as_ref().unwrap().scroll;
     assert!(scroll > 0);
     for key in [KeyCode::Tab, KeyCode::BackTab] {
         p.key(key);
         assert!(screen(&mut p, &mut app, 120, 40).contains("Reply evidence."));
-        assert_eq!(p.readings[&1].source_scroll, scroll);
+        assert_eq!(p.readings[&1].source.as_ref().unwrap().scroll, scroll);
     }
     p.key(KeyCode::Esc);
     assert!(!p.readings[&1].reveal_citation);

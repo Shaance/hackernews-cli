@@ -147,7 +147,7 @@ fn render_modal_body(
 
 /// Render the key groups shared by the comments and reader views.
 pub fn render_help(f: &mut Frame, theme: Theme, in_comments: bool, opened: Option<Instant>) {
-    let groups: &[(&str, &[(&str, &str)])] = if in_comments {
+    let groups: &[(&'static str, &[(&'static str, &'static str)])] = if in_comments {
         &[
             (
                 "READING",
@@ -210,6 +210,37 @@ pub fn render_help(f: &mut Frame, theme: Theme, in_comments: bool, opened: Optio
             ("ANYWHERE", &[("q", "Quit"), ("?", "Close")]),
         ]
     };
+    render_key_groups(f, theme, opened, groups);
+}
+
+pub(crate) fn render_source_help(f: &mut Frame, theme: Theme, opened: Option<Instant>) {
+    render_key_groups(
+        f,
+        theme,
+        opened,
+        &[(
+            "CITATION SOURCE",
+            &[
+                ("j/k/↑/↓", "Select reply"),
+                ("Enter/o", "Toggle/continue/retry"),
+                ("c", "Fold"),
+                ("Backspace", "Up the trail"),
+                ("f", "Focus mode"),
+                ("PgUp/PgDn", "Scroll"),
+                ("Tab/Shift-Tab", "Next/previous source"),
+                ("h/Esc", "Back"),
+                ("?", "Close"),
+            ],
+        )],
+    );
+}
+
+fn render_key_groups(
+    f: &mut Frame,
+    theme: Theme,
+    opened: Option<Instant>,
+    groups: &[(&'static str, &[(&'static str, &'static str)])],
+) {
     render_modal_body(f, theme, opened, "Keys", |width, height| {
         // The body includes the two padding columns on each side.
         let columns = if width + 4 >= 72 { 2 } else { 1 };

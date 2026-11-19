@@ -226,7 +226,7 @@ async fn staged_discussion_is_saved_only_if_it_becomes_displayed() {
         p.open(story(1));
         p.key(KeyCode::Tab);
         p.key(KeyCode::Enter);
-        assert_eq!(p.readings[&1].source, Some(11));
+        assert_eq!(p.source_id(), Some(11));
 
         p.config.profile = Profile::Thorough;
         p.request(Request::Generate);

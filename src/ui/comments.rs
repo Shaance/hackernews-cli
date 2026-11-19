@@ -5,7 +5,8 @@ use crate::{
         comment_view_state::{COMMENT_INDENT, COMMENT_PREFIX},
         App, View,
     },
-    comments::Row,
+    comments::{Row, Thread},
+    theme::Theme,
 };
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -151,31 +152,9 @@ fn render_comments_list(
     show_selection: bool,
 ) {
     if app.thread.root().is_some() && !area.is_empty() {
-        let trail = app
-            .thread
-            .trail()
-            .iter()
-            .filter_map(|id| app.thread.node(*id))
-            .map(|node| {
-                if node.readable {
-                    node.author.as_str()
-                } else {
-                    "Replies"
-                }
-            })
-            .collect::<Vec<_>>()
-            .join(" › ");
-        let width = usize::from(area.width);
-        let mut start = 0;
-        while Span::raw(&trail[start..]).width() + usize::from(start > 0) > width {
-            start += trail[start..].chars().next().unwrap().len_utf8();
-        }
-        let line = Line::from(vec![
-            Span::raw(if start > 0 { "…" } else { "" }),
-            Span::raw(&trail[start..]),
-        ]);
+        let trail = trail_line(&app.thread, &app.thread.trail(), area.width);
         f.render_widget(
-            Paragraph::new(line).style(app.theme().dim),
+            Paragraph::new(trail).style(app.theme().dim),
             Rect { height: 1, ..area },
         );
         area.y += 1;
@@ -212,16 +191,22 @@ fn render_comments_list(
     let mut line_cursor = post_lines.len();
 
     let selected = app.thread.cursor().filter(|_| show_selection);
+    let renderer = CommentRows {
+        thread: &app.thread,
+        theme: app.theme(),
+        tick,
+        width: area.width,
+    };
     for row in rows {
         let prepared = render_comment(
-            app,
+            &renderer,
             row,
             Some(row.id) == selected,
-            tick,
-            area.width as usize,
+            app.comment_replies_pending(row.id),
+            false,
         );
         let start = line_cursor;
-        line_cursor += prepared.height;
+        line_cursor += prepared.len();
         let end = line_cursor;
         line_ranges.push((row.id, start, end));
         rendered.push(prepared);
@@ -240,7 +225,7 @@ fn render_comments_list(
     // Flatten all lines
     let mut lines = post_lines;
     for item in rendered {
-        lines.extend(item.lines);
+        lines.extend(item);
     }
 
     let paragraph = Paragraph::new(lines)
@@ -262,37 +247,65 @@ fn render_comments_list(
     }
 }
 
-/// A rendered comment ready for display
-struct RenderedComment {
-    lines: Vec<Line<'static>>,
-    height: usize,
+pub(crate) fn trail_line(thread: &Thread, ids: &[i32], width: u16) -> Line<'static> {
+    let trail = ids
+        .iter()
+        .filter_map(|id| thread.node(*id))
+        .map(|node| {
+            if node.readable {
+                node.author.as_str()
+            } else {
+                "Replies"
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" › ");
+    let mut start = 0;
+    while start < trail.len()
+        && Span::raw(&trail[start..]).width() + usize::from(start > 0) > usize::from(width)
+    {
+        start += trail[start..].chars().next().unwrap().len_utf8();
+    }
+    Line::from(format!(
+        "{}{}",
+        if start > 0 { "…" } else { "" },
+        &trail[start..]
+    ))
 }
 
-/// Render a single comment into lines
-fn render_comment(
-    app: &App,
+pub(crate) struct CommentRows<'a> {
+    pub thread: &'a Thread,
+    pub theme: Theme,
+    pub tick: usize,
+    pub width: u16,
+}
+
+pub(crate) fn render_comment(
+    renderer: &CommentRows<'_>,
     row: Row,
     is_selected: bool,
-    tick: usize,
-    max_width: usize,
-) -> RenderedComment {
-    let theme = app.theme();
-    let comment = app.thread.node(row.id).expect("visible comment");
+    pending: bool,
+    is_citation: bool,
+) -> Vec<Line<'static>> {
+    let CommentRows {
+        thread,
+        theme,
+        tick,
+        width,
+    } = *renderer;
+    let comment = thread.node(row.id);
     let depth = row.depth as usize;
     let text_column = usize::from(COMMENT_PREFIX) + usize::from(COMMENT_INDENT) * depth;
-    let dimmed = app.thread.focus() && !app.thread.in_chain_from(row.id, app.thread.cursor());
+    let dimmed = thread.focus() && !thread.in_chain_from(row.id, thread.cursor());
     let ink = if dimmed { theme.dim } else { theme.fg };
     let prefix = vec![
         Span::styled(if is_selected { "▎ " } else { "  " }, theme.accent),
         Span::styled("│ ".repeat(depth), theme.line),
     ];
     let mut header = prefix.clone();
-    if !comment.readable {
-        header.push(Span::styled(
-            "[deleted]",
-            theme.dim.add_modifier(Modifier::ITALIC),
-        ));
-    } else {
+    if is_citation {
+        header.push(Span::styled("Replies to cited comment", ink));
+    } else if let Some(comment) = comment.filter(|comment| comment.readable) {
         header.push(Span::styled(
             comment.author.clone(),
             if is_selected {
@@ -302,15 +315,21 @@ fn render_comment(
             },
         ));
         header.push(Span::styled(format!("  {}", comment.time_ago), theme.dim));
+    } else {
+        header.push(Span::styled(
+            "[deleted]",
+            theme.dim.add_modifier(Modifier::ITALIC),
+        ));
     }
     let mut lines = vec![Line::from(header)];
-    if comment.readable {
+    if let Some(comment) = comment.filter(|comment| comment.readable && !is_citation) {
         for body in comment.text.lines() {
             let quote = body.trim_start().strip_prefix('>');
             let text = quote
                 .map(|text| text.strip_prefix(' ').unwrap_or(text))
                 .unwrap_or(body);
-            let width = max_width.saturating_sub(text_column + if quote.is_some() { 2 } else { 0 });
+            let width = usize::from(width)
+                .saturating_sub(text_column + if quote.is_some() { 2 } else { 0 });
             // Track source offsets so a URL keeps its colour when wrapped across rows.
             let mut consumed = 0;
             for wrapped in wrap_with_indent(text, width) {
@@ -345,17 +364,17 @@ fn render_comment(
             }
         }
     }
-    let child_count = app.thread.child_count(row.id);
-    let child_info = if app.thread.capped(row.id) {
-        let behind = app.thread.reply_count(row.id).max(child_count);
+    let child_count = thread.child_count(row.id);
+    let child_info = if thread.capped(row.id) {
+        let behind = thread.reply_count(row.id).max(child_count);
         Some(format!(
             "continue thread → {behind} {}",
             if behind == 1 { "reply" } else { "replies" }
         ))
-    } else if app.comment_replies_pending(row.id) {
+    } else if pending {
         Some(format!("{} loading replies", widgets::spinner_frame(tick)))
-    } else if child_count > 0 && !app.comment_replies_open(row.id) {
-        let child_count = app.thread.hidden_count(row.id).max(child_count);
+    } else if child_count > 0 && (!thread.replies_loaded(row.id) || thread.is_folded(row.id)) {
+        let child_count = thread.hidden_count(row.id).max(child_count);
         let label = if child_count == 1 { "reply" } else { "replies" };
         Some(format!("+ {child_count} {label}"))
     } else {
@@ -370,8 +389,7 @@ fn render_comment(
         if is_selected { "▎" } else { "" },
         theme.accent,
     )));
-    let height = lines.len();
-    RenderedComment { lines, height }
+    lines
 }
 
 /// Wrap a line of comment text to the available width

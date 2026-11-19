@@ -123,20 +123,13 @@ impl Reader {
             ),
         );
         reading.page_rows = usize::from(areas[1].height);
-        if let Some(id) = reading.source {
-            let lines = reading.source_lines(id, width);
-            reading.source_scroll = reading
-                .source_scroll
-                .min(lines.len().saturating_sub(reading.page_rows));
-            frame.render_widget(
-                Paragraph::new(
-                    lines
-                        .into_iter()
-                        .skip(reading.source_scroll)
-                        .collect::<Vec<_>>(),
-                ),
-                areas[1],
-            );
+        if let Some(source) = &reading.source {
+            let lines = reading.source_lines(source.id, width);
+            reading
+                .source
+                .as_mut()
+                .unwrap()
+                .render(frame, areas[1], app, tick, lines);
         } else {
             let comments_area = reading.render_summary(frame, areas[1]);
             app.prepare_comment_layout(comments_area.width);
@@ -185,10 +178,15 @@ impl Reader {
         }
         let hints = if reading.source.is_some() {
             vec![
-                ("Tab", "next"),
-                ("Shift-Tab", "previous"),
+                ("h/Esc", "back"),
+                ("j/k", "replies"),
+                ("Enter/o", "toggle"),
+                ("c", "fold"),
+                ("⌫", "trail"),
+                ("f", "focus"),
+                ("Tab/⇧Tab", "sources"),
                 ("PgUp/PgDn", "scroll"),
-                ("Esc", "back"),
+                ("?", "keys"),
             ]
         } else if reading.citation_focus {
             vec![
@@ -289,7 +287,11 @@ impl Reader {
             }
         }
         if app.show_help {
-            crate::ui::widgets::render_help(frame, theme, true, app.overlay_opened);
+            if reading.source.is_some() {
+                crate::ui::widgets::render_source_help(frame, theme, app.overlay_opened);
+            } else {
+                crate::ui::widgets::render_help(frame, theme, true, app.overlay_opened);
+            }
         }
         if app.show_links {
             crate::ui::links::render(frame, app);
@@ -448,7 +450,7 @@ impl Reading {
         let theme = self.theme;
         let ready = self.article.result.is_some() as u8 + self.discussion.result.is_some() as u8;
         let loading = self.article.pending() || self.discussion.pending();
-        if let Some(id) = self.source {
+        if let Some(id) = self.source.as_ref().map(|source| source.id) {
             let result = self.discussion.result.as_ref().unwrap();
             let author = &result.sources().iter().find(|s| s.id == id).unwrap().author;
             return Line::styled(

@@ -55,6 +55,7 @@ impl App {
 
     pub(crate) fn begin_comment_refresh(&mut self) -> (u64, std::collections::HashSet<i32>) {
         self.pending_replies.clear();
+        self.citation_lookups.clear();
         self.comment_view_generation = self.comment_view_generation.wrapping_add(1);
         self.refreshing_comments = true;
         self.set_comment_loading(true);
