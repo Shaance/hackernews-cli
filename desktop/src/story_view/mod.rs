@@ -141,7 +141,7 @@ mod tests {
     #[test]
     fn folded_comment_keeps_body_and_places_guide_outside_text() {
         let mut story = Story::opening(fixtures::item(fixtures::STORY_INDEX, fixtures::STORY_ID), true);
-        story.thread = hn_lib::comments::Thread::from_comments(&fixtures::thread());
+        story.thread = hn_lib::comments::Thread::from_comments(&fixtures::thread(), Some(crate::story::VISIBLE_COMMENT_LEVELS), crate::story::REPLY_BATCH_SIZE);
         let mut rt = rune::Runtime::new(story, nested_comment, (420.0, 250.0), rune::Env::new(true, 1.0));
         rt.frame(0.0);
         let guide_x = rt.elements().iter().find(|e| e.key.as_deref() == Some("guide-9010-1")).unwrap().rect[0];
@@ -170,7 +170,7 @@ mod tests {
         let mut comments = fixtures::thread();
         comments.iter_mut().find(|comment| comment.id == 9010).unwrap().deleted = true;
         let mut story = Story::opening(fixtures::item(fixtures::STORY_INDEX, fixtures::STORY_ID), true);
-        story.thread = hn_lib::comments::Thread::from_comments(&comments);
+        story.thread = hn_lib::comments::Thread::from_comments(&comments, Some(crate::story::VISIBLE_COMMENT_LEVELS), crate::story::REPLY_BATCH_SIZE);
         let mut rt = rune::Runtime::new(story, nested_comment, (420.0, 250.0), rune::Env::new(true, 1.0));
         rt.frame(0.0);
         let elements = rt.elements();
@@ -178,7 +178,7 @@ mod tests {
         for key in ["comment-author-9010", "comment-age-9010", "comment-text-9010"] {
             assert!(!elements.iter().any(|e| e.key.as_deref() == Some(key)));
         }
-        rt.update(|story, tx| { story.thread = hn_lib::comments::Thread::empty(); tx.instant(); });
+        rt.update(|story, tx| { story.thread = hn_lib::comments::Thread::empty(Some(crate::story::VISIBLE_COMMENT_LEVELS), crate::story::REPLY_BATCH_SIZE); tx.instant(); });
         rt.frame(0.0);
         assert!(!rt.elements().iter().any(|e| e.key.as_deref() == Some("comment-9010")));
     }
@@ -189,7 +189,7 @@ mod tests {
             let mut parent = fixtures::thread().into_iter().find(|comment| comment.id == 9010).unwrap();
             parent.deleted = !readable;
             let mut story = Story::opening(fixtures::item(fixtures::STORY_INDEX, fixtures::STORY_ID), true);
-            story.thread = hn_lib::comments::Thread::from_comments(&[parent]);
+            story.thread = hn_lib::comments::Thread::from_comments(&[parent], Some(crate::story::VISIBLE_COMMENT_LEVELS), crate::story::REPLY_BATCH_SIZE);
             assert!(story.request_replies(9010, false).is_some());
             let mut rt = rune::Runtime::new(story, nested_comment, (420.0, 250.0), rune::Env::new(true, 1.0));
             rt.frame(0.0);

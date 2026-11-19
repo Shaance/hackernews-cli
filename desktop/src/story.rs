@@ -17,8 +17,12 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 
 use hn_lib::comments::{Navigation, Thread};
+
 use hn_lib::reader::{Article, Discussion, Source as CapturedSource};
 use hn_lib::HNCLIItem;
+
+pub(crate) const VISIBLE_COMMENT_LEVELS: u32 = 4;
+pub(crate) const REPLY_BATCH_SIZE: usize = 50;
 
 use crate::story_io::{CommentsRefreshed, StoryUpdate, SummaryError};
 
@@ -332,7 +336,7 @@ impl Story {
             } else {
                 SummaryState::Unconfigured
             },
-            thread: Thread::empty(),
+            thread: Thread::empty(Some(VISIBLE_COMMENT_LEVELS), REPLY_BATCH_SIZE),
             discussion: None,
             pending_reply: None,
             current_sources: Vec::new(),
@@ -385,7 +389,7 @@ impl Story {
                 let first = self.discussion.is_none() && self.thread.is_empty();
                 self.discussion = Some(match comments {
                     Ok(crate::story_io::CapturedComments { comments, sources }) => {
-                        if first { self.thread = Thread::from_comments(&comments); }
+                        if first { self.thread = Thread::from_comments(&comments, Some(VISIBLE_COMMENT_LEVELS), REPLY_BATCH_SIZE); }
                         else { self.thread.merge_comments(&comments, &[]); }
                         self.merge_current_sources(&comments, sources);
                         Ok(())

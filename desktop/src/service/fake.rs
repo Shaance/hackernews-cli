@@ -172,20 +172,22 @@ impl HackerNewsCliService for FakeService {
             tokio::time::sleep(self.delay).await;
         }
         if self.failing_comments.lock().unwrap().contains(&story_id) { anyhow::bail!("Discussion unavailable"); }
-        Ok(self.comments.lock().unwrap().iter().filter(|c| c.depth == 0).cloned().collect())
+        let comments = self.comments.lock().unwrap();
+        let children: HashSet<_> = comments.iter().flat_map(|c| &c.child_ids).collect();
+        Ok(comments.iter().filter(|c| !children.contains(&c.id)).cloned().collect())
     }
 
     async fn fetch_comment_children(
         &self,
         comment_ids: &[i32],
-        depth: usize,
+        _depth: usize,
     ) -> Result<Vec<Comment>> {
         self.comment_requests.lock().unwrap().push(comment_ids.to_vec());
         if !self.delay.is_zero() { tokio::time::sleep(self.delay).await; }
         let comments = self.comments.lock().unwrap();
         let failed = self.failing_comments.lock().unwrap();
         let out: Vec<_> = comment_ids.iter().filter(|id| !failed.contains(id)).filter_map(|id|
-            comments.iter().find(|c| c.id == *id).cloned().map(|mut c| { c.depth = depth; c })).collect();
+            comments.iter().find(|c| c.id == *id).cloned()).collect();
         if out.is_empty() && !comment_ids.is_empty() { anyhow::bail!("Replies unavailable"); }
         Ok(out)
     }

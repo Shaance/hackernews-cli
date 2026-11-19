@@ -117,7 +117,7 @@ pub(super) fn screen(p: &mut Reader, app: &mut crate::app::App, width: u16, heig
         .collect()
 }
 pub(super) fn comments_app() -> crate::app::App {
-    use crate::app::{App, Comment, CommentState};
+    use crate::app::{App, Comment};
     let mut app = App::with_theme(Theme::TRUE_DARK);
     app.view_comments(1, "An example story".into(), "https://example.com".into());
     app.set_comments(
@@ -130,8 +130,7 @@ pub(super) fn comments_app() -> crate::app::App {
                     .collect(),
                 links: vec![],
                 time_ago: "now".into(),
-                state: CommentState::Collapsed,
-                depth: 0,
+
                 deleted: false,
                 child_ids: vec![],
             })

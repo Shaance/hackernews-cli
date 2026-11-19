@@ -4,7 +4,7 @@
 //! This is the terminal front end, not part of the reader boundary. A non-terminal
 //! front end binds to [`crate::reader`] and [`crate::feed_state`] instead of this module.
 use crate::{
-    app::{App, CommentState, StoryType, View},
+    app::{App, StoryType, View},
     event::{handle_comments_key, handle_stories_key, CommentAction, StoryAction},
     reader, reader_actions,
     url_open::open_story_url,
@@ -339,10 +339,9 @@ pub(crate) async fn handle_comment_action(
         }
         CommentAction::Refresh => {
             if let View::Comments { story_id, .. } = app.view {
-                let view_generation = app.begin_comment_refresh();
-                let previous = app.comments.clone();
+                let (view_generation, open) = app.begin_comment_refresh();
                 tokio::spawn(async move {
-                    let result = service.refresh_comments(story_id, &previous).await;
+                    let result = App::fetch_comment_refresh(&service, story_id, &open).await;
                     let _ = tx.send(AppMessage::Comments {
                         story_id,
                         view_generation,
@@ -357,47 +356,19 @@ pub(crate) async fn handle_comment_action(
                 View::Stories => return Ok(()),
             };
             let view_generation = app.comment_view_generation();
-            let child_load_generation = app.next_comment_child_load_generation();
-
-            if let Some(comment) = app.selected_comment_mut() {
-                match &comment.state {
-                    CommentState::Collapsed => {
-                        if !comment.child_ids.is_empty() {
-                            let ids = comment.child_ids.clone();
-                            let depth = comment.depth + 1;
-                            let comment_id = comment.id;
-                            let service = service.clone();
-
-                            // Set to loading
-                            comment.state = CommentState::Loading {
-                                generation: child_load_generation,
-                            };
-                            app.rebuild_visible_comments();
-                            app.set_comment_loading(true);
-
-                            // Spawn task to fetch children
-                            tokio::spawn(async move {
-                                let result = service.fetch_comment_children(&ids, depth).await;
-                                let _ = tx.send(AppMessage::CommentChildren {
-                                    story_id: active_story_id,
-                                    view_generation,
-                                    comment_id,
-                                    child_load_generation,
-                                    result,
-                                });
-                            });
-                        }
-                    }
-                    CommentState::Expanded { .. } => {
-                        // Collapse - just change state back to collapsed (child_ids preserved)
-                        comment.state = CommentState::Collapsed;
-                        app.rebuild_visible_comments();
-                        app.recompute_comment_loading(app.has_loading_comments());
-                    }
-                    CommentState::Loading { .. } => {
-                        // Do nothing while loading
-                    }
-                }
+            if let Some((comment_id, child_load_generation, ids)) = app.toggle_comment_replies() {
+                let depth =
+                    app.thread.tree_depth(comment_id).expect("selected comment") as usize + 1;
+                tokio::spawn(async move {
+                    let result = service.fetch_comment_children(&ids, depth).await;
+                    let _ = tx.send(AppMessage::CommentChildren {
+                        story_id: active_story_id,
+                        view_generation,
+                        comment_id,
+                        child_load_generation,
+                        result,
+                    });
+                });
             }
         }
         CommentAction::CollapseThread => {
@@ -470,31 +441,7 @@ pub(crate) fn handle_app_message(app: &mut App, msg: AppMessage) {
                 return;
             }
 
-            match result {
-                Ok(children) => {
-                    let applied = app.replace_loading_comment_state(
-                        comment_id,
-                        child_load_generation,
-                        CommentState::Expanded { children },
-                    );
-                    if applied {
-                        app.rebuild_visible_comments();
-                        app.recompute_comment_loading(app.has_loading_comments());
-                    }
-                }
-                Err(e) => {
-                    let applied = app.replace_loading_comment_state(
-                        comment_id,
-                        child_load_generation,
-                        CommentState::Collapsed,
-                    );
-                    if applied {
-                        app.set_comment_error(format!("Failed to load comment children: {e}"));
-                        app.rebuild_visible_comments();
-                        app.recompute_comment_loading(app.has_loading_comments());
-                    }
-                }
-            }
+            app.apply_comment_replies(comment_id, child_load_generation, result);
         }
     }
 }

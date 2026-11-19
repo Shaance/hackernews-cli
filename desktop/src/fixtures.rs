@@ -5,7 +5,7 @@
 //! `prototypes/rune-hn/fixtures/topstories.json` ships, extended to a full page so the
 //! two-column grid has enough rows to fill. Nothing here is fetched at run time.
 
-use hn_lib::app::{Comment, CommentState};
+use hn_lib::app::Comment;
 use hn_lib::reader::{Discussion, Point, Source};
 use hn_lib::HNCLIItem;
 
@@ -208,7 +208,7 @@ pub fn comments() -> Vec<Comment> {
     THREAD
         .iter()
         .filter(|(_, parent, ..)| parent.is_none())
-        .map(|row| comment(row, 0))
+        .map(comment)
         .collect()
 }
 
@@ -217,17 +217,17 @@ pub fn replies(ids: &[i32]) -> Vec<Comment> {
     THREAD
         .iter()
         .filter(|(id, ..)| ids.contains(id))
-        .map(|row| comment(row, depth_of(row.0)))
+        .map(comment)
         .collect()
 }
 
 /// The whole discussion of [`STORY_ID`]: the top-level comments and every reply the fixture
 /// holds, level by level, as the desktop's tree walk collects them.
 pub fn thread() -> Vec<Comment> {
-    THREAD.iter().map(|row| comment(row, depth_of(row.0))).collect()
+    THREAD.iter().map(comment).collect()
 }
 
-fn comment(row: &(i32, Option<i32>, &str, &str, &str, &[&str]), depth: usize) -> Comment {
+fn comment(row: &(i32, Option<i32>, &str, &str, &str, &[&str])) -> Comment {
     let (id, _, author, age, text, links) = *row;
     Comment {
         id,
@@ -235,8 +235,6 @@ fn comment(row: &(i32, Option<i32>, &str, &str, &str, &[&str]), depth: usize) ->
         text: text.to_string(),
         links: links.iter().map(|link| (*link).to_string()).collect(),
         time_ago: age.to_string(),
-        state: CommentState::Collapsed,
-        depth,
         deleted: false,
         child_ids: THREAD
             .iter()
@@ -246,6 +244,7 @@ fn comment(row: &(i32, Option<i32>, &str, &str, &str, &[&str]), depth: usize) ->
     }
 }
 
+#[cfg(test)]
 fn depth_of(id: i32) -> usize {
     let mut depth = 0;
     let mut at = id;

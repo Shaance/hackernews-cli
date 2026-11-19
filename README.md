@@ -69,7 +69,7 @@ Use `j/k` or the arrow keys to select a story. Press `1`, `2`, or `3` for Top, N
 
 Press `o` or Enter to open the discussion and its article. Press `c` to read the discussion without opening a new article pane. If a companion pane is already open, it follows the selected story. `O` always opens the story in your default browser.
 
-In a discussion, `j/k` moves between comments. Enter expands or collapses replies, `[/]` skips between sibling threads, and `u` returns to the parent. Page Up/Down scrolls through long comments without changing the selection. Original post text appears above the replies, with paragraphs and indented code preserved. Press `L` to choose a link from the post or selected comment.
+In a discussion, `j/k` moves between comments. Enter expands or collapses replies, `[/]` skips between sibling threads, and `u` returns to the parent. Folding keeps replies in memory, so reopening restores nested expansions immediately. Press `r` to refresh the comments, including every reply you have loaded. Page Up/Down scrolls through long comments without changing the selection. Original post text appears above the replies, with paragraphs and indented code preserved. Press `L` to choose a link from the post or selected comment.
 
 Return to the feed with Esc; if a companion article pane is open, hn closes it (only the tab hn created — your own tabs in that pane stay open; if it was the last tab, the whole pane closes). Reopening the discussion during the same run restores loaded replies, selection, and scroll position. Press `?` for help.
 

@@ -3,7 +3,8 @@
 use std::f32::consts::FRAC_PI_2;
 use std::rc::Rc;
 
-use hn_lib::comments::{BranchStatus, MAX_DEPTH};
+use hn_lib::comments::BranchStatus;
+use crate::story::VISIBLE_COMMENT_LEVELS;
 use rune::tok::{self, radius, type_};
 use rune::{Color, El, GrowthSpec, ScrollSpec, Spring, SpringPair, Transition, Tx, col, el, icon, row, text};
 use rune_kit::{Keybind, Kit, Placement, Popover};
@@ -215,7 +216,7 @@ pub(super) fn comment_row(s: &Story, id: i32, depth: u32, k: &Kit, t: tok::Theme
     let focus = nav.map_or_else(|| thread.focus(), |nav| nav.focus);
     let selected = cursor == Some(id);
     let folded = nav.map_or_else(|| thread.is_folded(id), |nav| nav.folded.contains(&id));
-    let capped = if context { depth + 1 >= MAX_DEPTH && thread.has_children(id) } else { thread.capped(id) };
+    let capped = if context { depth + 1 >= VISIBLE_COMMENT_LEVELS && thread.has_children(id) } else { thread.capped(id) };
     let replies = thread.child_count(id);
     let loaded = node.is_some_and(|node| !node.children.is_empty());
     let loading = s.pending_reply.as_ref().is_some_and(|r| r.batch.parent_id() == id);

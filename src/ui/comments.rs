@@ -1,6 +1,9 @@
 //! Comments view rendering
 
-use crate::app::{App, CommentState, View};
+use crate::{
+    app::{App, View},
+    comments::Row,
+};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Modifier, Style},
@@ -30,9 +33,9 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
         .as_ref()
         .is_some_and(|story| !story.text.is_empty());
 
-    if app.is_loading() && app.comments.is_empty() && !has_post {
+    if app.is_loading() && app.thread.is_empty() && !has_post {
         widgets::render_loading(f, chunks[1], "Loading comments...", tick);
-    } else if app.comments.is_empty() && !has_post {
+    } else if app.thread.is_empty() && !has_post {
         if let Some(error) = app.error() {
             widgets::render_error(f, chunks[1], error);
         } else {
@@ -63,7 +66,7 @@ pub fn render_reader_content(
     mut prefix: Vec<Line<'static>>,
     show_selection: bool,
 ) {
-    if app.comments.is_empty() {
+    if app.thread.is_empty() {
         let message = if app.is_loading() {
             "Loading comments..."
         } else {
@@ -150,8 +153,9 @@ fn render_comments_list(
     };
 
     // Pre-render all comments to line buffers and track their line ranges
-    let mut rendered = Vec::with_capacity(app.visible_comment_count());
-    let mut line_ranges = Vec::with_capacity(app.visible_comment_count());
+    let rows = app.thread.rows();
+    let mut rendered = Vec::with_capacity(rows.len());
+    let mut line_ranges = Vec::with_capacity(rows.len());
     let mut post_lines = Vec::new();
     if let Some(prefix) = prefix {
         post_lines = prefix;
@@ -171,16 +175,20 @@ fn render_comments_list(
     }
     let mut line_cursor = post_lines.len();
 
-    for idx in 0..app.visible_comment_count() {
-        let Some((path, comment)) = app.visible_comment_at(idx) else {
-            continue;
-        };
-        let is_selected = show_selection && idx == app.comment_cursor;
-        let prepared = render_comment(app, path, comment, is_selected, tick, area.width as usize);
+    app.prepare_comment_layout(area.width);
+    let selected = app.thread.cursor().filter(|_| show_selection);
+    for row in rows {
+        let prepared = render_comment(
+            app,
+            row,
+            Some(row.id) == selected,
+            tick,
+            area.width as usize,
+        );
         let start = line_cursor;
         line_cursor += prepared.height;
         let end = line_cursor;
-        line_ranges.push((comment.id, start, end));
+        line_ranges.push((row.id, start, end));
         rendered.push(prepared);
     }
 
@@ -206,10 +214,7 @@ fn render_comments_list(
         .scroll((scroll as u16, 0));
 
     f.render_widget(paragraph, area);
-    if let Some((_, start, end)) = line_ranges
-        .get(app.comment_cursor)
-        .filter(|_| show_selection)
-    {
+    if let Some((_, start, end)) = line_ranges.iter().find(|(id, _, _)| Some(*id) == selected) {
         let top = start.saturating_sub(scroll).min(usize::from(area.height));
         let bottom = end.saturating_sub(scroll).min(usize::from(area.height));
         let selected = Rect::new(
@@ -231,21 +236,21 @@ struct RenderedComment {
 /// Render a single comment into lines
 fn render_comment(
     app: &App,
-    path: &[usize],
-    comment: &crate::app::Comment,
+    row: Row,
     is_selected: bool,
     tick: usize,
     max_width: usize,
 ) -> RenderedComment {
     let theme = app.theme();
-    let depth = path.len().saturating_sub(1);
+    let comment = app.thread.node(row.id).expect("visible comment");
+    let depth = row.depth as usize;
     let text_column = 2 + 2 * depth;
     let prefix = vec![
         Span::styled(if is_selected { "▎ " } else { "  " }, theme.accent),
         Span::styled("│ ".repeat(depth), theme.line),
     ];
     let mut header = prefix.clone();
-    if comment.deleted {
+    if !comment.readable {
         header.push(Span::styled(
             "[deleted]",
             theme.dim.add_modifier(Modifier::ITALIC),
@@ -262,7 +267,7 @@ fn render_comment(
         header.push(Span::styled(format!("  {}", comment.time_ago), theme.dim));
     }
     let mut lines = vec![Line::from(header)];
-    if !comment.deleted {
+    if comment.readable {
         for body in comment.text.lines() {
             let quote = body.trim_start().strip_prefix('>');
             let text = quote
@@ -303,27 +308,19 @@ fn render_comment(
             }
         }
     }
-    if comment.has_children() {
-        let child_info = match comment.state {
-            CommentState::Collapsed => Some(format!(
-                "+ {} {}",
-                comment.child_count(),
-                if comment.child_count() == 1 {
-                    "reply"
-                } else {
-                    "replies"
-                }
-            )),
-            CommentState::Loading { .. } => {
-                Some(format!("{} loading replies", widgets::spinner_frame(tick)))
-            }
-            CommentState::Expanded { .. } => None,
-        };
-        if let Some(info) = child_info {
-            let mut spans = prefix;
-            spans.push(Span::styled(info, theme.dim));
-            lines.push(Line::from(spans));
-        }
+    let child_count = app.thread.child_count(row.id);
+    let child_info = if app.comment_replies_pending(row.id) {
+        Some(format!("{} loading replies", widgets::spinner_frame(tick)))
+    } else if child_count > 0 && !app.comment_replies_open(row.id) {
+        let label = if child_count == 1 { "reply" } else { "replies" };
+        Some(format!("+ {child_count} {label}"))
+    } else {
+        None
+    };
+    if let Some(info) = child_info {
+        let mut spans = prefix;
+        spans.push(Span::styled(info, theme.dim));
+        lines.push(Line::from(spans));
     }
     lines.push(Line::from(Span::styled(
         if is_selected { "▎" } else { "" },

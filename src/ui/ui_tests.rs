@@ -1,5 +1,5 @@
 use super::render;
-use crate::app::{App, Comment, CommentState};
+use crate::app::{App, Comment};
 use ratatui::{backend::TestBackend, buffer::Buffer, Terminal};
 
 fn test_comment(id: i32, text: &str) -> Comment {
@@ -9,8 +9,7 @@ fn test_comment(id: i32, text: &str) -> Comment {
         text: text.to_string(),
         links: vec![],
         time_ago: "now".to_string(),
-        state: CommentState::Collapsed,
-        depth: 0,
+
         deleted: false,
         child_ids: vec![],
     }
@@ -224,17 +223,11 @@ fn thread_selection_quotes_guides_and_replies_preserve_roles() {
     );
     leaf.child_ids = vec![13, 14];
     let mut child = test_comment(11, "child");
-    child.state = CommentState::Expanded {
-        children: vec![leaf],
-    };
     child.child_ids = vec![12];
     let mut root = test_comment(10, "root");
-    root.state = CommentState::Expanded {
-        children: vec![child],
-    };
     root.child_ids = vec![11];
     app.view_comments(1, "Thread".into(), String::new());
-    app.set_comments(vec![root, test_comment(99, "last")]);
+    app.set_comments(vec![root, child, leaf, test_comment(99, "last")]);
     app.next_comment();
     app.next_comment();
     let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();

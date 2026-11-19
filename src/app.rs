@@ -1,6 +1,7 @@
 //! Application state management for HackerNews TUI
 
 use crate::{
+    comments::{ReplyBatch, Thread},
     feed_state::{self, FeedAction, FeedState, FeedStatus},
     theme::Theme,
     HNCLIItem,
@@ -35,7 +36,7 @@ mod comment_view_state;
 mod comment_view_state_tests;
 mod reading_session;
 mod view_status;
-pub use comment_view_state::{Comment, CommentState};
+pub use comment_view_state::Comment;
 use reading_session::ReadingSession;
 use view_status::ViewStatus;
 
@@ -117,12 +118,8 @@ pub struct App {
     pub page_landing: Option<PageLanding>,
     /// Current page number
     pub current_page: u32,
-    /// Comments for current story
-    pub comments: Vec<Comment>,
-    /// Paths to comments visible in the flattened render/navigation order
-    visible_comment_paths: Vec<Vec<usize>>,
-    /// Currently selected comment in visible list
-    pub comment_cursor: usize,
+    pub(crate) thread: Thread,
+    pending_replies: HashMap<i32, (u64, ReplyBatch)>,
     /// Scroll offset for comments view
     pub comment_scroll: usize,
     pub discussion_story: Option<HNCLIItem>,
@@ -136,6 +133,7 @@ pub struct App {
     feed_positions: HashMap<StoryType, FeedPosition>,
     comment_line_ranges: Vec<(i32, usize, usize)>,
     comment_viewport_height: usize,
+    comment_layout_width: u16,
     comment_anchor: Option<(i32, usize)>,
     refreshing_comments: bool,
     follow_comment_selection: bool,
@@ -191,9 +189,8 @@ impl App {
             outgoing_feed: None,
             page_landing: None,
             current_page: 1,
-            comments: Vec::new(),
-            visible_comment_paths: Vec::new(),
-            comment_cursor: 0,
+            thread: Thread::empty(None, usize::MAX),
+            pending_replies: HashMap::new(),
             comment_scroll: 0,
             discussion_story: None,
             show_links: false,
@@ -206,6 +203,7 @@ impl App {
             feed_positions: HashMap::new(),
             comment_line_ranges: Vec::new(),
             comment_viewport_height: 0,
+            comment_layout_width: 0,
             comment_anchor: None,
             refreshing_comments: false,
             follow_comment_selection: false,
@@ -445,12 +443,12 @@ impl App {
     }
 
     fn reset_comment_view_state(&mut self) {
-        self.comments.clear();
+        self.thread = Thread::empty(None, usize::MAX);
+        self.pending_replies.clear();
         self.comment_line_ranges.clear();
+        self.comment_layout_width = 0;
         self.comment_anchor = None;
         self.refreshing_comments = false;
-        self.visible_comment_paths.clear();
-        self.comment_cursor = 0;
         self.comment_scroll = 0;
         self.discussion_story = None;
         self.show_links = false;
@@ -641,12 +639,8 @@ impl App {
             self.apply_comment_refresh(comments);
             return;
         }
-        self.comments = comments;
-        self.rebuild_visible_comments();
-        self.comment_cursor = self
-            .comment_cursor
-            .min(self.visible_comment_count().saturating_sub(1));
+        self.thread = Thread::from_comments(&comments, None, usize::MAX);
+        self.pending_replies.clear();
         self.clear_comment_status();
-        self.recompute_comment_loading(self.has_loading_comments());
     }
 }

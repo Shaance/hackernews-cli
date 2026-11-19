@@ -12,12 +12,12 @@ fn ignores_comments_loaded_for_inactive_story() {
         AppMessage::Comments {
             story_id: 1,
             view_generation,
-            result: Ok(vec![test_comment(10, CommentState::Collapsed)]),
+            result: Ok(vec![test_comment(10)]),
         },
     );
 
     assert!(matches!(app.view, View::Comments { story_id: 2, .. }));
-    assert!(app.comments.is_empty());
+    assert!(app.thread.is_empty());
     assert!(app.is_loading());
     assert!(app.error().is_none());
 }
@@ -39,7 +39,7 @@ fn ignores_comment_errors_after_returning_to_stories() {
     );
 
     assert!(matches!(app.view, View::Stories));
-    assert!(app.comments.is_empty());
+    assert!(app.thread.is_empty());
     assert!(!app.is_loading());
     assert!(app.error().is_none());
 }
@@ -111,12 +111,12 @@ fn ignores_comment_results_from_previous_visit_to_same_story() {
         AppMessage::Comments {
             story_id: 1,
             view_generation: first_generation,
-            result: Ok(vec![test_comment(10, CommentState::Collapsed)]),
+            result: Ok(vec![test_comment(10)]),
         },
     );
 
     assert_ne!(first_generation, second_generation);
-    assert!(app.comments.is_empty());
+    assert!(app.thread.is_empty());
     assert!(app.is_loading());
 
     handle_app_message(
@@ -124,11 +124,11 @@ fn ignores_comment_results_from_previous_visit_to_same_story() {
         AppMessage::Comments {
             story_id: 1,
             view_generation: second_generation,
-            result: Ok(vec![test_comment(20, CommentState::Collapsed)]),
+            result: Ok(vec![test_comment(20)]),
         },
     );
 
-    assert_eq!(app.comments.len(), 1);
-    assert_eq!(app.comments[0].id, 20);
+    assert_eq!(app.thread.roots(), 1);
+    assert_eq!(app.thread.cursor().unwrap(), 20);
     assert!(!app.is_loading());
 }
