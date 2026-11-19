@@ -70,8 +70,11 @@ jobs:
       - name: Install Linux build dependencies
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends pkg-config libssl-dev
+          # GitHub's Ubuntu images ship these; only reach the archive when one is missing.
+          if ! dpkg -s pkg-config libssl-dev >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends pkg-config libssl-dev
+          fi
 
       - name: Build
         run: |
