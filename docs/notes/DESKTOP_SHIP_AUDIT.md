@@ -388,6 +388,13 @@ Real app, real config, real Anthropic summary key, 1344×900 window. Evidence in
   sends no request, so a repeat view leaves no record.
 - Next time it appears, note the story title and time; the matching record shows whether the model wrote it.
 - Since `866d4e9` new records go to `~/.local/state/hn/summary-responses/`; the old folder keeps the earlier ones.
+- Seen a second time on 2026-11-19 in a README render. That render kept its records in a throwaway directory
+  that the script deleted, so the reply is lost again.
+- Status: guarded, cause still unconfirmed. A discussion whose overview or any point is a single word now fails
+  with "Discussion summary came back incomplete. M → Enter Retry" instead of being displayed
+  (`src/reader/network.rs`). In the 13 logged replies, the shortest point is 18 words and the shortest
+  overview 20, so the rule rejects none of them. `scripts/readme-screenshots.sh` now copies its replies into
+  `~/.local/state/hn/summary-responses/` before cleanup, so the next occurrence leaves a record.
 
 ### N9. Saved summaries: review findings deferred (`aca07ee`)
 A read-only review of the persistence change found seven issues; four were fixed before merge (placeholder

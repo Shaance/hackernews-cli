@@ -20,7 +20,7 @@ async fn native_profiles_use_matching_models_prompts_evidence_and_authentication
         let points: Vec<_> = (0..count)
             .map(|i| json!({"text":format!("Insight {i}"),"sources":[11]}))
             .collect();
-        let result = json!({"overview":"Context", "points":points});
+        let result = json!({"overview":"Discussion context", "points":points});
         let (network, mut requests, server) = tests::serve(move |path, _, headers| {
             assert_eq!(path, "/messages");
             let headers = headers.to_lowercase();
@@ -153,7 +153,7 @@ async fn native_article_and_failures_keep_diagnostics_and_never_retry() {
 #[tokio::test]
 async fn native_discussion_rejects_citations_outside_captured_evidence() {
     let (network, mut requests, server) = tests::serve(|_, _, _| (200, json!({"content":[{"type":"text","text":
-        json!({"overview":"Context","points":[{"text":"Unsupported claim","sources":[999]}]}).to_string()
+        json!({"overview":"Discussion context","points":[{"text":"Unsupported claim","sources":[999]}]}).to_string()
     }]}).to_string())).await;
     let failure = network
         .discussion(

@@ -214,6 +214,25 @@ async fn discussion_publishes_only_citations_from_its_captured_sources() {
     }
 }
 #[tokio::test]
+async fn discussion_rejects_single_word_stubs_instead_of_displaying_them() {
+    // N8: a point reading only "placeholder [1]" reached the screen twice.
+    for content in [
+        json!({"overview":"Two viewpoints.","points":[{"text":"placeholder","sources":[10]}]}),
+        json!({"overview":"  placeholder ","points":[{"text":"A disagreement.","sources":[10]}]}),
+        json!({"overview":"Two viewpoints.","points":[{"text":"  ","sources":[10]}]}),
+    ] {
+        let body = json!({"choices":[{"message":{"content":content.to_string()}}]}).to_string();
+        let (network, request) = server(200, body).await;
+        let captured = crate::reader::tests::discussion_capture();
+        let error = network
+            .discussion(Provider::OpenRouter, "test-key", Profile::Fast, &captured)
+            .await
+            .unwrap_err();
+        assert!(error.message.contains("incomplete"), "{content}");
+        request.await.unwrap();
+    }
+}
+#[tokio::test]
 async fn article_parses_provider_summary() {
     let body = json!({"choices":[{"message":{"content":"{\"summary\":\"The author proposes a tradeoff.\"}"}}]}).to_string();
     let (network, request) = server(200, body).await;

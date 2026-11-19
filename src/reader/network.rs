@@ -110,10 +110,17 @@ impl Network {
             .await?;
         let mut output: Discussion = serde_json::from_value(output)
             .map_err(|_| Failure::new("Discussion response could not be read. M → Enter Retry"))?;
+        // Logged real overviews and points run 18+ words; a lone token such as the
+        // reported "placeholder" is not a summary (docs/notes/DESKTOP_SHIP_AUDIT.md, N8).
+        let is_stub = |text: &str| text.split_whitespace().nth(1).is_none();
+        if is_stub(&output.overview) || output.points.iter().any(|p| is_stub(&p.text)) {
+            return Err(Failure::new(
+                "Discussion summary came back incomplete. M → Enter Retry",
+            ));
+        }
         if output.points.is_empty()
             || output.points.iter().any(|p| {
-                p.text.trim().is_empty()
-                    || p.sources.is_empty()
+                p.sources.is_empty()
                     || p.sources
                         .iter()
                         .any(|id| !readable.iter().any(|s| s.id == *id))
