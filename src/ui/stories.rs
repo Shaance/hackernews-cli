@@ -11,15 +11,33 @@ use ratatui::{
 use tachyonfx::{fx, ColorSpace, Interpolation};
 
 use super::widgets;
-use std::time::{Duration, Instant};
+use std::{
+    ops::Range,
+    time::{Duration, Instant},
+};
 
 /// Feed switch motion: 110ms dip out + 160ms dip in on the list, 160ms tab color ease.
 const FEED_DIP_OUT: Duration = Duration::from_millis(110);
 const FEED_DIP_IN: Duration = Duration::from_millis(160);
 const FEED_TAB_EASE: Duration = Duration::from_millis(160);
 
+pub(crate) fn feed_columns(width: u16) -> usize {
+    if width >= 160 {
+        2
+    } else {
+        1
+    }
+}
+
 /// Render the stories view
 pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
+    // Leave room for both chrome bars and at least one complete story.
+    let padding = u16::from(f.area().height >= 7);
+    let area = Rect {
+        y: f.area().y + padding,
+        height: f.area().height - padding,
+        ..f.area()
+    };
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -27,7 +45,7 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
             Constraint::Min(0),    // Stories list
             Constraint::Length(2), // Status bar
         ])
-        .split(f.area());
+        .split(area);
 
     // Feed switch: during the out-phase the outgoing list is swapped in so it
     // fades through the chrome color; the in-phase then fades the new list in,
@@ -118,10 +136,9 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
                 .process((elapsed - FEED_DIP_OUT).into(), f.buffer_mut(), chunks[1]);
         }
     }
-    if app
-        .feed_switched
-        .is_some_and(|(start, _)| now.saturating_duration_since(start) >= FEED_DIP_OUT + FEED_DIP_IN)
-    {
+    if app.feed_switched.is_some_and(|(start, _)| {
+        now.saturating_duration_since(start) >= FEED_DIP_OUT + FEED_DIP_IN
+    }) {
         app.feed_switched = None;
         app.outgoing_feed = None;
     }
@@ -131,7 +148,12 @@ pub fn render(f: &mut Frame, app: &mut App, tick: usize) {
 
     // Render help overlay if shown
     if app.show_help {
-        widgets::render_help(f, app.theme(), false, app.overlay_opened);
+        widgets::render_feed_help(
+            f,
+            app.theme(),
+            app.overlay_opened,
+            widgets::feed_arrow_hint(area.width, app),
+        );
     }
 }
 
@@ -154,7 +176,8 @@ fn render_title(f: &mut Frame, area: Rect, app: &App, tick: usize) {
             (
                 elapsed,
                 prev,
-                Interpolation::QuadOut.alpha((elapsed.as_secs_f32() / FEED_TAB_EASE.as_secs_f32()).min(1.0)),
+                Interpolation::QuadOut
+                    .alpha((elapsed.as_secs_f32() / FEED_TAB_EASE.as_secs_f32()).min(1.0)),
             )
         })
         .filter(|(elapsed, _, _)| *elapsed < FEED_TAB_EASE);
@@ -189,11 +212,17 @@ fn render_title(f: &mut Frame, area: Rect, app: &App, tick: usize) {
                 *story_type == prev && alpha < 0.5
             };
             if active {
-                number_style = Style::default()
-                    .fg(lerp_color(theme.dim.fg.unwrap(), theme.accent.fg.unwrap(), alpha));
+                number_style = Style::default().fg(lerp_color(
+                    theme.dim.fg.unwrap(),
+                    theme.accent.fg.unwrap(),
+                    alpha,
+                ));
             } else if *story_type == prev {
-                number_style = Style::default()
-                    .fg(lerp_color(theme.accent.fg.unwrap(), theme.dim.fg.unwrap(), alpha));
+                number_style = Style::default().fg(lerp_color(
+                    theme.accent.fg.unwrap(),
+                    theme.dim.fg.unwrap(),
+                    alpha,
+                ));
             }
             if emphasized {
                 name_style = number_style.add_modifier(Modifier::BOLD | Modifier::UNDERLINED);
@@ -254,34 +283,99 @@ fn render_title(f: &mut Frame, area: Rect, app: &App, tick: usize) {
 
 /// Render the list of stories
 fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
-    // Keep selection in view
-    app.update_story_scroll(area.height as usize);
+    if area.is_empty() {
+        return;
+    }
 
+    let count = app.stories.len();
+    let columns = feed_columns(area.width);
+    let split = count.div_ceil(columns);
+    let now = Instant::now();
+    let glide = app
+        .selection_glide
+        .filter(|&(start, from, to)| {
+            app.theme().motion
+                && to == app.selected_index
+                && now.saturating_duration_since(start) < SELECTION_GLIDE
+                && ((from < split as f32) == (to < split))
+        })
+        .map(|_| app.selection_glide_position(now));
+    if glide.is_none() {
+        app.selection_glide = None;
+    }
+
+    if columns == 1 {
+        app.update_story_scroll(usize::from(area.height));
+        app.story_scroll =
+            render_story_column(f, area, app, 0..count, Some(app.story_scroll), glide);
+        return;
+    }
+
+    // Fit whole stories, allowing the last visible story to omit its blank spacer.
+    let gap = usize::from(f.area().height >= 30);
+    let visible_rows = (usize::from(area.height) + gap) / (2 + gap);
+    let selected_row = app.selected_index % split;
+    let offset = app
+        .story_scroll
+        .clamp(
+            selected_row.saturating_sub(visible_rows.saturating_sub(1)),
+            selected_row,
+        )
+        .min(split.saturating_sub(visible_rows));
+    app.story_scroll = offset;
+
+    let [left, rule, right] = Layout::horizontal([
+        Constraint::Fill(1),
+        Constraint::Length(1),
+        Constraint::Fill(1),
+    ])
+    .areas(area);
+    f.render_widget(
+        Block::default()
+            .borders(Borders::LEFT)
+            .border_style(app.theme().line),
+        rule,
+    );
+    for (column_area, range) in [(left, 0..split), (right, split..count)] {
+        let first = (range.start + offset).min(range.end);
+        let end = (first + visible_rows).min(range.end);
+        render_story_column(f, column_area, app, first..end, None, glide);
+    }
+}
+
+/// Render the slice assigned to one column. The single-column feed lets ListState
+/// manage its offset, while wide columns receive the already-clipped shared viewport.
+fn render_story_column(
+    f: &mut Frame,
+    area: Rect,
+    app: &App,
+    indices: Range<usize>,
+    list_offset: Option<usize>,
+    glide: Option<f32>,
+) -> usize {
     let (display_type, display_page) = app.displayed_story_context();
     let list_style = if app.is_loading() {
         app.theme().dim.add_modifier(Modifier::DIM)
     } else {
         Style::default()
     };
-
-    let now = Instant::now();
-    let gliding = app.theme().motion
-        && app.selection_glide.is_some_and(|(start, _, to)| {
-            to == app.selected_index && now.saturating_duration_since(start) < SELECTION_GLIDE
-        });
+    let gliding = glide.is_some();
     let mut flash_cell = None;
-    let items: Vec<ListItem> = app
-        .stories
-        .iter()
-        .enumerate()
-        .map(|(idx, story)| {
+    let items: Vec<ListItem> = indices
+        .clone()
+        .map(|idx| {
+            let story = &app.stories[idx];
             let is_selected = idx == app.selected_index;
             let global_idx = ((display_page - 1) as usize * app.page_size as usize) + idx + 1;
 
             let theme = app.theme();
             // While gliding, the bar is drawn at the eased row after the list render.
             let indicator = Span::styled(
-                if is_selected && !gliding { "▎ " } else { "  " },
+                if is_selected && !gliding {
+                    "▎ "
+                } else {
+                    "  "
+                },
                 theme.accent,
             );
             let bookmark = if display_type != StoryType::Saved && app.is_bookmarked(story.id) {
@@ -347,7 +441,7 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
                 Span::styled(format!(" · {}", story.time_ago), theme.dim),
             ]));
 
-            if f.area().height >= 30 && idx < app.stories.len() - 1 {
+            if f.area().height >= 30 && idx + 1 < indices.end {
                 lines.push(Line::from(""));
             }
 
@@ -357,34 +451,34 @@ fn render_stories_list(f: &mut Frame, area: Rect, app: &mut App) {
 
     let list = List::new(items).style(list_style);
 
-    let mut state = ListState::default()
-        .with_selected(Some(app.selected_index))
-        .with_offset(app.story_scroll);
+    let mut state = ListState::default();
+    if let Some(offset) = list_offset {
+        state = state
+            .with_selected(Some(app.selected_index))
+            .with_offset(offset);
+    }
 
     f.render_stateful_widget(list, area, &mut state);
-    app.story_scroll = state.offset();
     // Apply after text rendering, which resets continuation cells of wide characters.
     let stride = if f.area().height >= 30 { 3 } else { 2 };
-    let position = if gliding {
-        app.selection_glide_position(now)
-    } else {
-        app.selection_glide = None;
-        app.selected_index as f32
-    };
-    let row = ((position - state.offset() as f32) * stride as f32)
-        .round()
-        .max(0.0) as u16;
-    let y = area.y + row;
-    let selected = Rect::new(area.x, y, area.width, 2).intersection(area);
-    f.buffer_mut().set_style(selected, app.theme().sel);
-    if gliding {
-        f.buffer_mut().set_string(area.x, y, "▎", app.theme().accent);
+    let first = indices.start + state.offset();
+    if indices.contains(&app.selected_index) {
+        let position = glide.unwrap_or(app.selected_index as f32);
+        let row = ((position - first as f32) * stride as f32).round().max(0.0) as u16;
+        let y = area.y + row;
+        let selected = Rect::new(area.x, y, area.width, 2).intersection(area);
+        f.buffer_mut().set_style(selected, app.theme().sel);
+        if gliding && !selected.is_empty() {
+            f.buffer_mut()
+                .set_string(area.x, y, "▎", app.theme().accent);
+        }
     }
-    if let Some((index, x, id)) = flash_cell.filter(|(index, _, _)| *index >= state.offset()) {
-        let y = area.y + ((index - state.offset()) * stride) as u16;
+    if let Some((index, x, id)) = flash_cell.filter(|(index, _, _)| *index >= first) {
+        let y = area.y + ((index - first) * stride) as u16;
         let cell = Rect::new(x, y, 1, 1).intersection(area);
         app.render_save_flash(f.buffer_mut(), cell, id);
     }
+    state.offset()
 }
 
 /// Interpolate two colors; non-RGB colors fall back to the target.

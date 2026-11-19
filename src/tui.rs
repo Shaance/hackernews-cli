@@ -94,7 +94,7 @@ pub async fn run_app(
             apply(app, summaries, message);
         }
         let frame = (started.elapsed().as_millis() / u128::from(FRAME_MS)) as u64;
-        terminal.draw(|f| {
+        let drawn = terminal.draw(|f| {
             if summaries.is_open() {
                 summaries.render(f, app, frame as usize);
             } else {
@@ -121,6 +121,8 @@ pub async fn run_app(
                 );
             }
         })?;
+
+        let feed_width = drawn.area.width;
 
         // Input and app results wake immediately; only polled work needs a timer.
         let now = Instant::now();
@@ -169,10 +171,10 @@ pub async fn run_app(
                 // Handle key based on current view
                 match &app.view {
                     View::Stories => {
-                        let action = handle_stories_key(key);
-                        handle_story_action(
+                        handle_feed_key(
                             app,
-                            action,
+                            key,
+                            feed_width,
                             tx.clone(),
                             service.clone(),
                             bookmark_path,
@@ -202,6 +204,24 @@ pub async fn run_app(
     }
 
     Ok(())
+}
+
+async fn handle_feed_key(
+    app: &mut App,
+    key: KeyCode,
+    width: u16,
+    tx: mpsc::UnboundedSender<AppMessage>,
+    service: HackerNewsCliServiceImpl,
+    bookmark_path: &mut Option<PathBuf>,
+) -> Result<()> {
+    if crate::ui::stories::feed_columns(width) == 2 && matches!(key, KeyCode::Left | KeyCode::Right)
+    {
+        if app.move_across_feed(key == KeyCode::Right) {
+            request_stories(app, tx, service, false);
+        }
+        return Ok(());
+    }
+    handle_story_action(app, handle_stories_key(key), tx, service, bookmark_path).await
 }
 
 /// Handle story view actions

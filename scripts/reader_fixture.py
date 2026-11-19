@@ -69,9 +69,17 @@ class ReaderFixture:
             if ident == self.fail_item:
                 return 503, {"error": "Synthetic child fetch failure"}
             if 90010001 <= ident <= 90010060:
+                roots = [90010101, 90010102] if ident == 90010001 else []
                 return 200, {"id": ident, "type": "story", "title": f"Synthetic feed control {ident - 90010000:02}",
                              "by": "replay_control", "time": 1792497600, "score": 123,
-                             "url": "https://subdomain.example.com/control", "descendants": 0}
+                             "url": "https://subdomain.example.com/control",
+                             "descendants": 3 if roots else 0, "kids": roots}
+            if ident in (90010101, 90010102, 90010103):
+                author = {90010101: "ordinary_parent", 90010102: "ordinary_sibling",
+                          90010103: "ordinary_reply"}[ident]
+                return 200, {"id": ident, "type": "comment", "by": author, "time": 1792497600,
+                             "text": author.replace("_", " "),
+                             "kids": [90010103] if ident == 90010101 else []}
             comments = self.data["input"]["comments"]
             kids = lambda parent: [c["id"] for c in comments if c["parent"] == parent]
             if ident == self.data["provenance"]["story_id"]:
