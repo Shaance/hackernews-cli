@@ -13,7 +13,9 @@ fi
 export OPENROUTER_API_KEY
 unset ANTHROPIC_API_KEY
 state=$(mktemp -d "${TMPDIR:-/tmp}/hn-readme.XXXXXX")
-trap 'rm -rf "$state"' EXIT HUP INT TERM
+# Keep the provider replies so a bad summary in a render can be traced (audit N8).
+keep="$HOME/.local/state/hn/summary-responses"
+trap 'mkdir -p "$keep"; cp -R "$state/state/hn/summary-responses/." "$keep/" 2>/dev/null || true; rm -rf "$state"' EXIT HUP INT TERM
 export XDG_CONFIG_HOME="$state/config" XDG_DATA_HOME="$state/data" XDG_STATE_HOME="$state/state"
 cargo build --release
 for tape in scripts/readme/demo.tape scripts/readme/dark.tape scripts/readme/light.tape; do

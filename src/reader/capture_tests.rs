@@ -42,7 +42,7 @@ async fn captures_survive_model_choices_revisit_retry_and_key_repair() {
         if path == "/chat/completions" {
             let input: Value = serde_json::from_str(body["messages"][1]["content"].as_str().unwrap()).unwrap();
             let result = if input.get("article").is_some() { json!({"summary":"Article result"}) }
-                else { json!({"overview":"Discussion result", "points":[{"text":"Reply", "sources":[11]}]}) };
+                else { json!({"overview":"Discussion result", "points":[{"text":"Reply evidence", "sources":[11]}]}) };
             return (response_status.load(Ordering::SeqCst), json!({"choices":[{"message":{"content":result.to_string()}}]}).to_string());
         }
         let id: i32 = path.trim_start_matches("/v0/item/").trim_end_matches(".json").parse().unwrap();

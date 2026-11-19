@@ -237,7 +237,7 @@ async fn switching_provider_reuses_captures_and_ignores_old_pending_completion()
         let output = if input.get("article").is_some() {
             json!({"summary":"Native article"})
         } else {
-            json!({"overview":"Context","points":[{"text":"Native discussion","sources":[11]}]})
+            json!({"overview":"Discussion context","points":[{"text":"Native discussion","sources":[11]}]})
         };
         (
             200,
@@ -323,7 +323,7 @@ async fn comment_refresh_is_free_and_explicit_summary_retry_only_retries_failure
             let output = if path == "/chat/completions" {
                 let input: Value = serde_json::from_str(body["messages"][1]["content"].as_str().unwrap()).unwrap();
                 let content = if input.get("article").is_some() { json!({"summary":"Retried article"}) }
-                    else { json!({"overview":"Context","points":[{"text":"Retried discussion","sources":[11]}]}) };
+                    else { json!({"overview":"Discussion context","points":[{"text":"Retried discussion","sources":[11]}]}) };
                 json!({"choices":[{"message":{"content":content.to_string()}}]})
             } else if path.ends_with("/1.json") {
                 json!({"id":1,"time":0,"type":"story","kids":[10]})

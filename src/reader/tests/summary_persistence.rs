@@ -23,7 +23,7 @@ async fn fixture(
                 let content = if let Some(article) = input.get("article") {
                     json!({"summary": format!("Summary of {}", article.as_str().unwrap())})
                 } else {
-                    json!({"overview":"Discussion","points":[{"text":"Fresh point","sources":[11]}]})
+                    json!({"overview":"Discussion topic","points":[{"text":"Fresh point","sources":[11]}]})
                 };
                 json!({"choices":[{"message":{"content":content.to_string()}}]})
             }

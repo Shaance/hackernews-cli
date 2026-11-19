@@ -454,7 +454,7 @@ mod tests {
         let (sent, received) = std::sync::mpsc::channel();
         let (base, _requests, server) = bridge.runtime.block_on(http_fixture::serve(move |path, body, headers| {
             sent.send((path.clone(), body, headers)).unwrap();
-            let content = json!({"summary":"article", "overview":"discussion", "points":[{"text":"point", "sources":[901]}]}).to_string();
+            let content = json!({"summary":"article", "overview":"Discussion topic", "points":[{"text":"Useful point", "sources":[901]}]}).to_string();
             let response = if path == "/messages" {
                 json!({"content":[{"type":"text", "text":content}]})
             } else {
