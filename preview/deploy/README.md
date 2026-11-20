@@ -37,7 +37,7 @@ No blanket bucket TTL is configured. Current/last-good data must survive publish
 
 Public UI: https://hn.hashcode.dev (Vercel project `hn-preview`, team `christophe-has-projects`). Gateway: https://hn-session.hashcode.dev on production38.242.207.222. The daily publisher ran on development 51.210.151.84 at launch and on Netcup 62.83.128.195 since 2026-11-17, with the approved Anthropic credential; production has only the bucket-scoped reader and hourly adoption. No production inference key or second daily generation schedule. The direct public gateway port8782 remains blocked.
 
-The UI was deployed from `preview/dist` with the Vercel CLI. GitHub integration was unavailable. Since 2026-11-19 `.github/workflows/preview-ui.yml` rebuilds `preview/dist` and redeploys it to production when a change to the page's files reaches `main`; run it by hand from the Actions tab to redeploy without a change. Its `VERCEL_TOKEN` lives in the GitHub `production` environment, which only protected branches can use. The workflow then checks that the live page still sends its Content-Security-Policy and points at the session gateway. Roll back from the Vercel dashboard by promoting the previous deployment. The gateway, visitor image and publisher binary are still released by hand. When a change alters the messages between the page and the gateway, release the gateway first and merge the page change after it. Do not upload the repository root or generated credentials. Both host routes came from canonical infrastructure commit87c53e3. Public DNS, certificate, WebSocket/session limits, isolation settings and disconnect cleanup passed; browser evidence is in `evidence/launch/public-*`.
+The UI was deployed from `preview/dist` with the Vercel CLI. GitHub integration was unavailable. Since 2026-11-20 `.github/workflows/preview-ui.yml` rebuilds `preview/dist` and redeploys it to production when a change to the page's files reaches `main`; run it by hand from the Actions tab to redeploy without a change. Its `VERCEL_TOKEN` lives in the GitHub `production` environment, which only protected branches can use. The token is the Vercel access token "hn GitHub Actions (preview UI deploy)", scoped to the `hn-preview` project only, and it expires on 2027-11-20; after that the workflow fails until a new token replaces the secret. The workflow then checks that the live page still sends its Content-Security-Policy and points at the session gateway. Roll back from the Vercel dashboard by promoting the previous deployment. The gateway, visitor image and publisher binary are still released by hand. When a change alters the messages between the page and the gateway, release the gateway first and merge the page change after it. Do not upload the repository root or generated credentials. Both host routes came from canonical infrastructure commit87c53e3. Public DNS, certificate, WebSocket/session limits, isolation settings and disconnect cleanup passed; browser evidence is in `evidence/launch/public-*`.
 
 ## Snapshot adoption Host check (2026-10-28)
 
@@ -46,3 +46,33 @@ The local readiness request must send `PREVIEW_HOST` while connecting to `PREVIE
 ## Feed item validation (2026-10-29)
 
 Hacker News top/new feeds include job postings. The previous story-only snapshot validator rejected job50280824 and stopped the October29 capture before publication. Feed entries now accept stories and jobs, preserving their original order; comments and missing entries remain invalid. The regression uses that actual job and exercises the offline CLI feed reader. Deploy the updated native validator and visitor image to both gateways before running the updated publisher, because older readers reject bundles containing jobs. A failed capture retains the previous published snapshot; a healthy adoption job reporting `Snapshot unchanged` does not prove generation succeeded.
+
+## Server release (2026-11-19 and 2026-11-20)
+
+The gateway's visitor image and the native `/opt/hn-preview/hn` were released by hand from `main` at `db03844` (`hn 0.2.0`, the `h` fold key). Development switched on 2026-11-19 and production on 2026-11-20, after an explicit go.
+
+| Item | Value |
+|---|---|
+| Image | `hn-preview:20261119-db03844`, ID `sha256:1f64317d717ee51271b265dc4c46a1143060ce19e9ee8cc9cc70fece7f6c6932` on both hosts |
+| `image.tar` | sha256 `234fec9449f20a7954fcbea83cf348c50f133ef7066ee2a2750e8c2e9e57586d` |
+| `/opt/hn-preview/hn` | sha256 `b16ecd882b49615ecdc3124cee1a126b4dc931cb34d8e3817c198768edd0f836`, copied out of the image so the publisher and visitors run the same build |
+| Previous image pin | development `sha256:7297a971f98c173a4b73ea51f3833d3d95049200f7b684f2838aa4f0b1919126`, production `sha256:cd3da2a045fd8b43f98badbf1b4204e758f925382f005cf23f9cd301d4ebe6e7` |
+| Rollback copies | `/opt/hn-preview/hn.previous-20261119` and `gateway.env.previous-20261119` on each host |
+
+Checks that passed: the new `hn` validated each host's live snapshot; a snapshot captured by the new `hn` validated with development's old `hn`, production's old `hn`, and production's old visitor image under gVisor; a real session through each gateway showed the feed and the new help rows; the visitor container ran the new image with `runsc-rootless`, no network, a read-only filesystem and 256 MB, and was removed on disconnect; public port 8782 stayed closed. Development's scheduled publish at 03:00 UTC on 2026-11-20 was the first full run of the new `hn`: it captured 55 stories, prepared the three featured summaries and published snapshot `6ff3cfa2…`, which both hosts adopted at 03:01 UTC. Production's previous visitor image then served that snapshot until the 2026-11-20 switch.
+
+### Manual server release
+
+Snapshot readers go before the writer, and the gateway goes before a page change that alters their messages. Release development first and switch production only after development passes. The commands run over SSH as `shaance`; the one-off `sudo -n -u hnpreview` and root installs below are the exception the owner approved for this demo, not the TLDW routine-deploy path.
+
+1. Build on development from a clean clone at the chosen commit: `docker build -f preview/Dockerfile -t hn-preview:<date>-<sha7> .`. Save it with `docker save`, copy `/usr/local/bin/hn` out of a container made from it, and record both checksums.
+2. Check snapshot compatibility in both directions: the new `hn --validate-snapshot` on each host's live snapshot, and each old reader (host `hn` and current visitor image under `runsc-rootless`) on a snapshot from the new `hn --capture-snapshot`. Stop if any reader rejects it.
+3. Copy `image.tar` and `hn` to each host and compare checksums.
+4. On each host, confirm no visitor container is running and the adopter is idle, because the restart ends open sessions.
+5. Load the image into the `hnpreview` rootless daemon (`DOCKER_HOST=unix:///run/user/<uid>/docker.sock`; the home directory is private, so load from a world-readable copy in `/tmp` and delete it after). Confirm the loaded ID matches the build.
+6. Copy `/opt/hn-preview/hn` and `gateway.env` to `.previous-<date>`, install the new `hn` root-owned 0755 through a temporary name and `mv`, and set `PREVIEW_IMAGE=<loaded ID>` in `gateway.env` as `hnpreview`.
+7. Restart `hn-preview.service` as `hnpreview`, check `/healthz`, then open a real session (production through `wss://hn-session.hashcode.dev/session` with origin `https://hn.hashcode.dev`) and inspect the visitor container's image, runtime, network, read-only flag and memory limit.
+8. Delete the copied files and the rootful build tag. Keep the previous rootless image and `.previous` files until the next release.
+
+To roll back, restore the two `.previous` files on that host and restart `hn-preview.service`; the previous image is still loaded.
+
