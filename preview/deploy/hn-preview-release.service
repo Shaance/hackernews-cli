@@ -1,0 +1,23 @@
+[Unit]
+Description=Coordinate Hacker News preview release rollout
+Wants=network-online.target
+After=network-online.target
+[Service]
+Type=oneshot
+User=hnpublisher
+Group=hnpublisher
+StateDirectory=hn-publisher
+WorkingDirectory=/var/lib/hn-publisher
+EnvironmentFile=/etc/hn-preview/publisher.env
+Environment=HOME=/var/lib/hn-publisher PORT=8782 PREVIEW_BIND=127.0.0.1 PREVIEW_HOST=127.0.0.1:8782
+ExecStart=/usr/bin/flock /var/lib/hn-publisher/publish.lock /opt/hn-preview/node/bin/node /opt/hn-preview/tools/rollout.mjs
+TimeoutStartSec=600
+MemoryMax=512M
+CPUQuota=50%
+TasksMax=64
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+CapabilityBoundingSet=
+UMask=0077

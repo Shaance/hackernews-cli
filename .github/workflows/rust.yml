@@ -40,5 +40,7 @@ jobs:
       run: npm test --prefix preview
     - name: Test preview release updater
       run: npm run test:update --prefix preview
+    - name: Test preview release coordinator
+      run: npm run test:rollout --prefix preview
     - name: Build public preview assets
       run: npm run build --prefix preview
