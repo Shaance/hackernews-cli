@@ -28,6 +28,8 @@ on:
 concurrency:
   group: ${{ github.ref == 'refs/heads/main' && 'preview-server' || github.run_id }}
   cancel-in-progress: false
+  # Keep every pending release in order; the default keeps only the newest one.
+  queue: max
 
 permissions:
   contents: read
@@ -121,14 +123,14 @@ jobs:
             --certificate-oidc-issuer https://token.actions.githubusercontent.com "$CHECK_IMAGE"
       - name: Advance the main tag
         run: |
-          if config=$(crane config "$IMAGE:main" 2>&1); then
+          if config=$(crane config "$IMAGE:main" 2>crane.err); then
             previous=$(jq -er '.config.Labels["dev.hashcode.hn-preview.commit_count"] | strings | select(test("^[1-9][0-9]*$"))' <<< "$config")
             if (( COMMIT_COUNT <= previous )); then
               echo "Main is already at commit count $previous"
               exit 0
             fi
-          elif [[ "$config" != *MANIFEST_UNKNOWN* ]]; then
-            echo "$config" >&2
+          elif ! grep -q MANIFEST_UNKNOWN crane.err; then
+            cat crane.err >&2
             exit 1
           fi
           crane tag "$CHECK_IMAGE" main
@@ -150,7 +152,7 @@ jobs:
             gh label create preview-alert
           fi
           issue=$(gh api --paginate "repos/$GH_REPO/issues?state=open&labels=preview-alert&per_page=100" |
-            jq -sr --arg title "$title" 'first(.[][] | select(.title == $title and (has("pull_request") | not)) | .number) // empty')
+            jq -sr 'first(.[][] | select(has("pull_request") | not) | .number) // empty')
           body=$(printf 'Commit %s failed in [this workflow run](%s/%s/actions/runs/%s).' \
             "$COMMIT" "$GITHUB_SERVER_URL" "$GH_REPO" "$GITHUB_RUN_ID")
           if [[ -n "$issue" ]]; then
