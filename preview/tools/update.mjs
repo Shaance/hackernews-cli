@@ -3,7 +3,7 @@ import { homedir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import * as release from './release.mjs';
 import { ReleaseError, SignatureMismatch } from './release.mjs';
-import { checkRelease } from './session.mjs';
+import { checkHealth, checkRelease, SessionCapacityError } from './session.mjs';
 
 const lib = join(homedir(), '.local/lib/hn-preview');
 const state = join(homedir(), '.local/state/hn-preview');
@@ -17,6 +17,7 @@ const releasePath = (id) => join(lib, folder(id));
 const path = (name) => join(state, name + '.json');
 const log = (decision, fields = {}) => console.log(JSON.stringify({ decision, ...fields }));
 const reasonOf = (error, fallback) => (error instanceof ReleaseError ? error.message : fallback);
+class RecoveryPending extends ReleaseError {}
 
 async function optional(operation) {
   try {
@@ -57,12 +58,27 @@ async function localImage(id) {
   return image;
 }
 
+async function imagePresent(image) {
+  try {
+    const result = await release.command(
+      process.env.DOCKER || 'docker',
+      ['image', 'inspect', '--format', '{{.Id}}', image],
+      120_000,
+    );
+    if (result.stdout.trim() !== image) throw new ReleaseError('Local image ID differs');
+    return true;
+  } catch (error) {
+    if (/no such image/i.test(error.stderr ?? '')) return false;
+    throw new ReleaseError('Docker image inspect failed');
+  }
+}
+
 async function stage(descriptor) {
   const id = descriptor.digest;
   const existing = await localImage(id);
+  if (existing && (await imagePresent(existing))) return;
   if (id === release.bootstrap) {
-    if (!existing) throw new ReleaseError('Bootstrap release is missing');
-    return;
+    throw new ReleaseError('Bootstrap release or image is missing');
   }
   await release.verifyRelease(descriptor);
   const ref = release.imageRef(id);
@@ -140,26 +156,65 @@ async function prune(good) {
 
 const busy = async () => Boolean(await docker(['ps', '-q', '--filter', 'label=hn-preview=local']));
 
+async function attemptRelease(id, restart) {
+  try {
+    if (restart) await activate(id);
+    await checkRelease(id, await localImage(id), snapshot, docker);
+    return null;
+  } catch (error) {
+    return error instanceof ReleaseError ? error : new ReleaseError('Release checks failed');
+  }
+}
+
 async function update() {
   if (!['dev', 'prod'].includes(role) || !snapshot || process.argv.length !== (check ? 3 : 2))
     throw new ReleaseError('Configure PREVIEW_ROLE and SNAPSHOT; optional argument: --check');
   const tools = (await fs.readFile(new URL('./VERSION', import.meta.url), 'utf8')).trim();
-  const record = await release.readRollout();
+  const attempt = await read('attempt');
+  if (attempt && (!release.releaseId(attempt.target) || !release.releaseId(attempt.known_good)))
+    throw new ReleaseError('Invalid interrupted attempt');
+  let record;
+  try {
+    record = await release.readRollout();
+  } catch (error) {
+    if (!attempt || check) throw error;
+    try {
+      await checkHealth(attempt.target, snapshot);
+      log('recovery-pending', { target: attempt.target, reason: 'Rollout unavailable' });
+    } catch {
+      const status = await read('committed');
+      const rollback = await attemptRelease(attempt.known_good, true);
+      const reason =
+        'Rollout unavailable' + (rollback ? '; known_good also failed: ' + rollback.message : '');
+      await save('committed', {
+        ...status,
+        committed: rollback ? null : attempt.known_good,
+        failed: status?.failed === attempt.known_good ? null : (status?.failed ?? null),
+        reason: status?.reason ? status.reason + '; ' + reason : reason,
+        tools,
+      });
+      log('recovery-pending', {
+        target: attempt.target,
+        committed: rollback ? null : attempt.known_good,
+        reason,
+      });
+    }
+    process.exitCode = 1;
+    return;
+  }
   const target = desired(record).digest;
   const installed = await current();
   const status = await read('committed');
-  const attempt = await read('attempt');
   const deferred = await read('deferred');
-  if (attempt && (!release.releaseId(attempt.target) || !release.releaseId(attempt.known_good)))
-    throw new ReleaseError('Invalid interrupted attempt');
   const running =
     target === installed || check
       ? ((await release.readLocalHealth().catch(() => null))?.running ?? null)
       : null;
-  const failed = retainedFailure(record, status) ? status.failed : null;
+  const failed =
+    retainedFailure(record, status) && status.failed !== record.good.digest ? status.failed : null;
   let action = 'check-current';
   if (attempt) action = 'recover';
-  else if (failed === target) action = 'skip-failed';
+  else if (failed === target && target !== record.good.digest) action = 'skip-failed';
   else if (target !== installed) action = 'stage';
   else if (running === installed && status?.committed === installed) action = 'no-op';
   const writeStatus = (rollout, committed, failed = null, reason = null) =>
@@ -188,10 +243,18 @@ async function update() {
     return log(action, { target });
   }
   if (attempt) {
-    if (!(await localImage(record.good.digest))) await stage(record.good);
-    const reason =
-      status?.failed === attempt.target ? 'Interrupted rollback already recorded' : null;
-    const superseded = attempt.target !== target && 'Interrupted target is no longer desired';
+    await stage(record.good);
+    let reason = null;
+    if (attempt.target !== record.good.digest) {
+      if (status?.failed === attempt.target)
+        reason = new ReleaseError(status.reason || 'Interrupted rollback already recorded');
+      else if (status?.committed === null)
+        reason = new RecoveryPending(status.reason || 'Interrupted rollback is unverified');
+    }
+    const superseded =
+      attempt.target !== target
+        ? new ReleaseError('Interrupted target is no longer desired')
+        : null;
     return finish(record, attempt.target, true, reason || superseded);
   }
 
@@ -206,7 +269,7 @@ async function update() {
       if (deferred?.target !== target) await save('deferred', { target, since: Date.now() });
       return log('deferred', { target });
     }
-    if (!(await localImage(record.good.digest))) await stage(record.good);
+    if (target !== record.good.digest) await stage(record.good);
     try {
       await fs.access(snapshot);
       await release.command(
@@ -215,7 +278,7 @@ async function update() {
         60_000,
       );
     } catch (error) {
-      if (typeof error.code !== 'number' || error.killed)
+      if (error.killed || (typeof error.code !== 'number' && !error.signal))
         throw new ReleaseError('Snapshot validation could not run');
       return rejectTarget(record, 'Release rejected the live snapshot');
     }
@@ -232,40 +295,45 @@ async function update() {
   )
     return log('record-changed', { target, desired: next.digest });
   await save('attempt', { target, known_good: latest.good.digest });
-  return finish(latest, target, action === 'stage', null);
+  return finish(latest, target, action === 'stage' || running !== installed, null);
 
   async function rejectTarget(rollout, reason) {
-    await writeStatus(rollout, status?.committed ?? null, target, reason);
-    log('failed', { target, reason });
+    const rejected = target === rollout.good.digest ? failed : target;
+    await writeStatus(rollout, status?.committed ?? null, rejected, reason);
+    log(target === rollout.good.digest ? 'check-failed' : 'failed', { target, reason });
     process.exitCode = 1;
   }
 
-  async function attemptRelease(id, restart) {
-    try {
-      if (restart) await activate(id);
-      await checkRelease(id, await localImage(id), snapshot, docker);
-      return null;
-    } catch (error) {
-      return reasonOf(error, 'Release checks failed');
-    }
-  }
-
-  async function finish(rollout, id, restart, reason) {
+  async function finish(rollout, id, restart, failure) {
     const good = rollout.good.digest;
-    reason ||= await attemptRelease(id, restart);
-    const committed = reason ? good : id;
-    if (reason) {
-      const rollback = await attemptRelease(good, true);
-      if (rollback) reason += '; known_good also failed: ' + rollback;
+    failure ||= await attemptRelease(id, restart);
+    const transient = failure instanceof SessionCapacityError || failure instanceof RecoveryPending;
+    const rollbackNeeded = failure && id !== good && (!transient || restart);
+    const rollback = rollbackNeeded ? await attemptRelease(good, true) : null;
+    let committed = id;
+    if (failure) {
+      if (id === good || rollback) committed = null;
+      else if (rollbackNeeded) committed = good;
+      else committed = status?.committed ?? null;
     }
-    const failed = retainedFailure(rollout, status) ? status.failed : null;
-    if (reason) await writeStatus(rollout, committed, id, reason);
-    else await writeStatus(rollout, committed, failed, failed ? status.reason : null);
-    await fs.rm(path('attempt'));
+    const previousFailure =
+      retainedFailure(rollout, status) && status.failed !== good ? status.failed : null;
+    const rejected = failure && !transient && id !== good ? id : previousFailure;
+    let reason = failure?.message ?? (rejected ? status.reason : null);
+    if (rollback) reason += '; known_good also failed: ' + rollback.message;
+    await writeStatus(rollout, committed, rejected, reason);
+    if (!failure || (id !== good && !rollback)) await fs.rm(path('attempt'));
     await fs.rm(path('deferred'), { force: true });
-    await prune(good);
-    log(reason ? 'rolled-back' : 'committed', { target: id, committed, reason });
-    if (reason) process.exitCode = 1;
+    if (!failure || (id !== good && !rollback)) await prune(good);
+    const decision = !failure
+      ? 'committed'
+      : rollback
+        ? 'rollback-failed'
+        : rollbackNeeded
+          ? 'rolled-back'
+          : 'check-failed';
+    log(decision, { target: id, committed, reason });
+    if (failure) process.exitCode = 1;
   }
 }
 

@@ -127,8 +127,18 @@ async function fakeProcess() {
       images.push(config.releases[second.split('@')[1]].image);
       save('images', [...new Set(images)]);
     } else if (first === 'image' && second === 'inspect') {
-      const id = config.releases[args.at(-1).split('@')[1]].image;
-      assert(images.includes(id));
+      const ref = args.at(-1);
+      const id = ref.includes('@') ? config.releases[ref.split('@')[1]].image : ref;
+      if (fault === 'inspect-unavailable') {
+        console.error('Cannot connect to the Docker daemon');
+        process.exitCode = 1;
+        return;
+      }
+      if (!images.includes(id)) {
+        console.error('Error response from daemon: No such image: ' + id);
+        process.exitCode = 1;
+        return;
+      }
       print(id);
     } else if (first === 'image' && second === 'ls') {
       print(images.join('\n'));
@@ -145,13 +155,19 @@ async function fakeProcess() {
     } else if (first === 'cp') {
       assert(existsSync(file('export-container')));
       if (second.endsWith('/hn')) {
+        const command =
+          fault === 'snapshot-signal'
+            ? 'kill -KILL "$$"'
+            : fault === 'snapshot-timeout'
+              ? 'exec sleep 70'
+              : 'test "' + fault + '" != snapshot';
         writeFileSync(
           args[2],
           `#!/bin/sh
 test "$1" = --validate-snapshot && test "$2" = "$SNAPSHOT" && test -s "$2" || exit 2
-test "${fault}" != snapshot
+${command}
 `,
-          { mode: 0o755 },
+          { mode: fault === 'snapshot-launch' ? 0o644 : 0o755 },
         );
       } else {
         assert.equal(second, 'export-container:/opt/release/.');
@@ -198,13 +214,18 @@ test "${fault}" != snapshot
         JSON.stringify({
           ...read(state + '/committed.json'),
           snapshot:
-            (targeted && fault === 'health') || fault === 'both-health' ? 'bad-snapshot' : snapshot,
+            (targeted && fault === 'health') ||
+            fault === 'both-health' ||
+            (!targeted && fault === 'full-forever-bad-good')
+              ? 'bad-snapshot'
+              : snapshot,
           running: targeted && fault === 'running' ? 'wrong-release' : RELEASE,
         }),
       );
     });
     const wss = new WebSocketServer({ noServer: true });
     let sessions = 0;
+    const started = Date.now();
     server.on('upgrade', (req, socket, head) => {
       if (
         req.headers.host !== PREVIEW_HOST ||
@@ -212,8 +233,20 @@ test "${fault}" != snapshot
         req.url !== '/session'
       )
         return socket.end('HTTP/1.1 403 Forbidden\r\n\r\n');
-      if (targeted && fault === 'full' && sessions++ === 0) {
+      if (
+        targeted &&
+        (fault === 'full-forever' ||
+          fault === 'full-forever-bad-good' ||
+          (fault === 'full' && sessions++ === 0))
+      ) {
         trace('session-full');
+        if (fault === 'full-forever' && Date.now() - started > 298_000) {
+          trace('session-pending');
+          return setTimeout(
+            () => socket.end('HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\n\r\n'),
+            4000,
+          );
+        }
         return socket.end('HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\n\r\n');
       }
       wss.handleUpgrade(req, socket, head, (ws) => {
@@ -221,7 +254,7 @@ test "${fault}" != snapshot
         save(id, {
           Image: targeted && fault === 'image' ? 'wrong-image' : PREVIEW_IMAGE,
           HostConfig: {
-            Runtime: DOCKER_RUNTIME,
+            Runtime: targeted ? DOCKER_RUNTIME || 'runc' : 'runsc-rootless',
             NetworkMode: targeted && fault === 'container' ? 'bridge' : 'none',
             ReadonlyRootfs: true,
             Memory: 268435456,
@@ -230,8 +263,15 @@ test "${fault}" != snapshot
         ws.on('close', () => rmSync(file(id), { force: true }));
         ws.send(Buffer.from('To'));
         ws.send(JSON.stringify({ type: 'ready', id }));
+        const snapshot = JSON.parse(readFileSync(SNAPSHOT));
+        const title = snapshot.items[snapshot.feeds.best[0]].title;
         if (targeted && fault === 'session') ws.send(JSON.stringify({ type: 'ended' }));
-        else ws.send(Buffer.from('p | New'));
+        else if (targeted && fault === 'error-screen') {
+          ws.send(Buffer.from("p | New Couldn't load Best stories"));
+          ws.send(JSON.stringify({ type: 'ended' }));
+        } else {
+          ws.send(Buffer.from('p | New ' + title));
+        }
       });
     });
     process.on('SIGTERM', () => {
@@ -267,7 +307,7 @@ async function fixture(context, options = {}) {
     PREVIEW_BIND: '127.0.0.1',
     PREVIEW_HOST: 'hn.example.test',
     PREVIEW_ORIGIN: 'https://preview.example.test',
-    DOCKER_RUNTIME: 'runsc-rootless',
+    DOCKER_RUNTIME: options.runtime ?? 'runsc-rootless',
     PREVIEW_ROLE: options.role ?? 'dev',
     COSIGN: join(home, 'cosign'),
     DOCKER: join(home, 'docker'),
@@ -277,6 +317,7 @@ async function fixture(context, options = {}) {
     R2_ACCESS_KEY_ID: 'test',
     R2_SECRET_ACCESS_KEY: 'secret-sentinel',
   };
+  if (options.runtime === null) delete env.DOCKER_RUNTIME;
   const systemctl = (...args) => exec(env.SYSTEMCTL, args, { env, timeout: 9000 });
   context.after(async () => {
     try {
@@ -301,12 +342,14 @@ async function fixture(context, options = {}) {
     preload,
     `
     import assert from 'node:assert/strict';
+    import {existsSync} from 'node:fs';
     import {readFile} from 'node:fs/promises';
     globalThis.fetch = async (input, init) => {
       const req = new Request(input, init);
       assert.equal(req.method, 'GET');
       assert.equal(req.url, 'https://test.r2.cloudflarestorage.com/snapshots/releases/rollout.json');
       assert.match(req.headers.get('Authorization'), /^AWS4-HMAC-SHA256 /);
+      if (existsSync(process.env.HOME + '/r2-unavailable')) return new Response('', {status: 503});
       return new Response(await readFile(process.env.HOME + '/rollout'));
     };
   `,
@@ -319,7 +362,7 @@ async function fixture(context, options = {}) {
     fault: options.fault,
     busy: options.busy,
     changed: idle,
-    target: proposed.candidate?.digest,
+    target: proposed.candidate?.digest ?? proposed.good.digest,
     releases: Object.fromEntries(
       releases.map((row) => [row.digest, { ...row, image: image(row.digest) }]),
     ),
@@ -327,11 +370,11 @@ async function fixture(context, options = {}) {
   const setRecord = (record) => json(join(home, 'rollout'), record);
   const save = (name, value) => json(join(state, name + '.json'), value);
   await Promise.all([
-    writeFile(snapshot, '{"live":true}\n'),
+    cp(new URL('../fixtures/snapshot.json', import.meta.url), snapshot),
     json(join(home, 'fake-config'), config),
     json(
       join(home, 'images'),
-      staged.map((row) => image(row.digest)),
+      (options.available ?? staged).map((row) => image(row.digest)),
     ),
     setRecord(proposed),
     save('committed', { committed: options.committed ?? bootstrap.digest }),
@@ -342,6 +385,11 @@ async function fixture(context, options = {}) {
     await writeFile(
       join(dir, 'release.env'),
       `PREVIEW_IMAGE=${image(row.digest)}\nRELEASE=${row.digest}\n`,
+    );
+    await writeFile(
+      join(dir, 'hn'),
+      '#!/bin/sh\ntest "$1" = --validate-snapshot && test -s "$2"\n',
+      { mode: 0o755 },
     );
   }
   if (options.attempt) await save('attempt', options.attempt);
@@ -361,6 +409,15 @@ async function fixture(context, options = {}) {
   return {
     setRecord,
     save,
+    stopGateway: () => systemctl('stop'),
+    setFault: async (fault) => {
+      config.fault = fault;
+      await json(join(home, 'fake-config'), config);
+    },
+    setOffline: async (offline) => {
+      if (offline) await writeFile(join(home, 'r2-unavailable'), '');
+      else await rm(join(home, 'r2-unavailable'), { force: true });
+    },
     status: () => read(join(state, 'committed.json')),
     images: () => read(join(home, 'images')),
     entries: () => readdir(lib),
@@ -392,7 +449,7 @@ async function fixture(context, options = {}) {
         ['--import', preload, join(tooling, 'update.mjs'), ...args],
         {
           env,
-          timeout: 25_000,
+          timeout: options.runTimeout ?? 25_000,
           stdio: ['ignore', 'pipe', 'pipe'],
         },
       );
@@ -416,8 +473,10 @@ async function fixture(context, options = {}) {
 
 const restartCount = (calls) => calls.filter(([name]) => name === 'systemctl').length;
 const journal = { target: candidate.digest, known_good: bootstrap.digest };
+const scenarios = [];
+const scenario = (name, run) => scenarios.push({ name, run });
 
-test('first apply from bootstrap and no-op heartbeat refresh', async (t) => {
+scenario('first apply from bootstrap and no-op heartbeat refresh', async (t) => {
   const host = await fixture(t);
   assert.equal((await host.run()).decision, 'committed');
   assert.equal(await host.current(), folder(candidate.digest));
@@ -441,7 +500,7 @@ test('first apply from bootstrap and no-op heartbeat refresh', async (t) => {
 });
 
 for (const fault of ['sigstore', 'registry', 'identity', 'annotations', 'snapshot']) {
-  test(fault + ' staging failure preserves the running release', async (t) => {
+  scenario(fault + ' staging failure preserves the running release', async (t) => {
     const host = await fixture(t, { fault });
     const result = await host.run(1);
     const status = await host.status();
@@ -457,8 +516,8 @@ for (const fault of ['sigstore', 'registry', 'identity', 'annotations', 'snapsho
   });
 }
 
-for (const fault of ['health', 'running', 'session', 'image', 'container', 'both-health']) {
-  test(fault + ' rolls back and suppresses retries', async (t) => {
+for (const fault of ['health', 'running', 'session', 'error-screen', 'image', 'container']) {
+  scenario(fault + ' rolls back and suppresses retries', async (t) => {
     const host = await fixture(t, { fault });
     const result = await host.run(1);
     assert.equal(result.decision, 'rolled-back');
@@ -468,7 +527,6 @@ for (const fault of ['health', 'running', 'session', 'image', 'container', 'both
     assert.equal(status.committed, bootstrap.digest);
     assert.equal(await host.exists('attempt'), false);
     assert.match(status.reason, /health|session/);
-    if (fault === 'both-health') assert.match(status.reason, /known_good also failed/);
     const calls = await host.calls();
     assert.equal(restartCount(calls), 2);
     assert.equal((await host.run()).decision, 'skip-failed');
@@ -476,7 +534,25 @@ for (const fault of ['health', 'running', 'session', 'image', 'container', 'both
   });
 }
 
-test('abort preserves failed marker and a different candidate clears it', async (t) => {
+scenario('both-health keeps the attempt until good passes its checks', async (t) => {
+  const host = await fixture(t, { fault: 'both-health' });
+  assert.equal((await host.run(1)).decision, 'rollback-failed');
+  let status = await host.status();
+  assert.equal(status.committed, null);
+  assert.equal(status.failed, candidate.digest);
+  assert.match(status.reason, /Gateway health.*known_good also failed.*Gateway health/);
+  assert.equal(await host.exists('attempt'), true);
+  assert.equal(await host.current(), bootstrap.digest);
+  await host.setFault(null);
+  assert.equal((await host.run(1)).decision, 'rolled-back');
+  status = await host.status();
+  assert.equal(status.committed, bootstrap.digest);
+  assert.equal(status.failed, candidate.digest);
+  assert.equal(await host.exists('attempt'), false);
+  assert.equal((await host.run()).decision, 'skip-failed');
+});
+
+scenario('abort preserves failed marker and a different candidate clears it', async (t) => {
   const host = await fixture(t, { fault: 'health' });
   await host.run(1);
   await host.setRecord(idle);
@@ -491,7 +567,7 @@ for (const [label, id] of [
   ['before flip', bootstrap.digest],
   ['after flip', candidate.digest],
 ]) {
-  test('recover attempt ' + label, async (t) => {
+  scenario('recover attempt ' + label, async (t) => {
     const host = await fixture(t, {
       staged: [bootstrap, candidate],
       current: id,
@@ -505,7 +581,7 @@ for (const [label, id] of [
   });
 }
 
-test('recover superseded attempt by checking record good', async (t) => {
+scenario('recover superseded attempt by checking record good', async (t) => {
   const host = await fixture(t, {
     staged: [bootstrap, candidate],
     current: candidate.digest,
@@ -519,7 +595,7 @@ test('recover superseded attempt by checking record good', async (t) => {
   assert.equal(restartCount(await host.calls()), 1);
 });
 
-test('recover after a rollback outcome was already written', async (t) => {
+scenario('recover after a rollback outcome was already written', async (t) => {
   const host = await fixture(t, { staged: [bootstrap, candidate], attempt: journal });
   await host.save('committed', {
     committed: bootstrap.digest,
@@ -533,7 +609,174 @@ test('recover after a rollback outcome was already written', async (t) => {
   assert.equal(restartCount(await host.calls()), 1);
 });
 
-test('record changes during staging', async (t) => {
+for (const current of [bootstrap.digest, candidate.digest]) {
+  scenario(`restore good without R2 when target is unhealthy (${current})`, async (t) => {
+    const host = await fixture(t, {
+      staged: [bootstrap, candidate],
+      current,
+      attempt: journal,
+      fault: 'health',
+    });
+    await host.setOffline(true);
+    const before = await host.status();
+    assert.equal((await host.run(1, '--check')).decision, 'error');
+    assert.deepEqual(await host.status(), before);
+    assert.equal(restartCount(await host.calls()), 0);
+    assert.equal((await host.run(1)).decision, 'recovery-pending');
+    assert.equal(await host.current(), bootstrap.digest);
+    assert.equal((await host.status()).committed, bootstrap.digest);
+    assert.equal(await host.exists('attempt'), true);
+    assert.equal(restartCount(await host.calls()), 1);
+    await host.setFault(null);
+    await host.setOffline(false);
+    assert.equal((await host.run()).decision, 'committed');
+    assert.equal((await host.status()).committed, candidate.digest);
+    assert.equal(await host.exists('attempt'), false);
+  });
+}
+
+scenario('keep a healthy target running while R2 is unavailable', async (t) => {
+  const host = await fixture(t, {
+    staged: [bootstrap, candidate],
+    current: candidate.digest,
+    attempt: journal,
+  });
+  await host.setOffline(true);
+  assert.equal((await host.run(1)).decision, 'recovery-pending');
+  assert.equal(await host.current(), folder(candidate.digest));
+  assert.equal(await host.exists('attempt'), true);
+  assert.equal(restartCount(await host.calls()), 0);
+});
+
+scenario('offline recovery keeps an unverified rollback uncommitted', async (t) => {
+  const host = await fixture(t, {
+    staged: [bootstrap, candidate],
+    current: candidate.digest,
+    attempt: journal,
+    fault: 'both-health',
+  });
+  await host.setOffline(true);
+  assert.equal((await host.run(1)).decision, 'recovery-pending');
+  const status = await host.status();
+  assert.equal(status.committed, null);
+  assert.equal(status.failed, null);
+  assert.match(status.reason, /known_good also failed/);
+  assert.equal(await host.exists('attempt'), true);
+});
+
+for (const [label, record, current] of [
+  ['candidate', rollout(), bootstrap.digest],
+  ['good', rollout(candidate, null, 'idle'), bootstrap.digest],
+]) {
+  scenario(`reuse retained ${label} while Sigstore is unavailable`, async (t) => {
+    const host = await fixture(t, {
+      staged: [bootstrap, candidate],
+      record,
+      current,
+      fault: 'sigstore',
+    });
+    assert.equal((await host.run()).decision, 'committed');
+    assert.equal(await host.current(), folder(candidate.digest));
+    const calls = await host.calls();
+    assert(
+      calls.some(
+        ([name, verb, action]) => name === 'docker' && verb === 'image' && action === 'inspect',
+      ),
+    );
+    assert(
+      !calls.some(([name, verb]) => name === 'cosign' || (name === 'docker' && verb === 'pull')),
+    );
+  });
+}
+
+scenario('missing retained image triggers signature verification and pull', async (t) => {
+  const host = await fixture(t, { staged: [bootstrap, candidate], available: [bootstrap] });
+  assert.equal((await host.run()).decision, 'committed');
+  const calls = await host.calls();
+  assert(calls.some(([name]) => name === 'cosign'));
+  assert(calls.some(([name, verb]) => name === 'docker' && verb === 'pull'));
+});
+
+scenario('an unavailable Docker daemon does not trigger a pull', async (t) => {
+  const host = await fixture(t, { staged: [bootstrap, candidate], fault: 'inspect-unavailable' });
+  assert.equal((await host.run(1)).decision, 'error');
+  assert.equal(await host.current(), bootstrap.digest);
+  assert.deepEqual(await host.status(), { committed: bootstrap.digest });
+  assert(
+    !(await host.calls()).some(
+      ([name, verb]) => name === 'cosign' || (name === 'docker' && verb === 'pull'),
+    ),
+  );
+});
+
+for (const runtime of ['runc', null]) {
+  scenario(`reject session runtime ${runtime}`, async (t) => {
+    const host = await fixture(t, { runtime });
+    assert.equal((await host.run(1)).decision, 'rolled-back');
+    assert.equal(await host.current(), bootstrap.digest);
+    assert.equal((await host.status()).failed, candidate.digest);
+    assert.match((await host.status()).reason, /container configuration/);
+  });
+}
+
+scenario('restart the current good release when the gateway is down', async (t) => {
+  const host = await fixture(t, { record: idle });
+  await host.stopGateway();
+  assert.equal((await host.run()).decision, 'committed');
+  assert.equal((await host.status()).committed, bootstrap.digest);
+  assert.equal((await host.status()).failed, null);
+  assert.equal(restartCount(await host.calls()), 2);
+});
+
+scenario('restart a current release when another build is running', async (t) => {
+  const host = await fixture(t, { record: idle, fault: 'running' });
+  await host.setFault(null);
+  assert.equal((await host.run()).decision, 'committed');
+  assert.equal((await host.status()).committed, bootstrap.digest);
+  assert.equal(restartCount(await host.calls()), 1);
+});
+
+scenario('a failing good release remains eligible for recovery', async (t) => {
+  const host = await fixture(t, { record: idle, fault: 'running' });
+  assert.equal((await host.run(1)).decision, 'check-failed');
+  let status = await host.status();
+  assert.equal(status.committed, null);
+  assert.equal(status.failed, null);
+  assert.match(status.reason, /health/);
+  assert.equal(await host.exists('attempt'), true);
+  await host.setFault(null);
+  assert.equal((await host.run()).decision, 'committed');
+  status = await host.status();
+  assert.equal(status.committed, bootstrap.digest);
+  assert.equal(status.failed, null);
+  assert.equal(await host.exists('attempt'), false);
+});
+
+scenario('a good release with a signature mismatch remains eligible', async (t) => {
+  const host = await fixture(t, { record: rollout(candidate, null, 'idle'), fault: 'annotations' });
+  assert.equal((await host.run(1)).decision, 'check-failed');
+  const status = await host.status();
+  assert.equal(status.committed, bootstrap.digest);
+  assert.equal(status.failed, null);
+  assert.match(status.reason, /signature/);
+  await host.setFault(null);
+  assert.equal((await host.run()).decision, 'committed');
+  assert.equal((await host.status()).committed, candidate.digest);
+});
+
+for (const fault of ['snapshot-signal', 'snapshot-launch']) {
+  scenario(`${fault} classifies validator failure`, async (t) => {
+    const host = await fixture(t, { fault });
+    const result = await host.run(1);
+    const status = await host.status();
+    assert.equal(result.decision, fault === 'snapshot-signal' ? 'failed' : 'error');
+    assert.equal(status.failed, fault === 'snapshot-signal' ? candidate.digest : undefined);
+    assert.equal(await host.current(), bootstrap.digest);
+    assert.equal(restartCount(await host.calls()), 0);
+  });
+}
+
+scenario('record changes during staging', async (t) => {
   const host = await fixture(t, { fault: 'change-record' });
   assert.equal((await host.run()).decision, 'record-changed');
   assert.equal(await host.current(), bootstrap.digest);
@@ -542,7 +785,7 @@ test('record changes during staging', async (t) => {
   assert.deepEqual(await host.status(), { committed: bootstrap.digest });
 });
 
-test('idle deferral keeps its first timestamp and overrides after two hours', async (t) => {
+scenario('idle deferral keeps its first timestamp and overrides after two hours', async (t) => {
   const host = await fixture(t, { busy: true });
   assert.equal((await host.run()).decision, 'deferred');
   const first = await host.run(0, '--check');
@@ -558,7 +801,7 @@ test('idle deferral keeps its first timestamp and overrides after two hours', as
   assert.equal(await host.exists('deferred'), false);
 });
 
-test('prune preserves good, current and previous directories and images', async (t) => {
+scenario('prune preserves good, current and previous directories and images', async (t) => {
   const stale = release('c', 9);
   const host = await fixture(t, {
     record: rollout(bootstrap, next),
@@ -578,7 +821,7 @@ test('prune preserves good, current and previous directories and images', async 
   );
 });
 
-test('--check reports a decision without modifying local state', async (t) => {
+scenario('--check reports a decision without modifying local state', async (t) => {
   const host = await fixture(t);
   const before = await host.fingerprint();
   const result = await host.run(0, '--check');
@@ -592,7 +835,7 @@ test('--check reports a decision without modifying local state', async (t) => {
   ]);
 });
 
-test('current without matching committed must run checks', async (t) => {
+scenario('current without matching committed must run checks', async (t) => {
   const host = await fixture(t, { staged: [bootstrap, candidate], current: candidate.digest });
   assert.equal((await host.run()).decision, 'committed');
   assert.equal((await host.status()).committed, candidate.digest);
@@ -601,11 +844,64 @@ test('current without matching committed must run checks', async (t) => {
   assert(calls.some(([name, call]) => name === 'docker' && call === 'container'));
 });
 
-test('production follows stage policy and retries a full session', async (t) => {
+scenario('production follows stage policy and retries a full session', async (t) => {
   const host = await fixture(t, { role: 'prod', fault: 'full' });
   assert.equal((await host.run()).decision, 'no-op');
   assert.deepEqual(await host.calls(), []);
   await host.setRecord(rollout(bootstrap, candidate, 'prod'));
   assert.equal((await host.run()).decision, 'committed');
   assert((await host.calls()).some(([name]) => name === 'session-full'));
+});
+
+scenario('validator timeout remains transient', async (t) => {
+  const host = await fixture(t, { fault: 'snapshot-timeout', runTimeout: 80_000 });
+  const result = await host.run(1);
+  assert.equal(result.decision, 'error');
+  assert.match(result.reason, /validation could not run/);
+  assert.deepEqual(await host.status(), { committed: bootstrap.digest });
+  assert.equal(await host.current(), bootstrap.digest);
+  assert.equal(restartCount(await host.calls()), 0);
+});
+
+scenario('five minutes of full sessions defer the candidate without failing it', async (t) => {
+  const host = await fixture(t, { fault: 'full-forever', runTimeout: 330_000 });
+  const started = Date.now();
+  const result = await host.run(1);
+  assert(Date.now() - started >= 299_000);
+  assert.equal(result.decision, 'rolled-back');
+  let status = await host.status();
+  assert.equal(status.committed, bootstrap.digest);
+  assert.equal(status.failed, null);
+  assert.match(status.reason, /session limit/);
+  assert.equal(await host.current(), bootstrap.digest);
+  assert.equal(await host.exists('attempt'), false);
+  assert((await host.calls()).filter(([name]) => name === 'session-full').length > 1);
+  assert((await host.calls()).some(([name]) => name === 'session-pending'));
+  await host.setFault(null);
+  assert.equal((await host.run()).decision, 'committed');
+  status = await host.status();
+  assert.equal(status.committed, candidate.digest);
+  assert.equal(status.failed, null);
+});
+
+scenario('capacity and failed rollback recover good before retrying the candidate', async (t) => {
+  const host = await fixture(t, { fault: 'full-forever-bad-good', runTimeout: 330_000 });
+  assert.equal((await host.run(1)).decision, 'rollback-failed');
+  let status = await host.status();
+  assert.equal(status.committed, null);
+  assert.equal(status.failed, null);
+  assert.match(status.reason, /session limit.*known_good also failed/);
+  assert.equal(await host.exists('attempt'), true);
+  await host.setFault(null);
+  assert.equal((await host.run(1)).decision, 'rolled-back');
+  status = await host.status();
+  assert.equal(status.committed, bootstrap.digest);
+  assert.equal(status.failed, null);
+  assert.equal(await host.exists('attempt'), false);
+  assert.equal((await host.run()).decision, 'committed');
+  assert.equal((await host.status()).committed, candidate.digest);
+});
+
+test('reader updater', { concurrency: 6 }, async (t) => {
+  await Promise.all(scenarios.map(({ name, run }) => t.test(name, run)));
 });
