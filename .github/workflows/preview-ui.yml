@@ -55,21 +55,35 @@ jobs:
         run: |
           page_commit=$(git log -1 --format=%H -- preview/index.html preview/app.js preview/style.css \
             preview/favicon.svg preview/build-ui.mjs preview/package.json preview/package-lock.json)
-          live=$(curl -fsS --max-time 30 https://hn.hashcode.dev/)
-          live_commit=$(sed -n 's/.*<meta name="preview-page-commit" content="\([0-9a-f]\{40\}\)".*/\1/p' <<<"$live")
+          if ! live_response=$(curl -sS --max-time 30 -w '\n%{http_code}' https://hn.hashcode.dev/); then
+            echo "Live page request failed. Deferring the page deploy."
+            exit 0
+          fi
+          live_status=${live_response##*$'\n'}
+          live_commit=
+          if [[ "$live_status" == 2?? ]]; then
+            live=${live_response%$'\n'*}
+            live_commit=$(sed -n 's/.*<meta name="preview-page-commit" content="\([0-9a-f]\{40\}\)".*/\1/p' <<<"$live")
+          else
+            echo "Live page returned HTTP $live_status. Continuing without a live page commit."
+          fi
           if [[ "$live_commit" == "$page_commit" && "$FORCE" != true ]]; then
             echo "Page commit $page_commit is already live."
             exit 0
           fi
 
           if ! health=$(curl -fsS --max-time 30 https://hn-session.hashcode.dev/healthz) ||
-             ! armed=$(jq -er 'select(type == "object") | if has("rollout") then "yes" else "no" end' <<<"$health"); then
+             ! armed=$(jq -er 'select(type == "object") | (.running != null) | tostring' <<<"$health"); then
             echo "Production health is unavailable. Deferring the page deploy."
             exit 0
           fi
-          if [[ "$armed" == no ]]; then
+          if [[ "$armed" == false ]]; then
             echo "Gateway gate is not armed."
           else
+            if ! jq -e '.rollout != null' >/dev/null <<<"$health"; then
+              echo "Production health is missing rollout status. Deferring the page deploy."
+              exit 0
+            fi
             if ! good_commit=$(jq -er '.rollout.good as $good |
               select(($good.digest | type) == "string" and ($good.digest | length) > 0 and
                 .running == $good.digest and .committed == $good.digest) |

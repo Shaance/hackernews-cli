@@ -22,61 +22,55 @@ jobs:
         with:
           ref: main
           persist-credentials: false
-      - name: Read production health
-        id: health
-        shell: bash
-        run: |
-          if ! curl -fsS --max-time 30 https://hn-session.hashcode.dev/healthz -o "$RUNNER_TEMP/preview-health.json" ||
-             ! armed=$(jq -er 'select(type == "object") | has("committed") | tostring' "$RUNNER_TEMP/preview-health.json"); then
-            echo "state=unavailable" >> "$GITHUB_OUTPUT"
-          elif [[ "$armed" == false ]]; then
-            echo "Preview release monitor is not armed."
-            echo "state=unarmed" >> "$GITHUB_OUTPUT"
-          else
-            echo "state=armed" >> "$GITHUB_OUTPUT"
-          fi
       - uses: imjasonh/setup-crane@v0.7
-        if: steps.health.outputs.state == 'armed'
         continue-on-error: true
       - name: Check the release and reconcile alert issues
-        if: steps.health.outputs.state != 'unarmed'
         shell: bash
         env:
-          HEALTH_STATE: ${{ steps.health.outputs.state }}
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           DOCKER_CONFIG: ${{ runner.temp }}/preview-monitor-docker
         run: |
-          node <<'NODE'
-          const { execFileSync } = require('node:child_process');
-          const { readFileSync } = require('node:fs');
-          const { GH_REPO, GITHUB_SERVER_URL, GITHUB_RUN_ID, HEALTH_STATE, RUNNER_TEMP } = process.env;
+          node --input-type=module <<'NODE'
+          import { execFileSync } from 'node:child_process';
+          import { setTimeout as wait } from 'node:timers/promises';
+          const { GH_REPO, GITHUB_SERVER_URL, GITHUB_RUN_ID } = process.env;
           const run = (cmd, ...args) => execFileSync(cmd, args, { encoding: 'utf8', timeout: 60_000 }).trim();
           const gh = (...args) => run('gh', ...args);
-          const failures = [];
-          const check = (description, evaluate) => {
-            try {
-              evaluate();
-            } catch (error) {
-              failures.push(`${description}: ${error.stderr?.trim() || error.message}`);
-            }
-          };
-          const now = Date.now();
-          const hoursOld = (value, field) => {
-            const time = Date.parse(value);
-            if (!Number.isFinite(time)) throw Error(`missing or invalid ${field}`);
-            return (now - time) / 3_600_000;
-          };
-          const count = (value, field) => {
-            if (!/^\d+$/.test(String(value))) throw Error(`missing or invalid ${field}`);
-            return BigInt(value);
-          };
+          const listFailures = failures => failures.map(message => `- ${message}`).join('\n');
 
-          if (HEALTH_STATE !== 'armed') {
-            failures.push('Production /healthz is unreachable or did not return a JSON object.');
-          } else {
-            const health = JSON.parse(readFileSync(`${RUNNER_TEMP}/preview-health.json`, 'utf8'));
-            const { stage, since, heartbeat, good, last_abort: lastAbort } = health.rollout ?? {};
+          function evaluate() {
+            let health;
+            try {
+              health = JSON.parse(run('curl', '-fsS', '--max-time', '30', 'https://hn-session.hashcode.dev/healthz'));
+              if (!health || typeof health !== 'object' || Array.isArray(health))
+                throw Error('expected a JSON object');
+            } catch {
+              return ['Production /healthz is unreachable or did not return a JSON object.'];
+            }
+            if (health.running == null) return null;
+            const missing = ['committed', 'rollout'].filter(field => health[field] == null);
+            if (missing.length) return [`Production /healthz is missing ${missing.join(' and ')} while the monitor is armed.`];
+
+            const failures = [];
+            const check = (description, evaluate) => {
+              try {
+                evaluate();
+              } catch (error) {
+                failures.push(`${description}: ${error.stderr?.trim() || error.message}`);
+              }
+            };
+            const now = Date.now();
+            const hoursOld = (value, field) => {
+              const time = Date.parse(value);
+              if (!Number.isFinite(time)) throw Error(`missing or invalid ${field}`);
+              return (now - time) / 3_600_000;
+            };
+            const count = (value, field) => {
+              if (!/^\d+$/.test(String(value))) throw Error(`missing or invalid ${field}`);
+              return BigInt(value);
+            };
+            const { stage, since, heartbeat, good, last_abort: lastAbort } = health.rollout;
             check('Rollout stage', () => {
               if (!['idle', 'dev', 'prod', 'writer'].includes(stage)) throw Error(`invalid stage ${stage}`);
               const limit = stage === 'writer' ? 1 : 6;
@@ -117,18 +111,31 @@ jobs:
               const runs = ['push', 'workflow_dispatch'].flatMap(event =>
                 JSON.parse(gh('api', `${endpoint}&event=${event}`)).workflow_runs);
               const latest = runs.sort((a, b) => b.run_number - a.run_number)[0];
-              if (latest?.conclusion === 'failure') throw Error(`latest completed run on main failed (${latest.html_url})`);
+              if (['failure', 'cancelled', 'timed_out'].includes(latest?.conclusion))
+                throw Error(`latest completed run on main concluded ${latest.conclusion} (${latest.html_url})`);
             });
+            return failures;
           }
 
-          if (failures.length) console.error(failures.map(message => `- ${message}`).join('\n'));
+          let failures = evaluate();
+          if (failures?.length) {
+            console.error(listFailures(failures));
+            console.log('Waiting 20 minutes before checking the release again.');
+            await wait(20 * 60_000);
+            failures = evaluate();
+          }
+          if (failures === null) {
+            console.log('Preview release monitor is not armed.');
+            process.exit(0);
+          }
+          if (failures.length) console.error(listFailures(failures));
           const issues = JSON.parse(gh('api', '--paginate', '--slurp', `repos/${GH_REPO}/issues?state=open&labels=preview-alert&per_page=100`))
             .flat().filter(issue => !issue.pull_request);
           if (failures.length) {
-            const body = `${failures.map(message => `- ${message}`).join('\n')}\n\n[Monitor run](${GITHUB_SERVER_URL}/${GH_REPO}/actions/runs/${GITHUB_RUN_ID})`;
+            const list = listFailures(failures);
+            const body = `${list}\n\n[Monitor run](${GITHUB_SERVER_URL}/${GH_REPO}/actions/runs/${GITHUB_RUN_ID})`;
             if (issues.length) {
               // Comment only when the failures change, so a lasting problem sends one email, not one an hour.
-              const list = failures.map(message => `- ${message}`).join('\n');
               const comments = JSON.parse(gh('api', '--paginate', '--slurp', `repos/${GH_REPO}/issues/${issues[0].number}/comments?per_page=100`)).flat();
               const last = (comments.at(-1)?.body ?? issues[0].body ?? '').split('\n\n[Monitor run]')[0];
               if (last !== list) gh('issue', 'comment', String(issues[0].number), '--body', body);
