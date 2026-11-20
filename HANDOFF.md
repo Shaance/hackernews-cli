@@ -34,7 +34,7 @@ See the status table at the end (updated last).
 
 ## Known follow-ups (not started)
 
-- crates.io: the crate is `hn-reader` (#73; `hn` was taken), first published as 0.2.1 by the `crates-io` job with a stored token. Since #77 the job uses trusted publishing: crates.io trusts `Shaance/hn` / `tui-release.yml` / environment `crates-io`, and that GitHub environment only deploys from `tui-v*` tags. The `CARGO_REGISTRY_TOKEN` secret is deleted and the token revoked. The next `tui-v*` tag is the first real trusted-publishing run; if it fails at the auth step, check those three values match.
+- crates.io: the crate is `hn-reader` (#73; `hn` was taken), first published as 0.2.1 by the `crates-io` job with a stored token. Since #77 the job uses trusted publishing: crates.io trusts `Shaance/hn` / `tui-release.yml` / environment `crates-io`, and that GitHub environment only deploys from `tui-v*` tags. The `CARGO_REGISTRY_TOKEN` secret is deleted and the token revoked. hn 0.2.2 (#78 week ages, #79 release, run 44643723513) was the first trusted-publishing release: every job passed on the first attempt and crates.io records the publish against that run. If a later run fails at the auth step, check those three values match. Optional: turn on "Require trusted publishing for all new versions" in the crate settings.
 - `macos-15` runners often go unassigned: jobs are cancelled after 15 min with zero steps. Rerun only the failed jobs (`gh run rerun <id> --failed`); 0.2.1 needed three attempts.
 - cargo-binstall metadata is in `Cargo.toml` (#69); URLs and archive layout checked, but no real `cargo binstall` run yet, so the README doesn't mention it.
 - Intel macOS binary is only cross-built; first native execution check happens on an Intel Mac or Rosetta.
