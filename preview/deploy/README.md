@@ -37,7 +37,7 @@ No blanket bucket TTL is configured. Current/last-good data must survive publish
 
 Public UI: https://hn.hashcode.dev (Vercel project `hn-preview`, team `christophe-has-projects`). Gateway: https://hn-session.hashcode.dev on production38.242.207.222. The daily publisher ran on development 51.210.151.84 at launch and on Netcup 62.83.128.195 since 2026-11-17, with the approved Anthropic credential; production has only the bucket-scoped reader and hourly adoption. No production inference key or second daily generation schedule. The direct public gateway port8782 remains blocked.
 
-The UI was deployed from `preview/dist` with the Vercel CLI. GitHub integration was unavailable. Since 2026-11-20 `.github/workflows/preview-ui.yml` rebuilds `preview/dist` and redeploys it to production when a change to the page's files reaches `main`; run it by hand from the Actions tab to redeploy without a change. Its `VERCEL_TOKEN` lives in the GitHub `production` environment, which only protected branches can use. The token is the Vercel access token "hn GitHub Actions (preview UI deploy)", scoped to the `hn-preview` project only, and it expires on 2027-11-20; after that the workflow fails until a new token replaces the secret. The workflow then checks that the live page still sends its Content-Security-Policy and points at the session gateway. Roll back from the Vercel dashboard by promoting the previous deployment. The gateway, visitor image and publisher binary are still released by hand. When a change alters the messages between the page and the gateway, release the gateway first and merge the page change after it. Do not upload the repository root or generated credentials. Both host routes came from canonical infrastructure commit87c53e3. Public DNS, certificate, WebSocket/session limits, isolation settings and disconnect cleanup passed; browser evidence is in `evidence/launch/public-*`.
+The UI was deployed from `preview/dist` with the Vercel CLI. GitHub integration was unavailable. Since 2026-11-20 `.github/workflows/preview-ui.yml` rebuilds `preview/dist` and redeploys it to production when a change to the page's files reaches `main`; run it by hand from the Actions tab to redeploy without a change. Its `VERCEL_TOKEN` lives in the GitHub `production` environment, which only protected branches can use. The token is the Vercel access token "hn GitHub Actions (preview UI deploy)", scoped to the `hn-preview` project only, and it expires on 2027-11-20; after that the workflow fails until a new token replaces the secret. The workflow then checks that the live page still sends its Content-Security-Policy and points at the session gateway. Roll back from the Vercel dashboard by promoting the previous deployment. The gateway, visitor image and publisher binary are released automatically (see "Automatic server releases"); the page waits for the gateway it needs. Do not upload the repository root or generated credentials. Both host routes came from canonical infrastructure commit87c53e3. Public DNS, certificate, WebSocket/session limits, isolation settings and disconnect cleanup passed; browser evidence is in `evidence/launch/public-*`.
 
 ## Snapshot adoption Host check (2026-10-28)
 
@@ -61,7 +61,9 @@ The gateway's visitor image and the native `/opt/hn-preview/hn` were released by
 
 Checks that passed: the new `hn` validated each host's live snapshot; a snapshot captured by the new `hn` validated with development's old `hn`, production's old `hn`, and production's old visitor image under gVisor; a real session through each gateway showed the feed and the new help rows; the visitor container ran the new image with `runsc-rootless`, no network, a read-only filesystem and 256 MB, and was removed on disconnect; public port 8782 stayed closed. Development's scheduled publish at 03:00 UTC on 2026-11-20 was the first full run of the new `hn`: it captured 55 stories, prepared the three featured summaries and published snapshot `6ff3cfa2…`, which both hosts adopted at 03:01 UTC. Production's previous visitor image then served that snapshot until the 2026-11-20 switch.
 
-### Manual server release
+### Manual server release (retired)
+
+Until automatic releases were set up, these steps were run by hand. Use them only to recover a host that the automatic path cannot fix.
 
 Snapshot readers go before the writer, and the gateway goes before a page change that alters their messages. Release development first and switch production only after development passes. The commands run over SSH as `shaance`; the one-off `sudo -n -u hnpreview` and root installs below are the exception the owner approved for this demo, not the TLDW routine-deploy path.
 
@@ -76,3 +78,18 @@ Snapshot readers go before the writer, and the gateway goes before a page change
 
 To roll back, restore the two `.previous` files on that host and restart `hn-preview.service`; the previous image is still loaded.
 
+## Automatic server releases (since 2026-11-21)
+
+Design and review history: `../RELEASE_PLAN.md`. No person acts after a merge.
+
+1. A merge that changes server code runs `.github/workflows/preview-server.yml`. It builds `preview/Dockerfile`, pushes `ghcr.io/shaance/hn-preview:<sha>`, signs the digest with cosign keyless and moves `:main` forward. The image carries the visitor `hn` and, under `/opt/release`, the gateway code, `publish.mjs` and `node_modules`.
+2. On development, `hn-preview-release.timer` (as `hnpublisher`, every 15 minutes) runs `/opt/hn-preview/tools/rollout.mjs`. It is the only writer of `releases/rollout.json` in the snapshot bucket. It admits a newer signed `:main` once both readers run the good release, moves the stage `dev -> prod -> writer` as each reader reports the candidate, then records it as `good` and switches the publisher's own copy.
+3. On both hosts, `hn-preview-update.timer` (as `hnpreview`, every 15 minutes) runs `/opt/hn-preview/tools/update.mjs`. It verifies, pulls and stages the release it should run, waits until no visitor is connected (at most two hours), switches `~/.local/lib/hn-preview/current` under the adopter's lock, then checks `/healthz`, a synthetic session showing a real story title and the visitor container's isolation. A failure returns the host to the good release and reports it, and the coordinator then aborts the rollout for every host.
+4. The daily publish runs `/opt/hn-preview/tools/run.sh`. It first aligns the publisher with the record's good release, then uses that one build for capture, prepare and publish.
+5. `.github/workflows/preview-monitor.yml` reads production's public `/healthz` hourly and keeps one `preview-alert` issue open while anything is wrong. `preview-ui.yml` deploys a page change only after production's good release contains the gateway it needs.
+
+Where to look: production's `https://hn-session.hashcode.dev/healthz` shows `running`, `committed`, `failed`, `tools` and the rollout record. On a host, use `journalctl --user -u hn-preview-update` as `hnpreview`, and `journalctl -u hn-preview-release -u hn-preview-publish` for the coordinator and the publisher.
+
+Changing the tooling itself (`preview/tools/*`, the unit files) is the one step that still needs a person: run `sudo preview/deploy/install-tools.sh dev|prod` from a checkout on each host. The monitor opens an issue while a host's tooling differs from `main`.
+
+Scheduled workflows in a public repository are disabled after 60 days without repository activity, which would also stop the monitor.
