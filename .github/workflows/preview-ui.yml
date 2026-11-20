@@ -1,8 +1,6 @@
 name: Preview UI
 
-# Deploys the static page of the browser trial (hn.hashcode.dev) when a merged
-# change touches it. The session gateway and visitor image on the server are
-# released by hand; see preview/deploy/README.md.
+# Retry pending page changes hourly once production has the required gateway.
 on:
   push:
     branches: [ "main" ]
@@ -14,8 +12,17 @@ on:
       - "preview/build-ui.mjs"
       - "preview/package.json"
       - "preview/package-lock.json"
+      - "preview/server.mjs"
+      - "preview/docker.mjs"
       - ".github/workflows/preview-ui.yml"
+  schedule:
+    - cron: '17 * * * *'
   workflow_dispatch:
+    inputs:
+      force:
+        description: Redeploy the page even if its commit is already live
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -36,21 +43,86 @@ jobs:
       VERCEL_PROJECT_ID: prj_TA4es9PAZDYE8vF8jf65LtVifQD4
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Check whether the page can deploy
+        id: gate
+        shell: bash
+        env:
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          page_commit=$(git log -1 --format=%H -- preview/index.html preview/app.js preview/style.css \
+            preview/favicon.svg preview/build-ui.mjs preview/package.json preview/package-lock.json)
+          if ! live_response=$(curl -sS --max-time 30 -w '\n%{http_code}' https://hn.hashcode.dev/); then
+            echo "Live page request failed. Deferring the page deploy."
+            exit 0
+          fi
+          live_status=${live_response##*$'\n'}
+          live_commit=
+          if [[ "$live_status" == 2?? ]]; then
+            live=${live_response%$'\n'*}
+            live_commit=$(sed -n 's/.*<meta name="preview-page-commit" content="\([0-9a-f]\{40\}\)".*/\1/p' <<<"$live")
+          else
+            echo "Live page returned HTTP $live_status. Continuing without a live page commit."
+          fi
+          if [[ "$live_commit" == "$page_commit" && "$FORCE" != true ]]; then
+            echo "Page commit $page_commit is already live."
+            exit 0
+          fi
+
+          if ! health=$(curl -fsS --max-time 30 https://hn-session.hashcode.dev/healthz) ||
+             ! armed=$(jq -er 'select(type == "object") | (.running != null) | tostring' <<<"$health"); then
+            echo "Production health is unavailable. Deferring the page deploy."
+            exit 0
+          fi
+          if [[ "$armed" == false ]]; then
+            echo "Gateway gate is not armed."
+          else
+            if ! jq -e '.rollout != null' >/dev/null <<<"$health"; then
+              echo "Production health is missing rollout status. Deferring the page deploy."
+              exit 0
+            fi
+            if ! good_commit=$(jq -er '.rollout.good as $good |
+              select(($good.digest | type) == "string" and ($good.digest | length) > 0 and
+                .running == $good.digest and .committed == $good.digest) |
+              $good.commit | strings | select(test("^[0-9a-f]{40}$"))' <<<"$health"); then
+              echo "Production is waiting for running and committed to match a valid rollout.good release."
+              exit 0
+            fi
+            gateway_commit=$(git log -1 --format=%H -- preview/server.mjs preview/docker.mjs)
+            if ! comparison=$(gh api "repos/$GITHUB_REPOSITORY/compare/$gateway_commit...${good_commit}?per_page=1" --jq .status) ||
+               [[ "$comparison" != ahead && "$comparison" != identical ]]; then
+              echo "Could not confirm gateway commit $gateway_commit in production release $good_commit (${comparison:-compare unavailable})."
+              exit 0
+            fi
+          fi
+          echo "PAGE_COMMIT=$page_commit" >> "$GITHUB_ENV"
+          echo "deploy=true" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v7
+        if: steps.gate.outputs.deploy == 'true'
         with:
           node-version: "22"
       - name: Install preview dependencies
+        if: steps.gate.outputs.deploy == 'true'
         run: npm ci --prefix preview
       - name: Build the static page
+        if: steps.gate.outputs.deploy == 'true'
         run: npm run build --prefix preview
       - name: Deploy to production
+        if: steps.gate.outputs.deploy == 'true'
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: npx --yes vercel@65.11.0 deploy preview/dist --prod --yes --token "$VERCEL_TOKEN"
       - name: Check the live page
+        if: steps.gate.outputs.deploy == 'true'
         run: |
           headers=$(curl -fsSI https://hn.hashcode.dev/)
           grep -qi '^content-security-policy:.*hn-session\.hashcode\.dev' <<<"$headers" \
             || { echo "Live page is missing its Content-Security-Policy"; exit 1; }
-          curl -fsS https://hn.hashcode.dev/ | grep -q 'content="https://hn-session.hashcode.dev"' \
+          live=$(curl -fsS https://hn.hashcode.dev/)
+          grep -q 'content="https://hn-session.hashcode.dev"' <<<"$live" \
             || { echo "Live page does not point at the session gateway"; exit 1; }
+          grep -Fq "<meta name=\"preview-page-commit\" content=\"$PAGE_COMMIT\"" <<<"$live" \
+            || { echo "Live page does not report page commit $PAGE_COMMIT"; exit 1; }

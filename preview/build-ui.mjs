@@ -17,10 +17,15 @@ if (project) {
   await mkdir(new URL('.vercel/', out));
   await writeFile(new URL('.vercel/project.json', out), project);
 }
-const html = (await readFile(new URL('index.html', root), 'utf8')).replace(
-  'name="preview-backend" content=""',
-  `name="preview-backend" content="${backend.origin}"`,
-);
+const html = (await readFile(new URL('index.html', root), 'utf8'))
+  .replace(
+    'name="preview-backend" content=""',
+    `name="preview-backend" content="${backend.origin}"`,
+  )
+  .replace(
+    'name="preview-page-commit" content=""',
+    `name="preview-page-commit" content="${process.env.PAGE_COMMIT ?? ''}"`,
+  );
 await writeFile(new URL('index.html', out), html);
 for (const [source, target] of [
   ['favicon.svg', 'favicon.svg'],
