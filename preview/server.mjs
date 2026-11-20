@@ -57,8 +57,22 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('Vary', 'Origin');
   if (req.headers.origin === origin) res.setHeader('Access-Control-Allow-Origin', origin);
   if (req.url === '/healthz') {
+    const health = {
+      snapshot: hash,
+      generated_at: snapshot.generated_at,
+      running: process.env.RELEASE ?? null,
+    };
+    const file = process.env.PREVIEW_STATUS_FILE;
+    let body;
+    try {
+      const status = file && JSON.parse(await readFile(file, 'utf8'));
+      if (status && typeof status === 'object' && !Array.isArray(status))
+        body = JSON.stringify({ ...status, ...health });
+    } catch {
+      // The status file is optional and updated by a separate process.
+    }
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ snapshot: hash }));
+    res.end(body ?? JSON.stringify(health));
     return;
   }
   if (req.url === `/snapshots/${hash}.json`) {
