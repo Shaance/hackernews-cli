@@ -9,11 +9,8 @@ Group=hnpublisher
 StateDirectory=hn-publisher
 WorkingDirectory=/var/lib/hn-publisher
 EnvironmentFile=/etc/hn-preview/publisher.env
-Environment=HN_BIN=/opt/hn-preview/hn
 Environment=XDG_CONFIG_HOME=/var/lib/hn-publisher/config
-ExecStart=/opt/hn-preview/hn --capture-snapshot /var/lib/hn-publisher/candidate.json
-ExecStart=/opt/hn-preview/hn --prepare-snapshot /var/lib/hn-publisher/candidate.json
-ExecStart=/opt/hn-preview/node/bin/node /opt/hn-preview/publisher/publish.mjs /var/lib/hn-publisher/candidate.json
+ExecStart=/usr/bin/flock /var/lib/hn-publisher/publish.lock /opt/hn-preview/tools/run.sh
 TimeoutStartSec=1200
 MemoryMax=512M
 CPUQuota=50%

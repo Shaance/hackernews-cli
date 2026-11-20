@@ -6,6 +6,7 @@
     "build": "node build-ui.mjs",
     "test": "node publisher-check.mjs",
     "test:update": "node tools/update-check.mjs",
+    "test:rollout": "node tools/rollout-check.mjs",
     "test:sandbox": "node verify.mjs",
     "test:lifecycle": "node lifecycle.mjs",
     "test:proxy": "node public-check.mjs",

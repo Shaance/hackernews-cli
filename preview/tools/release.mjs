@@ -19,6 +19,7 @@ const descriptor = (entry) =>
   releaseId(entry?.digest) &&
   /^[a-f0-9]{40}$/.test(entry.commit) &&
   /^[1-9]\d*$/.test(entry.commit_count);
+export { descriptor };
 
 export async function readRollout() {
   if (!R2_ACCOUNT_ID || !R2_BUCKET || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY)
