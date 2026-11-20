@@ -860,8 +860,47 @@ scenario('record changes during staging', async (t) => {
   assert.equal(await host.current(), bootstrap.digest);
   assert.equal(await host.exists('attempt'), false);
   assert.equal(restartCount(await host.calls()), 0);
-  assert.deepEqual(await host.status(), { committed: bootstrap.digest });
+  assert.deepEqual(await host.status(), {
+    committed: bootstrap.digest,
+    failed: null,
+    reason: null,
+    tools: 'fixture-tools',
+    rollout: idle,
+  });
 });
+
+scenario(
+  'visitor deferral and skip-failed refresh the rollout without changing release status',
+  async (t) => {
+    const record = rollout(bootstrap, candidate, 'prod');
+    const host = await fixture(t, { busy: true, role: 'prod', record });
+    const releaseStatus = {
+      committed: bootstrap.digest,
+      failed: next.digest,
+      reason: 'Previous health check failed',
+    };
+    await host.save('committed', { ...releaseStatus, tools: 'old-tools', rollout: idle });
+
+    const deferred = { ...record, heartbeat: '2026-11-20T12:15:00Z' };
+    await host.setRecord(deferred);
+    assert.equal((await host.run()).decision, 'deferred');
+    assert.deepEqual(await host.status(), {
+      ...releaseStatus,
+      tools: 'fixture-tools',
+      rollout: deferred,
+    });
+
+    const skipped = { ...deferred, candidate: next, heartbeat: '2026-11-20T12:30:00Z' };
+    await host.setRecord(skipped);
+    assert.equal((await host.run()).decision, 'skip-failed');
+    assert.deepEqual(await host.status(), {
+      ...releaseStatus,
+      tools: 'fixture-tools',
+      rollout: skipped,
+    });
+    assert.equal(restartCount(await host.calls()), 0);
+  },
+);
 
 scenario('idle deferral keeps its first timestamp and overrides after two hours', async (t) => {
   const host = await fixture(t, { busy: true });
@@ -989,6 +1028,8 @@ scenario(
     assert.equal(status.committed, null);
     assert.equal(status.failed, next.digest);
     assert.match(status.reason, /session limit/);
+    assert.equal(status.tools, 'fixture-tools');
+    assert.deepEqual(status.rollout, rollout());
     assert.equal(await host.current(), folder(candidate.digest));
     assert.equal(await host.exists('attempt'), true);
     assert.equal(restartCount(await host.calls()), 0);

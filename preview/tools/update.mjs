@@ -242,8 +242,12 @@ async function update() {
   else if (failed === target && target !== record.good.digest) action = 'skip-failed';
   else if (target !== installed) action = 'stage';
   else if (running === installed && status?.committed === installed) action = 'no-op';
-  const writeStatus = (rollout, committed, failed = null, reason = null) =>
-    save('committed', { committed, failed, reason, tools, rollout });
+  const writeStatus = (
+    rollout,
+    committed = status?.committed ?? null,
+    failed = status?.failed ?? null,
+    reason = status?.reason ?? null,
+  ) => save('committed', { committed, failed, reason, tools, rollout });
   const deferring = () => deferred?.target !== target || Date.now() - deferred.since <= 7_200_000;
   if (check) {
     const occupied = action === 'stage' && (await busy());
@@ -260,9 +264,12 @@ async function update() {
     });
     return;
   }
-  if (action === 'skip-failed') return log(action, { target });
+  if (action === 'skip-failed') {
+    await writeStatus(record);
+    return log(action, { target });
+  }
   if (action === 'no-op') {
-    await writeStatus(record, target, failed, failed ? status.reason : null);
+    await writeStatus(record);
     if (deferred) await fs.rm(path('deferred'), { force: true });
     await prune(record.good.digest);
     return log(action, { target });
@@ -294,6 +301,7 @@ async function update() {
   if (action === 'stage') {
     if ((await busy()) && deferring()) {
       if (deferred?.target !== target) await save('deferred', { target, since: Date.now() });
+      await writeStatus(record);
       return log('deferred', { target });
     }
   }
@@ -320,8 +328,10 @@ async function update() {
     !sameDescriptor(next, original) ||
     !sameDescriptor(latest.good, record.good) ||
     !(await localImage(latest.good.digest))
-  )
+  ) {
+    await writeStatus(latest);
     return log('record-changed', { target, desired: next.digest });
+  }
   await save('attempt', { target, known_good: latest.good.digest });
   return finish(latest, target, action === 'stage' || running !== installed, null);
 
@@ -350,7 +360,8 @@ async function update() {
         : previousFailure;
     let reason = failure?.message ?? (rejected ? status.reason : null);
     if (rollback) reason += '; known_good also failed: ' + rollback.message;
-    await writeStatus(rollout, committed, rejected, reason);
+    if (pending && !restart && status?.committed == null) await writeStatus(rollout);
+    else await writeStatus(rollout, committed, rejected, reason);
     if (settled) {
       await fs.rm(path('attempt'));
       await fs.rm(path('deferred'), { force: true });
