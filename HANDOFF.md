@@ -55,18 +55,19 @@ All steps done on 2026-11-19:
 
 Next release: bump `Cargo.toml` + both lockfiles, write `docs/releases/tui-vX.Y.Z.md`, merge, push the tag, then check the run: the `homebrew` job pushes `Formula/hn.rb` to the tap and the `crates-io` job publishes `hn-reader`. Rerun cancelled macOS builds with `gh run rerun <id> --failed`.
 
-## Terminal keys and the browser trial (added 2026-11-19, later session)
+## Terminal keys and the browser trial (2026-11-19 to 2026-11-20)
 
 | Item | State |
 |---|---|
 | #71 `h` folds the selected comment in the terminal discussion and citation views (Mac parity); `Esc`/`q`/`←` go back | merged |
 | #72 README media re-rendered with `h` as fold | merged |
-| #75 `.github/workflows/preview-ui.yml`: deploys the trial's static page (hn.hashcode.dev, Vercel `hn-preview`) when a page file changes on `main` | see PR; needs `VERCEL_TOKEN` in the GitHub `production` environment before merge |
+| #75 `.github/workflows/preview-ui.yml`: deploys the trial's static page (hn.hashcode.dev, Vercel `hn-preview`) when a page file changes on `main` | merged; first run deployed `dfab4b9` on 2026-11-20 and passed its live-page check |
+| Gateway, visitor image and `/opt/hn-preview/hn` at `db03844` | released by hand: development 2026-11-19, production 2026-11-20; record and runbook in `preview/deploy/README.md` (#80) |
 
 Decisions (owner-approved, don't relitigate):
 - Terminal `o` stays "open the article pane". The Mac app's `o` (same as Enter) differs on purpose: the terminal has no always-on article split.
-- Page deploys: GitHub Actions with a team-scoped Vercel token in the `production` environment (protected branches only), not Vercel's Git integration (the build writes its CSP `vercel.json` inside `dist/`). Reviewed by advisor and Astra medium.
-- Server side stays manual, never pushed from CI (no SSH keys in GitHub). Planned: one operator script on the server that installs a chosen commit, pins the visitor image digest, restarts the gateway, checks `/healthz` plus a real session, and keeps the previous version for rollback. Not written yet: it needs read access to the servers to match their real layout.
-- Release order: snapshot-format change → pause publisher, update readers (visitor image + host `hn`) on both hosts, test a session, resume publisher. Page↔gateway message change → release gateway first, then merge the page PR (it auto-deploys).
+- Page deploys: GitHub Actions with a Vercel token in the `production` environment (protected branches only), not Vercel's Git integration (the build writes its CSP `vercel.json` inside `dist/`). The token "hn GitHub Actions (preview UI deploy)" is scoped to the `hn-preview` project and expires 2027-11-20; replace the `VERCEL_TOKEN` secret before then.
+- Server releases stay manual, never pushed from CI (no SSH keys in GitHub), and there is no release script: follow "Manual server release" in `preview/deploy/README.md`, development first, production only after the owner says go. The `sudo -n -u hnpreview` steps are an owner-approved exception to the TLDW no-sudo routine-deploy rule. `tldw-infra` provisions the development host only.
+- Release order: snapshot readers (visitor image + host `hn`) on both hosts before the writer; page↔gateway message change → release gateway first, then merge the page PR (it auto-deploys).
 
-Trial state on 2026-11-19: page last deployed 2026-11-05 (CLI); gateway/visitor image predate #63–#72; daily snapshot healthy (published 03:00 UTC). Current `main` was run with `--snapshot` on that live snapshot: two-column feed, four-level thread, trail, `h`, Esc and quit all worked. Docker sandbox tests (`npm run test:sandbox`, `test:lifecycle`) were not run because no Docker daemon was available.
+Trial state on 2026-11-20: both gateways run image `sha256:1f64317d…` and `hn 0.2.0` (`db03844`); a real public session showed the new `h/c Fold` help, gVisor, no network, read-only, 256 MB. The 03:00 UTC publish on 2026-11-20 already ran on the new `hn` (55 stories, three summaries) and both hosts adopted snapshot `6ff3cfa2…`. Rollback: restore `/opt/hn-preview/hn.previous-20261119` and `gateway.env.previous-20261119` on the host and restart `hn-preview.service`; previous images stay loaded. `main` has since gained 0.2.1/0.2.2; the only trial-visible change is "1w" ages (`src/time_utils.rs`), so it waits for the next release. Not cleaned up on purpose: development's rootful BuildKit cache (about 3 GB, shared with TLDW builds) and older rootless `hn-preview` tags on production.
