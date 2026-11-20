@@ -121,8 +121,12 @@ jobs:
           headers=$(curl -fsSI https://hn.hashcode.dev/)
           grep -qi '^content-security-policy:.*hn-session\.hashcode\.dev' <<<"$headers" \
             || { echo "Live page is missing its Content-Security-Policy"; exit 1; }
-          live=$(curl -fsS https://hn.hashcode.dev/)
+          # Vercel's edge can serve the previous page for a few seconds after a deploy.
+          for attempt in $(seq 12); do
+            live=$(curl -fsS https://hn.hashcode.dev/)
+            grep -Fq "<meta name=\"preview-page-commit\" content=\"$PAGE_COMMIT\"" <<<"$live" && break
+            [[ $attempt == 12 ]] && { echo "Live page does not report page commit $PAGE_COMMIT"; exit 1; }
+            sleep 5
+          done
           grep -q 'content="https://hn-session.hashcode.dev"' <<<"$live" \
             || { echo "Live page does not point at the session gateway"; exit 1; }
-          grep -Fq "<meta name=\"preview-page-commit\" content=\"$PAGE_COMMIT\"" <<<"$live" \
-            || { echo "Live page does not report page commit $PAGE_COMMIT"; exit 1; }
