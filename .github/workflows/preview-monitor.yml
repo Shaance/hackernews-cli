@@ -1,0 +1,145 @@
+name: Preview release monitor
+
+on:
+  schedule:
+    - cron: '47 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  actions: read
+
+concurrency:
+  group: preview-release-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Read production health
+        id: health
+        shell: bash
+        run: |
+          if ! curl -fsS --max-time 30 https://hn-session.hashcode.dev/healthz -o "$RUNNER_TEMP/preview-health.json" ||
+             ! armed=$(jq -er 'select(type == "object") | has("committed") | tostring' "$RUNNER_TEMP/preview-health.json"); then
+            echo "state=unavailable" >> "$GITHUB_OUTPUT"
+          elif [[ "$armed" == false ]]; then
+            echo "Preview release monitor is not armed."
+            echo "state=unarmed" >> "$GITHUB_OUTPUT"
+          else
+            echo "state=armed" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: imjasonh/setup-crane@v0.7
+        if: steps.health.outputs.state == 'armed'
+        continue-on-error: true
+      - name: Check the release and reconcile alert issues
+        if: steps.health.outputs.state != 'unarmed'
+        shell: bash
+        env:
+          HEALTH_STATE: ${{ steps.health.outputs.state }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          DOCKER_CONFIG: ${{ runner.temp }}/preview-monitor-docker
+        run: |
+          node <<'NODE'
+          const { execFileSync } = require('node:child_process');
+          const { readFileSync } = require('node:fs');
+          const { GH_REPO, GITHUB_SERVER_URL, GITHUB_RUN_ID, HEALTH_STATE, RUNNER_TEMP } = process.env;
+          const run = (cmd, ...args) => execFileSync(cmd, args, { encoding: 'utf8', timeout: 60_000 }).trim();
+          const gh = (...args) => run('gh', ...args);
+          const failures = [];
+          const check = (description, evaluate) => {
+            try {
+              evaluate();
+            } catch (error) {
+              failures.push(`${description}: ${error.stderr?.trim() || error.message}`);
+            }
+          };
+          const now = Date.now();
+          const hoursOld = (value, field) => {
+            const time = Date.parse(value);
+            if (!Number.isFinite(time)) throw Error(`missing or invalid ${field}`);
+            return (now - time) / 3_600_000;
+          };
+          const count = (value, field) => {
+            if (!/^\d+$/.test(String(value))) throw Error(`missing or invalid ${field}`);
+            return BigInt(value);
+          };
+
+          if (HEALTH_STATE !== 'armed') {
+            failures.push('Production /healthz is unreachable or did not return a JSON object.');
+          } else {
+            const health = JSON.parse(readFileSync(`${RUNNER_TEMP}/preview-health.json`, 'utf8'));
+            const { stage, since, heartbeat, good, last_abort: lastAbort } = health.rollout ?? {};
+            check('Rollout stage', () => {
+              if (!['idle', 'dev', 'prod', 'writer'].includes(stage)) throw Error(`invalid stage ${stage}`);
+              const limit = stage === 'writer' ? 1 : 6;
+              if (stage !== 'idle' && hoursOld(since, 'rollout.since') > limit)
+                throw Error(`${stage} has been active since ${since} (limit ${limit} h)`);
+            });
+            check('Coordinator heartbeat', () => {
+              if (hoursOld(heartbeat, 'rollout.heartbeat') > 1) throw Error(`last seen at ${heartbeat} (limit 1 h)`);
+            });
+            check('Snapshot freshness', () => {
+              if (hoursOld(health.generated_at, 'generated_at') > 30)
+                throw Error(`snapshot generated at ${health.generated_at} (limit 30 h)`);
+            });
+            check('Host tooling', () => {
+              const expected = run('bash', 'preview/deploy/tools-version.sh');
+              if (health.tools !== expected) throw Error(`production has ${health.tools ?? 'no version'}, main expects ${expected}`);
+            });
+            if (health.failed) failures.push(`Production reported failed release ${health.failed} (${health.reason || 'no reason supplied'}).`);
+            if (stage === 'idle' && (!good?.digest || health.running !== good.digest || health.committed !== good.digest))
+              failures.push(`Production is idle with running=${health.running}, committed=${health.committed}, good=${good?.digest}.`);
+
+            check('Registry release', () => {
+              const image = 'ghcr.io/shaance/hn-preview';
+              const digest = run('crane', 'digest', `${image}:main`);
+              // Read the config by digest so a concurrent tag update cannot mix releases.
+              const config = JSON.parse(run('crane', 'config', `${image}@${digest}`));
+              const labels = config.config?.Labels;
+              const commit = labels?.['org.opencontainers.image.revision'];
+              if (lastAbort?.digest === digest)
+                failures.push(`The main release ${digest} was aborted (${lastAbort.reason || 'no reason supplied'}).`);
+              const mainCount = count(labels?.['dev.hashcode.hn-preview.commit_count'], 'main image commit_count');
+              if (stage === 'idle' && lastAbort?.digest !== digest && mainCount > count(good?.commit_count, 'rollout.good.commit_count') &&
+                  hoursOld(config.created, 'main image creation time') > 1)
+                failures.push(`Main release ${commit} (${digest}, commit count ${mainCount}) was created at ${config.created} and is still ahead of good (${good.commit_count}).`);
+            });
+            check('Release workflow', () => {
+              const endpoint = `repos/${GH_REPO}/actions/workflows/preview-server.yml/runs?branch=main&status=completed&per_page=1`;
+              const runs = ['push', 'workflow_dispatch'].flatMap(event =>
+                JSON.parse(gh('api', `${endpoint}&event=${event}`)).workflow_runs);
+              const latest = runs.sort((a, b) => b.run_number - a.run_number)[0];
+              if (latest?.conclusion === 'failure') throw Error(`latest completed run on main failed (${latest.html_url})`);
+            });
+          }
+
+          if (failures.length) console.error(failures.map(message => `- ${message}`).join('\n'));
+          const issues = JSON.parse(gh('api', '--paginate', '--slurp', `repos/${GH_REPO}/issues?state=open&labels=preview-alert&per_page=100`))
+            .flat().filter(issue => !issue.pull_request);
+          if (failures.length) {
+            const body = `${failures.map(message => `- ${message}`).join('\n')}\n\n[Monitor run](${GITHUB_SERVER_URL}/${GH_REPO}/actions/runs/${GITHUB_RUN_ID})`;
+            if (issues.length) {
+              // Comment only when the failures change, so a lasting problem sends one email, not one an hour.
+              const list = failures.map(message => `- ${message}`).join('\n');
+              const comments = JSON.parse(gh('api', '--paginate', '--slurp', `repos/${GH_REPO}/issues/${issues[0].number}/comments?per_page=100`)).flat();
+              const last = (comments.at(-1)?.body ?? issues[0].body ?? '').split('\n\n[Monitor run]')[0];
+              if (last !== list) gh('issue', 'comment', String(issues[0].number), '--body', body);
+            } else {
+              const labels = JSON.parse(gh('label', 'list', '--search', 'preview-alert', '--json', 'name'));
+              if (!labels.some(label => label.name === 'preview-alert')) gh('label', 'create', 'preview-alert');
+              gh('issue', 'create', '--title', 'Preview release needs attention', '--label', 'preview-alert', '--body', body);
+            }
+            process.exitCode = 1;
+          } else {
+            for (const issue of issues) gh('issue', 'close', String(issue.number), '--comment', 'All preview release monitor checks passed.');
+            console.log('All preview release monitor checks passed.');
+          }
+          NODE
