@@ -55,19 +55,24 @@ All steps done on 2026-11-19:
 
 Next release: bump `Cargo.toml` + both lockfiles, write `docs/releases/tui-vX.Y.Z.md`, merge, push the tag, then check the run: the `homebrew` job pushes `Formula/hn.rb` to the tap and the `crates-io` job publishes `hn-reader`. Rerun cancelled macOS builds with `gh run rerun <id> --failed`.
 
-## Terminal keys and the browser trial (2026-11-19 to 2026-11-20)
+## Terminal keys and the browser trial (2026-11-19 to 2026-11-21)
 
 | Item | State |
 |---|---|
 | #71 `h` folds the selected comment in the terminal discussion and citation views (Mac parity); `Esc`/`q`/`←` go back | merged |
 | #72 README media re-rendered with `h` as fold | merged |
-| #75 `.github/workflows/preview-ui.yml`: deploys the trial's static page (hn.hashcode.dev, Vercel `hn-preview`) when a page file changes on `main` | merged; first run deployed `dfab4b9` on 2026-11-20 and passed its live-page check |
-| Gateway, visitor image and `/opt/hn-preview/hn` at `db03844` | released by hand: development 2026-11-19, production 2026-11-20; record and runbook in `preview/deploy/README.md` (#80) |
+| #75 `.github/workflows/preview-ui.yml` deploys the trial's static page (hn.hashcode.dev, Vercel `hn-preview`) | merged; since #83 it converges hourly and waits for the gateway it needs |
+| #80 record of the hand release of `db03844` (2026-11-19/20) | merged; runbook kept in `preview/deploy/README.md` as a recovery reference |
+| #81–#84 automatic server releases (design `preview/RELEASE_PLAN.md`) | merged; hosts set up 2026-11-20; first automatic release completed 2026-11-21 00:30 CET |
+
+How server releases work now (no person after a merge): CI builds and cosign-signs `ghcr.io/shaance/hn-preview` (public) on merges touching server code; on development `hn-preview-release.timer` (`hnpublisher`, `/opt/hn-preview/tools/rollout.mjs`) is the only writer of `releases/rollout.json` in the snapshot bucket and moves `idle → dev → prod → writer → idle`; `hn-preview-update.timer` (`hnpreview`, `update.mjs`) on each host verifies, stages, switches `~/.local/lib/hn-preview/current` and commits only after health, a synthetic session with a real story title and container isolation pass, else returns to `good`; the daily publish runs `/opt/hn-preview/tools/run.sh` pinned to the record's good release. `preview-monitor.yml` keeps one `preview-alert` issue open while anything is wrong. Production's public `https://hn-session.hashcode.dev/healthz` shows `running`, `committed`, `failed`, `tools` and the rollout record. Details: "Automatic server releases" in `preview/deploy/README.md`.
 
 Decisions (owner-approved, don't relitigate):
-- Terminal `o` stays "open the article pane". The Mac app's `o` (same as Enter) differs on purpose: the terminal has no always-on article split.
-- Page deploys: GitHub Actions with a Vercel token in the `production` environment (protected branches only), not Vercel's Git integration (the build writes its CSP `vercel.json` inside `dist/`). The token "hn GitHub Actions (preview UI deploy)" is scoped to the `hn-preview` project and expires 2027-11-20; replace the `VERCEL_TOKEN` secret before then.
-- Server releases stay manual, never pushed from CI (no SSH keys in GitHub), and there is no release script: follow "Manual server release" in `preview/deploy/README.md`, development first, production only after the owner says go. The `sudo -n -u hnpreview` steps are an owner-approved exception to the TLDW no-sudo routine-deploy rule. `tldw-infra` provisions the development host only.
-- Release order: snapshot readers (visitor image + host `hn`) on both hosts before the writer; page↔gateway message change → release gateway first, then merge the page PR (it auto-deploys).
+- Recurring ops are automated; don't recommend keeping something manual because it is rare (owner, 2026-11-20).
+- CI never holds server credentials; hosts pull. Readers before the writer, development before production, enforced by the rollout record.
+- The release tooling (`preview/tools/*`, unit files) is installed once and never self-updates, so a bad release can't replace what rolls it back. Changing it: `sudo preview/deploy/install-tools.sh dev|prod` from a checkout on each host; the monitor opens an issue while a host's tooling differs from `main`. This is the only manual path left.
+- Page deploys: GitHub Actions with a Vercel token in the `production` environment. The token "hn GitHub Actions (preview UI deploy)" is scoped to `hn-preview` and expires 2027-11-20; replace the `VERCEL_TOKEN` secret before then.
+- Terminal `o` stays "open the article pane" (the Mac app's `o` differs on purpose).
+- Codex implementation runs on Sol (`gpt-6.2-sol`) at medium; reviews on Astra (`gpt-6.2-astra`) high. Pass `-m` on every resume: `resume_classic.sh` does not carry it.
 
-Trial state on 2026-11-20: both gateways run image `sha256:1f64317d…` and `hn 0.2.0` (`db03844`); a real public session showed the new `h/c Fold` help, gVisor, no network, read-only, 256 MB. The 03:00 UTC publish on 2026-11-20 already ran on the new `hn` (55 stories, three summaries) and both hosts adopted snapshot `6ff3cfa2…`. Rollback: restore `/opt/hn-preview/hn.previous-20261119` and `gateway.env.previous-20261119` on the host and restart `hn-preview.service`; previous images stay loaded. `main` has since gained 0.2.1/0.2.2; the only trial-visible change is "1w" ages (`src/time_utils.rs`), so it waits for the next release. Not cleaned up on purpose: development's rootful BuildKit cache (about 3 GB, shared with TLDW builds) and older rootless `hn-preview` tags on production.
+Trial state on 2026-11-21 00:30 CET: fleet good release `sha256:accdb7a8…` (commit `1c8a2ac`, `hn 0.2.2`, includes the "1w" ages fix) on both readers and the publisher's writer; stage `idle`. Bootstrap `bootstrap-db03844` (image `1f64317d…`) kept as the rollback target until the next release. Pending: the first 03:00 UTC publish with the new writer on 2026-11-21 (a one-off check was scheduled in the session for 04:23 CET). Still on disk until that publish is proven: `/opt/hn-preview/hn`, `/opt/hn-preview/publisher`, the old code files in `~hnpreview/demo` (the snapshot and working directory there stay). Not cleaned up on purpose: development's rootful BuildKit cache (about 3 GB, shared with TLDW) and older rootless `hn-preview` tags on production. Known limit: GitHub disables scheduled workflows after 60 days without repository activity, which would stop the monitor.
