@@ -301,6 +301,28 @@ test('advances one stage per tick and validates before PUT and readback before f
   );
 });
 
+for (const [stage, reader] of [
+  ['dev', 'dev'],
+  ['prod', 'prod'],
+  ['writer', 'dev'],
+  ['writer', 'prod'],
+]) {
+  test(`holds ${stage} when ${reader} still commits the candidate but runs good`, async (t) => {
+    const ready = health(candidate);
+    const rollingBack = { ...ready, running: good.digest };
+    const host = await fixture(
+      t,
+      record(stage),
+      reader === 'dev' ? rollingBack : ready,
+      reader === 'prod' ? rollingBack : ready,
+    );
+    assert.equal((await host.run()).decision, 'waiting');
+    const result = await host.read();
+    assert.deepEqual(result, { ...record(stage), heartbeat: result.heartbeat });
+    assert.equal(await host.current(), good.digest);
+  });
+}
+
 for (const mode of ['crash', 'different']) {
   test('keeps current behind R2 after ' + mode + ' and reconciles on the next tick', async (t) => {
     const host = await fixture(t, record('writer'), health(candidate), health(candidate));

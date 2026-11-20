@@ -13,22 +13,23 @@ tools=/opt/hn-preview/tools
 node=/opt/hn-preview/node/bin
 
 # Pinned helper binaries (cosign v3.1.4, crane v0.22.1, linux amd64).
-fetch() { # url sha256 target
+# Command substitution drops errexit, so every failure returns explicitly.
+fetch() { # url sha256 -> path of the verified download
   local tmp
-  tmp=$(mktemp)
-  curl -fsSL --max-time 300 -o "$tmp" "$1"
-  echo "$2  $tmp" | sha256sum -c --quiet
+  tmp=$(mktemp) || return 1
+  curl -fsSL --max-time 300 -o "$tmp" "$1" || { rm -f "$tmp"; return 1; }
+  echo "$2  $tmp" | sha256sum -c --quiet || { rm -f "$tmp"; return 1; }
   printf '%s\n' "$tmp"
 }
 install -d -o root -g root -m 0755 "$tools"
 if ! echo "424e2c97d0b45fd7a6b608a87f090f35633f4c23ece5f092d48bba11aaf4bbfa  $tools/cosign" | sha256sum -c --quiet 2>/dev/null; then
   f=$(fetch https://github.com/sigstore/cosign/releases/download/v3.1.4/cosign-linux-amd64 \
-    424e2c97d0b45fd7a6b608a87f090f35633f4c23ece5f092d48bba11aaf4bbfa)
+    424e2c97d0b45fd7a6b608a87f090f35633f4c23ece5f092d48bba11aaf4bbfa) || exit 1
   install -o root -g root -m 0755 "$f" "$tools/cosign" && rm -f "$f"
 fi
 if ! echo "8e75c326adb43b053cfd78b9b987663f8f4fe4557f4d3915905643f25c730992  $tools/crane" | sha256sum -c --quiet 2>/dev/null; then
   f=$(fetch https://github.com/google/go-containerregistry/releases/download/v0.22.1/go-containerregistry_Linux_x86_64.tar.gz \
-    0ab7a1d6932a213aed964ce97666c3077fe691c8606413674a8b3e0b9ec4cda0)
+    0ab7a1d6932a213aed964ce97666c3077fe691c8606413674a8b3e0b9ec4cda0) || exit 1
   tar -xzf "$f" -C "$(dirname "$f")" crane
   install -o root -g root -m 0755 "$(dirname "$f")/crane" "$tools/crane" && rm -f "$f" "$(dirname "$f")/crane"
 fi

@@ -223,9 +223,10 @@ async function nextRelease(record) {
 
 async function decide(record, dev, prod, check) {
   const { good, candidate, stage, last_abort } = record;
+  const onRelease = (health, digest) => health?.running === digest && health.committed === digest;
   if (stage === 'idle') {
-    const onGood = (health) => health?.running === good.digest && health?.committed === good.digest;
-    if (!onGood(dev) || !onGood(prod)) return { decision: 'waiting' };
+    if (!onRelease(dev, good.digest) || !onRelease(prod, good.digest))
+      return { decision: 'waiting' };
     const next = await nextRelease(record);
     return next
       ? { decision: 'admit', changes: { candidate: next, stage: 'dev' } }
@@ -239,12 +240,12 @@ async function decide(record, dev, prod, check) {
   if (dev?.failed === candidate.digest) return abort('Development reader rejected the candidate');
   if (prod?.failed === candidate.digest) return abort('Production reader rejected the candidate');
 
-  const committed = (health) => health?.committed === candidate.digest;
-  if (stage === 'dev' && prod && committed(dev))
+  const onCandidate = (health) => onRelease(health, candidate.digest);
+  if (stage === 'dev' && prod && onCandidate(dev))
     return { decision: 'advance', changes: { stage: 'prod' } };
-  if (stage === 'prod' && committed(prod))
+  if (stage === 'prod' && onCandidate(prod))
     return { decision: 'advance', changes: { stage: 'writer' } };
-  if (stage !== 'writer' || !committed(dev) || !committed(prod)) return { decision: 'waiting' };
+  if (stage !== 'writer' || !onCandidate(dev) || !onCandidate(prod)) return { decision: 'waiting' };
   try {
     await verifyRelease(candidate);
     if (!check) {
