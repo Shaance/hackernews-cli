@@ -5,11 +5,12 @@
     "start": "node server.mjs",
     "build": "node build-ui.mjs",
     "test": "node publisher-check.mjs",
+    "test:update": "node tools/update-check.mjs",
     "test:sandbox": "node verify.mjs",
     "test:lifecycle": "node lifecycle.mjs",
     "test:proxy": "node public-check.mjs",
-    "format": "prettier --write '*.mjs' app.js index.html style.css package.json 'fixtures/*.json'",
-    "format:check": "prettier --check '*.mjs' app.js index.html style.css package.json 'fixtures/*.json'",
+    "format": "prettier --write '*.mjs' 'tools/*.mjs' app.js index.html style.css package.json 'fixtures/*.json'",
+    "format:check": "prettier --check '*.mjs' 'tools/*.mjs' app.js index.html style.css package.json 'fixtures/*.json'",
     "test:sensitivity": "node sensitivity-check.mjs"
   },
   "dependencies": {

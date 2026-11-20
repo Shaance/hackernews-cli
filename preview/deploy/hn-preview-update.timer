@@ -1,0 +1,10 @@
+[Unit]
+Description=Check for Hacker News preview reader releases
+
+[Timer]
+OnCalendar=*:0/15
+RandomizedDelaySec=60
+Persistent=true
+
+[Install]
+WantedBy=timers.target

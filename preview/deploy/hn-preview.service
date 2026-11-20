@@ -8,8 +8,10 @@ StartLimitBurst=5
 [Service]
 WorkingDirectory=%h/demo
 EnvironmentFile=%h/.config/hn-preview/gateway.env
+EnvironmentFile=%h/.local/lib/hn-preview/current/release.env
+Environment=PREVIEW_STATUS_FILE=%h/.local/state/hn-preview/committed.json
 Environment=DOCKER_SOCKET=%t/docker.sock
-ExecStart=/opt/hn-preview/node/bin/node %h/demo/server.mjs
+ExecStart=/opt/hn-preview/node/bin/node %h/.local/lib/hn-preview/current/server.mjs
 Restart=on-failure
 RestartSec=3
 TimeoutStopSec=30

@@ -1,0 +1,15 @@
+[Unit]
+Description=Update the Hacker News preview reader release
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/demo
+EnvironmentFile=%h/.config/hn-preview/gateway.env
+EnvironmentFile=%h/.config/hn-preview/storage.env
+Environment=DOCKER_HOST=unix://%t/docker.sock
+ExecStart=/usr/bin/flock %h/.local/state/hn-preview/lock /opt/hn-preview/node/bin/node /opt/hn-preview/tools/update.mjs
+TimeoutStartSec=1800
+NoNewPrivileges=yes
+UMask=0077

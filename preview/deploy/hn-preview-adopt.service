@@ -7,8 +7,9 @@ Type=oneshot
 WorkingDirectory=%h/demo
 EnvironmentFile=%h/.config/hn-preview/gateway.env
 EnvironmentFile=%h/.config/hn-preview/storage.env
-Environment=HN_BIN=/opt/hn-preview/hn
-ExecStart=/opt/hn-preview/node/bin/node %h/demo/adopt.mjs
-TimeoutStartSec=180
+Environment=HN_BIN=%h/.local/lib/hn-preview/current/hn
+ExecStart=/usr/bin/flock %h/.local/state/hn-preview/lock /opt/hn-preview/node/bin/node %h/.local/lib/hn-preview/current/adopt.mjs
+# Includes waiting for the updater, which holds the same lock for up to 30 minutes.
+TimeoutStartSec=2100
 NoNewPrivileges=yes
 UMask=0077
