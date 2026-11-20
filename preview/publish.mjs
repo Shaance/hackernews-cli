@@ -13,9 +13,11 @@ const {
 } = process.env;
 if (!account || !bucket || !accessKeyId || !secretAccessKey || !['dev', 'prod'].includes(channel))
   throw Error('Configure R2 credentials, bucket and PREVIEW_CHANNEL=dev|prod');
+const bytes = await readFile(file);
+if (bytes.length > 16 * 1024 * 1024)
+  throw Error('Snapshot exceeds 16 MiB; published snapshot unchanged');
 execFileSync(process.env.HN_BIN || 'hn', ['--validate-snapshot', file], { stdio: 'inherit' });
-const bytes = await readFile(file),
-  hash = createHash('sha256').update(bytes).digest('hex');
+const hash = createHash('sha256').update(bytes).digest('hex');
 const snapshot = JSON.parse(bytes),
   key = `${channel}/bundles/${hash}.json`;
 // The prompt asks for 60–90 words. Reject obvious fragments before any R2 write.

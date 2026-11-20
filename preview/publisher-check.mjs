@@ -139,6 +139,16 @@ try {
   checks.push(
     'Exact failed AI fragment rejected before bundle upload; published pointer unchanged',
   );
+  const oversized = Buffer.alloc(16 * 1024 * 1024 + 1, ' ');
+  bytes.copy(oversized);
+  await writeFile(candidate, oversized);
+  const tooLarge = await run('publish.mjs');
+  assert.notEqual(tooLarge.status, 0, tooLarge.stdout);
+  assert.match(tooLarge.stderr, /Snapshot exceeds 16 MiB; published snapshot unchanged/);
+  assert.deepEqual(await readFile(join(store, 'dev', 'latest.json')), priorManifest);
+  await assert.rejects(readFile(join(store, manifest(oversized).key)), { code: 'ENOENT' });
+  await writeFile(candidate, bytes);
+  checks.push('Snapshot above 16 MiB rejected before bundle upload; published pointer unchanged');
   for (const fault of ['bundle-upload', 'bundle-readback', 'pointer-upload']) {
     await reset(old);
     const previous = await readFile(join(store, 'dev', 'latest.json'));

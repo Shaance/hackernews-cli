@@ -4,3 +4,13 @@
 !src
 !src/**
 !preview/Dockerfile
+!preview/package.json
+!preview/package-lock.json
+!preview/server.mjs
+!preview/docker.mjs
+!preview/adopt.mjs
+!preview/publish.mjs
+!preview/index.html
+!preview/app.js
+!preview/style.css
+!preview/favicon.svg
