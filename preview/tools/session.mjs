@@ -78,10 +78,11 @@ export async function checkHealth(id, snapshot) {
 export async function checkRelease(id, image, snapshot, docker) {
   const bytes = await checkHealth(id, snapshot);
   const data = JSON.parse(bytes);
-  const title = Array.from(data.items?.[data.feeds?.best?.[0]]?.title ?? '')
-    .slice(0, 20)
-    .join('');
-  if (!title.trim()) throw new ReleaseError('Snapshot first story has no visible title');
+  const title = (data.feeds?.best ?? [])
+    .map((id) => Array.from(data.items?.[id]?.title?.trim() ?? '').slice(0, 20))
+    .find((prefix) => prefix.length >= 12)
+    ?.join('');
+  if (!title) throw new ReleaseError('Snapshot Best feed has no title with at least 12 characters');
   const { authority, host, origin } = gatewayAddress();
   const deadline = performance.now() + 300_000;
   let capacitySeen = false;

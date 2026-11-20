@@ -30,8 +30,12 @@ async function optional(operation) {
 
 const read = async (name) => JSON.parse(await optional(fs.readFile(path(name), 'utf8')));
 async function save(name, value) {
-  await fs.writeFile(path(name) + '.tmp', JSON.stringify(value) + '\n', { mode: 0o600 });
-  await fs.rename(path(name) + '.tmp', path(name));
+  await writeJson(path(name), value);
+}
+
+async function writeJson(file, value) {
+  await fs.writeFile(file + '.tmp', JSON.stringify(value) + '\n', { mode: 0o600 });
+  await fs.rename(file + '.tmp', file);
 }
 
 const desired = (record) =>
@@ -40,6 +44,10 @@ const desired = (record) =>
     : record.candidate;
 const retainedFailure = (record, status) =>
   status?.failed && (!record.candidate || record.candidate.digest === status.failed);
+const sameDescriptor = (a, b) =>
+  a?.digest === b.digest &&
+  a.commit === b.commit &&
+  String(a.commit_count) === String(b.commit_count);
 
 async function docker(args, timeout = 120_000) {
   try {
@@ -73,19 +81,31 @@ async function imagePresent(image) {
   }
 }
 
-async function stage(descriptor) {
-  const id = descriptor.digest;
+async function stage({ digest: id, commit, commit_count }) {
+  const descriptor = { digest: id, commit, commit_count };
   const existing = await localImage(id);
-  if (existing && (await imagePresent(existing))) return;
+  const present = existing && (await imagePresent(existing));
   if (id === release.bootstrap) {
+    if (present) return; // Provisioned locally, without a signed registry digest.
     throw new ReleaseError('Bootstrap release or image is missing');
   }
+  const metadata = 'descriptor.json';
+  const saved = join(releasePath(id), metadata);
+  if (present) {
+    const raw = await optional(fs.readFile(saved, 'utf8'));
+    try {
+      if (sameDescriptor(JSON.parse(raw), descriptor)) return;
+    } catch (error) {
+      if (!(error instanceof SyntaxError)) throw error;
+    }
+  }
   await release.verifyRelease(descriptor);
+  if (present) return writeJson(saved, descriptor);
   const ref = release.imageRef(id);
   await docker(['pull', ref]);
   const image = await docker(['image', 'inspect', '--format', '{{.Id}}', ref]);
   if (!release.registryDigest.test(image)) throw new ReleaseError('Invalid local image ID');
-  if (existing === image) return;
+  if (existing === image) return writeJson(saved, descriptor);
   if (existing) throw new ReleaseError('Staged release image differs from the pulled image');
   const scratch = await fs.mkdtemp(join(lib, '.stage-'));
   try {
@@ -96,6 +116,7 @@ async function stage(descriptor) {
       await fs.writeFile(join(scratch, 'release.env'), `PREVIEW_IMAGE=${image}\nRELEASE=${id}\n`, {
         mode: 0o600,
       });
+      await writeJson(join(scratch, metadata), descriptor);
     } finally {
       await docker(['rm', container]);
     }
@@ -178,27 +199,31 @@ async function update() {
     record = await release.readRollout();
   } catch (error) {
     if (!attempt || check) throw error;
-    try {
-      await checkHealth(attempt.target, snapshot);
-      log('recovery-pending', { target: attempt.target, reason: 'Rollout unavailable' });
-    } catch {
-      const status = await read('committed');
-      const rollback = await attemptRelease(attempt.known_good, true);
-      const reason =
-        'Rollout unavailable' + (rollback ? '; known_good also failed: ' + rollback.message : '');
-      await save('committed', {
-        ...status,
-        committed: rollback ? null : attempt.known_good,
-        failed: status?.failed === attempt.known_good ? null : (status?.failed ?? null),
-        reason: status?.reason ? status.reason + '; ' + reason : reason,
-        tools,
-      });
-      log('recovery-pending', {
-        target: attempt.target,
-        committed: rollback ? null : attempt.known_good,
-        reason,
-      });
+    const status = await read('committed');
+    const good = attempt.known_good;
+    const restored =
+      attempt.target !== good &&
+      status?.committed === good &&
+      (await current()) === good &&
+      Boolean(await checkHealth(good, snapshot).catch(() => null));
+    let reason = 'Rollout unavailable';
+    if (!restored) {
+      const failure = await attemptRelease(attempt.target, false);
+      if (failure) {
+        reason += '; ' + failure.message;
+        const transient = failure instanceof SessionCapacityError;
+        const rollback = transient ? null : await attemptRelease(good, true);
+        if (rollback) reason += '; known_good also failed: ' + rollback.message;
+        await save('committed', {
+          ...status,
+          committed: transient || rollback ? null : good,
+          failed: status?.failed === good ? null : (status?.failed ?? null),
+          reason,
+          tools,
+        });
+      }
     }
+    log('recovery-pending', { target: attempt.target, reason });
     process.exitCode = 1;
     return;
   }
@@ -252,24 +277,28 @@ async function update() {
         reason = new RecoveryPending(status.reason || 'Interrupted rollback is unverified');
     }
     const superseded =
-      attempt.target !== target
+      attempt.target !== target && attempt.target !== record.good.digest
         ? new ReleaseError('Interrupted target is no longer desired')
         : null;
-    return finish(record, attempt.target, true, reason || superseded);
+    reason ||= superseded;
+    if (!reason && attempt.target !== record.good.digest) await stage(desired(record));
+    return finish(record, attempt.target, true, reason);
   }
 
+  try {
+    await stage(desired(record));
+  } catch (error) {
+    if (!(error instanceof SignatureMismatch)) throw error;
+    return rejectTarget(record, error.message);
+  }
   if (action === 'stage') {
-    try {
-      await stage(desired(record));
-    } catch (error) {
-      if (!(error instanceof SignatureMismatch)) throw error;
-      return rejectTarget(record, error.message);
-    }
     if ((await busy()) && deferring()) {
       if (deferred?.target !== target) await save('deferred', { target, since: Date.now() });
       return log('deferred', { target });
     }
-    if (target !== record.good.digest) await stage(record.good);
+  }
+  if (target !== record.good.digest) await stage(record.good);
+  if (action === 'stage') {
     try {
       await fs.access(snapshot);
       await release.command(
@@ -288,9 +317,8 @@ async function update() {
   const next = desired(latest),
     original = desired(record);
   if (
-    next.digest !== target ||
-    next.commit !== original.commit ||
-    String(next.commit_count) !== String(original.commit_count) ||
+    !sameDescriptor(next, original) ||
+    !sameDescriptor(latest.good, record.good) ||
     !(await localImage(latest.good.digest))
   )
     return log('record-changed', { target, desired: next.digest });
@@ -310,21 +338,24 @@ async function update() {
     const transient = failure instanceof SessionCapacityError || failure instanceof RecoveryPending;
     const rollbackNeeded = failure && id !== good && (!transient || restart);
     const rollback = rollbackNeeded ? await attemptRelease(good, true) : null;
-    let committed = id;
-    if (failure) {
-      if (id === good || rollback) committed = null;
-      else if (rollbackNeeded) committed = good;
-      else committed = status?.committed ?? null;
-    }
+    const pending = failure instanceof SessionCapacityError;
+    const settled = !failure || (rollbackNeeded && !rollback && !pending);
+    const committed = !failure ? id : settled ? good : null;
     const previousFailure =
       retainedFailure(rollout, status) && status.failed !== good ? status.failed : null;
-    const rejected = failure && !transient && id !== good ? id : previousFailure;
+    const rejected = pending
+      ? (status?.failed ?? null)
+      : failure && !transient && id !== good
+        ? id
+        : previousFailure;
     let reason = failure?.message ?? (rejected ? status.reason : null);
     if (rollback) reason += '; known_good also failed: ' + rollback.message;
     await writeStatus(rollout, committed, rejected, reason);
-    if (!failure || (id !== good && !rollback)) await fs.rm(path('attempt'));
-    await fs.rm(path('deferred'), { force: true });
-    if (!failure || (id !== good && !rollback)) await prune(good);
+    if (settled) {
+      await fs.rm(path('attempt'));
+      await fs.rm(path('deferred'), { force: true });
+      await prune(good);
+    }
     const decision = !failure
       ? 'committed'
       : rollback

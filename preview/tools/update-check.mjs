@@ -264,13 +264,13 @@ ${command}
         ws.send(Buffer.from('To'));
         ws.send(JSON.stringify({ type: 'ready', id }));
         const snapshot = JSON.parse(readFileSync(SNAPSHOT));
-        const title = snapshot.items[snapshot.feeds.best[0]].title;
+        const titles = snapshot.feeds.best.map((id) => snapshot.items[id].title);
         if (targeted && fault === 'session') ws.send(JSON.stringify({ type: 'ended' }));
         else if (targeted && fault === 'error-screen') {
           ws.send(Buffer.from("p | New Couldn't load Best stories"));
           ws.send(JSON.stringify({ type: 'ended' }));
         } else {
-          ws.send(Buffer.from('p | New ' + title));
+          ws.send(Buffer.from('p | New ' + titles.join('\n')));
         }
       });
     });
@@ -386,6 +386,7 @@ async function fixture(context, options = {}) {
       join(dir, 'release.env'),
       `PREVIEW_IMAGE=${image(row.digest)}\nRELEASE=${row.digest}\n`,
     );
+    await json(join(dir, 'descriptor.json'), row);
     await writeFile(
       join(dir, 'hn'),
       '#!/bin/sh\ntest "$1" = --validate-snapshot && test -s "$2"\n',
@@ -409,6 +410,12 @@ async function fixture(context, options = {}) {
   return {
     setRecord,
     save,
+    descriptor: (id) => read(join(lib, folder(id), 'descriptor.json')),
+    setTitle: async (title) => {
+      const data = await read(snapshot);
+      data.items[data.feeds.best[0]].title = title;
+      await json(snapshot, data);
+    },
     stopGateway: () => systemctl('stop'),
     setFault: async (fault) => {
       config.fault = fault;
@@ -481,6 +488,7 @@ scenario('first apply from bootstrap and no-op heartbeat refresh', async (t) => 
   assert.equal((await host.run()).decision, 'committed');
   assert.equal(await host.current(), folder(candidate.digest));
   assert.equal(await host.exists('attempt'), false);
+  assert.deepEqual(await host.descriptor(candidate.digest), candidate);
   assert.deepEqual(await host.status(), {
     committed: candidate.digest,
     failed: null,
@@ -609,6 +617,20 @@ scenario('recover after a rollback outcome was already written', async (t) => {
   assert.equal(restartCount(await host.calls()), 1);
 });
 
+scenario('recover journaled good before switching to a new candidate', async (t) => {
+  const host = await fixture(t, {
+    record: rollout(candidate, next),
+    staged: [bootstrap, candidate],
+    current: candidate.digest,
+    attempt: { target: candidate.digest, known_good: candidate.digest },
+  });
+  assert.equal((await host.run()).decision, 'committed');
+  assert.equal((await host.status()).committed, candidate.digest);
+  assert.equal(await host.exists('attempt'), false);
+  assert.equal((await host.run()).decision, 'committed');
+  assert.equal((await host.status()).committed, next.digest);
+});
+
 for (const current of [bootstrap.digest, candidate.digest]) {
   scenario(`restore good without R2 when target is unhealthy (${current})`, async (t) => {
     const host = await fixture(t, {
@@ -626,7 +648,7 @@ for (const current of [bootstrap.digest, candidate.digest]) {
     assert.equal(await host.current(), bootstrap.digest);
     assert.equal((await host.status()).committed, bootstrap.digest);
     assert.equal(await host.exists('attempt'), true);
-    assert.equal(restartCount(await host.calls()), 1);
+    assert.equal(restartCount(await host.calls()), current === bootstrap.digest ? 0 : 1);
     await host.setFault(null);
     await host.setOffline(false);
     assert.equal((await host.run()).decision, 'committed');
@@ -635,17 +657,56 @@ for (const current of [bootstrap.digest, candidate.digest]) {
   });
 }
 
-scenario('keep a healthy target running while R2 is unavailable', async (t) => {
+scenario(
+  'offline recovery rolls back a target with healthy HTTP and a bad container',
+  async (t) => {
+    const host = await fixture(t, {
+      staged: [bootstrap, candidate],
+      current: candidate.digest,
+      attempt: journal,
+      fault: 'container',
+    });
+    await host.setOffline(true);
+    const result = await host.run(1);
+    assert.match(result.reason, /container configuration/);
+    assert.equal(await host.current(), bootstrap.digest);
+    assert.equal((await host.status()).committed, bootstrap.digest);
+    assert.equal(await host.exists('attempt'), true);
+  },
+);
+
+scenario('offline recovery leaves a verified rollback running on subsequent ticks', async (t) => {
   const host = await fixture(t, {
     staged: [bootstrap, candidate],
     current: candidate.digest,
     attempt: journal,
+    fault: 'health',
+  });
+  await host.setOffline(true);
+  await host.run(1);
+  const calls = await host.calls();
+  const status = await host.status();
+  assert.equal(restartCount(calls), 1);
+  await host.run(1);
+  assert.deepEqual(await host.calls(), calls);
+  assert.deepEqual(await host.status(), status);
+  assert.equal(await host.exists('attempt'), true);
+});
+
+scenario('check and keep a healthy journaled good running while R2 is unavailable', async (t) => {
+  const host = await fixture(t, {
+    staged: [bootstrap, candidate],
+    current: candidate.digest,
+    committed: candidate.digest,
+    attempt: { target: candidate.digest, known_good: candidate.digest },
   });
   await host.setOffline(true);
   assert.equal((await host.run(1)).decision, 'recovery-pending');
   assert.equal(await host.current(), folder(candidate.digest));
   assert.equal(await host.exists('attempt'), true);
-  assert.equal(restartCount(await host.calls()), 0);
+  const calls = await host.calls();
+  assert.equal(restartCount(calls), 0);
+  assert(calls.some(([name, verb]) => name === 'docker' && verb === 'container'));
 });
 
 scenario('offline recovery keeps an unverified rollback uncommitted', async (t) => {
@@ -696,6 +757,23 @@ scenario('missing retained image triggers signature verification and pull', asyn
   assert(calls.some(([name]) => name === 'cosign'));
   assert(calls.some(([name, verb]) => name === 'docker' && verb === 'pull'));
 });
+
+scenario(
+  'a different descriptor cannot reuse a retained release without verification',
+  async (t) => {
+    const changed = { ...candidate, commit_count: candidate.commit_count + 1 };
+    const host = await fixture(t, {
+      staged: [bootstrap, candidate],
+      record: rollout(bootstrap, changed),
+    });
+    assert.equal((await host.run(1)).decision, 'failed');
+    assert.equal(await host.current(), bootstrap.digest);
+    assert.deepEqual(await host.descriptor(candidate.digest), candidate);
+    const calls = await host.calls();
+    assert(calls.some(([name]) => name === 'cosign'));
+    assert(!calls.some(([, verb]) => verb === 'pull'));
+  },
+);
 
 scenario('an unavailable Docker daemon does not trigger a pull', async (t) => {
   const host = await fixture(t, { staged: [bootstrap, candidate], fault: 'inspect-unavailable' });
@@ -853,6 +931,15 @@ scenario('production follows stage policy and retries a full session', async (t)
   assert((await host.calls()).some(([name]) => name === 'session-full'));
 });
 
+scenario('a one-letter first title cannot make an error screen pass', async (t) => {
+  const host = await fixture(t, { fault: 'error-screen' });
+  await host.setTitle('T');
+  const result = await host.run(1);
+  assert.equal(result.decision, 'rolled-back');
+  assert.match(result.reason, /did not render/);
+  assert.equal((await host.status()).committed, bootstrap.digest);
+});
+
 scenario('validator timeout remains transient', async (t) => {
   const host = await fixture(t, { fault: 'snapshot-timeout', runTimeout: 80_000 });
   const result = await host.run(1);
@@ -870,19 +957,43 @@ scenario('five minutes of full sessions defer the candidate without failing it',
   assert(Date.now() - started >= 299_000);
   assert.equal(result.decision, 'rolled-back');
   let status = await host.status();
-  assert.equal(status.committed, bootstrap.digest);
+  assert.equal(status.committed, null);
   assert.equal(status.failed, null);
   assert.match(status.reason, /session limit/);
   assert.equal(await host.current(), bootstrap.digest);
-  assert.equal(await host.exists('attempt'), false);
+  assert.equal(await host.exists('attempt'), true);
   assert((await host.calls()).filter(([name]) => name === 'session-full').length > 1);
   assert((await host.calls()).some(([name]) => name === 'session-pending'));
   await host.setFault(null);
+  assert.equal((await host.run(1)).decision, 'rolled-back');
+  assert.equal((await host.status()).committed, bootstrap.digest);
+  assert.equal(await host.exists('attempt'), false);
   assert.equal((await host.run()).decision, 'committed');
   status = await host.status();
   assert.equal(status.committed, candidate.digest);
   assert.equal(status.failed, null);
 });
+
+scenario(
+  'capacity while checking the current candidate clears a stale committed claim',
+  async (t) => {
+    const host = await fixture(t, {
+      staged: [bootstrap, candidate],
+      current: candidate.digest,
+      fault: 'full-forever',
+      runTimeout: 330_000,
+    });
+    await host.save('committed', { committed: bootstrap.digest, failed: next.digest });
+    assert.equal((await host.run(1)).decision, 'check-failed');
+    const status = await host.status();
+    assert.equal(status.committed, null);
+    assert.equal(status.failed, next.digest);
+    assert.match(status.reason, /session limit/);
+    assert.equal(await host.current(), folder(candidate.digest));
+    assert.equal(await host.exists('attempt'), true);
+    assert.equal(restartCount(await host.calls()), 0);
+  },
+);
 
 scenario('capacity and failed rollback recover good before retrying the candidate', async (t) => {
   const host = await fixture(t, { fault: 'full-forever-bad-good', runTimeout: 330_000 });
