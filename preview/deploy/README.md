@@ -14,7 +14,7 @@ Gateway configuration belongs to `~hnpreview/.config/hn-preview/gateway.env` (06
 
 Adoption-only configuration belongs to `~hnpreview/.config/hn-preview/storage.env` (0600): `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `PREVIEW_CHANNEL=dev|prod`. The gateway unit does not load this file. The account can read it, but visitor containers receive only the snapshot mount, never the home directory or service environment.
 
-Publisher configuration belongs to `/etc/hn-preview/publisher.env` (root-owned 0600): the write credential variables above, publishing channel, and `ANTHROPIC_API_KEY`. Pin `{"provider":"anthropic"}` in `/var/lib/hn-publisher/config/hn/summary.json` (publisher-owned 0600). The existing native Fast profile then uses Anthropic directly; no OpenRouter key is installed. The separate `hnpublisher` account has no login, Docker/sudo membership or access to application secrets. Install its Node dependencies in `/opt/hn-preview/publisher` and tested native binary at `/opt/hn-preview/hn`. Do not enable its timer before a manual end-to-end publish/adopt passes.
+Publisher configuration belongs to `/etc/hn-preview/publisher.env` (root-owned 0600): the write credential variables above, publishing channel, and `ANTHROPIC_API_KEY`. Pin `{"provider":"anthropic"}` in `/var/lib/hn-publisher/config/hn/summary.json` (publisher-owned 0600). The existing native Fast profile then uses Anthropic directly; no OpenRouter key is installed. The separate `hnpublisher` account has no login, Docker/sudo membership or access to application secrets. It runs `hn` and `publish.mjs` from the signed release in `/var/lib/hn-publisher/releases/current` (see "Automatic server releases"). Do not enable its timer before a manual end-to-end publish/adopt passes.
 
 ## Rollout order
 
@@ -57,13 +57,13 @@ The gateway's visitor image and the native `/opt/hn-preview/hn` were released by
 | `image.tar` | sha256 `234fec9449f20a7954fcbea83cf348c50f133ef7066ee2a2750e8c2e9e57586d` |
 | `/opt/hn-preview/hn` | sha256 `b16ecd882b49615ecdc3124cee1a126b4dc931cb34d8e3817c198768edd0f836`, copied out of the image so the publisher and visitors run the same build |
 | Previous image pin | development `sha256:7297a971f98c173a4b73ea51f3833d3d95049200f7b684f2838aa4f0b1919126`, production `sha256:cd3da2a045fd8b43f98badbf1b4204e758f925382f005cf23f9cd301d4ebe6e7` |
-| Rollback copies | `/opt/hn-preview/hn.previous-20261119` and `gateway.env.previous-20261119` on each host |
+| Rollback copies | `/opt/hn-preview/hn.previous-20261119` and `gateway.env.previous-20261119` on each host, removed on 2026-11-21 with the rest of this layout |
 
 Checks that passed: the new `hn` validated each host's live snapshot; a snapshot captured by the new `hn` validated with development's old `hn`, production's old `hn`, and production's old visitor image under gVisor; a real session through each gateway showed the feed and the new help rows; the visitor container ran the new image with `runsc-rootless`, no network, a read-only filesystem and 256 MB, and was removed on disconnect; public port 8782 stayed closed. Development's scheduled publish at 03:00 UTC on 2026-11-20 was the first full run of the new `hn`: it captured 55 stories, prepared the three featured summaries and published snapshot `6ff3cfa2…`, which both hosts adopted at 03:01 UTC. Production's previous visitor image then served that snapshot until the 2026-11-20 switch.
 
 ### Manual server release (retired)
 
-Until automatic releases were set up, these steps were run by hand. Use them only to recover a host that the automatic path cannot fix.
+Until automatic releases were set up, these steps were run by hand. They are kept as a record: the layout they change (`/opt/hn-preview/hn`, `/opt/hn-preview/publisher`, the gateway code in `~hnpreview/demo` and `PREVIEW_IMAGE` in `gateway.env`) was removed on 2026-11-21, so they no longer apply as written. `~hnpreview/demo` now holds only the live snapshot and the gateway's working directory.
 
 Snapshot readers go before the writer, and the gateway goes before a page change that alters their messages. Release development first and switch production only after development passes. The commands run over SSH as `shaance`; the one-off `sudo -n -u hnpreview` and root installs below are the exception the owner approved for this demo, not the TLDW routine-deploy path.
 
