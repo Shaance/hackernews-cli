@@ -140,7 +140,8 @@ jobs:
               const last = (comments.at(-1)?.body ?? issues[0].body ?? '').split('\n\n[Monitor run]')[0];
               if (last !== list) gh('issue', 'comment', String(issues[0].number), '--body', body);
             } else {
-              const labels = JSON.parse(gh('label', 'list', '--search', 'preview-alert', '--json', 'name'));
+              // gh prints nothing, not [], when no label matches.
+              const labels = JSON.parse(gh('label', 'list', '--search', 'preview-alert', '--json', 'name') || '[]');
               if (!labels.some(label => label.name === 'preview-alert')) gh('label', 'create', 'preview-alert');
               gh('issue', 'create', '--title', 'Preview release needs attention', '--label', 'preview-alert', '--body', body);
             }
